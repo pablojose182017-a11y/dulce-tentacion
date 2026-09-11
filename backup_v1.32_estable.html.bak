@@ -1,0 +1,796 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panadería y Pastelería Dulce Tentación P y S v1.322</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+                        :root {
+            --primary: #d81b60;
+            --primary-hover: #ad1457;
+            --accent: #fbbf24;
+            --bg-body: #fff9f5;
+            --bg-card: #ffffff;
+            --text-main: #3e2723;
+            --text-muted: #795548;
+            --shadow-sm: 0 4px 10px rgba(109, 40, 217, 0.04);
+            --shadow-lg: 0 15px 30px -5px rgba(216, 27, 96, 0.25);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body { 
+            background-color: #fff9f5; 
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(248, 187, 208, 0.25) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(255, 224, 178, 0.3) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main); 
+            padding-bottom: 60px; 
+            overflow-x: hidden; 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body { 
+            background-color: #fdfbf7; 
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(251, 191, 36, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(225, 29, 72, 0.1) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(254, 215, 170, 0.2) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main); 
+            padding-bottom: 60px; 
+            overflow-x: hidden; 
+        }
+
+        /* Mejora visual en las tarjetas para resaltar sobre el nuevo fondo */
+        .card, .product-card, div[class*="card"] {
+            background: rgba(255, 255, 255, 0.92) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(251, 191, 36, 0.2) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01) !important;
+            border-radius: 16px !important;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding-bottom: 60px; overflow-x: hidden; }
+
+        .top-bar {
+            background: #1e293b; color: white; text-align: center; padding: 7px 10px;
+            font-size: 0.8rem; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .status-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
+            padding: 12px 5%;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+        }
+        .logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        
+        .search-box { position: relative; flex: 1; max-width: 320px; }
+        .search-box input {
+            width: 100%; padding: 8px 16px 8px 36px; border-radius: 20px; border: 1px solid #e2e8f0;
+            outline: none; background: #f1f5f9; font-size: 0.875rem; transition: all 0.2s;
+        }
+        .search-box input:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.5; font-size: 0.85rem; }
+
+        nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-link {
+            background: none; border: none; font-size: 0.9rem; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; padding: 8px 14px; border-radius: 20px;
+            transition: all 0.2s;
+        }
+        .nav-link.active, .nav-link:hover { color: var(--primary); background: #ffe4e6; }
+
+        .cart-btn {
+            background: var(--primary); color: white; border: none;
+            padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; font-size: 0.9rem;
+            box-shadow: var(--shadow-lg); transition: transform 0.2s, background 0.2s;
+            position: relative;
+        }
+        .cart-btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .cart-btn.bounce { animation: cartBounce 0.4s ease-out; }
+
+        @keyframes cartBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.18) rotate(-3deg); }
+            100% { transform: scale(1); }
+        }
+
+        .section { display: none; max-width: 1100px; margin: 25px auto; padding: 0 20px; }
+        .section.active { display: block; }
+
+        /* Hero Moderno */
+        .hero {
+            background: linear-gradient(135deg, rgba(225, 29, 72, 0.92), rgba(159, 18, 57, 0.92)), url('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover; background-position: center;
+            color: white; padding: 50px 20px; text-align: center; border-radius: 24px;
+            box-shadow: var(--shadow-lg); margin-bottom: 30px;
+        }
+        .hero h1 { font-size: 2.3rem; font-weight: 800; margin-bottom: 10px; }
+        .hero p { font-size: 1.05rem; margin-bottom: 20px; opacity: 0.95; }
+        .btn-cta {
+            background: var(--accent); color: #881337; border: none; padding: 12px 28px;
+            font-size: 1rem; font-weight: 800; border-radius: 25px; cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-cta:hover { transform: scale(1.05); }
+
+        .featured-title { text-align: center; font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 30px 0 15px; }
+        .features-badges { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 30px; }
+        .badge-card { background: white; padding: 15px 20px; border-radius: 16px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem; }
+
+        .category-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
+        .cat-btn {
+            background: white; border: 1px solid #e2e8f0; padding: 8px 18px; border-radius: 20px;
+            font-weight: 600; font-size: 0.85rem; color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+        }
+        .cat-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; }
+        .card {
+            background: var(--bg-card); border-radius: 20px; overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; position: relative;
+            display: flex; flex-direction: column; justify-content: space-between;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+        .card img { width: 100%; height: 160px; object-fit: cover; }
+        .card-tag {
+            position: absolute; top: 12px; left: 12px; background: var(--accent);
+            color: #881337; font-weight: 800; font-size: 0.75rem; padding: 4px 12px; border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .card-body { padding: 16px; text-align: center; }
+        .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+        .card .price { color: var(--primary); font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; }
+
+        .quantity-control {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;
+        }
+        .qty-btn {
+            background: #f8fafc; border: 1px solid #cbd5e1; width: 34px; height: 34px; border-radius: 10px;
+            font-weight: 800; cursor: pointer; font-size: 1.1rem; color: var(--text-main);
+            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .qty-btn:hover { background: #e2e8f0; border-color: #94a3b8; }
+        .qty-input {
+            width: 55px; height: 34px; text-align: center; border: 1.5px solid #cbd5e1; border-radius: 10px;
+            font-weight: 700; font-size: 0.95rem; outline: none; background: #fff; transition: border-color 0.2s;
+        }
+        .qty-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15); }
+
+        .qty-input::-webkit-outer-spin-button,
+        .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .qty-input[type=number] { -moz-appearance: textfield; }
+
+        .btn-add {
+            width: 100%; background: #fff1f2; color: var(--primary); border: 1.5px solid #ffe4e6; padding: 10px;
+            border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
+        .btn-add:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-add.added { background: #22c55e !important; color: white !important; border-color: #22c55e !important; }
+
+        .flying-img {
+            position: fixed; z-index: 9999; pointer-events: none;
+            width: 50px; height: 50px; border-radius: 50%; object-fit: cover;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25); border: 2px solid white;
+            transition: all 0.7s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        /* Modal del Carrito Rediseñado */
+        .cart-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px); z-index: 200;
+            justify-content: center; align-items: center; padding: 15px;
+        }
+        .cart-content {
+            background: white; padding: 25px; border-radius: 28px; width: 100%; max-width: 500px;
+            max-height: 88vh; overflow-y: auto; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex; flex-direction: column;
+        }
+        .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
+        .cart-header h3 { font-size: 1.25rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .close-btn { background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; font-weight: bold; color: var(--text-muted); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .close-btn:hover { background: #ffe4e6; color: var(--primary); }
+
+        .cart-list { max-height: 330px; overflow-y: auto; padding-right: 5px; margin: 15px 0; }
+        
+        .cart-item-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 12px 14px; border-radius: 16px; background: #ffffff; margin-bottom: 10px;
+            border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s;
+        }
+        .cart-item-row:hover { border-color: #e2e8f0; background: #fafafa; }
+        .cart-item-img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; }
+        .cart-item-info { flex: 1; }
+        .cart-item-title { font-size: 0.92rem; font-weight: 700; color: var(--text-main); }
+        .cart-item-price { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+        .cart-item-price strong { color: var(--primary); }
+
+        .cart-item-actions { display: flex; align-items: center; gap: 6px; }
+        .cart-item-actions button { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; font-weight: 800; cursor: pointer; color: var(--text-main); display: flex; align-items: center; justify-content: center; }
+        .cart-item-actions button:hover { background: #e2e8f0; }
+        .cart-item-actions input { width: 40px; height: 28px; text-align: center; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.85rem; }
+        
+        .btn-delete-styled {
+            background: #fff1f2 !important; border: 1px solid #fecdd3 !important;
+            color: #e11d48 !important; padding: 6px; border-radius: 10px !important;
+            cursor: pointer; transition: all 0.2s !important; margin-left: 4px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-delete-styled:hover {
+            background: #e11d48 !important; border-color: #e11d48 !important;
+            color: white !important; transform: scale(1.08);
+        }
+        .btn-delete-styled svg { width: 16px; height: 16px; fill: currentColor; }
+
+        .cart-summary-box {
+            background: linear-gradient(135deg, #fff1f2, #ffe4e6); padding: 18px; border-radius: 18px; border: 1px solid #fecdd3;
+            margin-top: auto;
+        }
+        .cart-summary-row { display: flex; justify-content: space-between; font-size: 0.95rem; font-weight: 700; color: #881337; margin-bottom: 6px; }
+        .cart-summary-row.total { font-size: 1.2rem; font-weight: 800; color: var(--primary); border-top: 1px dashed #fda4af; padding-top: 10px; margin-top: 6px; }
+
+        .btn-whatsapp {
+            width: 100%; background: #25d366; color: white; border: none; padding: 14px;
+            border-radius: 18px; font-weight: 800; font-size: 1rem; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px;
+            box-shadow: 0 8px 20px -4px rgba(37, 211, 102, 0.4); transition: all 0.2s;
+        }
+        .btn-whatsapp:hover { background: #22c55e; transform: translateY(-2px); }
+
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white;
+            padding: 12px 22px; border-radius: 14px; font-weight: 600; font-size: 0.9rem;
+            box-shadow: var(--shadow-lg); display: none; z-index: 300; animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .empty-cart-view { text-align: center; padding: 35px 10px; color: var(--text-muted); }
+        .empty-cart-view span { font-size: 3.2rem; display: block; margin-bottom: 10px; opacity: 0.7; }
+
+        /* Estilos sección Nosotros v1.322 */
+        .info-card { background: white; padding: 35px; border-radius: 24px; box-shadow: var(--shadow-sm); line-height: 1.8; border: 1px solid #f1f5f9; }
+        .info-card h2 { color: var(--primary); font-size: 1.8rem; font-weight: 800; margin-bottom: 15px; }
+        .about-text-lead { font-size: 1.1rem; color: #334155; font-weight: 500; margin-bottom: 20px; }
+        
+        .mission-vision-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 30px 0;
+        }
+        .mv-card {
+            padding: 25px; border-radius: 20px; border: 1px solid #e2e8f0; transition: transform 0.2s;
+        }
+        .mv-card:hover { transform: translateY(-3px); }
+        .mv-card.mission { background: linear-gradient(135deg, #fff1f2, #ffffff); border-color: #fecdd3; }
+        .mv-card.vision { background: linear-gradient(135deg, #f8fafc, #ffffff); border-color: #e2e8f0; }
+        .mv-card h3 { font-size: 1.25rem; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .mv-card.mission h3 { color: var(--primary); }
+        .mv-card.vision h3 { color: #1e293b; }
+        .mv-card p { font-size: 0.98rem; color: #475569; font-weight: 500; line-height: 1.6; }
+
+        .about-values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 25px; }
+        .value-card { background: #f8fafc; padding: 22px; border-radius: 18px; border: 1px solid #e2e8f0; }
+        .value-card h4 { color: var(--primary); font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .value-card p { color: var(--text-muted); font-size: 0.92rem; }
+
+        .about-banner-home {
+            background: linear-gradient(135deg, #fff1f2, #ffe4e6); padding: 30px; border-radius: 24px;
+            margin: 40px 0 20px; border: 1px solid #fecdd3; text-align: center;
+        }
+        .about-banner-home h3 { color: var(--primary); font-weight: 800; font-size: 1.4rem; margin-bottom: 10px; }
+        .about-banner-home p { color: #881337; font-weight: 600; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
+            .cat-chip-container, div[style*="overflow-x: auto"] {
+            display: flex !important;
+            justify-content: center !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            margin: 0 auto 25px auto !important;
+            padding: 0 15px !important;
+        }
+
+        h2, .section-title, div:has(> .cat-chip) pre, div:has(> .cat-chip) {
+            text-align: center !important;
+        }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+    <div class="top-bar">
+        <span class="status-dot"></span> 🟢 ¡Estamos Abiertos en Cúcuta! Atendiendo pedidos para entregar de inmediato. (v1.322)
+    </div>
+
+    <header>
+        <div class="logo">🍰 Dulce Tentación P y S</div>
+
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Buscar pan cascarita, queso..." oninput="filterProducts()">
+        </div>
+
+        <nav>
+            <button class="nav-link active" onclick="showSection('inicio', this)">Inicio</button>
+            <button class="nav-link" onclick="showSection('productos', this)">Productos</button>
+            <button class="nav-link" onclick="showSection('nosotros', this)">Nosotros</button>
+            <button class="nav-link" onclick="showSection('ubicacion', this)">Ubicación</button>
+        </nav>
+
+        <div id="user-profile-container" style="display: inline-flex; align-items: center; margin-right: 12px;">
+    <button id="btn-google-login" onclick="openGoogleLogin()" style="background: white; border: 1px solid #f8bbd0; color: #334155; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+        <span>Ingresar</span>
+    </button>
+    <div id="user-logged" style="display: none; align-items: center; gap: 8px;">
+        <img id="user-avatar" src="" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #d81b60;">
+        <span id="user-name" style="font-weight: 700; font-size: 0.85rem; color: #3e2723;"></span>
+    </div>
+</div>
+<button class="cart-btn" id="headerCartBtn" onclick="toggleCart()">
+            🛒 Carrito (<span id="cartCount">0</span>)
+        </button>
+    </header>
+
+    <section id="inicio" class="section active">
+        <div class="hero">
+            <h1>Panadería & Pastelería Dulce Tentación</h1>
+            <p>Pan fresco, suave y horneado al instante en Cúcuta. ¡Haz tu pedido directo por WhatsApp!</p>
+            <button class="btn-cta" onclick="showSection('productos', document.querySelectorAll('.nav-link')[1])">Ver Todos los Productos</button>
+        </div>
+
+        <h2 class="featured-title">🔥 Los Más Pedidos de Hoy</h2>
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding: 15px 20px; max-width: 1200px; margin: 0 auto 20px; scrollbar-width: none;">
+    <button class="cat-chip active" onclick="filterCategory('todos', this)" style="background: #d81b60; color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 10px rgba(216,27,96,0.3);">🔥 PROMOS</button>
+    <button class="cat-chip" onclick="filterCategory('tortas', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🎂 Tortas & Postres</button>
+    <button class="cat-chip" onclick="filterCategory('combos', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🎁 Combos</button>
+    <button class="cat-chip" onclick="filterCategory('panes', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🥖 Panes a $500</button>
+    <button class="cat-chip" onclick="filterCategory('hojaldres', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🥐 Hojaldres</button>
+    <button class="cat-chip" onclick="filterCategory('antojos', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🍩 Antojos</button>
+</div>
+<div class="grid" id="featuredGrid"></div>
+
+        <div class="about-banner-home">
+            <h3>❤️ Nuestra Pasión es el Buen Sabor</h3>
+            <p>En Dulce Tentación P y S cuidamos cada detalle para que cada bocado sea una verdadera tentación. Trabajamos con dedicación en Cúcuta para ofrecerte la máxima calidad y frescura.</p>
+        </div>
+
+        <div class="features-badges">
+            <div class="badge-card">🥖 Horneado Fresco Diariamente</div>
+            <div class="badge-card">⚡ Entrega Rápida en Cúcuta</div>
+            <div class="badge-card">⭐ La Mejor Calidad a $500</div>
+        </div>
+    </section>
+
+    <section id="productos" class="section">
+        <div class="category-tabs">
+            <button class="cat-btn active" onclick="filterCategory('TODOS', this)">Todos</button>
+            <button class="cat-btn" onclick="filterCategory('500', this)">✨ Panes a $500</button>
+            <button class="cat-btn" onclick="filterCategory('PANADERIA', this)">🥖 Panadería</button>
+            <button class="cat-btn" onclick="filterCategory('PASTELERIA', this)">🍰 Pastelería</button>
+        </div>
+
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding: 15px 20px; max-width: 1200px; margin: 0 auto 20px; scrollbar-width: none;">
+    <button class="cat-chip active" onclick="filterCategory('todos', this)" style="background: #d81b60; color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 10px rgba(216,27,96,0.3);">🔥 PROMOS</button>
+    <button class="cat-chip" onclick="filterCategory('tortas', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🎂 Tortas & Postres</button>
+    <button class="cat-chip" onclick="filterCategory('combos', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🎁 Combos</button>
+    <button class="cat-chip" onclick="filterCategory('panes', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🥖 Panes a $500</button>
+    <button class="cat-chip" onclick="filterCategory('hojaldres', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🥐 Hojaldres</button>
+    <button class="cat-chip" onclick="filterCategory('antojos', this)" style="background: white; color: #795548; border: 1px solid #f8bbd0; padding: 10px 20px; border-radius: 25px; font-weight: 700; cursor: pointer; white-space: nowrap;">🍩 Antojos</button>
+</div>
+<div class="grid" id="productGrid"></div>
+    </section>
+
+    <!-- Sección Nosotros v1.322 con Misión y Visión -->
+    <section id="nosotros" class="section">
+        <div class="info-card">
+            <h2>¿Quiénes somos?</h2>
+            <p class="about-text-lead">
+                Somos <strong>Dulce Tentación P y S</strong>, una panadería y pastelería de <strong>Cúcuta</strong>, donde cada producto está hecho con calidad, dedicación y mucho sabor.
+            </p>
+            <p style="color: #475569; font-size: 1.05rem; margin-bottom: 15px;">
+                Nos encanta crear productos frescos y deliciosos, cuidando cada detalle para que cada bocado sea una verdadera tentación.
+            </p>
+            <p style="color: #475569; font-size: 1.05rem;">
+                Queremos crecer, mejorar cada día y hacer de <strong>Dulce Tentación P y S</strong> una marca reconocida por su calidad, confianza y sabor exquisito.
+            </p>
+
+            <!-- Tarjetas de Misión y Visión v1.322 -->
+            <div class="mission-vision-container">
+                <div class="mv-card mission">
+                    <h3>🎯 Nuestra Misión</h3>
+                    <p>Ofrecer productos de panadería y pastelería frescos, deliciosos y de calidad, preparados con dedicación para brindar una experiencia que siempre invite a volver.</p>
+                </div>
+                <div class="mv-card vision">
+                    <h3>👁️ Nuestra Visión</h3>
+                    <p>Ser una marca reconocida y confiable, creciendo cada día sin perder lo que nos caracteriza: calidad, buen servicio y un sabor exquisito.</p>
+                </div>
+            </div>
+
+            <div class="about-values-grid">
+                <div class="value-card">
+                    <h4>✨ Calidad & Dedicación</h4>
+                    <p>Cuidamos con esmero los ingredientes y el horneado diario para garantizar productos siempre suaves y deliciosos.</p>
+                </div>
+                <div class="value-card">
+                    <h4>📍 Orgullo de Cúcuta</h4>
+                    <p>Nacimos para deleitar a las familias cucuteñas con la mejor atención y productos recién salidos del horno.</p>
+                </div>
+                <div class="value-card">
+                    <h4>🤝 Confianza & Sabor</h4>
+                    <p>Buscamos ser tu primera opción diaria, brindándote confianza total en cada pedido y un sabor inigualable.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ubicacion" class="section">
+        <div class="info-card">
+            <h2>📍 Visítanos o Pide a Domicilio en Cúcuta</h2>
+            <div class="info-grid">
+                <div>
+                    <h4>🕒 Horarios de Atención</h4>
+                    <p style="color: var(--text-muted);">Lunes a Domingo: 6:00 AM - 9:00 PM</p>
+                    <br>
+                    <h4>📞 Teléfono / WhatsApp</h4>
+                    <p style="color: var(--text-muted);">+57 300 000 0000</p>
+                </div>
+                <div>
+                    <h4>📍 Dirección</h4>
+                    <p style="color: var(--text-muted);">Cúcuta, Norte de Santander</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal Carrito v1.322 -->
+    <div class="cart-modal" id="cartModal">
+        <div class="cart-content">
+            <div class="cart-header">
+                <h3>🛒 Tu Carrito de Compra</h3>
+                <button class="close-btn" onclick="toggleCart()">✕</button>
+            </div>
+            
+            <div class="cart-list" id="cartItems"></div>
+            
+            <div class="cart-summary-box" id="cartSummaryBox">
+                <div class="cart-summary-row">
+                    <span>Total Unidades:</span>
+                    <span id="summaryQuantity">0</span>
+                </div>
+                <div class="cart-summary-row total">
+                    <span>Total a Pagar:</span>
+                    <span>$<span id="summaryTotal">0</span></span>
+                </div>
+            </div>
+            
+            <button class="btn-whatsapp" id="btnWhatsapp" onclick="sendOrder()">
+                <span>📲 Confirmar Pedido por WhatsApp</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">🛒 ¡Producto agregado al carrito!</div>
+
+    <script>
+        const products = [
+            { id: 1, name: "Pan Cascarita", price: 500, category: "500", featured: true, tag: "Popular", img: "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=400&q=80" },
+            { id: 2, name: "Bolita de Leche", price: 500, category: "500", featured: false, tag: "$500", img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80" },
+            { id: 3, name: "Bolita de Coco", price: 500, category: "500", featured: false, tag: "$500", img: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=400&q=80" },
+            { id: 4, name: "Bolita de Queso", price: 500, category: "500", featured: true, tag: "Favorito", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=400&q=80" },
+            { id: 5, name: "Croissant Jamón y Queso", price: 2500, category: "PANADERIA", featured: true, tag: "Especial", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=400&q=80" },
+            { id: 6, name: "Porción Torta Chocolate", price: 4000, category: "PASTELERIA", featured: false, tag: "Dulce", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=400&q=80" }
+        ];
+
+        let cart = [];
+
+        function showSection(sectionId, element) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            if(element) element.classList.add('active');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+
+        function changeQty(id, delta) {
+            const inputs = document.querySelectorAll(`.qty-input-id-${id}`);
+            inputs.forEach(input => {
+                let current = parseInt(input.value) || 1;
+                current += delta;
+                if(current < 1) current = 1;
+                input.value = current;
+            });
+        }
+
+        function validateInputQty(input) {
+            let val = parseInt(input.value);
+            if(isNaN(val) || val < 1) input.value = 1;
+        }
+
+        function createCardHTML(p) {
+            return `
+                <div class="card" id="card-product-${p.id}">
+                    <span class="card-tag">${p.tag}</span>
+                    <img src="${p.img}" alt="${p.name}" class="product-img-${p.id}">
+                    <div class="card-body">
+                        <h3>${p.name}</h3>
+                        <div class="price">$${p.price.toLocaleString()}</div>
+                        
+                        <div class="quantity-control">
+                            <button class="qty-btn" onclick="changeQty(${p.id}, -1)">-</button>
+                            <input type="number" class="qty-input qty-input-id-${p.id}" value="1" min="1" onblur="validateInputQty(this)">
+                            <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+                        </div>
+
+                        <button class="btn-add btn-add-id-${p.id}" onclick="addToCart(${p.id}, event)">
+                            <span>➕ Agregar al Carrito</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProducts(itemsToRender = products) {
+            const grid = document.getElementById('productGrid');
+            if(itemsToRender.length === 0) {
+                grid.innerHTML = "<p style='grid-column: 1/-1; text-align: center; color: var(--text-muted);'>No se encontraron productos.</p>";
+                return;
+            }
+            grid.innerHTML = itemsToRender.map(p => createCardHTML(p)).join('');
+        }
+
+        function renderFeatured() {
+            const featuredGrid = document.getElementById('featuredGrid');
+            const featuredList = products.filter(p => p.featured);
+            featuredGrid.innerHTML = featuredList.map(p => createCardHTML(p)).join('');
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            renderProducts(filtered);
+            showSection('productos', document.querySelectorAll('.nav-link')[1]);
+        }
+
+        function filterCategory(cat, element) {
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            if(cat === 'TODOS') renderProducts(products);
+            else renderProducts(products.filter(p => p.category === cat));
+        }
+
+        function triggerFlyAnimation(productId, startEvent) {
+            const imgElement = document.querySelector(`.product-img-${productId}`);
+            const cartBtn = document.getElementById('headerCartBtn');
+            if (!imgElement || !cartBtn) return;
+
+            const imgRect = imgElement.getBoundingClientRect();
+            const cartRect = cartBtn.getBoundingClientRect();
+
+            const flyingImg = document.createElement('img');
+            flyingImg.src = imgElement.src;
+            flyingImg.className = 'flying-img';
+            flyingImg.style.top = `${imgRect.top}px`;
+            flyingImg.style.left = `${imgRect.left}px`;
+            flyingImg.style.width = `${imgRect.width}px`;
+            flyingImg.style.height = `${imgRect.height}px`;
+
+            document.body.appendChild(flyingImg);
+
+            requestAnimationFrame(() => {
+                flyingImg.style.top = `${cartRect.top + 5}px`;
+                flyingImg.style.left = `${cartRect.left + 10}px`;
+                flyingImg.style.width = '25px';
+                flyingImg.style.height = '25px';
+                flyingImg.style.opacity = '0.4';
+            });
+
+            setTimeout(() => {
+                flyingImg.remove();
+                cartBtn.classList.add('bounce');
+                setTimeout(() => cartBtn.classList.remove('bounce'), 400);
+            }, 700);
+        }
+
+        function addToCart(productId, event) {
+            const product = products.find(p => p.id === productId);
+            const input = document.querySelector(`.qty-input-id-${productId}`);
+            let qtyToAdd = parseInt(input ? input.value : 1);
+            if(isNaN(qtyToAdd) || qtyToAdd < 1) qtyToAdd = 1;
+
+            const itemInCart = cart.find(item => item.id === productId);
+
+            if (itemInCart) {
+                itemInCart.quantity += qtyToAdd;
+            } else {
+                cart.push({ ...product, quantity: qtyToAdd });
+            }
+
+            triggerFlyAnimation(productId, event);
+
+            const addBtns = document.querySelectorAll(`.btn-add-id-${productId}`);
+            addBtns.forEach(btn => {
+                btn.classList.add('added');
+                btn.innerHTML = '<span>✓ ¡Agregado!</span>';
+                setTimeout(() => {
+                    btn.classList.remove('added');
+                    btn.innerHTML = '<span>➕ Agregar al Carrito</span>';
+                }, 1200);
+            });
+
+            if(input) input.value = 1;
+            updateCart();
+            showToast(`🛒 ${qtyToAdd}x ${product.name} agregado(s)`);
+        }
+
+        function setCartItemQty(productId, val) {
+            let newQty = parseInt(val);
+            const item = cart.find(i => i.id === productId);
+            if(item) {
+                if(isNaN(newQty) || newQty < 1) item.quantity = 1;
+                else item.quantity = newQty;
+            }
+            updateCart();
+        }
+
+        function updateCartQuantity(productId, delta) {
+            const item = cart.find(i => i.id === productId);
+            if(item) {
+                item.quantity += delta;
+                if(item.quantity <= 0) {
+                    cart = cart.filter(i => i.id !== productId);
+                }
+            }
+            updateCart();
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(i => i.id !== productId);
+            updateCart();
+        }
+
+        function updateCart() {
+            const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+            const totalPrice = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+            document.getElementById('cartCount').innerText = totalItems;
+            document.getElementById('summaryQuantity').innerText = totalItems;
+            document.getElementById('summaryTotal').innerText = totalPrice.toLocaleString();
+
+            const cartItemsDiv = document.getElementById('cartItems');
+            const summaryBox = document.getElementById('cartSummaryBox');
+            const btnWhatsapp = document.getElementById('btnWhatsapp');
+
+            if (cart.length === 0) {
+                cartItemsDiv.innerHTML = `
+                    <div class="empty-cart-view">
+                        <span>🍞</span>
+                        <p style="font-weight:700;">Tu carrito está vacío</p>
+                        <small>¡Agrega unos deliciosos panes para realizar tu pedido!</small>
+                    </div>
+                `;
+                summaryBox.style.opacity = "0.5";
+                btnWhatsapp.style.opacity = "0.5";
+                btnWhatsapp.style.pointerEvents = "none";
+            } else {
+                summaryBox.style.opacity = "1";
+                btnWhatsapp.style.opacity = "1";
+                btnWhatsapp.style.pointerEvents = "auto";
+
+                cartItemsDiv.innerHTML = cart.map(item => `
+                    <div class="cart-item-row">
+                        <img src="${item.img}" class="cart-item-img" alt="${item.name}">
+                        <div class="cart-item-info">
+                            <div class="cart-item-title">${item.name}</div>
+                            <div class="cart-item-price">$${item.price.toLocaleString()} c/u • <strong>$${(item.price * item.quantity).toLocaleString()}</strong></div>
+                        </div>
+                        <div class="cart-item-actions">
+                            <button onclick="updateCartQuantity(${item.id}, -1)">-</button>
+                            <input type="number" value="${item.quantity}" min="1" onchange="setCartItemQty(${item.id}, this.value)">
+                            <button onclick="updateCartQuantity(${item.id}, 1)">+</button>
+                            
+                            <button class="btn-delete-styled" title="Eliminar producto" onclick="removeFromCart(${item.id})">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cartModal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function sendOrder() {
+            if(cart.length === 0) return alert("¡Tu carrito está vacío!");
+            
+            let message = "🥖 *NUEVO PEDIDO - Dulce Tentación P y S (Cúcuta)*\n\n";
+            cart.forEach(item => {
+                message += `• ${item.quantity}x ${item.name} ($${(item.price * item.quantity).toLocaleString()})\n`;
+            });
+            
+            const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+            const totalPrice = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            
+            message += `\n*Total Unidades:* ${totalItems}`;
+            message += `\n*Total a Pagar:* $${totalPrice.toLocaleString()}`;
+            message += `\n\n¿Me confirman el tiempo de entrega por favor?`;
+
+            const phone = "573000000000";
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        renderProducts();
+        renderFeatured();
+    </script>
+<script>
+function filterCategory(cat, element) {
+    // 1. Cambiar color y estilo del botón presionado
+    var chips = document.querySelectorAll('.cat-chip');
+    chips.forEach(function(chip) {
+        chip.style.background = 'white';
+        chip.style.color = '#795548';
+        chip.style.boxShadow = 'none';
+    });
+
+    if (element) {
+        element.style.background = '#d81b60';
+        element.style.color = 'white';
+        element.style.boxShadow = '0 4px 10px rgba(216,27,96,0.3)';
+    }
+
+    // 2. Filtrar tarjetas dentro del contenedor de productos
+    var cards = document.querySelectorAll('.grid > div');
+    cards.forEach(function(card) {
+        var text = card.innerText.toLowerCase();
+        
+        if (cat === 'todos' || cat === 'promos') {
+            card.style.display = 'block';
+        } else if (cat === 'panes' && (text.includes('pan') || text.includes('cascarita') || text.includes('queso'))) {
+            card.style.display = 'block';
+        } else if (cat === 'hojaldres' && (text.includes('croissant') || text.includes('hojaldre'))) {
+            card.style.display = 'block';
+        } else if (cat === 'tortas' && (text.includes('torta') || text.includes('postre'))) {
+            card.style.display = 'block';
+        } else if (cat === 'combos' && text.includes('combo')) {
+            card.style.display = 'block';
+        } else if (cat === 'antojos') {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
