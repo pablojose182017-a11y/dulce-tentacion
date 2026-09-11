@@ -1679,13 +1679,12 @@
         }
 
         .form-group input {
-            padding: 10px 13px 10px 38px;
+            padding: 10px 13px;
             border-radius: 11px;
             border: 1.5px solid #cbd5e1;
             font-size: 0.9rem;
             outline: none;
-            transition: var(--ease);
-            width: 100%;
+            transition: border-color 0.2s;
         }
 
         .form-group input:focus {
@@ -1705,41 +1704,10 @@
             margin-top: 6px;
             transition: var(--ease);
             box-shadow: 0 6px 16px rgba(216, 27, 96, 0.3);
-            width: 100%;
         }
 
         .btn-auth-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.45);
-        }
-
-        .input-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-wrap .field-icon {
-            position: absolute;
-            left: 12px;
-            font-size: 1.1rem;
-            color: #94a3b8;
-            pointer-events: none;
-        }
-
-        .auth-incentive-banner {
-            background: linear-gradient(135deg, #fff0f5, #fce7f3);
-            border: 1.5px dashed var(--brand-pink);
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 18px;
-            font-size: 0.85rem;
-            color: #831843;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-align: left;
         }
 
         .auth-close-btn {
@@ -1764,87 +1732,6 @@
         .auth-close-btn:hover {
             background: #ffe4e6;
             color: var(--brand-pink);
-        }
-
-        /* Tabs and Panes */
-        .auth-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 10px;
-            background: none;
-            border: none;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: var(--ease);
-            position: relative;
-        }
-
-        .auth-tab.active {
-            color: var(--brand-pink);
-        }
-
-        .auth-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--brand-pink);
-            border-radius: 3px 3px 0 0;
-        }
-
-        .auth-pane {
-            display: none;
-            animation: paneFade 0.3s ease-out;
-        }
-
-        .auth-pane.active {
-            display: block;
-        }
-
-        @keyframes paneFade {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .auth-msg {
-            display: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .auth-msg.error {
-            display: block;
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .auth-msg.success {
-            display: block;
-            background: #dcfce7;
-            color: #15803d;
-            border: 1px solid #bbf7d0;
         }
 
         /* ===== CART MODAL ===== */
@@ -2597,9 +2484,6 @@
                         <button id="desk-admin-btn" class="dropdown-btn"
                             onclick="showSection('admin-dashboard'); renderAdminUsers();"
                             style="display:none; color:var(--brand-pink);">⚙️ Panel Administrador</button>
-                        <button class="dropdown-btn"
-                            onclick="alert('Funcionalidad en desarrollo: Aquí podrás ver el historial de tus pedidos.')">📦
-                            Mis pedidos recientes</button>
                         <button class="dropdown-btn" onclick="openCartFromDropdown(event)">🛒 Ver mi Carrito (<span
                                 class="dropdown-cart-qty">0</span>)</button>
                         <button class="dropdown-btn logout" onclick="logoutUser(event)">🚪 Cerrar Sesión</button>
@@ -2657,12 +2541,30 @@
 
     <section id="admin-dashboard" class="section">
         <div class="section-title">📊 Panel Administrativo</div>
-        <div
-            style="background:#fff3cd; border:1px solid #ffe69c; color:#664d03; padding:12px; border-radius:8px; text-align:center; margin-bottom:20px; font-size:0.9rem;">
-            <strong>¡Aviso!</strong> Este panel funciona actualmente de forma local en tu navegador. Para que los
-            clientes y pedidos se sincronicen desde cualquier dispositivo, es necesario integrar un backend o base de
-            datos en la nube (como <em>Netlify Identity</em>, <em>Firebase</em> o <em>Supabase</em>).
+        <p style="text-align:center; color:var(--text-mid); margin-bottom:20px;">Control interno de clientes registrados
+            en este dispositivo.</p>
+        <div style="overflow-x:auto;">
+            <table
+                style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow-m);">
+                <thead style="background:var(--brand-pink-l); text-align:left;">
+                    <tr>
+                        <th style="padding:12px;">Cliente</th>
+                        <th style="padding:12px;">Correo</th>
+                        <th style="padding:12px; text-align:center;">Puntos</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-users-table">
+                    <!-- Se llena con JS -->
+                </tbody>
+            </table>
         </div>
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn-gold" onclick="showSection('inicio')">⬅ Volver al Inicio</button>
+        </div>
+    </section>
+
+    <section id="admin-dashboard" class="section">
+        <div class="section-title">📊 Panel Administrativo</div>
         <p style="text-align:center; color:var(--text-mid); margin-bottom:20px;">Control interno de clientes registrados
             en este dispositivo.</p>
 
@@ -2885,13 +2787,9 @@
                 onclick="closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers();"
                 style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:10px 0;">⚙️
                 Panel Administrador</button>
-            <button class="dropdown-btn"
-                onclick="closeMobileProfile(); alert('Funcionalidad en desarrollo: Aquí podrás ver el historial de tus pedidos.');"
-                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:10px;">📦 Mis pedidos
-                recientes</button>
             <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();"
-                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:10px;">🛒 Ver mi Carrito
-                (<span class="dropdown-cart-qty">0</span>)</button>
+                style="width:100%; justify-content:center; background:#f8fafc; margin:10px 0;">🛒 Ver mi Carrito (<span
+                    class="dropdown-cart-qty">0</span>)</button>
             <button class="dropdown-btn logout" onclick="closeMobileProfile(); logoutUser(event)"
                 style="width:100%; justify-content:center; background:#fff1f2;">🚪 Cerrar Sesión</button>
         </div>
@@ -2903,92 +2801,19 @@
             <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
             <img src="logo_dulce_tentacion.jpg" alt="Logo"
                 style="width:80px; height:80px; border-radius:50%; margin-bottom:15px; border:2px solid var(--brand-pink);">
+            <h3 style="font-family:'Plus Jakarta Sans', sans-serif; font-size:1.3rem; margin-bottom:5px;">Inicia Sesión
+            </h3>
+            <p style="font-size:0.9rem; color:var(--text-soft); margin-bottom:20px;">Accede con tu cuenta de Google para
+                guardar tus Puntos Dulce.</p>
 
-            <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar Sesión</button>
-                <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
-            </div>
-
-            <div class="auth-incentive-banner">
-                <span style="font-size: 1.4rem;">🥐</span>
-                <span>¡Únete a la familia Dulce Tentación y acumula puntos en tus pedidos favoritos!</span>
-            </div>
-
-            <div id="authMsg" class="auth-msg"></div>
-
-            <div id="paneLogin" class="auth-pane active">
-                <form class="custom-form" onsubmit="loginCustomUser(event)">
-                    <div class="form-group">
-                        <label>Correo Electrónico o Usuario</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
-                            <input type="text" id="loginEmail" placeholder="ejemplo@correo.com">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">🔒</span>
-                            <input type="password" id="loginPassword" placeholder="••••••••">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-auth-submit">Iniciar Sesión</button>
-                </form>
-
-                <div class="auth-divider"><span>o accede rápidamente con</span></div>
-
-                <div style="display:flex; justify-content:center; align-items:center;">
-                    <div id="g_id_onload"
-                        data-client_id="463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com"
-                        data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
-                        data-auto_prompt="false">
-                    </div>
-                    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
-                        data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left">
-                    </div>
+            <div style="display:flex; justify-content:center; align-items:center;">
+                <div id="g_id_onload"
+                    data-client_id="463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com"
+                    data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
+                    data-auto_prompt="false">
                 </div>
-            </div>
-
-            <div id="paneRegister" class="auth-pane">
-                <form class="custom-form" onsubmit="registerCustomUser(event)">
-                    <div class="form-group">
-                        <label>Nombre Completo</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">👤</span>
-                            <input type="text" id="regName" placeholder="Juan Pérez">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Teléfono / WhatsApp</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">📱</span>
-                            <input type="tel" id="regPhone" placeholder="313 000 0000">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Correo Electrónico</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
-                            <input type="email" id="regEmail" placeholder="ejemplo@correo.com">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">🔒</span>
-                            <input type="password" id="regPassword" placeholder="••••••••">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-auth-submit">Crear Cuenta</button>
-                </form>
-
-                <div class="auth-divider"><span>o regístrate con</span></div>
-
-                <div style="display:flex; justify-content:center; align-items:center;">
-                    <!-- Google sign in button replicates here to keep logic simple -->
-                    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
-                        data-text="signup_with" data-shape="rectangular" data-logo_alignment="left">
-                    </div>
+                <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
+                    data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left">
                 </div>
             </div>
         </div>
@@ -3010,8 +2835,7 @@
             <div class="cart-summary" id="cartSummary">
                 <div class="sum-row"><span>Total Unidades:</span><span id="sumQty">0</span></div>
                 <div class="sum-row" id="discountRow" style="display:none; color:var(--brand-pink); font-weight:700;">
-                    <span>Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
-                </div>
+                    <span>Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span></div>
                 <div class="sum-row total"><span>Total a Pagar:</span><span>$<span id="sumTotal">0</span> COP</span>
                 </div>
             </div>
@@ -3155,81 +2979,8 @@
 
         // ===== AUTH =====
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuthModal() {
-            document.getElementById('authModal').style.display = 'none';
-            const msgEl = document.getElementById('authMsg');
-            if (msgEl) {
-                msgEl.style.display = 'none';
-                msgEl.className = 'auth-msg';
-            }
-            document.querySelectorAll('.custom-form input').forEach(inp => inp.value = '');
-        }
+        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function handleAuthBdrop(e) { if (e.target === document.getElementById('authModal')) closeAuthModal(); }
-
-        function switchAuthTab(tab) {
-            document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
-            document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
-            document.getElementById('paneLogin').classList.toggle('active', tab === 'login');
-            document.getElementById('paneRegister').classList.toggle('active', tab === 'register');
-            const msgEl = document.getElementById('authMsg');
-            if (msgEl) {
-                msgEl.style.display = 'none';
-                msgEl.className = 'auth-msg';
-            }
-        }
-
-        function showAuthMessage(msg, type) {
-            const msgEl = document.getElementById('authMsg');
-            if (!msgEl) return;
-            msgEl.innerText = msg;
-            msgEl.className = 'auth-msg ' + type;
-            msgEl.style.display = 'block';
-        }
-
-        function loginCustomUser(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('loginPassword').value;
-
-            if (!email || !pass) {
-                return showAuthMessage('Por favor, completa todos los campos.', 'error');
-            }
-
-            const user = db_users.find(u => (u.email === email || u.username === email) && u.password === pass);
-            if (!user) {
-                return showAuthMessage('Usuario o contraseña incorrectos.', 'error');
-            }
-
-            loginUserObj(user);
-        }
-
-        function registerCustomUser(e) {
-            e.preventDefault();
-            const name = document.getElementById('regName').value.trim();
-            const phone = document.getElementById('regPhone').value.trim();
-            const email = document.getElementById('regEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('regPassword').value;
-
-            if (!name || !phone || !email || !pass) {
-                return showAuthMessage('Por favor, completa todos los campos para registrarte.', 'error');
-            }
-
-            if (db_users.find(u => u.email === email)) {
-                return showAuthMessage('Este correo ya está registrado. Por favor inicia sesión.', 'error');
-            }
-
-            const newUser = {
-                name,
-                email,
-                phone,
-                password: pass,
-                picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-                points: 150
-            };
-            db_users.push(newUser);
-            saveUsersDB();
-            loginUserObj(newUser);
-        }
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
@@ -3276,8 +3027,7 @@
             saveUser(); syncUserUI(); closeAuthModal();
             const orderName = document.getElementById('orderName');
             if (orderName && !orderName.value) orderName.value = currentUser.name;
-            const firstName = currentUser.name.split(' ')[0];
-            showToast(`¡Hola, ${firstName}! Qué delicia tenerte de vuelta en Dulce Tentación ✨`, '🎉', 4000);
+            showToast(`👋 ¡Bienvenido, ${currentUser.name.split(' ')[0]}!`, '🎉');
         }
 
 
@@ -3349,11 +3099,10 @@
                 if (pill) {
                     pill.style.display = 'flex';
                     document.getElementById('user-avatar').src = currentUser.picture;
-                    const firstName = currentUser.name.split(' ')[0];
-                    document.getElementById('user-name').innerText = `Hola, ${firstName}`;
+                    document.getElementById('user-name').innerText = currentUser.name.split(' ')[0];
                     document.getElementById('dropdown-avatar').src = currentUser.picture;
                     document.getElementById('dropdown-name').innerText = currentUser.name;
-                    document.getElementById('dropdown-email').innerText = currentUser.email || currentUser.phone || '';
+                    document.getElementById('dropdown-email').innerText = currentUser.email;
                     if (document.getElementById('dropdown-points-val')) document.getElementById('dropdown-points-val').innerText = currentUser.points || 0;
                 }
                 if (mobileGoogleBtn) mobileGoogleBtn.style.display = 'none';
@@ -3660,12 +3409,12 @@
             window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(g)}`, '_blank');
         }
 
-        function showToast(msg, icon = '🥐', duration = 2600) {
+        function showToast(msg, icon = '🥐') {
             const t = document.getElementById('toast');
             document.getElementById('toastMsg').innerText = msg;
             document.getElementById('toastIcon').innerText = icon;
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), duration);
+            setTimeout(() => t.classList.remove('show'), 2600);
         }
     </script>
 </body>
