@@ -13,2603 +13,7 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@700&display=swap"
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <style>
-        /* ===== BRAND VARIABLES ===== */
-        :root {
-            --brand-pink: #d81b60;
-            --brand-pink-d: #9f1239;
-            --brand-pink-l: #fff0f5;
-            --brand-choco: #3d1a0a;
-            --brand-choco-m: #6d3a1f;
-            --brand-gold: #f59e0b;
-            --brand-gold-l: #fef3c7;
-            --brand-cream: #fdf8f3;
-            --bg-body: #fdf7f2;
-            --text-dark: #271d19;
-            --text-mid: #6b4c3b;
-            --text-soft: #9d7b6e;
-            --card-bg: #ffffff;
-            --border-warm: rgba(245, 158, 11, 0.22);
-            --shadow-s: 0 4px 14px rgba(216, 27, 96, 0.07);
-            --shadow-m: 0 12px 30px rgba(216, 27, 96, 0.13);
-            --shadow-h: 0 22px 44px rgba(216, 27, 96, 0.22);
-            --r-sm: 10px;
-            --r-md: 16px;
-            --r-lg: 22px;
-            --r-xl: 28px;
-            --r-full: 9999px;
-            --ease: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            --bottom-nav-h: 66px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            background: var(--bg-body);
-            background-image:
-                radial-gradient(ellipse at 8% 5%, rgba(245, 158, 11, 0.14) 0px, transparent 48%),
-                radial-gradient(ellipse at 94% 8%, rgba(216, 27, 96, 0.10) 0px, transparent 46%),
-                radial-gradient(ellipse at 50% 95%, rgba(252, 207, 170, 0.18) 0px, transparent 52%);
-            background-attachment: fixed;
-            color: var(--text-dark);
-            min-height: 100vh;
-            overflow-x: hidden;
-            padding-bottom: calc(var(--bottom-nav-h) + 12px);
-        }
-
-        /* ===== TOP STATUS BAR ===== */
-        .top-bar {
-            background: linear-gradient(90deg, var(--brand-choco), #1a0a05);
-            color: #f9f0e8;
-            padding: 8px 16px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 9px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-            z-index: 102;
-            position: relative;
-            letter-spacing: 0.3px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            flex-shrink: 0;
-            box-shadow: 0 0 8px #22c55e;
-            animation: dotPulse 1.8s infinite;
-        }
-
-        @keyframes dotPulse {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            50% {
-                transform: scale(1.4);
-                opacity: 0.5;
-            }
-        }
-
-        .top-bar-phone {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-            padding: 2px 10px;
-            border-radius: var(--r-full);
-            font-weight: 800;
-            font-size: 0.76rem;
-            margin-left: 4px;
-            letter-spacing: 0.5px;
-        }
-
-        /* ===== HEADER (DESKTOP) ===== */
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
-            padding: 10px 4%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 2px solid var(--brand-pink-l);
-        }
-
-        /* Brand Logo Area */
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .logo-img-wrap {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 2.5px solid var(--brand-pink);
-            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.25);
-            flex-shrink: 0;
-            animation: logoFloat 3.5s ease-in-out infinite;
-        }
-
-        .logo-img-wrap img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        @keyframes logoFloat {
-
-            0%,
-            100% {
-                transform: translateY(0) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-4px) rotate(1deg);
-            }
-        }
-
-        .logo-text-block h1 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.55rem;
-            color: var(--brand-pink);
-            line-height: 1;
-            letter-spacing: -0.3px;
-        }
-
-        .logo-text-block .logo-sub {
-            font-size: 0.62rem;
-            font-weight: 800;
-            color: var(--brand-choco-m);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-top: 1px;
-            display: block;
-        }
-
-        .logo-text-block .logo-tag {
-            font-size: 0.62rem;
-            font-style: italic;
-            color: var(--brand-gold);
-            font-weight: 700;
-            display: block;
-        }
-
-        /* Desktop Search */
-        .search-box {
-            position: relative;
-            flex: 1;
-            max-width: 300px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 9px 16px 9px 36px;
-            border-radius: var(--r-full);
-            border: 1.5px solid #e9ddd5;
-            background: #fdf8f5;
-            font-size: 0.87rem;
-            font-weight: 500;
-            outline: none;
-            color: var(--text-dark);
-            transition: var(--ease);
-        }
-
-        .search-box input:focus {
-            background: #fff;
-            border-color: var(--brand-pink);
-            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.11);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 13px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.82rem;
-            opacity: 0.55;
-        }
-
-        /* Desktop Nav */
-        nav {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .nav-link {
-            background: none;
-            border: none;
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--text-mid);
-            cursor: pointer;
-            padding: 7px 16px;
-            border-radius: var(--r-full);
-            transition: var(--ease);
-            letter-spacing: 0.2px;
-        }
-
-        .nav-link:hover {
-            color: var(--brand-pink);
-            background: var(--brand-pink-l);
-        }
-
-        .nav-link.active {
-            color: #fff;
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            box-shadow: 0 4px 14px rgba(216, 27, 96, 0.28);
-        }
-
-        /* Header Actions */
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* Google Login Button */
-        .btn-google-login {
-            background: #fff;
-            border: 1.5px solid #e2e8f0;
-            color: #334155;
-            padding: 7px 14px;
-            border-radius: var(--r-full);
-            font-weight: 700;
-            font-size: 0.82rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            transition: var(--ease);
-        }
-
-        .btn-google-login:hover {
-            border-color: #94a3b8;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        /* User Pill */
-        .user-pill {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            background: #fff;
-            padding: 4px 12px 4px 5px;
-            border-radius: var(--r-full);
-            border: 1.5px solid #fbcfe8;
-            cursor: pointer;
-            transition: var(--ease);
-            position: relative;
-            box-shadow: 0 2px 8px rgba(216, 27, 96, 0.08);
-        }
-
-        .user-pill:hover {
-            border-color: var(--brand-pink);
-            background: #fff5f8;
-        }
-
-        .user-avatar-img {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--brand-pink);
-        }
-
-        .user-pill-name {
-            font-size: 0.82rem;
-            font-weight: 800;
-            color: var(--text-dark);
-            max-width: 100px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .user-pill-arrow {
-            font-size: 0.65rem;
-            color: var(--text-soft);
-            transition: transform 0.2s;
-        }
-
-        .user-pill.open .user-pill-arrow {
-            transform: rotate(180deg);
-        }
-
-        /* Dropdown Menu */
-        .user-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: #fff;
-            border-radius: var(--r-lg);
-            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
-            border: 1px solid #f1e8e4;
-            width: 230px;
-            padding: 12px;
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            z-index: 160;
-            animation: dropFade 0.2s ease-out;
-        }
-
-        @keyframes dropFade {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .user-dropdown-menu.active {
-            display: flex;
-        }
-
-        .dropdown-profile-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #f1e8e4;
-        }
-
-        .dropdown-profile-header img {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            border: 2px solid var(--brand-pink);
-        }
-
-        .dropdown-profile-info {
-            overflow: hidden;
-            min-width: 0;
-            flex: 1;
-        }
-
-        .dropdown-profile-info strong {
-            font-size: 0.86rem;
-            display: block;
-            color: var(--text-dark);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .dropdown-points-box {
-            background: linear-gradient(135deg, #fdf2f8, #fce7f3);
-            border: 1px solid #fbcfe8;
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-            margin: 4px 0;
-        }
-
-        .dropdown-points-box span {
-            font-size: 0.85rem;
-            color: #831843;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .dropdown-points-box strong {
-            font-size: 1.1rem;
-            color: var(--brand-pink);
-        }
-
-        .points-progress {
-            width: 100%;
-            height: 6px;
-            background: #fbcfe8;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 4px;
-        }
-
-        .points-bar {
-            height: 100%;
-            background: var(--brand-pink);
-            transition: width 0.3s;
-        }
-
-        .dropdown-points-box small {
-            font-size: 0.7rem;
-            color: #9d174d;
-        }
-
-        .dropdown-points-simulator {
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            border-radius: 8px;
-            padding: 8px;
-            text-align: center;
-            margin-bottom: 6px;
-        }
-
-        .dropdown-points-simulator strong {
-            display: block;
-            font-size: 0.75rem;
-            color: #475569;
-            margin-bottom: 2px;
-        }
-
-        .dropdown-points-simulator span {
-            font-size: 0.75rem;
-            color: var(--brand-pink);
-            font-weight: 700;
-            line-height: 1.2;
-            display: block;
-        }
-
-        .dropdown-profile-info small {
-            color: var(--text-soft);
-            font-size: 0.73rem;
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .dropdown-btn {
-            background: none;
-            border: none;
-            padding: 7px 10px;
-            border-radius: 8px;
-            text-align: left;
-            font-size: 0.83rem;
-            font-weight: 600;
-            color: #475569;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--ease);
-        }
-
-        .dropdown-btn:hover {
-            background: #f8fafc;
-            color: var(--text-dark);
-        }
-
-        .dropdown-btn.logout {
-            color: #e11d48;
-        }
-
-        .dropdown-btn.logout:hover {
-            background: #ffe4e6;
-        }
-
-        /* Header Cart Button */
-        .cart-btn {
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            color: #fff;
-            border: none;
-            padding: 9px 18px;
-            border-radius: var(--r-full);
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 0.88rem;
-            box-shadow: 0 6px 18px rgba(216, 27, 96, 0.3);
-            transition: var(--ease);
-            position: relative;
-        }
-
-        .cart-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.4);
-        }
-
-        .cart-btn.bounce {
-            animation: cartBounce 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-
-        @keyframes cartBounce {
-            0% {
-                transform: scale(1);
-            }
-
-            40% {
-                transform: scale(1.22) rotate(-4deg);
-            }
-
-            70% {
-                transform: scale(0.94);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .cart-badge {
-            background: var(--brand-gold);
-            color: var(--brand-choco);
-            font-size: 0.75rem;
-            font-weight: 900;
-            padding: 2px 7px;
-            border-radius: var(--r-full);
-        }
-
-        /* ===== MOBILE BOTTOM NAVIGATION ===== */
-        .mobile-bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: var(--bottom-nav-h);
-            background: #fff;
-            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.10);
-            border-top: 1px solid #f3e8e5;
-            z-index: 99;
-            padding: 0;
-        }
-
-        .bottom-nav-items {
-            display: flex;
-            height: 100%;
-            align-items: stretch;
-        }
-
-        .bottom-nav-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            transition: var(--ease);
-            padding: 8px 4px 10px;
-            position: relative;
-        }
-
-        .bottom-nav-btn .bn-icon {
-            font-size: 1.35rem;
-            line-height: 1;
-            transition: transform 0.2s;
-        }
-
-        .bottom-nav-btn .bn-label {
-            font-size: 0.64rem;
-            font-weight: 700;
-            color: #a08070;
-            letter-spacing: 0.3px;
-            text-transform: uppercase;
-        }
-
-        .bottom-nav-btn.active .bn-icon {
-            transform: scale(1.15);
-        }
-
-        .bottom-nav-btn.active .bn-label {
-            color: var(--brand-pink);
-        }
-
-        .bottom-nav-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 20%;
-            right: 20%;
-            height: 3px;
-            background: var(--brand-pink);
-            border-radius: 3px 3px 0 0;
-        }
-
-        /* Cart bottom nav special style */
-        .bottom-nav-btn.cart-nav-btn {
-            position: relative;
-        }
-
-        .bottom-nav-btn.cart-nav-btn .bn-icon {
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            color: #fff;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 6px 18px rgba(216, 27, 96, 0.35);
-            margin-bottom: 2px;
-        }
-
-        .cart-mobile-badge {
-            position: absolute;
-            top: 4px;
-            right: calc(50% - 26px);
-            background: var(--brand-gold);
-            color: var(--brand-choco);
-            font-size: 0.6rem;
-            font-weight: 900;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #fff;
-            z-index: 2;
-        }
-
-        /* ===== MOBILE HEADER (Compact) ===== */
-        .mobile-header {
-            display: none;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(16px);
-            box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
-            padding: 8px 14px;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid var(--brand-pink-l);
-        }
-
-        .mobile-logo {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-        }
-
-        .mobile-logo-img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--brand-pink);
-            box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
-        }
-
-        .mobile-logo-text h1 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.3rem;
-            color: var(--brand-pink);
-            line-height: 1;
-        }
-
-        .mobile-logo-text span {
-            font-size: 0.54rem;
-            font-weight: 700;
-            color: var(--brand-choco-m);
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            display: block;
-        }
-
-        .mobile-header-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .mobile-search-btn {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 6px;
-            color: var(--text-mid);
-            border-radius: 50%;
-            transition: var(--ease);
-        }
-
-        .mobile-search-btn:hover {
-            background: var(--brand-pink-l);
-            color: var(--brand-pink);
-        }
-
-        .mobile-google-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            border: 1.5px solid #e2e8f0;
-            background: #fff;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-            transition: var(--ease);
-        }
-
-        .mobile-google-btn:hover {
-            border-color: var(--brand-pink);
-        }
-
-        /* Mobile Search Bar (expandable) */
-        .mobile-search-bar {
-            display: none;
-            padding: 0 14px 10px;
-            background: rgba(255, 255, 255, 0.97);
-            border-bottom: 1px solid #f3e8e5;
-        }
-
-        .mobile-search-bar.open {
-            display: block;
-        }
-
-        .mobile-search-bar input {
-            width: 100%;
-            padding: 10px 16px 10px 38px;
-            border-radius: var(--r-full);
-            border: 1.5px solid #e2e8f0;
-            background: #fdf8f5;
-            font-size: 0.9rem;
-            outline: none;
-            position: relative;
-        }
-
-        .mobile-search-bar input:focus {
-            border-color: var(--brand-pink);
-            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
-        }
-
-        .mobile-search-wrap {
-            position: relative;
-        }
-
-        .mobile-search-wrap .search-icon {
-            position: absolute;
-            left: 13px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.85rem;
-            opacity: 0.5;
-        }
-
-        /* ===== SECTIONS ===== */
-        .section {
-            display: none;
-            max-width: 1200px;
-            margin: 22px auto;
-            padding: 0 18px;
-            animation: secFade 0.3s ease-out;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes secFade {
-            from {
-                opacity: 0;
-                transform: translateY(7px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ===== HERO BANNER ===== */
-        .hero {
-            position: relative;
-            background:
-                linear-gradient(135deg, rgba(253, 248, 243, 0.95), rgba(255, 240, 245, 0.90)),
-                url('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1400&q=80') center/cover;
-            color: var(--text-dark);
-            padding: 52px 28px;
-            text-align: center;
-            border-radius: var(--r-xl);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-            margin-bottom: 32px;
-            overflow: hidden;
-            border: 1px solid rgba(216, 27, 96, 0.08);
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 240px;
-            height: 240px;
-            background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: -40px;
-            left: -40px;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(216, 27, 96, 0.08) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .hero-brand-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--brand-pink-l);
-            padding: 6px 16px;
-            border-radius: var(--r-full);
-            font-size: 0.82rem;
-            font-weight: 700;
-            margin-bottom: 18px;
-            border: 1px solid rgba(216, 27, 96, 0.15);
-            color: var(--brand-pink);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .hero-logo-img {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid #fff;
-            box-shadow: 0 8px 24px rgba(216, 27, 96, 0.15);
-            margin: 0 auto 18px;
-            display: block;
-        }
-
-        .hero h1 {
-            font-family: 'Dancing Script', cursive;
-            font-size: clamp(2.2rem, 5vw, 3.5rem);
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 8px;
-            color: var(--brand-pink);
-        }
-
-        .hero .hero-sub {
-            font-size: clamp(1rem, 2.2vw, 1.2rem);
-            font-style: italic;
-            color: var(--text-mid);
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-
-        .hero p.hero-body {
-            font-size: clamp(0.88rem, 1.8vw, 1.05rem);
-            margin: 0 auto 26px;
-            max-width: 620px;
-            color: var(--text-soft);
-            font-weight: 500;
-            line-height: 1.55;
-        }
-
-        .hero-actions {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn-gold {
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            color: #78350f;
-            border: none;
-            padding: 13px 28px;
-            font-size: 1rem;
-            font-weight: 800;
-            border-radius: var(--r-full);
-            cursor: pointer;
-            box-shadow: 0 8px 22px rgba(245, 158, 11, 0.3);
-            transition: var(--ease);
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        .btn-gold:hover {
-            transform: translateY(-2px) scale(1.03);
-        }
-
-        .btn-outline-white {
-            background: #fff;
-            color: var(--brand-pink);
-            border: 2px solid var(--brand-pink);
-            padding: 13px 24px;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: var(--r-full);
-            cursor: pointer;
-            transition: var(--ease);
-            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.08);
-        }
-
-        .btn-outline-white:hover {
-            background: var(--brand-pink-l);
-        }
-
-        .btn-outline-white .bn-icon {
-            color: #25D366;
-            font-size: 1.2rem;
-        }
-
-        /* Love Phrase */
-        .hero-love-phrase {
-            margin-top: 32px;
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.8rem;
-            color: var(--brand-pink);
-            font-weight: 700;
-        }
-
-        .hero-love-phrase span {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 0.95rem;
-            display: block;
-            color: var(--text-mid);
-            margin-top: 4px;
-            font-weight: 600;
-            font-style: italic;
-        }
-
-        .login-incentive-box {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px dashed var(--brand-pink);
-            padding: 12px 18px;
-            border-radius: 16px;
-            max-width: 480px;
-            margin: 28px auto 0;
-            cursor: pointer;
-            transition: var(--ease);
-            text-align: left;
-            box-shadow: 0 4px 15px rgba(216, 27, 96, 0.1);
-        }
-
-        .login-incentive-box:hover {
-            transform: translateY(-2px);
-            background: #fff;
-            box-shadow: 0 6px 20px rgba(216, 27, 96, 0.15);
-        }
-
-        .li-icon {
-            font-size: 1.8rem;
-        }
-
-        .li-text strong {
-            display: block;
-            color: var(--brand-pink);
-            font-size: 0.95rem;
-            margin-bottom: 2px;
-        }
-
-        .li-text p {
-            margin: 0;
-            font-size: 0.8rem;
-            color: var(--text-dark);
-            line-height: 1.3;
-        }
-
-        .li-arrow {
-            font-size: 1.2rem;
-            color: var(--brand-pink);
-            margin-left: auto;
-            font-weight: bold;
-        }
-
-        .cart-login-incentive {
-            background: #fdf2f8;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #fbcfe8;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .cart-login-incentive:hover {
-            background: #fce7f3;
-        }
-
-        .cart-login-incentive span {
-            font-size: 0.82rem;
-            color: #831843;
-            font-weight: 500;
-        }
-
-        .cart-login-incentive strong {
-            color: var(--brand-pink);
-        }
-
-        /* ===== CATEGORY CHIPS ===== */
-        .section-title {
-            text-align: center;
-            font-family: 'Dancing Script', cursive;
-            font-size: 2rem;
-            color: var(--text-dark);
-            margin: 28px 0 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .cat-chip-scroll {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 8px 4px 18px;
-            margin-bottom: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            scrollbar-width: none;
-        }
-
-        .cat-chip-scroll::-webkit-scrollbar {
-            display: none;
-        }
-
-        .cat-chip {
-            background: #fff;
-            color: var(--text-mid);
-            border: 1.5px solid #f0d8ce;
-            padding: 8px 18px;
-            border-radius: var(--r-full);
-            font-weight: 700;
-            font-size: 0.86rem;
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: var(--shadow-s);
-            transition: var(--ease);
-        }
-
-        .cat-chip:hover {
-            border-color: var(--brand-pink);
-            color: var(--brand-pink);
-            transform: translateY(-2px);
-        }
-
-        .cat-chip.active {
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            color: #fff;
-            border-color: var(--brand-pink);
-            box-shadow: 0 6px 18px rgba(216, 27, 96, 0.35);
-        }
-
-        /* ===== PRODUCT GRID & CARDS ===== */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
-            gap: 22px;
-            margin-bottom: 40px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: var(--shadow-s);
-            border: 1px solid var(--border-warm);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-h);
-        }
-
-        .card-img-wrap {
-            position: relative;
-            width: 100%;
-            height: 180px;
-            overflow: hidden;
-            background: #f5ede8;
-        }
-
-        .card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.4s ease;
-        }
-
-        .card:hover img {
-            transform: scale(1.06);
-        }
-
-        .card-tag {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            color: var(--brand-choco);
-            font-weight: 800;
-            font-size: 0.72rem;
-            padding: 4px 11px;
-            border-radius: var(--r-full);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
-            z-index: 2;
-        }
-
-        .card-body {
-            padding: 16px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-        .card h3 {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: var(--text-dark);
-            margin-bottom: 4px;
-            line-height: 1.3;
-        }
-
-        .card-desc {
-            font-size: 0.78rem;
-            color: var(--text-soft);
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
-
-        .price-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 12px;
-        }
-
-        .price {
-            color: var(--brand-pink);
-            font-size: 1.45rem;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-        }
-
-        .price-label {
-            background: var(--brand-pink-l);
-            color: var(--brand-pink);
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 6px;
-            border: 1px solid #fecdd3;
-        }
-
-        /* Qty Controls */
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            margin-bottom: 12px;
-        }
-
-        .qty-btn {
-            background: #f5ede8;
-            border: 1.5px solid #e0c8be;
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            font-weight: 800;
-            cursor: pointer;
-            font-size: 1.15rem;
-            color: var(--brand-choco-m);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--ease);
-        }
-
-        .qty-btn:hover {
-            background: #fcd5d5;
-            border-color: var(--brand-pink);
-            color: var(--brand-pink);
-        }
-
-        .qty-input {
-            width: 54px;
-            height: 34px;
-            text-align: center;
-            border: 1.5px solid #ddd3cd;
-            border-radius: 9px;
-            font-weight: 800;
-            font-size: 0.96rem;
-            outline: none;
-            background: #fff;
-            transition: border-color 0.2s;
-        }
-
-        .qty-input:focus {
-            border-color: var(--brand-pink);
-            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.12);
-        }
-
-        .qty-input::-webkit-outer-spin-button,
-        .qty-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        .qty-input[type=number] {
-            -moz-appearance: textfield;
-        }
-
-        /* Add to Cart Button */
-        .btn-add {
-            width: 100%;
-            background: var(--brand-pink-l);
-            color: var(--brand-pink);
-            border: 1.5px solid #fecdd3;
-            padding: 10px;
-            border-radius: var(--r-sm);
-            font-weight: 800;
-            font-size: 0.88rem;
-            cursor: pointer;
-            transition: var(--ease);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-add:hover {
-            background: var(--brand-pink);
-            color: #fff;
-            border-color: var(--brand-pink);
-            box-shadow: 0 6px 18px rgba(216, 27, 96, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .btn-add.added {
-            background: #22c55e !important;
-            color: #fff !important;
-            border-color: #22c55e !important;
-        }
-
-        /* Flying animation */
-        .flying-img {
-            position: fixed;
-            z-index: 9999;
-            pointer-events: none;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.3);
-            border: 3px solid #fff;
-            transition: all 0.72s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-
-        /* ===== ABOUT SECTION ELEMENTS ===== */
-        .identity-banner {
-            background: linear-gradient(135deg, #fff6f0, #fff0f5);
-            border: 1.5px solid rgba(245, 158, 11, 0.25);
-            border-radius: var(--r-xl);
-            padding: 32px 24px;
-            text-align: center;
-            margin: 40px 0 24px;
-            box-shadow: var(--shadow-s);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .identity-banner::before {
-            content: '🍰';
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            font-size: 5rem;
-            opacity: 0.06;
-            pointer-events: none;
-        }
-
-        .identity-banner h3 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.7rem;
-            color: var(--brand-pink);
-            margin-bottom: 8px;
-        }
-
-        .identity-banner p {
-            color: #5c2a1a;
-            font-weight: 600;
-            max-width: 760px;
-            margin: 0 auto;
-            line-height: 1.65;
-            font-size: 0.98rem;
-        }
-
-        .identity-tagline {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.1rem;
-            color: var(--brand-gold);
-            margin-top: 10px;
-            font-weight: 700;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 18px;
-            margin: 24px 0 40px;
-        }
-
-        .feature-card {
-            background: #fff;
-            padding: 20px 18px;
-            border-radius: var(--r-lg);
-            box-shadow: var(--shadow-s);
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            border: 1px solid #f3e8e3;
-            transition: var(--ease);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-m);
-        }
-
-        .feature-icon {
-            font-size: 1.9rem;
-            flex-shrink: 0;
-        }
-
-        .feature-text strong {
-            display: block;
-            font-size: 0.95rem;
-            color: var(--text-dark);
-            margin-bottom: 3px;
-        }
-
-        .feature-text p {
-            font-size: 0.8rem;
-            color: var(--text-soft);
-            line-height: 1.4;
-        }
-
-        /* Info Sections (Nosotros / Ubicación) */
-        .info-card {
-            background: #fff;
-            padding: 36px;
-            border-radius: var(--r-xl);
-            box-shadow: var(--shadow-s);
-            border: 1px solid var(--border-warm);
-            margin-bottom: 28px;
-        }
-
-        .info-card h2 {
-            font-family: 'Dancing Script', cursive;
-            color: var(--brand-pink);
-            font-size: 2rem;
-            margin-bottom: 14px;
-        }
-
-        .about-lead {
-            font-size: 1.12rem;
-            color: #1e293b;
-            font-weight: 600;
-            margin-bottom: 18px;
-            line-height: 1.6;
-        }
-
-        .mv-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-            gap: 20px;
-            margin: 26px 0;
-        }
-
-        .mv-card {
-            padding: 24px;
-            border-radius: 18px;
-            border: 1.5px solid #e2d8d4;
-            transition: var(--ease);
-        }
-
-        .mv-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .mv-card.mission {
-            background: linear-gradient(135deg, #fff0f5, #fff);
-            border-color: #fbcfe8;
-        }
-
-        .mv-card.vision {
-            background: linear-gradient(135deg, #fef3c7, #fff);
-            border-color: #fde68a;
-        }
-
-        .mv-card h3 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.25rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .mv-card.mission h3 {
-            color: var(--brand-pink);
-        }
-
-        .mv-card.vision h3 {
-            color: #b45309;
-        }
-
-        .mv-card p {
-            font-size: 0.95rem;
-            color: #475569;
-            line-height: 1.6;
-        }
-
-        .values-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 18px;
-            margin-top: 26px;
-        }
-
-        .value-card {
-            background: #faf7f4;
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid #edddd5;
-        }
-
-        .value-card h4 {
-            color: var(--brand-pink);
-            font-size: 1.05rem;
-            font-weight: 800;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        .value-card p {
-            color: var(--text-soft);
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-            gap: 22px;
-            margin-top: 22px;
-        }
-
-        .contact-box {
-            background: #faf7f4;
-            padding: 22px;
-            border-radius: 16px;
-            border: 1px solid #edddd5;
-        }
-
-        .contact-box h4 {
-            color: var(--brand-pink);
-            font-size: 1.08rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 7px;
-        }
-
-        /* ===== AUTH MODAL ===== */
-        .auth-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(8px);
-            z-index: 300;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-        }
-
-        .auth-card {
-            background: #fff;
-            padding: 28px;
-            border-radius: var(--r-xl);
-            width: 100%;
-            max-width: 420px;
-            box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.25);
-            position: relative;
-            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes modalPop {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .auth-logo {
-            text-align: center;
-            margin-bottom: 18px;
-        }
-
-        .auth-logo img {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            border: 3px solid var(--brand-pink);
-            box-shadow: 0 4px 14px rgba(216, 27, 96, 0.22);
-        }
-
-        .auth-logo h3 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.5rem;
-            color: var(--brand-pink);
-            margin-top: 8px;
-        }
-
-        .auth-logo p {
-            font-size: 0.84rem;
-            color: var(--text-soft);
-        }
-
-        .quick-user-card {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #f8fafc;
-            border: 1.5px solid #e2e8f0;
-            padding: 12px 16px;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: var(--ease);
-            margin-bottom: 14px;
-        }
-
-        .quick-user-card:hover {
-            border-color: var(--brand-pink);
-            background: #fff5f8;
-            transform: translateY(-2px);
-        }
-
-        .quick-user-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--brand-pink);
-        }
-
-        .quick-user-info strong {
-            display: block;
-            font-size: 0.94rem;
-            color: var(--text-dark);
-        }
-
-        .quick-user-info span {
-            font-size: 0.77rem;
-            color: var(--text-soft);
-        }
-
-        .auth-divider {
-            display: flex;
-            align-items: center;
-            color: #94a3b8;
-            font-size: 0.78rem;
-            margin: 16px 0;
-        }
-
-        .auth-divider::before,
-        .auth-divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .auth-divider span {
-            padding: 0 10px;
-            font-weight: 600;
-        }
-
-        .custom-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            text-align: left;
-        }
-
-        .form-group label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #475569;
-        }
-
-        .form-group input {
-            padding: 10px 13px 10px 38px;
-            border-radius: 11px;
-            border: 1.5px solid #cbd5e1;
-            font-size: 0.9rem;
-            outline: none;
-            transition: var(--ease);
-            width: 100%;
-        }
-
-        .form-group input:focus {
-            border-color: var(--brand-pink);
-            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
-        }
-
-        .btn-auth-submit {
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 13px;
-            font-weight: 800;
-            font-size: 0.94rem;
-            cursor: pointer;
-            margin-top: 6px;
-            transition: var(--ease);
-            box-shadow: 0 6px 16px rgba(216, 27, 96, 0.3);
-            width: 100%;
-        }
-
-        .btn-auth-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.45);
-        }
-
-        .input-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-wrap .field-icon {
-            position: absolute;
-            left: 12px;
-            font-size: 1.1rem;
-            color: #94a3b8;
-            pointer-events: none;
-        }
-
-        .auth-incentive-banner {
-            background: linear-gradient(135deg, #fff0f5, #fce7f3);
-            border: 1.5px dashed var(--brand-pink);
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 18px;
-            font-size: 0.85rem;
-            color: #831843;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-align: left;
-        }
-
-        .auth-close-btn {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            background: #f1f5f9;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 1rem;
-            cursor: pointer;
-            font-weight: bold;
-            color: var(--text-soft);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--ease);
-        }
-
-        .auth-close-btn:hover {
-            background: #ffe4e6;
-            color: var(--brand-pink);
-        }
-
-        /* Tabs and Panes */
-        .auth-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 10px;
-            background: none;
-            border: none;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: var(--ease);
-            position: relative;
-        }
-
-        .auth-tab.active {
-            color: var(--brand-pink);
-        }
-
-        .auth-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--brand-pink);
-            border-radius: 3px 3px 0 0;
-        }
-
-        .auth-pane {
-            display: none;
-            animation: paneFade 0.3s ease-out;
-        }
-
-        .auth-pane.active {
-            display: block;
-        }
-
-        @keyframes paneFade {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .auth-msg {
-            display: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .auth-msg.error {
-            display: block;
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .auth-msg.success {
-            display: block;
-            background: #dcfce7;
-            color: #15803d;
-            border: 1px solid #bbf7d0;
-        }
-
-        /* ===== CART MODAL ===== */
-        .cart-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.70);
-            backdrop-filter: blur(8px);
-            z-index: 250;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-        }
-
-        .cart-content {
-            background: #fff;
-            padding: 22px;
-            border-radius: var(--r-xl);
-            width: 100%;
-            max-width: 520px;
-            max-height: 92vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.28);
-        }
-
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1.5px solid #f3e8e3;
-            padding-bottom: 14px;
-            margin-bottom: 14px;
-        }
-
-        .cart-header h3 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.5rem;
-            color: var(--text-dark);
-        }
-
-        .cart-list {
-            max-height: 260px;
-            overflow-y: auto;
-            padding-right: 4px;
-            margin-bottom: 14px;
-        }
-
-        .cart-item-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 11px 12px;
-            border-radius: 14px;
-            background: #fff;
-            margin-bottom: 8px;
-            border: 1px solid #f3e8e3;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-            transition: var(--ease);
-        }
-
-        .cart-item-row:hover {
-            border-color: #fecdd3;
-            background: #fffbfa;
-        }
-
-        .cart-item-img {
-            width: 52px;
-            height: 52px;
-            border-radius: 11px;
-            object-fit: cover;
-            border: 1px solid #f3e8e3;
-        }
-
-        .cart-item-info {
-            flex: 1;
-        }
-
-        .cart-item-title {
-            font-size: 0.9rem;
-            font-weight: 800;
-            color: var(--text-dark);
-        }
-
-        .cart-item-price {
-            font-size: 0.8rem;
-            color: var(--text-soft);
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .cart-item-price strong {
-            color: var(--brand-pink);
-            font-size: 0.86rem;
-        }
-
-        .cart-item-actions {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .cart-item-actions button {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
-            border: 1px solid #cbd5e1;
-            background: #fff;
-            font-weight: 800;
-            cursor: pointer;
-            color: var(--text-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--ease);
-        }
-
-        .cart-item-actions button:hover {
-            background: #f3e8e3;
-            color: var(--brand-pink);
-        }
-
-        .cart-item-actions input {
-            width: 40px;
-            height: 28px;
-            text-align: center;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 7px;
-            font-weight: 800;
-            font-size: 0.85rem;
-        }
-
-        .btn-delete-item {
-            background: #fff1f2 !important;
-            border: 1px solid #fecdd3 !important;
-            color: #e11d48 !important;
-            padding: 6px !important;
-            border-radius: 9px !important;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--ease) !important;
-            margin-left: 3px;
-        }
-
-        .btn-delete-item:hover {
-            background: #e11d48 !important;
-            color: #fff !important;
-            border-color: #e11d48 !important;
-        }
-
-        .btn-delete-item svg {
-            width: 14px;
-            height: 14px;
-            fill: currentColor;
-        }
-
-        .cart-summary {
-            background: linear-gradient(135deg, #fff0f5, #ffe4e6);
-            padding: 14px 18px;
-            border-radius: 16px;
-            border: 1px solid #fecdd3;
-            margin-bottom: 14px;
-        }
-
-        .sum-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.92rem;
-            font-weight: 700;
-            color: #881337;
-            margin-bottom: 5px;
-        }
-
-        .sum-row.total {
-            font-size: 1.2rem;
-            font-weight: 900;
-            color: var(--brand-pink);
-            border-top: 1.5px dashed #f472b6;
-            padding-top: 9px;
-            margin-top: 5px;
-        }
-
-        .checkout-form-card {
-            background: #f8fafc;
-            border: 1.5px solid #e2d8d4;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .checkout-form-title {
-            font-size: 0.88rem;
-            font-weight: 800;
-            color: #334155;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .checkout-input {
-            width: 100%;
-            padding: 9px 13px;
-            border-radius: 11px;
-            border: 1.5px solid #cbd5e1;
-            font-size: 0.86rem;
-            outline: none;
-            background: #fff;
-            transition: border-color 0.2s;
-        }
-
-        .checkout-input:focus {
-            border-color: var(--brand-pink);
-            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
-        }
-
-        .payment-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 7px;
-        }
-
-        .payment-chip {
-            background: #fff;
-            border: 1.5px solid #cbd5e1;
-            padding: 7px 5px;
-            border-radius: 9px;
-            text-align: center;
-            font-size: 0.74rem;
-            font-weight: 700;
-            color: #475569;
-            cursor: pointer;
-            transition: var(--ease);
-        }
-
-        .payment-chip:hover {
-            border-color: var(--brand-pink);
-        }
-
-        .payment-chip.active {
-            background: var(--brand-pink-l);
-            border-color: var(--brand-pink);
-            color: var(--brand-pink);
-        }
-
-        .btn-whatsapp {
-            width: 100%;
-            background: linear-gradient(135deg, #25d366, #16a34a);
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 16px;
-            font-weight: 800;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 9px;
-            box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
-            transition: var(--ease);
-        }
-
-        .btn-whatsapp:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(37, 211, 102, 0.45);
-        }
-
-        .empty-cart-view {
-            text-align: center;
-            padding: 36px 15px;
-            color: var(--text-soft);
-        }
-
-        .empty-cart-view span {
-            font-size: 3.2rem;
-            display: block;
-            margin-bottom: 10px;
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: calc(var(--bottom-nav-h) + 14px);
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--brand-choco);
-            color: #f9f0e8;
-            padding: 12px 22px;
-            border-radius: var(--r-full);
-            font-weight: 700;
-            font-size: 0.88rem;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
-            display: none;
-            z-index: 400;
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            align-items: center;
-            gap: 9px;
-            white-space: nowrap;
-        }
-
-        .toast.show {
-            display: flex;
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Floating WhatsApp FAB */
-        .fab-whatsapp {
-            position: fixed;
-            bottom: calc(var(--bottom-nav-h) + 16px);
-            right: 18px;
-            width: 54px;
-            height: 54px;
-            background: linear-gradient(135deg, #25d366, #16a34a);
-            color: #fff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 22px rgba(37, 211, 102, 0.45);
-            cursor: pointer;
-            z-index: 94;
-            text-decoration: none;
-            animation: fabPulse 2.8s infinite;
-            transition: var(--ease);
-        }
-
-        @keyframes fabPulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.55);
-            }
-
-            70% {
-                box-shadow: 0 0 0 14px rgba(37, 211, 102, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
-            }
-        }
-
-        .fab-whatsapp:hover {
-            transform: scale(1.1) rotate(6deg);
-        }
-
-        .fab-whatsapp svg {
-            width: 28px;
-            height: 28px;
-            fill: #fff;
-        }
-
-        /* ===== CLUB DULCE RECOMPENSA ===== */
-        .rewards-club-section {
-            background: linear-gradient(135deg, #fff0f5, #fdf2f8);
-            border-radius: 14px;
-            padding: 24px 16px;
-            margin: 0 auto 24px auto;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(216, 27, 96, 0.08);
-            border: 1px solid #fce7f3;
-        }
-
-        .rewards-club-title {
-            font-size: 1.45rem;
-            color: var(--brand-pink-d);
-            font-weight: 800;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .rewards-club-sub {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-bottom: 20px;
-            padding: 0 10px;
-        }
-
-        .rewards-btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .rewards-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
-            padding: 10px 14px;
-            min-height: 44px;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: #fff;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .rewards-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-        }
-
-        .btn-tiktok {
-            background: linear-gradient(135deg, #000000, #252525);
-        }
-
-        .btn-tiktok:hover {
-            background: linear-gradient(135deg, #252525, #3a3a3a);
-        }
-
-        .btn-instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-        }
-
-        .rewards-card {
-            background: #fff;
-            border: 1.5px dashed var(--brand-pink);
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 0.88rem;
-            color: #831843;
-            font-weight: 600;
-            line-height: 1.5;
-            box-shadow: inset 0 2px 10px rgba(252, 231, 243, 0.5);
-        }
-
-        @media (min-width: 640px) {
-            .rewards-btn-group {
-                flex-direction: row;
-                justify-content: center;
-            }
-            .rewards-btn {
-                flex: 1;
-                max-width: 250px;
-                font-size: 0.95rem;
-                padding: 12px 16px;
-            }
-        }
-
-        /* ===== DESKTOP: HIDE MOBILE ELEMENTS ===== */
-        @media (min-width: 769px) {
-            .mobile-bottom-nav {
-                display: none !important;
-            }
-
-            .mobile-header {
-                display: none !important;
-            }
-
-            .mobile-search-bar {
-                display: none !important;
-            }
-
-            header {
-                display: flex;
-            }
-
-            body {
-                padding-bottom: 80px;
-            }
-
-            .toast {
-                bottom: 24px;
-            }
-
-            .fab-whatsapp {
-                bottom: 24px;
-                right: 22px;
-                width: 58px;
-                height: 58px;
-            }
-        }
-
-        /* ===== MOBILE BREAKPOINT ===== */
-        @media (max-width: 768px) {
-
-            /* Hide desktop header, show mobile header */
-            header {
-                display: none !important;
-            }
-
-            .mobile-header {
-                display: flex;
-            }
-
-            .mobile-bottom-nav {
-                display: block;
-            }
-
-            .cat-chip-scroll {
-                justify-content: flex-start;
-                flex-wrap: nowrap;
-                padding-left: 12px;
-                padding-right: 12px;
-            }
-
-            .section {
-                margin: 14px auto;
-                padding: 0 12px;
-            }
-
-            /* Hero adjusts for mobile */
-            .hero {
-                padding: 28px 16px 24px;
-                border-radius: 18px;
-                margin-bottom: 20px;
-            }
-
-            .hero-logo-img {
-                width: 80px;
-                height: 80px;
-                margin-bottom: 12px;
-            }
-
-            .hero h1 {
-                font-size: 1.9rem;
-            }
-
-            .hero .hero-sub {
-                font-size: 0.9rem;
-            }
-
-            .hero p.hero-body {
-                font-size: 0.84rem;
-            }
-
-            .hero-brand-badge {
-                font-size: 0.72rem;
-                padding: 5px 12px;
-                margin-bottom: 14px;
-            }
-
-            .hero-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .btn-gold,
-            .btn-outline-white {
-                width: 100%;
-                justify-content: center;
-                padding: 12px 20px;
-                font-size: 0.95rem;
-            }
-
-            .brand-values-strip {
-                gap: 6px;
-            }
-
-            .bv-pill {
-                font-size: 0.72rem;
-                padding: 5px 11px;
-            }
-
-            /* Grid: 2 columns on mobile */
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-                margin-bottom: 28px;
-            }
-
-            .card {
-                border-radius: 14px;
-            }
-
-            .card-img-wrap {
-                height: 120px;
-            }
-
-            .card-body {
-                padding: 11px 10px;
-            }
-
-            .card h3 {
-                font-size: 0.88rem;
-            }
-
-            .card-desc {
-                font-size: 0.72rem;
-                margin-bottom: 8px;
-            }
-
-            .price {
-                font-size: 1.15rem;
-            }
-
-            .price-label {
-                font-size: 0.62rem;
-            }
-
-            .quantity-control {
-                gap: 4px;
-                margin-bottom: 8px;
-            }
-
-            .qty-btn {
-                width: 30px;
-                height: 30px;
-                font-size: 1rem;
-                border-radius: 7px;
-            }
-
-            .qty-input {
-                width: 44px;
-                height: 30px;
-                font-size: 0.88rem;
-                border-radius: 7px;
-            }
-
-            .btn-add {
-                padding: 8px 6px;
-                font-size: 0.78rem;
-                border-radius: 8px;
-            }
-
-            .card-tag {
-                font-size: 0.65rem;
-                padding: 3px 9px;
-            }
-
-            /* Category chips horizontal scroll on mobile */
-            .cat-chip-scroll {
-                flex-wrap: nowrap;
-                justify-content: flex-start;
-                overflow-x: auto;
-                padding: 6px 4px 14px;
-            }
-
-            .cat-chip {
-                font-size: 0.8rem;
-                padding: 7px 14px;
-            }
-
-            .section-title {
-                font-size: 1.55rem;
-                margin: 18px 0 10px;
-            }
-
-            /* Top bar compact */
-            .top-bar {
-                font-size: 0.67rem;
-                padding: 5px 10px;
-                flex-wrap: wrap;
-                gap: 5px;
-                justify-content: center;
-            }
-
-            .top-bar-phone {
-                font-size: 0.7rem;
-            }
-
-            /* FAB position above bottom nav */
-            .fab-whatsapp {
-                bottom: calc(var(--bottom-nav-h) + 10px);
-                right: 14px;
-                width: 48px;
-                height: 48px;
-            }
-
-            .fab-whatsapp svg {
-                width: 24px;
-                height: 24px;
-            }
-
-            /* Identity banner */
-            .identity-banner {
-                padding: 22px 16px;
-                margin: 28px 0 18px;
-            }
-
-            .identity-banner h3 {
-                font-size: 1.35rem;
-            }
-
-            .identity-banner p {
-                font-size: 0.88rem;
-            }
-
-            /* Features grid 1 column */
-            .features-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            /* Info card */
-            .info-card {
-                padding: 20px 16px;
-            }
-
-            .info-card h2 {
-                font-size: 1.55rem;
-            }
-
-            .about-lead {
-                font-size: 0.96rem;
-            }
-
-            .mv-grid {
-                grid-template-columns: 1fr;
-                gap: 14px;
-            }
-
-            .values-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
-
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 14px;
-            }
-
-            /* Cart modal */
-            .cart-content {
-                padding: 16px;
-                max-height: 94vh;
-                border-radius: 22px;
-            }
-
-            .cart-header h3 {
-                font-size: 1.25rem;
-            }
-        }
-
-        /* ===== TV / LARGE SCREENS ===== */
-        @media (min-width: 1700px) {
-            .section {
-                max-width: 1500px;
-            }
-
-            .hero {
-                padding: 80px 40px;
-            }
-
-            .hero h1 {
-                font-size: 4rem;
-            }
-
-            .hero-logo-img {
-                width: 130px;
-                height: 130px;
-            }
-
-            .grid {
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                gap: 28px;
-            }
-
-            .card-img-wrap {
-                height: 210px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -2688,8 +92,10 @@
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
+                        <div id="vip-dropdown-area-desk"></div>
+
                         <button id="desk-admin-btn" class="dropdown-btn"
-                            onclick="showSection('admin-dashboard'); renderAdminUsers();"
+                            onclick="showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderAdminOrders();"
                             style="display:none; color:var(--brand-pink);">⚙️ Panel Administrador</button>
                         <button class="dropdown-btn"
                             onclick="alert('Funcionalidad en desarrollo: Aquí podrás ver el historial de tus pedidos.')">📦
@@ -2750,43 +156,150 @@
     </div>
 
     <section id="admin-dashboard" class="section">
-        <div class="section-title">📊 Panel Administrativo</div>
-        <div
+        <div class="section-title" id="admin-title-panel">📊 Panel Administrativo & Financiero</div>
+        <div id="admin-local-warning"
             style="background:#fff3cd; border:1px solid #ffe69c; color:#664d03; padding:12px; border-radius:8px; text-align:center; margin-bottom:20px; font-size:0.9rem;">
-            <strong>¡Aviso!</strong> Este panel funciona actualmente de forma local en tu navegador. Para que los
-            clientes y pedidos se sincronicen desde cualquier dispositivo, es necesario integrar un backend o base de
-            datos en la nube (como <em>Netlify Identity</em>, <em>Firebase</em> o <em>Supabase</em>).
+            <strong>¡Aviso!</strong> Datos guardados localmente. Integrar backend (Firebase/Supabase) para
+            multi-dispositivo.
         </div>
-        <p style="text-align:center; color:var(--text-mid); margin-bottom:20px;">Control interno de clientes registrados
-            en este dispositivo.</p>
 
-        <div
-            style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-            <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">➕ Registrar Nuevo Cliente</h4>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <input type="text" id="adminNewName" placeholder="Nombre (ej. Juan)"
-                    style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                <input type="email" id="adminNewEmail" placeholder="Correo Electrónico"
-                    style="flex:1; min-width:180px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                <button onclick="adminRegisterUser()" class="btn-gold" style="padding:8px 16px;">Registrar</button>
+        <!-- CONTROL DE STOCK DIARIO -->
+        <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+            <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1.1rem;">🥖 Disponibilidad de Productos del Día</h4>
+            
+            <div style="display:flex; gap:10px; margin-bottom: 20px; overflow-x:auto; padding-bottom:5px; scrollbar-width:thin; white-space:nowrap; flex-wrap:nowrap;">
+                <button class="stock-filter-chip active" style="flex:0 0 auto;" onclick="setStockFilter('todos', this)">🔥 Todos</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('panaderia', this)">🥖 Pan</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('pasteleria', this)">🎂 Tortas & Postres</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('combos', this)">🎁 Combos</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('antojos', this)">☕ Antojos</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('eventos', this)">🎉 Eventos & Fiestas</button>
+            </div>
+
+            <div id="admin-stock-grid" style="display:flex; flex-wrap:wrap; gap:10px;">
+                <!-- Se llena con JS -->
             </div>
         </div>
 
-        <div style="overflow-x:auto;">
-            <table
-                style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow-m);">
-                <thead style="background:var(--brand-pink-l); text-align:left;">
-                    <tr>
-                        <th style="padding:12px;">Cliente</th>
-                        <th style="padding:12px;">Correo</th>
-                        <th style="padding:12px; text-align:center;">Puntos</th>
-                        <th style="padding:12px; text-align:center;">Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-users-table">
-                    <!-- Se llena con JS -->
-                </tbody>
-            </table>
+        <!-- MONITOR DE PEDIDOS EN VIVO -->
+        <div style="margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:15px; gap:10px;">
+                <h4 style="margin:0; color:var(--brand-pink); font-size:1.1rem;">📦 Monitor de Pedidos en Vivo</h4>
+                <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 12px; border-radius:20px; box-shadow:var(--shadow-s); border:1px solid #f1e8e4;">
+                    <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark);">🔔 Sonido Notificaciones:</span>
+                    <label class="switch-sound" style="position:relative; display:inline-block; width:40px; height:22px;">
+                        <input type="checkbox" id="soundToggle" onchange="toggleOrderSound()" style="opacity:0; width:0; height:0;">
+                        <span class="slider-sound" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:34px;"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="background:#fff; border-radius:10px; padding:10px 15px; margin-bottom:15px; box-shadow:var(--shadow-s); display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <span style="font-size:0.85rem; font-weight:bold; color:var(--text-dark);">📅 Filtro de Fecha:</span>
+                <input type="date" id="orderDateFilter" onchange="filterOrdersByDate()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit;">
+                <button class="btn-gold" style="padding:6px 12px; font-size:0.85rem;" onclick="setOrderDateToToday()">📅 Pedidos de Hoy</button>
+                <button style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; font-family:inherit;" onclick="clearOrderDateFilter()">🔄 Ver Todos</button>
+            </div>
+
+            <div class="live-orders-grid" id="live-orders-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:15px;">
+                <!-- Llenado por JS -->
+            </div>
+        </div>
+
+        <!-- ADMIN ONLY CONTAINERS -->
+        <div id="admin-only-sections">
+            <!-- DASHBOARD TARJETAS -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:25px;"
+                id="admin-dashboard-cards">
+                <!-- Llenado por JS -->
+            </div>
+
+            <!-- CONFIGURACIÓN MARGENES -->
+            <div
+                style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+                <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1rem;">⚙️ Control de Márgenes (Descuentos
+                    VIP)</h4>
+                <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end;">
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:0.85rem; font-weight:bold;">Compra Mínima (COP)</label>
+                        <input type="number" id="adminMinPurchase"
+                            style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:0.85rem; font-weight:bold;">Tope Max Descuento (COP)</label>
+                        <input type="number" id="adminMaxDiscount"
+                            style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div style="flex:1; min-width:150px; display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="adminVipEnabled" style="width:20px; height:20px;">
+                        <label style="font-size:0.85rem; font-weight:bold; cursor:pointer;" for="adminVipEnabled">Habilitar
+                            Descuentos VIP/Base</label>
+                    </div>
+                    <button class="btn-gold" onclick="saveConfigFromAdmin()" style="padding:8px 20px;">Guardar</button>
+                </div>
+            </div>
+
+            <!-- REGISTRAR CLIENTE / PERSONAL -->
+            <div
+                style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">➕ Registrar Nuevo Usuario / Personal
+                </h4>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <input type="text" id="adminNewName" placeholder="Nombre (ej. Juan)"
+                        style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <input type="email" id="adminNewEmail" placeholder="Correo Electrónico"
+                        style="flex:1; min-width:140px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <input type="password" id="adminNewPassword" placeholder="Contraseña..."
+                        style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <select id="adminNewRole" style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer;">
+                        <option value="cliente">Cliente Normal</option>
+                        <option value="trabajador">Trabajador</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <button onclick="adminRegisterUser()" class="btn-gold" style="padding:8px 16px; border-radius:8px;">Registrar</button>
+                </div>
+            </div>
+
+            <!-- TOP 5 Y PEDIDOS -->
+            <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:20px;">
+                <div
+                    style="flex:1; min-width:300px; background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s);">
+                    <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">👑 Top 5 Clientes</h4>
+                    <div id="admin-top-clients"></div>
+                </div>
+            </div>
+
+            <!-- TABLA CLIENTES -->
+            <h4 style="margin-bottom:10px; color:var(--text-dark); font-size:1.1rem;">👥 Control de Usuarios Registrados
+            </h4>
+            <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="🔍 Buscar cliente por nombre, correo o teléfono...">
+            
+            <div class="user-filters-tabs" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px;">
+                <button class="cat-chip active" onclick="setRoleFilter('Todos', this)">Todos</button>
+                <button class="cat-chip" onclick="setRoleFilter('Administradores', this)">Administradores</button>
+                <button class="cat-chip" onclick="setRoleFilter('Trabajadores', this)">Trabajadores</button>
+                <button class="cat-chip" onclick="setRoleFilter('VIP', this)">Clientes VIP</button>
+                <button class="cat-chip" onclick="setRoleFilter('Normales', this)">Clientes Normales</button>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table
+                    style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow-m);">
+                    <thead style="background:var(--brand-pink-l); text-align:left;">
+                        <tr>
+                            <th style="padding:12px;">Cliente</th>
+                            <th style="padding:12px;">Teléfono / WhatsApp</th>
+                            <th style="padding:12px;">Correo</th>
+                            <th style="padding:12px; text-align:center;">Nivel</th>
+                            <th style="padding:12px; text-align:center;">Estado</th>
+                            <th style="padding:12px; text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-table">
+                        <!-- Se llena con JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div style="text-align:center; margin-top:20px;">
             <button class="btn-gold" onclick="showSection('inicio')">⬅ Volver al Inicio</button>
@@ -2796,18 +309,20 @@
     <!-- ===== SECTION: INICIO ===== -->
     <section id="inicio" class="section active">
         <div class="hero">
+            <div class="event-banner" onclick="filterCategory('eventos', this); goToCatalog(event)">
+                🎉 ¿Tienes una celebración? Pasabocas y bandejas al por mayor <span class="banner-action-btn">Ver Bandejas ➔</span>
+            </div>
             <div class="hero-brand-badge">✨ Panadería & Repostería Artesanal</div>
             <img src="logo_dulce_tentacion.jpg" alt="Dulce Tentación" class="hero-logo-img">
             <h1>Dulce Tentación</h1>
             <p class="hero-sub">❝ Hecho con amor, endulzamos tu día ❞</p>
             <p class="hero-body">Pan cascarita crocante, bolitas de queso calienticas, hojaldres dorados, tortas húmedas
                 de chocolate y toda la repostería fina que hace especial cada momento en Cúcuta.</p>
-            <div class="hero-actions">
-                <button class="btn-gold"
-                    style="font-size: 1.15rem; padding: 16px 40px; box-shadow: 0 10px 28px rgba(245,158,11,0.45); border: none; letter-spacing: 0.5px;"
-                    onclick="showSection('productos', document.querySelectorAll('.nav-link')[1])">
-                    🥐 Antójate y Arma tu Pedido
+            <div class="hero-actions" style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <button class="btn-gold-shimmer" onclick="goToCatalog(event)">
+                    🥖 Ver Productos y Armar Pedido 🛒
                 </button>
+                <span class="cta-subtext">⭐ Horneado fresco todos los días · ¡Pídelo con un toque! 👆</span>
             </div>
             <div class="hero-love-phrase">
                 "El ingrediente secreto siempre es el amor"
@@ -2828,26 +343,30 @@
         <!-- ===== CLUB DULCE RECOMPENSA ===== -->
         <div class="rewards-club-section">
             <h2 class="rewards-club-title">🎁 Club Dulce Recompensa</h2>
-            <p class="rewards-club-sub">Conéctate con nosotros en redes y acumula beneficios directos para tus pedidos.</p>
-            
+            <p class="rewards-club-sub">Conéctate con nosotros en redes y acumula beneficios directos para tus pedidos.
+            </p>
+
             <div class="rewards-btn-group">
                 <a href="https://www.tiktok.com/@dulce.tentacion108" target="_blank" class="rewards-btn btn-tiktok">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 15.68a6.34 6.34 0 0012.67-1.79V9.58a7.81 7.81 0 004.2 1.46V7.43a5.04 5.04 0 01-2.28-.74z"/>
+                        <path
+                            d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 15.68a6.34 6.34 0 0012.67-1.79V9.58a7.81 7.81 0 004.2 1.46V7.43a5.04 5.04 0 01-2.28-.74z" />
                     </svg>
                     Síguenos en TikTok (+50 pts)
                 </a>
-                
+
                 <a href="https://www.instagram.com/dulcetentacionpys" target="_blank" class="rewards-btn btn-instagram">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.85 3.92 2.31 7.15 2.16c1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 2.77.27.27 2.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.28 2.7 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.28-.2 6.78-2.7 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.28-2.7-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm5.23-10.7a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z"/>
+                        <path
+                            d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.85 3.92 2.31 7.15 2.16c1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 2.77.27.27 2.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.28 2.7 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.28-.2 6.78-2.7 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.28-2.7-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm5.23-10.7a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z" />
                     </svg>
                     Síguenos en Instagram (+50 pts)
                 </a>
             </div>
-            
+
             <div class="rewards-card">
-                ✨ ¿Nos sigues en ambas redes? Muéstrale la captura a nuestro equipo por WhatsApp o en tu pedido y recibe un detalle dulce sorpresa artesanal.
+                ✨ ¿Nos sigues en ambas redes? Muéstrale la captura a nuestro equipo por WhatsApp o en tu pedido y recibe
+                un detalle dulce sorpresa artesanal.
             </div>
         </div>
 
@@ -2859,6 +378,7 @@
             <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
             <button class="cat-chip" onclick="filterCategory('combos', this)">🎁 Combos</button>
             <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
+            <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
         </div>
 
         <div class="grid" id="featuredGrid"></div>
@@ -2905,6 +425,7 @@
             <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
             <button class="cat-chip" onclick="filterCategory('combos', this)">🎁 Combos</button>
             <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
+            <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
         </div>
         <div class="grid" id="productGrid"></div>
     </section>
@@ -3001,6 +522,8 @@
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
             </div>
 
+            <div id="vip-dropdown-area-mob"></div>
+
             <button id="mob-admin-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers();"
                 style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:10px 0;">⚙️
@@ -3016,6 +539,26 @@
                 style="width:100%; justify-content:center; background:#fff1f2;">🚪 Cerrar Sesión</button>
         </div>
     </div>
+
+    <!-- ===== PASSWORD RESET MODAL (ADMIN) ===== -->
+    <div class="modal-overlay" id="adminPasswordModal" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;" onclick="if(event.target===this) this.style.display='none'">
+        <div style="background:#fff; border-radius:12px; padding:24px; width:90%; max-width:400px; text-align:center;">
+            <h3 style="color:var(--brand-pink); margin-bottom:15px;">🔑 Cambiar Contraseña</h3>
+            <p id="adminPasswordModalUser" style="font-size:0.9rem; color:#555; margin-bottom:15px;"></p>
+            <div class="custom-form-group" style="text-align:left;">
+                <label>Nueva Contraseña</label>
+                <div class="input-wrap">
+                    <span class="field-icon">🔒</span>
+                    <input type="password" id="adminNewPasswordInput" placeholder="Escribe la nueva contraseña..." style="width:100%; padding:10px 10px 10px 40px; border-radius:8px; border:1px solid #ddd; outline:none;">
+                </div>
+            </div>
+            <button onclick="confirmAdminPasswordChange()" class="btn-primary" style="width:100%; border-radius:30px; margin-top:15px; padding:12px;">Guardar Nueva Contraseña</button>
+            <button onclick="document.getElementById('adminPasswordModal').style.display='none'" style="width:100%; background:transparent; border:none; color:#666; margin-top:10px; padding:10px; cursor:pointer;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div id="toast" class="toast"></div>
 
     <!-- ===== AUTH MODAL ===== -->
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
@@ -3051,6 +594,7 @@
                             <span class="field-icon">🔒</span>
                             <input type="password" id="loginPassword" placeholder="••••••••">
                         </div>
+                        <a href="#" onclick="showRecoveryForm(event)" style="font-size: 0.8rem; color: var(--brand-pink); text-decoration: none; display: block; margin-top: 5px; text-align: right;">¿Olvidaste tu contraseña?</a>
                     </div>
                     <button type="submit" class="btn-auth-submit">Iniciar Sesión</button>
                 </form>
@@ -3111,6 +655,30 @@
                     </div>
                 </div>
             </div>
+
+            <!-- RECUPERAR CONTRASEÑA -->
+            <div class="auth-pane" id="paneRecovery" style="display: none;">
+                <h3 style="text-align: center; color: var(--brand-pink); margin-bottom: 15px;">Recuperar Contraseña</h3>
+                <div class="custom-form">
+                    <div class="form-group">
+                        <label>Correo Electrónico Registrado</label>
+                        <div class="input-wrap">
+                            <span class="field-icon">✉️</span>
+                            <input type="email" id="recoveryEmail" placeholder="tucorreo@ejemplo.com">
+                        </div>
+                    </div>
+                    <button onclick="requestPasswordRecovery()" class="btn-auth-submit" style="margin-top:10px;">Verificar Cuenta</button>
+                    
+                    <div id="recoveryWhatsAppContainer" style="display:none; margin-top: 15px; text-align: center;">
+                        <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:10px;">Hemos verificado tu cuenta. Solicita el restablecimiento contactándonos por WhatsApp:</p>
+                        <a id="recoveryWhatsAppLink" href="#" target="_blank" class="btn-whatsapp" style="width:100%; border-radius:30px; justify-content:center;">📱 Solicitar por WhatsApp</a>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: var(--text-dark); text-decoration: none;">⬅ Volver a Iniciar Sesión</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3127,12 +695,22 @@
                 <span><strong>¡No pierdas tu descuento!</strong> Inicia sesión con Google para ganar 6% de descuento y
                     "Puntos Dulce".</span>
             </div>
+            <div id="cart-vip-priority" class="cart-vip-priority">
+                👑 Pedido Prioritario: Este pedido sale con cortesía del maestro panadero
+            </div>
             <div class="cart-summary" id="cartSummary">
                 <div class="sum-row"><span>Total Unidades:</span><span id="sumQty">0</span></div>
                 <div class="sum-row" id="discountRow" style="display:none; color:var(--brand-pink); font-weight:700;">
-                    <span>Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
+                    <span id="discountLabel">Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
                 </div>
                 <div class="sum-row total"><span>Total a Pagar:</span><span>$<span id="sumTotal">0</span> COP</span>
+                </div>
+                <!-- Breakdown para Eventos -->
+                <div class="sum-row event-breakdown" id="eventDepositRow" style="display:none; color:var(--brand-gold); font-weight:700;">
+                    <span>Anticipo requerido (50%):</span><span id="sumDeposit">$0 COP</span>
+                </div>
+                <div class="sum-row event-breakdown" id="eventBalanceRow" style="display:none; color:var(--text-soft);">
+                    <span>Saldo contra entrega (50%):</span><span id="sumBalance">$0 COP</span>
                 </div>
             </div>
             <div class="checkout-form-card" id="checkoutCard">
@@ -3143,6 +721,31 @@
                 <input type="text" id="orderName" class="checkout-input" placeholder="👤 Nombre de quien recibe">
                 <input type="text" id="orderAddress" class="checkout-input"
                     placeholder="📍 Barrio y Dirección en Cúcuta">
+
+                <!-- Tipo de Pedido -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Tipo de Pedido:</label>
+                    <div class="payment-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="payment-chip active" id="btn-order-immediate" onclick="toggleOrderType('inmediato')">⚡ Inmediato</div>
+                        <div class="payment-chip" id="btn-order-event" onclick="toggleOrderType('evento')">📅 Programado (Evento)</div>
+                    </div>
+                </div>
+
+                <!-- Campos de Evento Ocultos -->
+                <div id="scheduledFields" class="scheduled-fields" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;">Fecha de entrega:</label>
+                        <input type="date" id="eventDate" class="checkout-input" style="margin-bottom:0;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;">Hora del evento:</label>
+                        <input type="time" id="eventTime" class="checkout-input" style="margin-bottom:0;">
+                    </div>
+                    <div class="event-alert">
+                        ⚠️ Para pedidos de eventos se requiere un anticipo del 50% para reservar la producción.
+                    </div>
+                </div>
+
                 <div>
                     <label
                         style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Forma
@@ -3162,9 +765,21 @@
     </div>
 
     <!-- Toast Notification -->
-    <div class="toast" id="toast">
+    <div id="toast" class="toast">
         <span id="toastIcon">🥐</span>
-        <span id="toastMsg">Producto agregado</span>
+        <span id="toastMsg">¡Agregado al carrito!</span>
+    </div>
+
+    <!-- ORDER NOTIFICATION TOAST -->
+    <div id="orderToast" class="order-toast">
+        <div class="order-toast-content">
+            <span class="order-toast-icon">🔔</span>
+            <div class="order-toast-text">
+                <strong id="orderToastTitle">¡Nuevo Pedido Recibido!</strong>
+                <p id="orderToastBody">Cliente: Juan Pérez</p>
+            </div>
+        </div>
+        <button class="btn-gold" style="padding: 6px 12px; font-size: 0.8rem; flex-shrink:0;" onclick="goToOrders()">Ver</button>
     </div>
 
     <!-- Floating WhatsApp FAB -->
@@ -3175,6 +790,27 @@
                 d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.09 2.53.73 2.99.69.45-.04 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.3" />
         </svg>
     </a>
+
+    <!-- ===== VIP PROMO MODAL ===== -->
+    <div class="auth-modal" id="vipPromoModal"
+        style="display:none; align-items:center; justify-content:center; z-index:2000;"
+        onclick="if(event.target===this) closeVipModal()">
+        <div class="vip-modal-content">
+            <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">✕</button>
+            <h3>👑 Membresía VIP Oro</h3>
+            <p style="color:#64748b; margin-bottom:20px; font-size:0.95rem;">Accede al club exclusivo de Dulce Tentación
+                y disfruta de beneficios de por vida.</p>
+            <ul>
+                <li><span>✅</span> 10% de descuento automático en TODAS tus compras.</li>
+                <li><span>🎁</span> Una muestra sorpresa artesanal en cada pedido.</li>
+                <li><span>⏱️</span> Atención y horneado prioritario (tu pedido sale primero).</li>
+            </ul>
+            <button class="btn-gold-shimmer" style="width:100%; padding:12px; font-size:1rem;"
+                onclick="requestVipWhatsApp()">
+                Quiero ser VIP por WhatsApp
+            </button>
+        </div>
+    </div>
 
     <!-- ===== MOBILE BOTTOM NAV ===== -->
     <div class="mobile-bottom-nav">
@@ -3208,586 +844,7 @@
     </div>
 
     <!-- ===== JAVASCRIPT ===== -->
-    <script>
-        const PHONE = "573133040870";
-
-        const products = [
-            { id: 1, name: "Pan Cascarita Tradicional", price: 500, cat: "panaderia", featured: true, tag: "🔥 Más Pedido", desc: "Crocante por fuera y miga suave por dentro. El rey de las mañanas cucuteñas.", img: "pan cascarita 500 pesos.jpeg" },
-            { id: 2, name: "Bolita de Leche Azucarada", price: 500, cat: "panaderia", featured: true, tag: "⭐ Favorito", desc: "Masa dulce y esponjosa horneada con leche fresca y toque azucarado.", img: "bolitas de leche 500 pesos.jpeg" },
-            { id: 3, name: "Bolitas de Maíz", price: 500, cat: "panaderia", featured: false, tag: "✨ Tradición", desc: "Pan de maíz dulce y suave, con azúcar espolvoreada encima.", img: "bolitas de maiz 500 pesos.jpeg" },
-            { id: 4, name: "Bolita con Bocadillo", price: 500, cat: "panaderia", featured: false, tag: "🍯 Dulce", desc: "Pan dulce relleno de delicioso bocadillo colombiano.", img: "bolita de bocadillo.jpeg" },
-            { id: 5, name: "Cema Integral", price: 500, cat: "panaderia", featured: false, tag: "🌾 Saludable", desc: "Pan integral rico en fibra, ideal para desayunos nutritivos.", img: "cema integral a.jpeg" },
-            { id: 6, name: "Paledonias", price: 500, cat: "panaderia", featured: false, tag: "🥮 Clásico", desc: "Galleta tradicional tipo paledonia, perfecta para el café.", img: "paleedonias a 500.jpeg" },
-            { id: 7, name: "Galletas Corazón (Con Mermelada)", price: 500, cat: "panaderia", featured: true, tag: "💖 Amor", desc: "Galletas dulces en forma de corazón con un toque de mermelada y chispas.", img: "galletas a 500.jpeg" },
-            { id: 8, name: "Pan de Maíz y de Leche", price: 1000, cat: "panaderia", featured: false, tag: "🍞 Suave", desc: "Pan grande con una combinación deliciosa de maíz y leche.", img: "pain de maiz y de leche.jpeg" },
-            { id: 9, name: "Roliqueso", price: 3000, cat: "panaderia", featured: true, tag: "🧀 Quesudo", desc: "Rollito suave lleno de sabor a queso.", img: "roliqueso 3000.jpeg" },
-            { id: 10, name: "Pan Tajado Familiar", price: 4000, cat: "panaderia", featured: true, tag: "🥪 Desayunos", desc: "Paquete de pan tajado 100% fresco, ideal para sándwiches.", img: "pan tajado a 4000.jpeg" },
-            { id: 11, name: "Croissant Jamón & Queso", price: 2500, cat: "panaderia", featured: false, tag: "🥐 Hojaldrado", desc: "Hojaldre artesanal en capas crujientes, jamón tierno y queso fundido.", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80" },
-            { id: 12, name: "Porción Torta Chocolate Húmeda", price: 4000, cat: "pasteleria", featured: true, tag: "🍫 Delicia", desc: "Bizcocho súper húmedo de chocolate con ganache artesanal.", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80" },
-            { id: 13, name: "Combo Desayuno Tentación", price: 5500, cat: "combos", featured: true, tag: "🎁 Ahorro 15%", desc: "1 Croissant + 2 Pan Cascarita + Café caliente. El combo perfecto.", img: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=500&q=80" },
-            { id: 14, name: "Café con Leche / Capuchino 9oz", price: 2000, cat: "antojos", featured: false, tag: "☕ Caliente", desc: "Café colombiano de origen con leche espumosa preparado al instante.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
-            { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, cat: "combos", featured: true, tag: "💝 Regalo Especial", desc: "2 Croissants, 2 Porciones Torta, 5 Pan Cascarita, 5 Bolitas Queso y empaque premium.", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=500&q=80" }
-        ];
-
-        let cart = [];
-        let currentUser = null;
-        let selectedPay = "Nequi / Daviplata";
-
-        // ===== INIT =====
-        window.addEventListener('DOMContentLoaded', () => {
-            try { const c = localStorage.getItem('dt_cart'); if (c) cart = JSON.parse(c); } catch (e) { }
-            try { const u = localStorage.getItem('dt_user'); if (u) currentUser = JSON.parse(u); } catch (e) { }
-            renderFeatured();
-            renderProducts(products);
-            updateCart();
-            syncUserUI();
-        });
-
-        function saveCart() { try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch (e) { } }
-        function saveUser() { try { if (currentUser) localStorage.setItem('dt_user', JSON.stringify(currentUser)); else localStorage.removeItem('dt_user'); } catch (e) { } }
-
-        // ===== SECTION NAVIGATION =====
-        function showSection(id, element) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
-
-            const el = document.getElementById(id);
-            if (el) el.classList.add('active');
-            if (element && element.classList && element.classList.contains('nav-link')) element.classList.add('active');
-
-            // Sync bottom nav
-            const bnMap = { inicio: 'bnInicio', productos: 'bnProductos', nosotros: 'bnNosotros', ubicacion: 'bnUbicacion' };
-            const bnEl = document.getElementById(bnMap[id]);
-            if (bnEl) bnEl.classList.add('active');
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // ===== MOBILE SEARCH TOGGLE =====
-        function toggleMobileSearch() {
-            const bar = document.getElementById('mobileSearchBar');
-            bar.classList.toggle('open');
-            if (bar.classList.contains('open')) {
-                document.getElementById('searchInputMobile').focus();
-            }
-        }
-
-        // ===== AUTH =====
-        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuthModal() {
-            document.getElementById('authModal').style.display = 'none';
-            const msgEl = document.getElementById('authMsg');
-            if (msgEl) {
-                msgEl.style.display = 'none';
-                msgEl.className = 'auth-msg';
-            }
-            document.querySelectorAll('.custom-form input').forEach(inp => inp.value = '');
-        }
-        function handleAuthBdrop(e) { if (e.target === document.getElementById('authModal')) closeAuthModal(); }
-
-        function switchAuthTab(tab) {
-            document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
-            document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
-            document.getElementById('paneLogin').classList.toggle('active', tab === 'login');
-            document.getElementById('paneRegister').classList.toggle('active', tab === 'register');
-            const msgEl = document.getElementById('authMsg');
-            if (msgEl) {
-                msgEl.style.display = 'none';
-                msgEl.className = 'auth-msg';
-            }
-        }
-
-        function showAuthMessage(msg, type) {
-            const msgEl = document.getElementById('authMsg');
-            if (!msgEl) return;
-            msgEl.innerText = msg;
-            msgEl.className = 'auth-msg ' + type;
-            msgEl.style.display = 'block';
-        }
-
-        function loginCustomUser(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('loginPassword').value;
-
-            if (!email || !pass) {
-                return showAuthMessage('Por favor, completa todos los campos.', 'error');
-            }
-
-            const user = db_users.find(u => (u.email === email || u.username === email) && u.password === pass);
-            if (!user) {
-                return showAuthMessage('Usuario o contraseña incorrectos.', 'error');
-            }
-
-            loginUserObj(user);
-        }
-
-        function registerCustomUser(e) {
-            e.preventDefault();
-            const name = document.getElementById('regName').value.trim();
-            const phone = document.getElementById('regPhone').value.trim();
-            const email = document.getElementById('regEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('regPassword').value;
-
-            if (!name || !phone || !email || !pass) {
-                return showAuthMessage('Por favor, completa todos los campos para registrarte.', 'error');
-            }
-
-            if (db_users.find(u => u.email === email)) {
-                return showAuthMessage('Este correo ya está registrado. Por favor inicia sesión.', 'error');
-            }
-
-            const newUser = {
-                name,
-                email,
-                phone,
-                password: pass,
-                picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-                points: 150
-            };
-            db_users.push(newUser);
-            saveUsersDB();
-            loginUserObj(newUser);
-        }
-
-        function decodeJwtResponse(token) {
-            let base64Url = token.split('.')[1];
-            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        }
-
-        function handleCredentialResponse(response) {
-            const payload = decodeJwtResponse(response.credential);
-            const email = payload.email;
-            const name = payload.name;
-            const picture = payload.picture;
-
-            let user = db_users.find(u => u.email === email);
-            if (!user) {
-                user = { name, email, picture, points: 150 };
-                db_users.push(user);
-            } else {
-                user.name = name;
-                user.picture = picture;
-            }
-            saveUsersDB();
-            loginUserObj(user);
-        }
-
-        function handleMobilePillClick() {
-            if (currentUser) document.getElementById('mobileProfileModal').style.display = 'flex';
-            else openAuthModal();
-        }
-        function closeMobileProfile() { document.getElementById('mobileProfileModal').style.display = 'none'; }
-        function handleMobileProfileBdrop(e) { if (e.target === document.getElementById('mobileProfileModal')) closeMobileProfile(); }
-
-        let db_users = [];
-        window.addEventListener('DOMContentLoaded', () => {
-            try { const db = localStorage.getItem('dt_users_db'); if (db) db_users = JSON.parse(db); } catch (e) { }
-        });
-        function saveUsersDB() { try { localStorage.setItem('dt_users_db', JSON.stringify(db_users)); } catch (e) { } }
-
-        function loginUserObj(userObj) {
-            currentUser = userObj;
-            saveUser(); syncUserUI(); closeAuthModal();
-            const orderName = document.getElementById('orderName');
-            if (orderName && !orderName.value) orderName.value = currentUser.name;
-            const firstName = currentUser.name.split(' ')[0];
-            showToast(`¡Hola, ${firstName}! Qué delicia tenerte de vuelta en Dulce Tentación ✨`, '🎉', 4000);
-        }
-
-
-
-        function adminRegisterUser() {
-            const name = document.getElementById('adminNewName').value.trim();
-            const email = document.getElementById('adminNewEmail').value.trim().toLowerCase();
-            if (!name || !email) return alert('Por favor, completa ambos campos.');
-            if (db_users.find(u => u.email === email)) return alert('Este correo ya está registrado.');
-
-            db_users.push({
-                name, email,
-                picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-                points: 0
-            });
-            saveUsersDB();
-            document.getElementById('adminNewName').value = '';
-            document.getElementById('adminNewEmail').value = '';
-            renderAdminUsers();
-            showToast('Cliente registrado exitosamente', '✅');
-        }
-
-        function adminDeleteUser(email) {
-            if (!confirm(`¿Estás seguro de que deseas eliminar el correo ${email}?`)) return;
-            db_users = db_users.filter(u => u.email !== email);
-            saveUsersDB();
-            renderAdminUsers();
-            showToast('Cliente eliminado', '🗑️');
-        }
-
-        function renderAdminUsers() {
-            const tbody = document.getElementById('admin-users-table');
-            if (!tbody) return;
-            if (db_users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="padding:15px;text-align:center;">No hay clientes registrados aún.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = db_users.map(u => `
-            <tr style="border-bottom:1px solid #eee;">
-                <td style="padding:10px; display:flex; align-items:center; gap:10px;">
-                    <img src="${u.picture}" style="width:30px;height:30px;border-radius:50%;">
-                    <strong>${u.name}</strong>
-                </td>
-                <td style="padding:10px; font-size:0.85rem; color:#555;">${u.email}</td>
-                <td style="padding:10px; text-align:center; font-weight:bold; color:var(--brand-pink);">${u.points || 0} pts</td>
-                <td style="padding:10px; text-align:center;">
-                    ${(u.email === 'admin@gmail.com' || u.email === 'admin@dulcetentacion.com') ? '-' : `<button onclick="adminDeleteUser('${u.email}')" style="background:#fff1f2; color:#e11d48; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem;">Borrar</button>`}
-                </td>
-            </tr>
-        `).join('');
-        }
-        function logoutUser(e) {
-            e.stopPropagation();
-            currentUser = null; saveUser(); syncUserUI();
-            document.getElementById('user-dropdown-menu')?.classList.remove('active');
-            showToast("Sesión cerrada.", 'ℹ️');
-        }
-
-        function syncUserUI() {
-            const loginBtn = document.getElementById('btn-google-login');
-            const pill = document.getElementById('user-pill-container');
-            const mobileGoogleBtn = document.getElementById('mobile-google-btn');
-            const mobilePill = document.getElementById('mobile-user-pill');
-            const hIncentive = document.getElementById('hero-login-incentive');
-            const cIncentive = document.getElementById('cartLoginIncentive');
-
-            if (currentUser) {
-                if (loginBtn) loginBtn.style.display = 'none';
-                if (pill) {
-                    pill.style.display = 'flex';
-                    document.getElementById('user-avatar').src = currentUser.picture;
-                    const firstName = currentUser.name.split(' ')[0];
-                    document.getElementById('user-name').innerText = `Hola, ${firstName}`;
-                    document.getElementById('dropdown-avatar').src = currentUser.picture;
-                    document.getElementById('dropdown-name').innerText = currentUser.name;
-                    document.getElementById('dropdown-email').innerText = currentUser.email || currentUser.phone || '';
-                    if (document.getElementById('dropdown-points-val')) document.getElementById('dropdown-points-val').innerText = currentUser.points || 0;
-                }
-                if (mobileGoogleBtn) mobileGoogleBtn.style.display = 'none';
-                if (mobilePill) {
-                    mobilePill.style.display = 'flex';
-                    document.getElementById('mobile-user-avatar').src = currentUser.picture;
-
-                    const mpAv = document.getElementById('mp-avatar'); if (mpAv) mpAv.src = currentUser.picture;
-                    const mpNm = document.getElementById('mp-name'); if (mpNm) mpNm.innerText = currentUser.name;
-                    const mpEm = document.getElementById('mp-email'); if (mpEm) mpEm.innerText = currentUser.email;
-                    const mpPt = document.getElementById('mp-points-val'); if (mpPt) mpPt.innerText = currentUser.points || 0;
-                }
-                const on = document.getElementById('orderName'); if (on && !on.value) on.value = currentUser.name;
-                if (hIncentive) hIncentive.style.display = 'none';
-                if (cIncentive) cIncentive.style.display = 'none';
-
-                const isAdmin = currentUser.email === 'admin@gmail.com' || currentUser.email === 'admin@dulcetentacion.com';
-                const deskBtn = document.getElementById('desk-admin-btn');
-                const mobBtn = document.getElementById('mob-admin-btn');
-                if (deskBtn) deskBtn.style.display = isAdmin ? 'flex' : 'none';
-                if (mobBtn) mobBtn.style.display = isAdmin ? 'flex' : 'none';
-
-                const pts = currentUser.points || 0;
-                const goal = 500;
-                const pct = Math.min((pts / goal) * 100, 100);
-                const faltan = goal - pts;
-                let msg = `Te faltan ${faltan} pts para un premio`;
-                if (faltan <= 0) msg = `¡Felicidades! Tienes puntos para un premio 🎁`;
-
-                const dBar = document.querySelector('#user-dropdown-menu .points-bar');
-                const dMsg = document.querySelector('#user-dropdown-menu .dropdown-points-box small');
-                if (dBar) dBar.style.width = `${pct}%`;
-                if (dMsg) dMsg.innerText = msg;
-
-                const mBar = document.querySelector('#mobileProfileModal .points-bar');
-                const mMsg = document.querySelector('#mobileProfileModal .dropdown-points-box small');
-                if (mBar) mBar.style.width = `${pct}%`;
-                if (mMsg) mMsg.innerText = msg;
-            } else {
-                if (loginBtn) loginBtn.style.display = 'inline-flex';
-                if (pill) pill.style.display = 'none';
-                if (mobileGoogleBtn) mobileGoogleBtn.style.display = 'flex';
-                if (mobilePill) mobilePill.style.display = 'none';
-                if (hIncentive) hIncentive.style.display = 'flex';
-                if (cIncentive) cIncentive.style.display = 'flex';
-            }
-        }
-
-        function toggleUserDropdown(e) {
-            e.stopPropagation();
-            const pill = document.getElementById('user-pill-container');
-            const menu = document.getElementById('user-dropdown-menu');
-            pill.classList.toggle('open'); menu.classList.toggle('active');
-        }
-        document.addEventListener('click', () => {
-            document.getElementById('user-pill-container')?.classList.remove('open');
-            document.getElementById('user-dropdown-menu')?.classList.remove('active');
-        });
-        function openCartFromDropdown(e) { e.stopPropagation(); document.getElementById('user-dropdown-menu')?.classList.remove('active'); toggleCart(); }
-
-        // ===== PRODUCTS =====
-        function createCardHTML(p) {
-            return `<div class="card" id="card-${p.id}">
-            <span class="card-tag">${p.tag}</span>
-            <div class="card-img-wrap">
-                <img src="${p.img}" alt="${p.name}" class="pimg-${p.id}" loading="lazy">
-            </div>
-            <div class="card-body">
-                <div>
-                    <h3>${p.name}</h3>
-                    <p class="card-desc">${p.desc}</p>
-                </div>
-                <div>
-                    <div class="price-row">
-                        <span class="price">$${p.price.toLocaleString()}</span>
-                        <span class="price-label">COP c/u</span>
-                    </div>
-                    <div class="quantity-control">
-                        <button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button>
-                        <input type="number" class="qty-input qinp-${p.id}" value="1" min="1" onblur="validateQty(this)">
-                        <button class="qty-btn" onclick="changeQty(${p.id},1)">+</button>
-                    </div>
-                    <button class="btn-add badd-${p.id}" onclick="addToCart(${p.id},event)">
-                        <span>➕ Agregar al Carrito</span>
-                    </button>
-                </div>
-            </div>
-        </div>`;
-        }
-
-        function renderProducts(items = products) {
-            const g = document.getElementById('productGrid');
-            if (!g) return;
-            g.innerHTML = items.length === 0
-                ? "<p style='grid-column:1/-1;text-align:center;color:var(--text-soft);padding:40px 0;font-size:1rem;'>No encontramos productos con esa búsqueda.</p>"
-                : items.map(createCardHTML).join('');
-        }
-        function renderFeatured(cat = 'todos') {
-            const g = document.getElementById('featuredGrid');
-            if (!g) return;
-            let list = cat === 'todos' ? products.filter(p => p.featured) : products.filter(p => p.cat === cat);
-            if (list.length === 0) list = products.filter(p => p.cat === cat);
-            g.innerHTML = list.map(createCardHTML).join('');
-        }
-        function filterCategory(cat, el) {
-            document.querySelectorAll('.cat-chip').forEach(c => {
-                c.classList.toggle('active', c.getAttribute('onclick')?.includes(`'${cat}'`));
-            });
-            renderProducts(cat === 'todos' ? products : products.filter(p => p.cat === cat));
-            renderFeatured(cat);
-        }
-        function filterProductsBySearch(inputId) {
-            const q = document.getElementById(inputId)?.value.trim().toLowerCase() || '';
-            const filtered = products.filter(p =>
-                p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q)
-            );
-            renderProducts(filtered);
-            showSection('productos', document.querySelectorAll('.nav-link')[1]);
-        }
-
-        // ===== QTY =====
-        function changeQty(id, d) {
-            document.querySelectorAll(`.qinp-${id}`).forEach(inp => {
-                let v = parseInt(inp.value) || 1; v += d; if (v < 1) v = 1; inp.value = v;
-            });
-        }
-        function validateQty(inp) { if (isNaN(parseInt(inp.value)) || parseInt(inp.value) < 1) inp.value = 1; }
-
-        // ===== ADD TO CART =====
-        function flyAnimation(id) {
-            const img = document.querySelector(`.pimg-${id}`);
-            const cart = document.getElementById('headerCartBtn') || document.querySelector('.cart-nav-btn');
-            if (!img || !cart) return;
-            const ir = img.getBoundingClientRect(), cr = cart.getBoundingClientRect();
-            const fi = document.createElement('img');
-            fi.src = img.src; fi.className = 'flying-img';
-            fi.style.cssText = `top:${ir.top}px;left:${ir.left}px;width:${ir.width}px;height:${ir.height}px;`;
-            document.body.appendChild(fi);
-            requestAnimationFrame(() => {
-                fi.style.top = `${cr.top + 6}px`; fi.style.left = `${cr.left + 10}px`;
-                fi.style.width = '24px'; fi.style.height = '24px'; fi.style.opacity = '0.3';
-            });
-            setTimeout(() => { fi.remove(); document.getElementById('headerCartBtn')?.classList.add('bounce'); setTimeout(() => document.getElementById('headerCartBtn')?.classList.remove('bounce'), 450); }, 750);
-        }
-
-        function addToCart(id, e) {
-            const p = products.find(x => x.id === id); if (!p) return;
-            const inp = document.querySelector(`.qinp-${id}`);
-            let qty = parseInt(inp?.value) || 1; if (qty < 1) qty = 1;
-            const existing = cart.find(i => i.id === id);
-            if (existing) existing.quantity += qty; else cart.push({ ...p, quantity: qty });
-            flyAnimation(id);
-            document.querySelectorAll(`.badd-${id}`).forEach(b => {
-                b.classList.add('added'); b.innerHTML = '<span>✓ ¡Agregado!</span>';
-                setTimeout(() => { b.classList.remove('added'); b.innerHTML = '<span>➕ Agregar al Carrito</span>'; }, 1100);
-            });
-            if (inp) inp.value = 1;
-            updateCart(); saveCart();
-            showToast(`¡${qty}x ${p.name} al carrito!`, '🥐');
-        }
-
-        function updCartQty(id, d) {
-            const i = cart.find(x => x.id === id); if (!i) return;
-            i.quantity += d; if (i.quantity <= 0) cart = cart.filter(x => x.id !== id);
-            updateCart(); saveCart();
-        }
-        function setCartQty(id, v) {
-            const i = cart.find(x => x.id === id); if (!i) return;
-            const nv = parseInt(v); i.quantity = isNaN(nv) || nv < 1 ? 1 : nv;
-            updateCart(); saveCart();
-        }
-        function removeFromCart(id) {
-            cart = cart.filter(i => i.id !== id); updateCart(); saveCart();
-            showToast("Producto eliminado.", "🗑️");
-        }
-
-        function updateCart() {
-            const totalQty = cart.reduce((a, i) => a + i.quantity, 0);
-            let totalPrice = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
-
-            let discount = 0;
-            const dRow = document.getElementById('discountRow');
-            if (currentUser && totalPrice > 0) {
-                discount = Math.floor(totalPrice * 0.06);
-                if (dRow) { dRow.style.display = 'flex'; document.getElementById('sumDiscount').innerText = `- $${discount.toLocaleString()} COP`; }
-            } else {
-                if (dRow) dRow.style.display = 'none';
-            }
-            const finalTotal = totalPrice - discount;
-
-            const simMsg = document.getElementById('sim-points-msg');
-            const mpSimMsg = document.getElementById('mp-sim-points-msg');
-            if (simMsg || mpSimMsg) {
-                let t = "Agrega productos para ver cuántos puntos ganas.";
-                if (totalPrice >= 100000) {
-                    t = "¡Ganarás +30 puntos con este pedido! 🎉";
-                } else if (totalPrice >= 50000) {
-                    t = `¡Ganarás +20 puntos! Agrega $${(100000 - totalPrice).toLocaleString()} más para ganar 30 pts.`;
-                } else if (totalPrice >= 10000) {
-                    t = `¡Ganarás +10 puntos! Agrega $${(50000 - totalPrice).toLocaleString()} más para ganar 20 pts.`;
-                } else if (totalPrice > 0) {
-                    t = `Agrega $${(10000 - totalPrice).toLocaleString()} más para empezar a ganar puntos.`;
-                }
-                if (simMsg) simMsg.innerText = t;
-                if (mpSimMsg) mpSimMsg.innerText = t;
-            }
-
-            document.getElementById('cartCount').innerText = totalQty;
-            document.getElementById('cartCountMobile').innerText = totalQty;
-            document.querySelectorAll('.dropdown-cart-qty').forEach(e => e.innerText = totalQty);
-            document.getElementById('sumQty').innerText = totalQty;
-            document.getElementById('sumTotal').innerText = finalTotal.toLocaleString();
-            const ci = document.getElementById('cartItems');
-            const cs = document.getElementById('cartSummary');
-            const cc = document.getElementById('checkoutCard');
-            const bw = document.querySelector('.btn-whatsapp');
-            if (cart.length === 0) {
-                ci.innerHTML = `<div class="empty-cart-view"><span>🥖</span><strong style="display:block;color:var(--text-dark);margin-bottom:5px;">Tu carrito está vacío</strong><p style="font-size:0.85rem;">¡Agrega panes, hojaldres o tortas para hacer tu pedido!</p></div>`;
-                cs.style.opacity = '0.5'; if (cc) cc.style.display = 'none'; bw.style.opacity = '0.5'; bw.style.pointerEvents = 'none';
-            } else {
-                cs.style.opacity = '1'; if (cc) cc.style.display = 'flex'; bw.style.opacity = '1'; bw.style.pointerEvents = 'auto';
-                ci.innerHTML = cart.map(item => `
-                <div class="cart-item-row">
-                    <img src="${item.img}" class="cart-item-img" alt="${item.name}">
-                    <div class="cart-item-info">
-                        <div class="cart-item-title">${item.name}</div>
-                        <div class="cart-item-price">$${item.price.toLocaleString()} c/u • <strong>$${(item.price * item.quantity).toLocaleString()} COP</strong></div>
-                    </div>
-                    <div class="cart-item-actions">
-                        <button onclick="updCartQty(${item.id},-1)">−</button>
-                        <input type="number" value="${item.quantity}" min="1" onchange="setCartQty(${item.id},this.value)">
-                        <button onclick="updCartQty(${item.id},1)">+</button>
-                        <button class="btn-delete-item" onclick="removeFromCart(${item.id})"><svg viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg></button>
-                    </div>
-                </div>`).join('');
-            }
-        }
-
-        function toggleCart() {
-            const m = document.getElementById('cartModal');
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
-        }
-        function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) toggleCart(); }
-
-        function selectPay(el, method) {
-            document.querySelectorAll('.payment-chip').forEach(c => c.classList.remove('active'));
-            el.classList.add('active'); selectedPay = method;
-        }
-
-        function sendOrder() {
-            if (cart.length === 0) return alert("¡Tu carrito está vacío!");
-            const name = document.getElementById('orderName').value.trim() || (currentUser?.name) || 'Cliente';
-            const addr = document.getElementById('orderAddress').value.trim() || 'Por acordar';
-            const notes = document.getElementById('orderNotes').value.trim() || 'Sin notas';
-            const tq = cart.reduce((a, i) => a + i.quantity, 0);
-            const tp = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
-            let discount = 0;
-            let finalTotal = tp;
-            if (currentUser) {
-                discount = Math.floor(tp * 0.06);
-                finalTotal = tp - discount;
-
-                let ptsEarned = 0;
-                if (tp >= 100000) ptsEarned = 30;
-                else if (tp >= 50000) ptsEarned = 20;
-                else if (tp >= 10000) ptsEarned = 10;
-
-                if (ptsEarned > 0) {
-                    currentUser.points = (currentUser.points || 0) + ptsEarned;
-                    const uidx = db_users.findIndex(u => u.email === currentUser.email);
-                    if (uidx !== -1) { db_users[uidx].points = currentUser.points; saveUsersDB(); }
-                    saveUser();
-                    syncUserUI();
-                }
-            }
-
-            let msg = `🥖 *NUEVO PEDIDO – Dulce Tentación P y S*\n`;
-            msg += `📍 *Ciudad:* Cúcuta, Norte de Santander\n`;
-            if (currentUser) {
-                msg += `🎁 *[CLIENTE VIP CLUB DULCE - APLICANDO 6% DESCUENTO Y PUNTOS]*\n`;
-            }
-            msg += `—————————————————————\n`;
-            msg += `👤 *Cliente:* ${name}\n`;
-            msg += `🛵 *Dirección / Barrio:* ${addr}\n`;
-            msg += `💳 *Pago:* ${selectedPay}\n`;
-            msg += `📝 *Notas:* ${notes}\n`;
-            msg += `—————————————————————\n`;
-            msg += `*PRODUCTOS PEDIDOS:*\n`;
-            cart.forEach(i => { msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString()} COP\n`; });
-            msg += `—————————————————————\n`;
-            msg += `*Total unidades:* ${tq}\n`;
-            if (discount > 0) {
-                msg += `*Subtotal:* $${tp.toLocaleString()} COP\n`;
-                msg += `*Descuento VIP (6%):* -$${discount.toLocaleString()} COP\n`;
-            }
-            msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString()} COP\n`;
-            msg += `—————————————————————\n`;
-            msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! 🙏`;
-            window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function openWhatsAppChat() {
-            const g = "¡Hola! Vengo desde la página web de Dulce Tentación P y S 🥖. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!";
-            window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(g)}`, '_blank');
-        }
-
-        function showToast(msg, icon = '🥐', duration = 2600) {
-            const t = document.getElementById('toast');
-            document.getElementById('toastMsg').innerText = msg;
-            document.getElementById('toastIcon').innerText = icon;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), duration);
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 
 </html>
