@@ -13,9 +13,9 @@
             { id: 10, name: "Pan Tajado Familiar", price: 4000, cat: "panaderia", featured: true, tag: "🥪 Desayunos", desc: "Paquete de pan tajado 100% fresco, ideal para sándwiches.", img: "pan tajado a 4000.jpeg" },
             { id: 11, name: "Croissant Jamón & Queso", price: 2500, cat: "antojos", featured: false, tag: "🥐 Hojaldrado", desc: "Hojaldre artesanal en capas crujientes, jamón tierno y queso fundido.", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80" },
             { id: 12, name: "Porción Torta Chocolate Húmeda", price: 4000, cat: "pasteleria", featured: true, tag: "🍫 Delicia", desc: "Bizcocho súper húmedo de chocolate con ganache artesanal.", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80" },
-            { id: 13, name: "Combo Desayuno Tentación", price: 5500, cat: "combos", featured: true, tag: "🎁 Ahorro 15%", desc: "1 Croissant + 2 Pan Cascarita + Café caliente. El combo perfecto.", img: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=500&q=80" },
+            { id: 13, name: "Combo Desayuno Tentación", price: 5500, oldPrice: 7000, cat: "combos", featured: true, tag: "✨ Ahorro 15%", desc: "1 Croissant + 2 Pan Cascarita + Café caliente. El combo perfecto.", img: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=500&q=80" },
             { id: 14, name: "Café con Leche / Capuchino 9oz", price: 2000, cat: "antojos", featured: false, tag: "☕ Caliente", desc: "Café colombiano de origen con leche espumosa preparado al instante.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
-            { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, cat: "combos", featured: true, tag: "💝 Regalo Especial", desc: "2 Croissants, 2 Porciones Torta, 5 Pan Cascarita, 5 Bolitas Queso y empaque premium.", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=500&q=80" },
+            { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, oldPrice: 30000, cat: "combos", featured: true, tag: "💝 Regalo Especial", desc: "2 Croissants, 2 Porciones Torta, 5 Pan Cascarita, 5 Bolitas Queso y empaque premium.", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=500&q=80" },
             { id: 16, name: "Bandeja x50 Bolitas de Queso", price: 25000, cat: "eventos", featured: true, tag: "🎉 Fiestas", desc: "50 bolitas de queso calienticas listas para repartir.", img: "https://images.unsplash.com/photo-1626200419189-322197e887e0?auto=format&fit=crop&w=500&q=80" },
             { id: 17, name: "Bandeja x30 Mini Hojaldres", price: 45000, cat: "eventos", featured: true, tag: "🎉 Gourmet", desc: "Mini croissants y palitos de queso ideales para pasabocas.", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80" },
             { id: 18, name: "Combo Cumpleaños Familiar", price: 75000, cat: "eventos", featured: false, tag: "🎂 Cumple", desc: "Torta grande, 20 pasabocas de sal y 10 mini postres.", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80" }
@@ -204,11 +204,183 @@
                 phone,
                 password: pass,
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-                points: 150
+                points: 15
             };
             db_users.push(newUser);
+            currentUser = newUser;
             saveUsersDB();
-            loginUserObj(newUser);
+            saveUser();
+            syncUserUI();
+            closeAuthModal();
+            showToast("¡Registro exitoso! Bienvenido.", "🎉");
+        }
+
+        const pointRewards = [
+            { id: 'r1', name: 'Café Americano o Latte', cost: 100, img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=100' },
+            { id: 'r2', name: 'Croissant Artesanal Relleno', cost: 150, img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=100' },
+            { id: 'r3', name: 'Caja de Galletas Especiales', cost: 300, img: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=100' }
+        ];
+
+        function openPointsModal() {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+            const modal = document.getElementById('modal-puntos');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.getElementById('modal-ticket-val').innerText = currentUser.points || 0;
+                
+                const container = document.getElementById('rewards-container');
+                container.innerHTML = pointRewards.map(r => {
+                    const canRedeem = (currentUser.points || 0) >= r.cost;
+                    return `
+                    <div class="ticket-card">
+                        <img src="${r.img}" alt="${r.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #f59e0b;">
+                        <div class="ticket-card-info" style="flex: 1;">
+                            <h4>${r.name}</h4>
+                            <p>🎟️ ${r.cost} Pts</p>
+                        </div>
+                        <button class="btn-redeem" ${canRedeem ? `onclick="redeemReward('${r.id}')"` : 'disabled'}>
+                            ${canRedeem ? 'Canjear premio' : `Te faltan ${r.cost - (currentUser.points || 0)} pts`}
+                        </button>
+                    </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function redeemReward(rewardId) {
+            const reward = pointRewards.find(x => x.id === rewardId);
+            if (!reward || !currentUser || (currentUser.points || 0) < reward.cost) return;
+            
+            currentUser.points -= reward.cost;
+            const uidx = db_users.findIndex(u => u.email === currentUser.email);
+            if (uidx !== -1) { db_users[uidx].points = currentUser.points; saveUsersDB(); }
+            saveUser();
+            syncUserUI();
+            
+            cart.push({
+                id: Date.now(),
+                name: '🎁 Cortesía: ' + reward.name,
+                price: 0,
+                quantity: 1,
+                cat: 'cortesia',
+                tag: '¡Canjeado!',
+                img: reward.img
+            });
+            saveCart();
+            updateCart();
+            
+            document.getElementById('modal-puntos').style.display = 'none';
+            showToast("¡Premio canjeado! Revisa tu carrito 🎉", "🎊");
+            toggleCart();
+        }
+
+        function openOrdersModal() {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+            document.getElementById('modal-mis-pedidos').style.display = 'flex';
+            switchOrderTab('curso');
+        }
+
+        function switchOrderTab(tabId) {
+            document.querySelectorAll('.order-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.orders-tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            renderOrders(tabId);
+        }
+
+        function renderOrders(tabId) {
+            const container = document.getElementById(`tab-${tabId}`);
+            container.innerHTML = '';
+            
+            if (!currentUser || !currentUser.history) {
+                container.innerHTML = '<p style="text-align:center; color:#94a3b8; margin: 20px 0;">Aún no tienes pedidos registrados... ¡antójate de algo rico!</p>';
+                return;
+            }
+
+            let filteredOrders = [];
+            const todayStr = new Date().toLocaleDateString('es-CO');
+
+            if (tabId === 'curso') {
+                // Pedidos inmediatos del día
+                filteredOrders = currentUser.history.filter(o => o.type !== 'evento' && new Date(o.timestamp).toLocaleDateString('es-CO') === todayStr);
+            } else if (tabId === 'eventos') {
+                filteredOrders = currentUser.history.filter(o => o.type === 'evento');
+            } else if (tabId === 'historial') {
+                // Historial de compras anteriores
+                filteredOrders = currentUser.history.filter(o => o.type !== 'evento' && new Date(o.timestamp).toLocaleDateString('es-CO') !== todayStr);
+            }
+
+            if (filteredOrders.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#94a3b8; margin: 20px 0;">Aún no tienes pedidos en esta sección... ¡antójate de algo rico!</p>';
+                return;
+            }
+
+            container.innerHTML = filteredOrders.map(order => {
+                let extraHtml = '';
+                
+                if (tabId === 'curso') {
+                    let fillWidth = '0%';
+                    let act1 = 'active', act2 = '', act3 = '', act4 = '';
+                    const st = order.status || 'Pendiente';
+                    
+                    if (st === 'En Horno') { fillWidth = '33%'; act2 = 'active'; }
+                    else if (st === 'En Camino') { fillWidth = '66%'; act2 = 'active'; act3 = 'active'; }
+                    else if (st === 'Entregado' || st.includes('Entregado')) { fillWidth = '100%'; act2 = 'active'; act3 = 'active'; act4 = 'active'; }
+                    
+                    extraHtml = `
+                    <div class="progress-bar-container">
+                        <div class="progress-line"></div>
+                        <div class="progress-line-fill" style="width: ${fillWidth};"></div>
+                        <div class="progress-step ${act1}">
+                            <div class="step-circle">1</div>
+                            <span class="step-label">Recibido</span>
+                        </div>
+                        <div class="progress-step ${act2}">
+                            <div class="step-circle">2</div>
+                            <span class="step-label">En Horno</span>
+                        </div>
+                        <div class="progress-step ${act3}">
+                            <div class="step-circle">3</div>
+                            <span class="step-label">En Camino</span>
+                        </div>
+                        <div class="progress-step ${act4}">
+                            <div class="step-circle">4</div>
+                            <span class="step-label">Entregado</span>
+                        </div>
+                    </div>`;
+                } else if (tabId === 'eventos') {
+                    const deposit = Math.ceil(order.total / 2);
+                    const balance = order.total - deposit;
+                    extraHtml = `
+                    <div style="margin-top: 12px; background: #fff5f8; padding: 12px; border-radius: 8px;">
+                        <span class="order-badge-event">Anticipo 50% Cubierto: $${deposit.toLocaleString()}</span>
+                        <p style="margin: 8px 0 0 0; color: #475569; font-size: 0.9rem;">
+                            <strong>Saldo contra entrega:</strong> $${balance.toLocaleString()} COP
+                        </p>
+                    </div>`;
+                }
+
+                return `
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <div>
+                            <h4 class="order-card-title">Pedido ${order.id}</h4>
+                            <p class="order-card-date">${order.date}</p>
+                        </div>
+                        <strong style="color: var(--brand-pink); font-size: 1.1rem;">$${order.total.toLocaleString()}</strong>
+                    </div>
+                    <p style="margin:0; font-size: 0.9rem; color: #475569;">${order.products}</p>
+                    ${extraHtml}
+                </div>`;
+            }).reverse().join('');
         }
 
         function decodeJwtResponse(token) {
@@ -218,6 +390,276 @@
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
             return JSON.parse(jsonPayload);
+        }
+
+        // ===== MODO COCINA / DESPACHO =====
+        function openKitchenModal() {
+            document.getElementById('kitchen-modal').style.display = 'flex';
+            switchKitchenTab('activos');
+        }
+
+        function closeKitchenModal() {
+            document.getElementById('kitchen-modal').style.display = 'none';
+        }
+
+        function switchKitchenTab(tabId) {
+            document.querySelectorAll('.kitchen-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.kitchen-tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(`k-tab-btn-${tabId}`).classList.add('active');
+            document.getElementById(`k-tab-${tabId}`).classList.add('active');
+            
+            if (tabId === 'stock') {
+                renderKitchenStock();
+            } else if (tabId === 'clientes') {
+                renderKitchenUsers();
+            } else {
+                renderKitchenOrders(tabId);
+            }
+        }
+
+        function renderKitchenStock() {
+            const container = document.getElementById('k-tab-stock');
+            if (!container) return;
+            
+            container.innerHTML = products.map(p => {
+                const isOut = stockConfig[p.id] === true;
+                return `
+                <div class="kitchen-stock-item">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <img src="${p.img}" alt="${p.name}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; ${isOut ? 'filter:grayscale(100%); opacity:0.5;' : ''}">
+                        <div>
+                            <strong style="display:block; font-size:1.1rem; margin-bottom:4px;">${p.name}</strong>
+                            <span style="font-size:0.9rem; color:#64748b;">${isOut ? '🔴 Agotado' : '✅ Disponible'}</span>
+                        </div>
+                    </div>
+                    <label class="stock-toggle-label">
+                        <input type="checkbox" class="stock-toggle-input" ${!isOut ? 'checked' : ''} onchange="toggleStock(${p.id})">
+                        <span class="stock-toggle-slider"></span>
+                    </label>
+                </div>`;
+            }).join('');
+        }
+
+        function renderKitchenUsers() {
+            const container = document.getElementById('k-users-grid');
+            if (!container) return;
+
+            const q = (document.getElementById('k-user-search')?.value || '').toLowerCase();
+            const filter = document.getElementById('k-user-filter')?.value || 'todos';
+
+            const filtered = db_users.filter(u => {
+                const matchSearch = (u.name || '').toLowerCase().includes(q) || 
+                                    (u.email || '').toLowerCase().includes(q) || 
+                                    (u.phone || '').toLowerCase().includes(q);
+                if (!matchSearch) return false;
+
+                const isAdm = adminEmails.includes(u.email);
+                const isWork = workerEmails.includes(u.email);
+                
+                if (filter === 'vip') return u.vip === true;
+                if (filter === 'cocina') return isWork;
+                if (filter === 'admin') return isAdm;
+                return true;
+            });
+
+            container.innerHTML = filtered.map(u => {
+                const isAdm = adminEmails.includes(u.email);
+                const isWork = workerEmails.includes(u.email);
+                
+                let currentRoleVal = 'regular';
+                let roleBadgeHtml = '<span class="k-role-badge k-role-regular">Regular</span>';
+                
+                if (isAdm) { currentRoleVal = 'admin'; roleBadgeHtml = '<span class="k-role-badge k-role-admin">🛡️ Administrador</span>'; }
+                else if (isWork) { currentRoleVal = 'cocina'; roleBadgeHtml = '<span class="k-role-badge k-role-cocina">👨‍🍳 Cocina</span>'; }
+                else if (u.vip) { currentRoleVal = 'vip'; roleBadgeHtml = '<span class="k-role-badge k-role-vip">⭐ VIP</span>'; }
+
+                const pts = u.points || 0;
+                
+                return `
+                <div class="k-user-card">
+                    <div class="k-user-header">
+                        <div class="k-user-avatar">${(u.name || 'U').charAt(0).toUpperCase()}</div>
+                        <div class="k-user-info">
+                            <h3>${u.name || 'Sin Nombre'}</h3>
+                            <p>📞 ${u.phone || 'Sin número'}</p>
+                            <p style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">✉️ ${u.email}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold; color:#475569; font-size:0.95rem;">Rol actual:</span>
+                        ${roleBadgeHtml}
+                    </div>
+
+                    <select class="k-role-select" onchange="updateUserRole('${u.email}', this.value)">
+                        <option value="regular" ${currentRoleVal==='regular'?'selected':''}>Cliente Regular</option>
+                        <option value="vip" ${currentRoleVal==='vip'?'selected':''}>⭐ Cliente VIP</option>
+                        <option value="cocina" ${currentRoleVal==='cocina'?'selected':''}>👨‍🍳 Equipo de Cocina</option>
+                        <option value="admin" ${currentRoleVal==='admin'?'selected':''}>🛡️ Administrador</option>
+                    </select>
+
+                    <div style="margin-top:8px;">
+                        <span style="font-weight:bold; color:#475569; font-size:0.95rem; margin-bottom:8px; display:block;">Dulce-Puntos:</span>
+                        <div class="k-points-control">
+                            <button class="k-btn-point" onclick="updateUserPoints('${u.email}', -10)">-10</button>
+                            <strong style="color:var(--brand-pink); font-size:1.1rem;">🎟️ ${pts}</strong>
+                            <button class="k-btn-point" onclick="updateUserPoints('${u.email}', 10)">+10</button>
+                            <button class="k-btn-point" onclick="updateUserPoints('${u.email}', 50)">+50</button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateUserRole(email, role) {
+            const u = db_users.find(x => x.email === email);
+            if(!u) return;
+
+            u.vip = false;
+            workerEmails = workerEmails.filter(e => e !== email);
+            adminEmails = adminEmails.filter(e => e !== email);
+
+            if (role === 'vip') u.vip = true;
+            if (role === 'cocina') workerEmails.push(email);
+            if (role === 'admin') adminEmails.push(email);
+
+            saveUsersDB();
+            saveAdminEmails(); // Guarda workerEmails y adminEmails
+            
+            if (currentUser && currentUser.email === email) {
+                currentUser.vip = u.vip;
+                saveUser();
+                updateUserUI();
+            }
+
+            renderKitchenUsers();
+            showToast(`Rol de ${u.name} actualizado a ${role}`, "✅");
+        }
+
+        function updateUserPoints(email, change) {
+            const u = db_users.find(x => x.email === email);
+            if(!u) return;
+
+            if(!u.points) u.points = 0;
+            u.points += change;
+            if(u.points < 0) u.points = 0;
+
+            saveUsersDB();
+            
+            if (currentUser && currentUser.email === email) {
+                currentUser.points = u.points;
+                saveUser();
+                updateUserUI(); // Actualiza el header del usuario local
+            }
+
+            renderKitchenUsers();
+            showToast(`Puntos actualizados: ${u.points} pts`, "🎟️");
+        }
+
+        function renderKitchenOrders(tabId) {
+            const container = document.getElementById(`k-tab-${tabId}`);
+            container.innerHTML = '';
+            
+            if (typeof pedidosHistorial === 'undefined' || pedidosHistorial.length === 0) {
+                container.innerHTML = '<h3 style="color:#94a3b8; width:100%; text-align:center;">No hay comandas registradas.</h3>';
+                return;
+            }
+
+            let filtered = [];
+            const todayStr = new Date().toLocaleDateString('es-CO');
+
+            if (tabId === 'activos') {
+                filtered = pedidosHistorial.filter(o => o.status !== 'Entregado' && o.status !== 'Cancelado');
+            } else {
+                filtered = pedidosHistorial.filter(o => o.status === 'Entregado' && new Date(o.timestamp).toLocaleDateString('es-CO') === todayStr);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<h3 style="color:#94a3b8; width:100%; text-align:center;">No hay comandas en esta sección.</h3>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(order => {
+                const u = db_users.find(x => x.email === order.email);
+                const isVip = u && u.vip;
+                
+                let eventHtml = '';
+                if (order.type === 'evento') {
+                    const deposit = Math.ceil(order.total / 2);
+                    eventHtml = `
+                    <div style="background: #fef2f2; color: #991b1b; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-weight: bold;">
+                        ⚠️ EVENTO AGENDADO<br>
+                        <span style="font-size: 0.9rem; font-weight: normal;">Saldo Pdto: $${(order.total - deposit).toLocaleString()}</span>
+                    </div>`;
+                }
+
+                // Phone for WhatsApp
+                const cPhone = (u && u.phone) ? u.phone.replace(/\D/g, '') : '573133040870';
+                
+                let actionsHtml = '';
+                if (tabId === 'activos') {
+                    actionsHtml = `
+                    <div class="k-actions">
+                        ${order.status === 'Pendiente' ? `<button class="k-btn k-btn-horno" onclick="updateKitchenOrderState('${order.id}', 'En Horno')">👨‍🍳 En Horno</button>` : ''}
+                        ${(order.status === 'Pendiente' || order.status === 'En Horno') ? `<button class="k-btn k-btn-camino" onclick="updateKitchenOrderState('${order.id}', 'En Camino')">🛵 En Camino</button>` : ''}
+                        <button class="k-btn k-btn-entregado" onclick="updateKitchenOrderState('${order.id}', 'Entregado')">✅ Entregado</button>
+                        <a href="https://wa.me/${cPhone}?text=¡Hola!%20Te%20escribimos%20de%20Dulce%20Tentación.%20Tu%20pedido%20${order.id}%20tiene%20una%20novedad." target="_blank" class="k-btn k-btn-whatsapp">💬 WA</a>
+                    </div>`;
+                }
+
+                return `
+                <div class="kitchen-card">
+                    <div class="kitchen-card-header">
+                        <div>
+                            <h3>${order.id}</h3>
+                            <span style="color:#64748b; font-size:0.9rem;">${order.date.split(',')[1]}</span>
+                        </div>
+                        <strong style="color: #0f172a; font-size: 1.2rem;">$${order.total.toLocaleString()}</strong>
+                    </div>
+                    ${eventHtml}
+                    <p><strong>Cliente:</strong> ${order.customer} ${isVip ? '<span class="k-vip-badge">⭐ VIP</span>' : ''}</p>
+                    <p><strong>Dirección:</strong> ${order.address || 'Para recoger'}</p>
+                    <div class="kitchen-products">
+                        ${order.products.replace(/, /g, '<br>')}
+                    </div>
+                    <p style="margin-bottom: 12px; color: #64748b; font-weight: bold;">Estado actual: ${order.status}</p>
+                    ${actionsHtml}
+                </div>`;
+            }).reverse().join('');
+        }
+
+        function updateKitchenOrderState(orderId, newState) {
+            // Update global orders
+            const p = pedidosHistorial.find(x => x.id === orderId);
+            if (p) {
+                p.status = newState;
+                if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
+                if (typeof renderLiveOrders === 'function') renderLiveOrders();
+                
+                // Sync with user's specific history
+                const u = db_users.find(x => x.email === p.email);
+                if (u && u.history) {
+                    const uOrder = u.history.find(o => o.id === orderId);
+                    if (uOrder) {
+                        uOrder.status = newState;
+                        saveUsersDB();
+                        if (currentUser && currentUser.email === u.email) {
+                            currentUser = u;
+                            saveUser();
+                            // Si el modal del cliente está abierto, refrescar
+                            if (document.getElementById('modal-mis-pedidos').style.display === 'flex') {
+                                const activeTab = document.querySelector('.order-tab-btn.active').id.replace('tab-btn-', '');
+                                renderOrders(activeTab);
+                            }
+                        }
+                    }
+                }
+                
+                showToast(`Comanda ${orderId} movida a: ${newState}`, "👨‍🍳");
+                const activeTab = document.querySelector('.kitchen-tab-btn.active').id.replace('k-tab-btn-', '');
+                renderKitchenOrders(activeTab);
+            }
         }
 
         function handleCredentialResponse(response) {
@@ -234,11 +676,19 @@
             }
 
             if (!user) {
-                user = { name, email, picture, points: 150 };
+                user = { 
+                    name, 
+                    email, 
+                    picture, 
+                    points: 15, 
+                    joinDate: new Date().toLocaleDateString('es-CO'),
+                    vip: false
+                };
                 db_users.push(user);
             } else {
                 user.name = name;
                 user.picture = picture;
+                // No sobreescribe puntos ni rol
             }
             saveUsersDB();
             loginUserObj(user);
@@ -260,6 +710,28 @@
             try { const adms = localStorage.getItem('dt_admin_emails'); if (adms) adminEmails = JSON.parse(adms); } catch (e) { }
             try { const wks = localStorage.getItem('dt_worker_emails'); if (wks) workerEmails = JSON.parse(wks); } catch (e) { }
             try { const stk = localStorage.getItem('dt_stock_config'); if (stk) stockConfig = JSON.parse(stk); } catch (e) { }
+            
+            // 2. Función de migración / sincronización automática
+            if (currentUser && currentUser.email) {
+                let existingUser = db_users.find(u => u.email === currentUser.email);
+                if (!existingUser) {
+                    existingUser = {
+                        name: currentUser.name || currentUser.email.split('@')[0],
+                        email: currentUser.email,
+                        picture: currentUser.picture || '',
+                        points: currentUser.points || 15,
+                        joinDate: currentUser.joinDate || new Date().toLocaleDateString('es-CO'),
+                        vip: currentUser.vip || false,
+                        phone: currentUser.phone || ''
+                    };
+                    db_users.push(existingUser);
+                    saveUsersDB();
+                } else {
+                    // Refrescar currentUser con datos de db_users por si los cambió un admin
+                    currentUser = { ...currentUser, ...existingUser };
+                    saveUser();
+                }
+            }
         });
         function saveAdminEmails() {
             if (!adminEmails.includes('dulcestentaciones2004@gmail.com')) adminEmails.push('dulcestentaciones2004@gmail.com');
@@ -289,7 +761,8 @@
             db_users.push({
                 name, email,
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-                points: 0
+                blocked: false,
+                points: 15
             });
             saveUsersDB();
             document.getElementById('adminNewName').value = '';
@@ -618,9 +1091,10 @@
             stockConfig[id] = !stockConfig[id];
             saveStockConfig();
             renderStockAdmin();
+            if (typeof renderKitchenStock === 'function') renderKitchenStock();
             renderProducts();
             renderFeatured();
-            showToast(stockConfig[id] ? 'Producto marcado como Agotado' : 'Producto disponible nuevamente', 'ℹ️');
+            showToast(stockConfig[id] ? 'Producto marcado como Agotado' : 'Producto disponible nuevamente', '✅');
         }
 
         function markOrderState(id, state) {
@@ -764,7 +1238,7 @@
                 password: pass,
                 phone: '',
                 address: '',
-                points: 0,
+                points: 15,
                 history: [],
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
                 vip: false,
@@ -825,43 +1299,85 @@
             if (currentUser) {
                 if (loginBtn) loginBtn.style.display = 'none';
 
-                const vipCrown = currentUser.vip ? '👑 ' : '';
-                const vipLabel = currentUser.vip ? ' (VIP)' : '';
-                const vipColor = currentUser.vip ? '#d97706' : '';
+                const isVip = currentUser.vip;
+                const vipLabel = isVip ? ' (VIP)' : '';
+                const vipColor = isVip ? '#d97706' : '';
 
                 if (pill) {
                     pill.style.display = 'flex';
                     document.getElementById('user-avatar').src = currentUser.picture;
+                    const deskWrap = document.getElementById('header-avatar-wrap');
+                    const deskCrown = document.getElementById('desk-vip-crown');
+                    if (deskWrap && deskCrown) {
+                        if (isVip) {
+                            deskWrap.classList.add('avatar-vip-container');
+                            deskCrown.style.display = 'inline-block';
+                        } else {
+                            deskWrap.classList.remove('avatar-vip-container');
+                            deskCrown.style.display = 'none';
+                        }
+                    }
+
                     const firstName = currentUser.name.split(' ')[0];
                     const uName = document.getElementById('user-name');
-                    uName.innerText = `${vipCrown}Hola, ${firstName}${vipLabel}`;
+                    uName.innerText = `Hola, ${firstName}`;
                     uName.style.color = vipColor;
-                    uName.style.fontWeight = currentUser.vip ? '700' : '';
+                    uName.style.fontWeight = isVip ? '700' : '';
 
                     document.getElementById('dropdown-avatar').src = currentUser.picture;
                     const dName = document.getElementById('dropdown-name');
-                    dName.innerText = `${vipCrown}${currentUser.name}${vipLabel}`;
+                    dName.innerText = currentUser.name;
                     dName.style.color = vipColor;
                     document.getElementById('dropdown-email').innerText = currentUser.email || currentUser.phone || '';
                     if (document.getElementById('dropdown-points-val')) document.getElementById('dropdown-points-val').innerText = currentUser.points || 0;
+
+                    const deskTicketVal = document.getElementById('desk-ticket-val');
+                    const deskTicketBadge = document.getElementById('desk-ticket-badge');
+                    if (deskTicketVal && deskTicketBadge) {
+                        deskTicketVal.innerText = currentUser.points || 0;
+                        deskTicketBadge.style.display = 'flex';
+                    }
                 }
                 if (mobileGoogleBtn) mobileGoogleBtn.style.display = 'none';
                 if (mobilePill) {
                     mobilePill.style.display = 'flex';
                     document.getElementById('mobile-user-avatar').src = currentUser.picture;
+                    const mobWrap = document.getElementById('mobile-avatar-wrap');
+                    const mobCrown = document.getElementById('mob-vip-crown');
+                    if (mobWrap && mobCrown) {
+                        if (isVip) {
+                            mobWrap.classList.add('avatar-vip-container');
+                            mobCrown.style.display = 'inline-block';
+                        } else {
+                            mobWrap.classList.remove('avatar-vip-container');
+                            mobCrown.style.display = 'none';
+                        }
+                    }
 
                     const mpAv = document.getElementById('mp-avatar'); if (mpAv) mpAv.src = currentUser.picture;
                     const mpNm = document.getElementById('mp-name');
                     if (mpNm) {
-                        mpNm.innerText = `${vipCrown}${currentUser.name}${vipLabel}`;
+                        mpNm.innerText = currentUser.name;
                         mpNm.style.color = vipColor;
                     }
-                    const mpEm = document.getElementById('mp-email'); if (mpEm) mpEm.innerText = currentUser.email;
+                    
+                    const vipHeaderBadge = document.getElementById('vip-header-badge');
+                    if (vipHeaderBadge) {
+                        vipHeaderBadge.style.display = isVip ? 'inline-flex' : 'none';
+                    }
+                    const mpEm = document.getElementById('mp-email'); if (mpEm) mpEm.innerText = currentUser.email || currentUser.phone || '';
                     const mpPt = document.getElementById('mp-points-val'); if (mpPt) mpPt.innerText = currentUser.points || 0;
+
+                    const mobTicketVal = document.getElementById('mob-ticket-val');
+                    const mobTicketBadge = document.getElementById('mob-ticket-badge');
+                    if (mobTicketVal && mobTicketBadge) {
+                        mobTicketVal.innerText = currentUser.points || 0;
+                        mobTicketBadge.style.display = 'flex';
+                    }
                 }
 
                 const vipHtml = currentUser.vip
-                    ? `<div class="vip-card-golden"><strong>Membresía Oro VIP Activa</strong>Válida de por vida • 10% Dcto</div>`
+                    ? `<div class="vip-card-golden"><strong>👑 Membresía VIP Mensual Activa</strong> • 5% Dcto Preferencial</div>`
                     : `<button class="vip-upgrade-btn" onclick="openVipModal()">✨ Pasar a VIP Oro</button>`;
 
                 const dArea = document.getElementById('vip-dropdown-area-desk');
@@ -926,9 +1442,24 @@
             const menu = document.getElementById('user-dropdown-menu');
             pill.classList.toggle('open'); menu.classList.toggle('active');
         }
-        document.addEventListener('click', () => {
+        document.addEventListener('click', (e) => {
             document.getElementById('user-pill-container')?.classList.remove('open');
             document.getElementById('user-dropdown-menu')?.classList.remove('active');
+            
+            if (e.target.classList.contains('auth-modal') || e.target.classList.contains('cart-modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.auth-modal, .cart-modal, #cartModal, #mobileProfileModal');
+                modals.forEach(m => {
+                    if (m.style.display === 'flex' || m.style.display === 'block') {
+                        m.style.display = 'none';
+                    }
+                });
+            }
         });
         function openCartFromDropdown(e) { e.stopPropagation(); document.getElementById('user-dropdown-menu')?.classList.remove('active'); toggleCart(); }
 
@@ -937,12 +1468,48 @@
             const isOut = stockConfig[p.id] === true;
             const opac = isOut ? '0.5' : '1';
             const filt = isOut ? 'grayscale(100%)' : 'none';
-            const btnText = isOut ? '🚫 Agotado por hoy' : '➕ Agregar al Carrito';
+            const btnText = isOut ? '🚫 Agotado por hoy' : '🛒 Agregar al Carrito';
             const btnClass = isOut ? 'btn-add disabled' : `btn-add badd-${p.id}`;
             const btnAction = isOut ? '' : `onclick="addToCart(${p.id},event)"`;
+            const outBadge = isOut ? `<span class="badge-status" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">🚫 Agotado</span>` : '';
+            const tagBadge = (p.tag && p.tag.trim() !== '') ? `<span class="badge-status" style="background:#dbeafe; color:#1e40af; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${p.tag}</span>` : '';
+            
+            let discountBadge = '';
+            if (p.oldPrice && p.oldPrice > p.price) {
+                const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
+                discountBadge = `<span class="badge-discount" style="background:#881337; color:#fff; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">📉 -${pct}%</span>`;
+            }
 
-            return `<div class="card" id="card-${p.id}">
-            <span class="card-tag" style="opacity:${opac};">${p.tag}</span>
+            const badgesHTML = `
+                <div class="product-badges-row">
+                    <div style="display:flex; flex-direction:row; gap:6px; align-items:flex-start;">
+                        ${outBadge}
+                        ${tagBadge}
+                    </div>
+                    ${discountBadge}
+                </div>
+            `;
+
+            let priceHTML = `
+                <div class="price-row" style="opacity:${opac};">
+                    <span class="price">$${p.price.toLocaleString()}</span>
+                    <span class="price-label">COP c/u</span>
+                </div>
+            `;
+            if (p.oldPrice && p.oldPrice > p.price) {
+                priceHTML = `
+                <div class="price-row" style="opacity:${opac}; align-items:flex-end;">
+                    <div style="display:flex; flex-direction:column; line-height:1.1; align-items:flex-start;">
+                        <span class="price-old">$${p.oldPrice.toLocaleString()}</span>
+                        <span class="price-current">$${p.price.toLocaleString()}</span>
+                    </div>
+                    <span class="price-label" style="margin-bottom:2px; margin-left:4px;">COP c/u</span>
+                </div>
+                `;
+            }
+
+            return `<div class="card" id="card-${p.id}" style="position:relative;">
+            ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt};">
                 <img src="${p.img}" alt="${p.name}" class="pimg-${p.id}" loading="lazy">
             </div>
@@ -952,10 +1519,7 @@
                     <p class="card-desc">${p.desc}</p>
                 </div>
                 <div>
-                    <div class="price-row" style="opacity:${opac};">
-                        <span class="price">$${p.price.toLocaleString()}</span>
-                        <span class="price-label">COP c/u</span>
-                    </div>
+                    ${priceHTML}
                     <div class="quantity-control" style="opacity:${opac}; pointer-events:${isOut ? 'none' : 'auto'};">
                         <button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button>
                         <input type="number" class="qty-input qinp-${p.id}" value="1" min="1" onblur="validateQty(this)">
@@ -1055,7 +1619,6 @@
             cart = cart.filter(i => i.id !== id); updateCart(); saveCart();
             showToast("Producto eliminado.", "🗑️");
         }
-
         function updateCart() {
             const totalQty = cart.reduce((a, i) => a + i.quantity, 0);
             let totalPrice = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
@@ -1063,11 +1626,14 @@
             let discount = 0;
             const dRow = document.getElementById('discountRow');
             const pRow = document.getElementById('cart-vip-priority');
+            const cartContent = document.querySelector('#cartModal .cart-content');
             if (currentUser && totalPrice > 0 && adminConfig.vipEnabled && totalPrice >= adminConfig.minPurchase) {
                 if (currentUser.vip) {
-                    discount = Math.floor(totalPrice * 0.10);
+                    discount = Math.floor(totalPrice * 0.05);
+                    if(cartContent) cartContent.classList.add('cart-vip-mode');
                 } else {
                     discount = Math.floor(totalPrice * 0.06);
+                    if(cartContent) cartContent.classList.remove('cart-vip-mode');
                 }
 
                 if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
@@ -1080,11 +1646,21 @@
                     if (pRow) pRow.style.display = 'none';
                 }
             } else {
+                if(cartContent) cartContent.classList.remove('cart-vip-mode');
                 if (dRow) dRow.style.display = 'none';
                 if (pRow) pRow.style.display = 'none';
             }
             const finalTotal = totalPrice - discount;
             
+            const cartVipPriority = document.getElementById('cart-vip-priority');
+            if (cartVipPriority) {
+                if (currentUser && currentUser.vip) {
+                    cartVipPriority.style.display = 'flex';
+                } else {
+                    cartVipPriority.style.display = 'none';
+                }
+            }
+
             const depositRow = document.getElementById('eventDepositRow');
             const balanceRow = document.getElementById('eventBalanceRow');
             if (typeof orderType !== 'undefined' && orderType === 'evento' && finalTotal > 0) {
@@ -1120,6 +1696,34 @@
                 if (mpSimMsg) mpSimMsg.innerText = t;
             }
 
+            const greetingDiv = document.getElementById('cart-user-greeting');
+            if (greetingDiv) {
+                if (typeof currentUser !== 'undefined' && currentUser) {
+                    const name = currentUser.name.split(' ')[0];
+                    if (currentUser.vip) {
+                        greetingDiv.innerHTML = `¡Hola, ${name}! 👑 Cliente VIP (Despacho Preferencial)`;
+                        greetingDiv.style.background = '#fef3c7';
+                        greetingDiv.style.color = '#d97706';
+                        greetingDiv.style.border = '1px solid #fde68a';
+                    } else {
+                        greetingDiv.innerText = `¡Hola, ${name}! Este es tu pedido de hoy:`;
+                        greetingDiv.style.background = '#f8fafc';
+                        greetingDiv.style.color = '#475569';
+                        greetingDiv.style.border = 'none';
+                    }
+                    greetingDiv.style.display = 'flex';
+                    greetingDiv.style.alignItems = 'center';
+                    greetingDiv.style.justifyContent = 'center';
+                    greetingDiv.style.height = '36px';
+                    greetingDiv.style.borderRadius = '8px';
+                    greetingDiv.style.fontSize = '0.85rem';
+                    greetingDiv.style.fontWeight = '700';
+                    greetingDiv.style.margin = '0 0 10px 0';
+                } else {
+                    greetingDiv.style.display = 'none';
+                }
+            }
+
             document.getElementById('cartCount').innerText = totalQty;
             document.getElementById('cartCountMobile').innerText = totalQty;
             document.querySelectorAll('.dropdown-cart-qty').forEach(e => e.innerText = totalQty);
@@ -1153,7 +1757,17 @@
 
         function toggleCart() {
             const m = document.getElementById('cartModal');
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+            if (m.style.display === 'flex') {
+                m.style.display = 'none';
+                document.body.style.overflow = '';
+            } else {
+                m.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                const addrInput = document.getElementById('orderAddress');
+                if (addrInput && !addrInput.value && typeof currentUser !== 'undefined' && currentUser && currentUser.address) {
+                    addrInput.value = currentUser.address;
+                }
+            }
         }
         function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) toggleCart(); }
 
@@ -1187,10 +1801,12 @@
             if (!name || !addr) return alert("Por favor, llena tu nombre y dirección.");
             if (!selectedPay) return alert("Por favor, selecciona un método de pago.");
 
+            if (cart.some(i => i.type === 'evento' || i.id.toString().startsWith('custom'))) {
+                orderType = 'evento';
+            }
+
             if (typeof orderType !== 'undefined' && orderType === 'evento') {
-                const eDate = document.getElementById('eventDate')?.value;
-                const eTime = document.getElementById('eventTime')?.value;
-                if (!eDate || !eTime) return alert("Por favor, selecciona la fecha y hora de tu evento.");
+                // Validación opcional si hay campos de evento globales
             }
 
             if (currentUser) {
@@ -1208,7 +1824,7 @@
 
             if (currentUser && typeof adminConfig !== 'undefined' && adminConfig.vipEnabled && tp >= adminConfig.minPurchase) {
                 if (currentUser.vip) {
-                    discount = Math.floor(tp * 0.10);
+                    discount = Math.floor(tp * 0.05);
                 } else {
                     discount = Math.floor(tp * 0.06);
                 }
@@ -1216,10 +1832,7 @@
                 if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
                 finalTotal = tp - discount;
 
-                let ptsEarned = 0;
-                if (tp >= 100000) ptsEarned = 30;
-                else if (tp >= 50000) ptsEarned = 20;
-                else if (tp >= 10000) ptsEarned = 10;
+                let ptsEarned = Math.floor(tp / 1000);
 
                 if (ptsEarned > 0) {
                     currentUser.points = (currentUser.points || 0) + ptsEarned;
@@ -1255,12 +1868,33 @@
                 lastOrderCount = pedidosHistorial.length;
                 if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
             }
+            
+            if (currentUser) {
+                if (!currentUser.history) currentUser.history = [];
+                currentUser.history.push(newOrder);
+                const uidx = db_users.findIndex(u => u.email === currentUser.email);
+                if (uidx !== -1) { db_users[uidx].history = currentUser.history; saveUsersDB(); }
+                saveUser();
+            }
 
-            let msg = `🥖 *NUEVO PEDIDO ${orderId} – Dulce Tentación P y S*\n`;
+            let msg = '';
+            if (currentUser && currentUser.vip) {
+                msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
+            }
+            msg += `🥖 *NUEVO PEDIDO ${orderId} – Dulce Tentación P y S*\n`;
             if (typeof orderType !== 'undefined' && orderType === 'evento') {
-                msg = `🎉 *NUEVO EVENTO ${orderId} – Dulce Tentación P y S*\n`;
-                msg += `📅 *Fecha:* ${document.getElementById('eventDate')?.value}\n`;
-                msg += `⏰ *Hora:* ${document.getElementById('eventTime')?.value}\n`;
+                msg = `🎂 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA – Dulce Tentación P y S*\n`;
+                if (currentUser && currentUser.vip) {
+                    msg = `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n` + msg;
+                }
+                const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
+                if (evtItem && evtItem.customData) {
+                    msg += `📅 *Fecha de entrega:* ${evtItem.customData.date}\n`;
+                    msg += `⏰ *Hora:* ${evtItem.customData.time}\n`;
+                } else {
+                    msg += `📅 *Fecha:* ${document.getElementById('eventDate')?.value || 'N/A'}\n`;
+                    msg += `⏰ *Hora:* ${document.getElementById('eventTime')?.value || 'N/A'}\n`;
+                }
             }
             msg += `📍 *Ciudad:* Cúcuta, Norte de Santander\n`;
             if (currentUser && discount > 0) {
@@ -1277,7 +1911,19 @@
             if (notes) msg += `📝 *Notas:* ${notes}\n`;
             msg += `—————————————————————\n`;
             msg += `*PRODUCTOS PEDIDOS:*\n`;
-            cart.forEach(i => { msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString()} COP\n`; });
+            cart.forEach(i => {
+                if (i.id.toString().startsWith('custom')) {
+                    msg += `  • 🎂 ${i.name}\n`;
+                    msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString()} COP\n`;
+                    if(i.customData) {
+                        msg += `    *Detalles:* ${i.customData.sizeName} | ${i.customData.doughName} | ${i.customData.fillingName} | ${i.customData.styleName}\n`;
+                        if (i.customData.message) msg += `    *Mensaje:* "${i.customData.message}"\n`;
+                        if (i.customData.obs) msg += `    *Obs:* ${i.customData.obs}\n`;
+                    }
+                } else {
+                    msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString()} COP\n`;
+                }
+            });
             msg += `—————————————————————\n`;
             msg += `*Total unidades:* ${tq}\n`;
             if (discount > 0) {
@@ -1342,6 +1988,117 @@
         }
 
         function requestVipWhatsApp() {
-            const msg = "¡Hola! Quiero activar mi Membresía VIP Oro en Dulce Tentación para acceder al 10% de descuento y los beneficios exclusivos. 👑";
+            const msg = "¡Hola! Quiero activar mi Membresía VIP Oro en Dulce Tentación para acceder al 5% de descuento y los beneficios exclusivos. 👑";
             window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        // ===== ASISTENTE DE TORTAS PERSONALIZADAS =====
+        let wizardStep = 1;
+        let wizardData = {
+            size: '', sizeName: '', price: 0,
+            dough: '', doughName: '',
+            filling: '', fillingName: '',
+            style: '', styleName: '',
+            message: '', obs: '', date: '', time: ''
+        };
+
+        function openWizard() {
+            document.getElementById('modal-evento-personalizado').style.display = 'flex';
+            wizardStep = 1;
+            updateWizardUI();
+        }
+
+        function closeWizard() {
+            document.getElementById('modal-evento-personalizado').style.display = 'none';
+        }
+
+        function selectWizardOption(category, value, price, element) {
+            wizardData[category] = value;
+            if (category === 'size') wizardData.price = price;
+            
+            wizardData[`${category}Name`] = element.querySelector('h4') ? element.querySelector('h4').innerText : element.innerText.split('\n')[0].trim();
+
+            const siblings = element.parentElement.querySelectorAll('.step-option-card');
+            siblings.forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function saveWizardField(field, value) {
+            wizardData[field] = value;
+        }
+
+        function validateWizardDate(val) {
+            const selected = new Date(val);
+            const now = new Date();
+            const diffTime = selected - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 2) {
+                alert("Por favor selecciona una fecha con al menos 48 horas (2 días) de anticipación para poder hornear tu torta fresca.");
+                document.getElementById('w-date').value = '';
+                wizardData.date = '';
+            } else {
+                wizardData.date = val;
+            }
+        }
+
+        function nextWizardStep() {
+            // Validations
+            if (wizardStep === 1 && !wizardData.size) return showToast("Por favor selecciona un tamaño.", "⚠️");
+            if (wizardStep === 2 && (!wizardData.dough || !wizardData.filling)) return showToast("Por favor selecciona masa y relleno.", "⚠️");
+            if (wizardStep === 3 && !wizardData.style) return showToast("Por favor selecciona un estilo de decoración.", "⚠️");
+
+            if (wizardStep < 4) {
+                wizardStep++;
+                updateWizardUI();
+            }
+        }
+
+        function prevWizardStep() {
+            if (wizardStep > 1) {
+                wizardStep--;
+                updateWizardUI();
+            }
+        }
+
+        function updateWizardUI() {
+            document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`w-step-${wizardStep}`).classList.add('active');
+
+            document.querySelectorAll('.wizard-step-circle').forEach((el, index) => {
+                el.classList.remove('active', 'completed');
+                if (index + 1 < wizardStep) el.classList.add('completed');
+                if (index + 1 === wizardStep) el.classList.add('active');
+            });
+
+            document.getElementById('btn-w-prev').style.display = wizardStep === 1 ? 'none' : 'block';
+            document.getElementById('btn-w-next').style.display = wizardStep === 4 ? 'none' : 'block';
+            document.getElementById('btn-w-finish').style.display = wizardStep === 4 ? 'block' : 'none';
+        }
+
+        function addCustomCakeToCart() {
+            if (!wizardData.date || !wizardData.time) return showToast("Por favor selecciona fecha y franja horaria.", "⚠️");
+
+            const customProduct = {
+                id: 'custom-' + Date.now(),
+                name: 'Torta Personalizada',
+                desc: `${wizardData.sizeName} | ${wizardData.doughName} | ${wizardData.fillingName}`,
+                price: wizardData.price,
+                img: 'logo_dulce_tentacion.jpg',
+                type: 'evento',
+                customData: { ...wizardData }
+            };
+
+            const existingIndex = cart.findIndex(i => i.id === customProduct.id);
+            if (existingIndex > -1) {
+                cart[existingIndex].quantity += 1;
+            } else {
+                customProduct.quantity = 1;
+                cart.push(customProduct);
+            }
+
+            saveCart();
+            updateCart();
+            closeWizard();
+            showToast("Torta Personalizada añadida al carrito", "🎂");
         }
