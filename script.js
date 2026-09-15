@@ -1734,10 +1734,10 @@
             const cc = document.getElementById('checkoutCard');
             const bw = document.querySelector('.btn-whatsapp');
             if (cart.length === 0) {
-                ci.innerHTML = `<div class="empty-cart-view"><span>🥖</span><strong style="display:block;color:var(--text-dark);margin-bottom:5px;">Tu carrito está vacío</strong><p style="font-size:0.85rem;">¡Agrega panes, hojaldres o tortas para hacer tu pedido!</p></div>`;
-                cs.style.opacity = '0.5'; if (cc) cc.style.display = 'none'; bw.style.opacity = '0.5'; bw.style.pointerEvents = 'none';
+                ci.innerHTML = `<div class="empty-cart-view" style="display:flex; flex-direction:column; gap:12px; align-items:center; text-align:center; padding: 20px 10px;"><span>🥖</span><strong style="display:block;color:var(--text-dark);margin-bottom:5px;">Tu carrito está vacío</strong><p style="font-size:0.85rem; color:#64748b; margin-bottom:12px;">¡Agrega panes, hojaldres o tortas para hacer tu pedido!</p><button type="button" onclick="toggleCart(); goToCatalog();" style="background:#f3f4f6; color:#4b5563; border:none; padding:10px 20px; border-radius:var(--r-full); font-weight:bold; cursor:pointer; width:100%; transition:all 0.2s;">Ver Catálogo</button></div>`;
+                cs.style.display = 'none'; if (cc) cc.style.display = 'none'; bw.style.display = 'none';
             } else {
-                cs.style.opacity = '1'; if (cc) cc.style.display = 'flex'; bw.style.opacity = '1'; bw.style.pointerEvents = 'auto';
+                cs.style.display = 'block'; cs.style.opacity = '1'; if (cc) cc.style.display = 'flex'; bw.style.display = 'flex'; bw.style.opacity = '1'; bw.style.pointerEvents = 'auto';
                 ci.innerHTML = cart.map(item => `
                 <div class="cart-item-row">
                     <img src="${item.img}" class="cart-item-img" alt="${item.name}">
@@ -1763,10 +1763,30 @@
             } else {
                 m.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
+                goToCartStep1(); // Reset to step 1
                 const addrInput = document.getElementById('orderAddress');
                 if (addrInput && !addrInput.value && typeof currentUser !== 'undefined' && currentUser && currentUser.address) {
                     addrInput.value = currentUser.address;
                 }
+            }
+        }
+        
+        function goToCartStep1() {
+            const step1 = document.getElementById('cart-step-1');
+            const step2 = document.getElementById('cart-step-2');
+            if (step1 && step2) {
+                step1.style.display = 'flex';
+                step2.style.display = 'none';
+            }
+        }
+        
+        function goToCartStep2() {
+            if (cart.length === 0) return showToast("Tu carrito está vacío", "⚠️");
+            const step1 = document.getElementById('cart-step-1');
+            const step2 = document.getElementById('cart-step-2');
+            if (step1 && step2) {
+                step1.style.display = 'none';
+                step2.style.display = 'flex';
             }
         }
         function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) toggleCart(); }
@@ -1877,16 +1897,17 @@
                 saveUser();
             }
 
-            let msg = '';
+            let msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
             if (currentUser && currentUser.vip) {
                 msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
             }
-            msg += `🥖 *NUEVO PEDIDO ${orderId} – Dulce Tentación P y S*\n`;
+            msg += `📲 *NUEVO PEDIDO ${orderId}*\n`;
             if (typeof orderType !== 'undefined' && orderType === 'evento') {
-                msg = `🎂 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA – Dulce Tentación P y S*\n`;
+                msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
                 if (currentUser && currentUser.vip) {
-                    msg = `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n` + msg;
+                    msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
                 }
+                msg += `🎂 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*\n`;
                 const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
                 if (evtItem && evtItem.customData) {
                     msg += `📅 *Fecha de entrega:* ${evtItem.customData.date}\n`;
@@ -1916,9 +1937,9 @@
                     msg += `  • 🎂 ${i.name}\n`;
                     msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString()} COP\n`;
                     if(i.customData) {
-                        msg += `    *Detalles:* ${i.customData.sizeName} | ${i.customData.doughName} | ${i.customData.fillingName} | ${i.customData.styleName}\n`;
+                        msg += `    *Detalles:* Sabor: ${i.customData.sabor} | Tamaño: ${i.customData.tamano} | Diseño: ${i.customData.diseno}\n`;
                         if (i.customData.message) msg += `    *Mensaje:* "${i.customData.message}"\n`;
-                        if (i.customData.obs) msg += `    *Obs:* ${i.customData.obs}\n`;
+                        msg += `    🎁 *Kit de Fiesta GRATIS Incluido*\n`;
                     }
                 } else {
                     msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString()} COP\n`;
@@ -1993,33 +2014,60 @@
         }
 
         // ===== ASISTENTE DE TORTAS PERSONALIZADAS =====
-        let wizardStep = 1;
         let wizardData = {
-            size: '', sizeName: '', price: 0,
-            dough: '', doughName: '',
-            filling: '', fillingName: '',
-            style: '', styleName: '',
-            message: '', obs: '', date: '', time: ''
+            sabor: '', tamano: '', precio: 0, diseno: '',
+            mensaje: '', date: '', time: ''
         };
 
         function openWizard() {
             document.getElementById('modal-evento-personalizado').style.display = 'flex';
-            wizardStep = 1;
-            updateWizardUI();
+            wizardData = { sabor: '', tamano: '', precio: 0, diseno: '', mensaje: '', date: '', time: '' };
+            document.querySelectorAll('.step-option-card, .design-thumb').forEach(el => el.classList.remove('selected'));
+            document.getElementById('w-message').value = '';
+            document.getElementById('w-date').value = '';
+            document.getElementById('w-time').value = '';
         }
 
         function closeWizard() {
             document.getElementById('modal-evento-personalizado').style.display = 'none';
         }
 
-        function selectWizardOption(category, value, price, element) {
-            wizardData[category] = value;
-            if (category === 'size') wizardData.price = price;
-            
-            wizardData[`${category}Name`] = element.querySelector('h4') ? element.querySelector('h4').innerText : element.innerText.split('\n')[0].trim();
+        const cakePrices = {
+            'Ponqué Clásico': { '1/4 (10 porciones)': 35000, '1/2 (20 porciones)': 60000, '1 Libra (30 porciones)': 115000 },
+            'default': { '1/4 (10 porciones)': 45000, '1/2 (20 porciones)': 75000, '1 Libra (30 porciones)': 130000 }
+        };
 
-            const siblings = element.parentElement.querySelectorAll('.step-option-card');
-            siblings.forEach(el => el.classList.remove('selected'));
+        function selectSabor(sabor, element) {
+            wizardData.sabor = sabor;
+            element.parentElement.querySelectorAll('.step-option-card').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            const prices = cakePrices[sabor] || cakePrices['default'];
+            const sizeCards = document.querySelectorAll('#cake-size-grid .step-option-card');
+            sizeCards.forEach(card => {
+                const size = card.getAttribute('data-size');
+                const price = prices[size];
+                card.querySelector('.size-price').innerText = `$${price.toLocaleString()} COP`;
+                if (wizardData.tamano === size) {
+                    wizardData.precio = price;
+                }
+            });
+        }
+
+        function selectTamano(element) {
+            const tamano = element.getAttribute('data-size');
+            const prices = cakePrices[wizardData.sabor] || cakePrices['default'];
+            
+            wizardData.tamano = tamano;
+            wizardData.precio = prices[tamano];
+            
+            element.parentElement.querySelectorAll('.step-option-card').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function selectDiseno(diseno, element) {
+            wizardData.diseno = diseno;
+            element.parentElement.querySelectorAll('.design-thumb').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
         }
 
@@ -2027,14 +2075,14 @@
             wizardData[field] = value;
         }
 
-        function validateWizardDate(val) {
+        function validateWizardDateNew(val) {
             const selected = new Date(val);
             const now = new Date();
             const diffTime = selected - now;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            if (diffDays < 2) {
-                alert("Por favor selecciona una fecha con al menos 48 horas (2 días) de anticipación para poder hornear tu torta fresca.");
+            if (diffDays < 1) {
+                alert("Por favor selecciona una fecha con al menos 24 horas de anticipación para poder hornear tu pedido.");
                 document.getElementById('w-date').value = '';
                 wizardData.date = '';
             } else {
@@ -2042,48 +2090,31 @@
             }
         }
 
-        function nextWizardStep() {
-            // Validations
-            if (wizardStep === 1 && !wizardData.size) return showToast("Por favor selecciona un tamaño.", "⚠️");
-            if (wizardStep === 2 && (!wizardData.dough || !wizardData.filling)) return showToast("Por favor selecciona masa y relleno.", "⚠️");
-            if (wizardStep === 3 && !wizardData.style) return showToast("Por favor selecciona un estilo de decoración.", "⚠️");
+        function addCustomCakeToCartNew() {
+            const errDiv = document.getElementById('w-error');
+            if (errDiv) errDiv.style.display = 'none';
 
-            if (wizardStep < 4) {
-                wizardStep++;
-                updateWizardUI();
+            if (!wizardData.sabor) return showToast("Por favor selecciona un sabor.", "⚠️");
+            if (!wizardData.tamano) return showToast("Por favor selecciona un tamaño.", "⚠️");
+            if (!wizardData.diseno) return showToast("Por favor selecciona un diseño.", "⚠️");
+            
+            if (!wizardData.date || !wizardData.time) {
+                if (errDiv) {
+                    errDiv.innerText = "⚠️ Por favor selecciona la fecha de entrega y hora.";
+                    errDiv.style.display = 'block';
+                }
+                const dateInput = document.getElementById('w-date');
+                if(dateInput) { dateInput.style.border = '2px solid #ef4444'; setTimeout(()=> dateInput.style.border = '1px solid #cbd5e1', 3000); }
+                const timeInput = document.getElementById('w-time');
+                if(timeInput) { timeInput.style.border = '2px solid #ef4444'; setTimeout(()=> timeInput.style.border = '1px solid #cbd5e1', 3000); }
+                return;
             }
-        }
-
-        function prevWizardStep() {
-            if (wizardStep > 1) {
-                wizardStep--;
-                updateWizardUI();
-            }
-        }
-
-        function updateWizardUI() {
-            document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-            document.getElementById(`w-step-${wizardStep}`).classList.add('active');
-
-            document.querySelectorAll('.wizard-step-circle').forEach((el, index) => {
-                el.classList.remove('active', 'completed');
-                if (index + 1 < wizardStep) el.classList.add('completed');
-                if (index + 1 === wizardStep) el.classList.add('active');
-            });
-
-            document.getElementById('btn-w-prev').style.display = wizardStep === 1 ? 'none' : 'block';
-            document.getElementById('btn-w-next').style.display = wizardStep === 4 ? 'none' : 'block';
-            document.getElementById('btn-w-finish').style.display = wizardStep === 4 ? 'block' : 'none';
-        }
-
-        function addCustomCakeToCart() {
-            if (!wizardData.date || !wizardData.time) return showToast("Por favor selecciona fecha y franja horaria.", "⚠️");
 
             const customProduct = {
                 id: 'custom-' + Date.now(),
                 name: 'Torta Personalizada',
-                desc: `${wizardData.sizeName} | ${wizardData.doughName} | ${wizardData.fillingName}`,
-                price: wizardData.price,
+                desc: `${wizardData.tamano} | Sabor: ${wizardData.sabor} | Diseño: ${wizardData.diseno}`,
+                price: wizardData.precio,
                 img: 'logo_dulce_tentacion.jpg',
                 type: 'evento',
                 customData: { ...wizardData }
@@ -2100,5 +2131,22 @@
             saveCart();
             updateCart();
             closeWizard();
-            showToast("Torta Personalizada añadida al carrito", "🎂");
+            showToast("¡Torta de celebración agregada a tu carrito!", "🎂");
+            
+            const cartBtn = document.querySelector('.cart-btn');
+            if(cartBtn) {
+                cartBtn.style.transition = 'transform 0.3s ease';
+                cartBtn.style.transform = 'scale(1.3)';
+                setTimeout(() => cartBtn.style.transform = 'scale(1)', 300);
+            }
+            const mobCartBadge = document.getElementById('bnCarrito');
+            if(mobCartBadge) {
+                mobCartBadge.style.transition = 'transform 0.3s ease';
+                mobCartBadge.style.transform = 'scale(1.3)';
+                setTimeout(() => mobCartBadge.style.transform = 'scale(1)', 300);
+            }
+            
+            if(document.getElementById('cartModal').style.display !== 'flex') {
+                toggleCart();
+            }
         }

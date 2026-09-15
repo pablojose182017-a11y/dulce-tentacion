@@ -6,14 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="description"
         content="Panadería y Repostería Dulce Tentación P y S - Pan fresco, tortas y postres artesanales en Cúcuta. Hecho con amor, endulzamos tu día.">
-    <title>Dulce Tentación P y S | Panadería & Repostería en Cúcuta @</title>
+    <title>P&S Punto Dulce | Tortas de Celebración en Cúcuta</title>
+    <link rel="icon" type="image/jpeg" href="logo.jpg?v=6">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Dancing+Script:wght@700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=13">
 </head>
 
 <body>
@@ -21,14 +22,11 @@
 
     <!-- ===== DESKTOP HEADER ===== -->
     <header>
-        <div class="logo-container" onclick="showSection('inicio', document.querySelectorAll('.nav-link')[0])">
-            <div class="logo-img-wrap">
-                <img src="logo_dulce_tentacion.jpg" alt="Logo Dulce Tentación">
-            </div>
-            <div class="logo-text-block">
-                <h1>Dulce Tentación</h1>
-                <span class="logo-sub">Panadería y Repostería P y S · Cúcuta</span>
-                <span class="logo-tag">❤️ Hecho con amor, endulzamos tu día</span>
+        <div class="logo-container brand-link" onclick="showSection('inicio', document.querySelectorAll('.nav-link')[0])">
+            <img src="logo.jpg?v=6" class="nav-logo-img" alt="P&S Punto Dulce Logo">
+            <div class="logo-text-block brand-text">
+                <h1 class="brand-title"><span class="gold-initials">P&amp;S</span> Punto Dulce</h1>
+                <span class="brand-tagline">TORTAS DE CELEBRACIÓN • REPOSTERÍA ARTESANAL</span>
             </div>
         </div>
 
@@ -122,11 +120,11 @@
 
     <!-- ===== MOBILE HEADER ===== -->
     <div class="mobile-header" id="mobileHeader">
-        <div class="mobile-logo" onclick="showSection('inicio', null)">
-            <img src="logo_dulce_tentacion.jpg" alt="Logo" class="mobile-logo-img">
-            <div class="mobile-logo-text">
-                <h1>Dulce Tentación</h1>
-                <span>Panadería y Repostería · Cúcuta</span>
+        <div class="mobile-logo brand-link" onclick="showSection('inicio', null)" style="display:flex; align-items:center; gap:8px;">
+            <img src="logo.jpg?v=6" class="nav-logo-img" alt="P&S Punto Dulce Logo">
+            <div class="mobile-logo-text brand-text">
+                <h1 class="brand-title" style="font-size: 18px;"><span class="gold-initials">P&amp;S</span> Punto Dulce</h1>
+                <span class="brand-tagline" style="font-size: 8px;">TORTAS DE CELEBRACIÓN</span>
             </div>
         </div>
         <div class="mobile-header-actions">
@@ -332,22 +330,22 @@
     <!-- ===== SECTION: INICIO ===== -->
     <section id="inicio" class="section active">
         <div class="hero">
-            <div class="event-banner" onclick="filterCategory('eventos', this); goToCatalog(event)">
-                🎉 ¿Tienes una celebración? Pasabocas y bandejas al por mayor <span class="banner-action-btn">Ver Bandejas ➔</span>
-            </div>
             <div class="hero-welcome-card">
-                <div class="hero-brand-badge">✨ Panadería & Repostería Artesanal</div>
-                <img src="logo_dulce_tentacion.jpg" alt="Dulce Tentación" class="hero-logo-img">
-                <h1>Dulce Tentación</h1>
-                <p class="hero-sub">❝ Hecho con amor, endulzamos tu día ❞</p>
-                <p class="hero-body">Pan cascarita crocante, bolitas de queso calienticas, hojaldres dorados, tortas húmedas
-                    de chocolate y toda la repostería fina que hace especial cada momento en Cúcuta.</p>
-                <div class="hero-actions" style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-                    <button class="btn-gold-shimmer" onclick="goToCatalog(event)">
-                        🥖 Ver Productos y Armar Pedido 🛒
-                    </button>
-                    <span class="cta-subtext">⭐ Horneado fresco todos los días · ¡Pídelo con un toque! 👆</span>
+                <img src="logo.jpg?v=7" class="hero-logo-img" alt="P&S Punto Dulce Logo">
+                <h2 class="hero-quote">“Hecho con amor, endulzamos tu día” 💖</h2>
+                <p class="hero-desc">Tortas de celebración hechas a la medida & panadería artesanal horneada cada mañana en Cúcuta.</p>
+                <div class="hero-order-hint">
+                    ⭐ Horneado fresco cada mañana · ¡Elige tu opción! <span class="bouncing-hand">👇</span>
                 </div>
+                <div class="hero-buttons-group">
+                    <button class="btn-hero-primary" onclick="goToCatalog(event)">
+                        🍰 ¡Quiero antojarme y pedir! ➔
+                    </button>
+                    <button class="btn-hero-secondary" onclick="filterCategory('eventos', this); goToCatalog(event)">
+                        🎉 Pasabocas y Bandejas al por mayor ➔
+                    </button>
+                </div>
+                <p class="hero-trust-badge">✨ Domicilios en Cúcuta • Calidad artesanal garantizada</p>
             </div>
             <div class="hero-love-phrase">
                 "El ingrediente secreto siempre es el amor"
@@ -460,6 +458,14 @@
             <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
             <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
         </div>
+        
+        <!-- BANNER DE TORTAS PERSONALIZADAS -->
+        <div style="background: linear-gradient(135deg, #fff0f5, #fde8ef); border: 2px dashed #d81b60; border-radius: var(--r-lg); padding: 20px; text-align: center; margin-bottom: 24px; cursor: pointer; transition: all 0.3s ease;" onclick="openWizard()" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <h3 style="color: #9f1239; font-size: 1.4rem; margin-bottom: 8px;">🎂 Torta para Celebración (Bajo Pedido)</h3>
+            <p style="color: #6d3a1f; font-size: 0.95rem; margin-bottom: 15px;">¡Personaliza el sabor, tamaño y diseño de tu torta ideal!</p>
+            <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta ✨</button>
+        </div>
+
         <div class="grid" id="productGrid"></div>
     </section>
 
@@ -605,7 +611,7 @@
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
         <div class="auth-card" style="padding:24px; text-align:center;">
             <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
-            <img src="logo_dulce_tentacion.jpg" alt="Logo"
+            <img src="logo.jpg?v=6" alt="Logo"
                 style="width:80px; height:80px; border-radius:50%; margin-bottom:15px; border:2px solid var(--brand-pink);">
 
             <div class="auth-tabs">
@@ -732,32 +738,34 @@
             </div>
             <div id="cart-user-greeting"></div>
 
-            <div class="cart-list" id="cartItems"></div>
-            <div class="cart-login-incentive" id="cartLoginIncentive" onclick="openAuthModal()">
-                <span style="font-size:1.4rem;">🌟</span>
-                <span><strong>¡No pierdas tu descuento!</strong> Inicia sesión con Google para ganar 6% de descuento y
-                    "Puntos Dulce".</span>
-            </div>
-            <div class="cart-footer">
-                <div class="cart-summary" id="cartSummary">
-                    <div class="sum-row"><span>Total Unidades:</span><span id="sumQty">0</span></div>
-                    <div class="sum-row" id="discountRow" style="display:none; color:var(--brand-pink); font-weight:700;">
-                        <span id="discountLabel">Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
-                    </div>
-
-
-
-                    <div class="sum-row total"><span>Total a Pagar:</span><span>$<span id="sumTotal">0</span> COP</span>
-                    </div>
-                    <!-- Breakdown para Eventos -->
-                    <div class="sum-row event-breakdown" id="eventDepositRow" style="display:none; color:var(--brand-gold); font-weight:700;">
-                        <span>Anticipo requerido (50%):</span><span id="sumDeposit">$0 COP</span>
-                    </div>
-                    <div class="sum-row event-breakdown" id="eventBalanceRow" style="display:none; color:var(--text-soft);">
-                        <span>Saldo contra entrega (50%):</span><span id="sumBalance">$0 COP</span>
-                    </div>
+            <div id="cart-step-1" style="display:flex; flex-direction:column; flex-grow:1;">
+                <div class="cart-list" id="cartItems" style="flex-grow:1; overflow-y:auto;"></div>
+                <div class="cart-login-incentive" id="cartLoginIncentive" onclick="openAuthModal()">
+                    <span style="font-size:1.4rem;">🌟</span>
+                    <span><strong>¡No pierdas tu descuento!</strong> Inicia sesión con Google para ganar 6% de descuento y
+                        "Puntos Dulce".</span>
                 </div>
-                <div class="checkout-form-card" id="checkoutCard">
+                <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
+                    <div class="cart-summary" id="cartSummary">
+                        <div class="sum-row"><span>Total Unidades:</span><span id="sumQty">0</span></div>
+                        <div class="sum-row" id="discountRow" style="display:none; color:var(--brand-pink); font-weight:700;">
+                            <span id="discountLabel">Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
+                        </div>
+                        <div class="sum-row total"><span>Total a Pagar:</span><span>$<span id="sumTotal">0</span> COP</span>
+                        </div>
+                        <div class="sum-row event-breakdown" id="eventDepositRow" style="display:none; color:var(--brand-gold); font-weight:700;">
+                            <span>Anticipo requerido (50%):</span><span id="sumDeposit">$0 COP</span>
+                        </div>
+                        <div class="sum-row event-breakdown" id="eventBalanceRow" style="display:none; color:var(--text-soft);">
+                            <span>Saldo contra entrega (50%):</span><span id="sumBalance">$0 COP</span>
+                        </div>
+                    </div>
+                    <button class="btn-gold" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega →</button>
+                </div>
+            </div>
+
+            <div id="cart-step-2" style="display:none; flex-direction:column; flex-grow:1;">
+                <div class="checkout-form-card" id="checkoutCard" style="margin-top: 5px;">
                     <div class="checkout-form-title">
                         <span>🛵 Datos para la Entrega en Cúcuta</span>
                         <small style="color:var(--brand-pink);font-weight:700;">→ WhatsApp</small>
@@ -766,7 +774,6 @@
                     <input type="text" id="orderAddress" class="checkout-input"
                         placeholder="📍 Barrio y Dirección en Cúcuta">
 
-                    <!-- Tipo de Pedido -->
                     <div style="margin-bottom: 15px;">
                         <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Tipo de Pedido:</label>
                         <div class="payment-grid" style="grid-template-columns: 1fr 1fr;">
@@ -775,7 +782,6 @@
                         </div>
                     </div>
 
-                    <!-- Campos de Evento Ocultos -->
                     <div id="scheduledFields" class="scheduled-fields" style="display: none; flex-direction: column; gap: 10px; margin-bottom: 15px;">
                         <div>
                             <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;">Fecha de entrega:</label>
@@ -804,7 +810,10 @@
                     <input type="text" id="orderNotes" class="checkout-input"
                         placeholder="📝 Notas (Ej: bien tostado, cambio para $50k)">
                 </div>
-                <button class="btn-whatsapp" onclick="sendOrder()">📲 Confirmar y Enviar Pedido por WhatsApp</button>
+                <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
+                    <button class="btn-whatsapp" onclick="sendOrder()">📲 Confirmar y Enviar Pedido</button>
+                    <button style="width:100%; background: #f1f5f9; color: #475569; border: none; border-radius: 12px; padding: 12px; margin-top: 10px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" onclick="goToCartStep1()">← Volver a la canasta</button>
+                </div>
             </div>
         </div>
     </div>
@@ -981,117 +990,94 @@
 
     <!-- ===== MODAL ASISTENTE TORTAS ===== -->
     <div class="auth-modal" id="modal-evento-personalizado">
-        <div class="wizard-modal-content">
-            <div class="wizard-header">
-                <h2>🎂 Diseña tu Torta Personalizada</h2>
-                <button class="kitchen-close-btn" onclick="closeWizard()">✕</button>
+        <div class="wizard-modal-content" style="max-height: 90vh; overflow-y: auto; padding: 24px;">
+            <div class="wizard-header" style="position: sticky; top: -24px; background: #fff; padding-top: 24px; z-index: 10; margin-top: -24px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="font-size:1.3rem; margin:0;">🎂 Personalizar Torta</h2>
+                <button class="kitchen-close-btn" onclick="closeWizard()" style="padding: 6px 12px; font-size: 0.9rem;">✕</button>
             </div>
             
-            <div class="wizard-progress">
-                <div class="wizard-progress-line"></div>
-                <div class="wizard-step-circle active" id="w-circle-1">1</div>
-                <div class="wizard-step-circle" id="w-circle-2">2</div>
-                <div class="wizard-step-circle" id="w-circle-3">3</div>
-                <div class="wizard-step-circle" id="w-circle-4">4</div>
+            <div style="background: #fefce8; border: 2px solid #fef08a; color: #854d0e; padding: 16px; border-radius: 12px; text-align: center; font-weight: bold; margin-bottom: 24px; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1);">
+                ✨ Tu pedido incluye GRATIS: Platos, servilletas, cucharas y vela volcán
             </div>
 
-            <!-- PASO 1 -->
-            <div class="wizard-step active" id="w-step-1">
-                <h3 style="margin-bottom:16px;">Paso 1: Tamaño y Porciones</h3>
-                <div class="wizard-options-grid">
-                    <div class="step-option-card" onclick="selectWizardOption('size', 'pequena', 35000, this)">
-                        <h4>Pequeña</h4>
-                        <p>10 a 12 porciones</p>
-                        <strong>Base: $35.000</strong>
-                    </div>
-                    <div class="step-option-card" onclick="selectWizardOption('size', 'mediana', 50000, this)">
-                        <h4>Mediana</h4>
-                        <p>20 a 25 porciones</p>
-                        <strong>Base: $50.000</strong>
-                    </div>
-                    <div class="step-option-card" onclick="selectWizardOption('size', 'grande', 75000, this)">
-                        <h4>Grande</h4>
-                        <p>35 a 40 porciones</p>
-                        <strong>Base: $75.000</strong>
-                    </div>
-                    <div class="step-option-card" onclick="selectWizardOption('size', 'especial', 120000, this)">
-                        <h4>Especial (2 pisos)</h4>
-                        <p>50+ porciones</p>
-                        <strong>Base: $120.000</strong>
-                    </div>
+            <!-- SABOR -->
+            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">1. Sabor / Línea</h3>
+            <div class="wizard-options-grid" style="margin-bottom:24px;">
+                <div class="step-option-card" onclick="selectSabor('Clásica Tres Leches', this)">Clásica Tres Leches</div>
+                <div class="step-option-card" onclick="selectSabor('Chocoarequipe', this)">Chocoarequipe</div>
+                <div class="step-option-card" onclick="selectSabor('Ponqué Clásico', this)">Ponqué Clásico</div>
+            </div>
+
+            <!-- TAMAÑO -->
+            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">2. Tamaño</h3>
+            <div class="wizard-options-grid" style="margin-bottom:24px;" id="cake-size-grid">
+                <div class="step-option-card" data-size="1/4 (10 porciones)" onclick="selectTamano(this)">
+                    <h4>1/4</h4><p>10 porc.</p><strong class="size-price">$45.000</strong>
+                </div>
+                <div class="step-option-card" data-size="1/2 (20 porciones)" onclick="selectTamano(this)">
+                    <h4>1/2</h4><p>20 porc.</p><strong class="size-price">$75.000</strong>
+                </div>
+                <div class="step-option-card" data-size="1 Libra (30 porciones)" onclick="selectTamano(this)">
+                    <h4>1 Libra</h4><p>30 porc.</p><strong class="size-price">$130.000</strong>
                 </div>
             </div>
 
-            <!-- PASO 2 -->
-            <div class="wizard-step" id="w-step-2">
-                <h3 style="margin-bottom:16px;">Paso 2: Masa y Relleno</h3>
-                <h4 style="color:#d81b60; margin-bottom:8px;">Tipo de Masa</h4>
-                <div class="wizard-options-grid" style="margin-bottom:20px;">
-                    <div class="step-option-card" onclick="selectWizardOption('dough', 'vainilla', 0, this)">Vainilla clásica</div>
-                    <div class="step-option-card" onclick="selectWizardOption('dough', 'chocolate', 0, this)">Chocolate húmedo</div>
-                    <div class="step-option-card" onclick="selectWizardOption('dough', 'redvelvet', 0, this)">Red Velvet</div>
-                    <div class="step-option-card" onclick="selectWizardOption('dough', 'naranja', 0, this)">Naranja con amapola</div>
+            <!-- DISEÑO -->
+            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">3. Diseño</h3>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px;">
+                <div class="design-thumb" onclick="selectDiseno('#1', this)">
+                    <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150" alt="Diseño 1" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">#1</div>
                 </div>
-                
-                <h4 style="color:#d81b60; margin-bottom:8px;">Relleno</h4>
-                <div class="wizard-options-grid">
-                    <div class="step-option-card" onclick="selectWizardOption('filling', 'arequipe', 0, this)">Arequipe artesanal</div>
-                    <div class="step-option-card" onclick="selectWizardOption('filling', 'frutosrojos', 0, this)">Frutos rojos silvestres</div>
-                    <div class="step-option-card" onclick="selectWizardOption('filling', 'chantilly', 0, this)">Crema chantilly</div>
-                    <div class="step-option-card" onclick="selectWizardOption('filling', 'ganache', 0, this)">Ganache de chocolate</div>
+                <div class="design-thumb" onclick="selectDiseno('#2', this)">
+                    <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150" alt="Diseño 2" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">#2</div>
                 </div>
-            </div>
-
-            <!-- PASO 3 -->
-            <div class="wizard-step" id="w-step-3">
-                <h3 style="margin-bottom:16px;">Paso 3: Decoración y Dedicatoria</h3>
-                <div class="wizard-options-grid" style="margin-bottom:20px;">
-                    <div class="step-option-card" onclick="selectWizardOption('style', 'clasico', 0, this)">Clásico/Artesanal</div>
-                    <div class="step-option-card" onclick="selectWizardOption('style', 'infantil', 0, this)">Temático infantil</div>
-                    <div class="step-option-card" onclick="selectWizardOption('style', 'elegante', 0, this)">Elegante/Flores</div>
-                    <div class="step-option-card" onclick="selectWizardOption('style', 'foto', 0, this)">Con Fototorta</div>
+                <div class="design-thumb" onclick="selectDiseno('#3', this)">
+                    <img src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=150" alt="Diseño 3" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">#3</div>
                 </div>
-                <div class="auth-group">
-                    <label>Mensaje en la torta (Dedicatoria)</label>
-                    <input type="text" id="w-message" placeholder="Ej. ¡Feliz Cumpleaños Mariana!" oninput="saveWizardField('message', this.value)">
+                <div class="design-thumb" onclick="selectDiseno('#4', this)">
+                    <img src="https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=150" alt="Diseño 4" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">#4</div>
                 </div>
-                <div class="auth-group">
-                    <label>Observaciones o indicaciones especiales</label>
-                    <textarea id="w-observations" placeholder="Ej. menos dulce, alérgica al maní..." rows="2" oninput="saveWizardField('obs', this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-family:inherit;"></textarea>
+                <div class="design-thumb" onclick="selectDiseno('#5', this)">
+                    <img src="https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=400&auto=format&fit=crop&q=80" alt="Diseño 5" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">#5</div>
+                </div>
+                <div class="design-thumb" onclick="selectDiseno('#6', this)">
+                    <img src="https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=150" alt="Diseño 6" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">#6</div>
                 </div>
             </div>
 
-            <!-- PASO 4 -->
-            <div class="wizard-step" id="w-step-4">
-                <h3 style="margin-bottom:16px;">Paso 4: Fecha y Hora</h3>
-                
-                <div style="background:#fef2f2; border-left:4px solid #ef4444; padding:12px; border-radius:0 8px 8px 0; margin-bottom:20px;">
-                    <p style="margin:0; color:#b91c1c; font-weight:bold; font-size:0.95rem;">
-                        ⚠️ Recuerda: Para agendar y hornear tu pedido especial se requiere un anticipo del 50%. El saldo restante se cancela contra entrega.
-                    </p>
-                </div>
-
-                <div class="auth-group">
-                    <label>Fecha de entrega (mínimo 48h de antelación)</label>
-                    <input type="date" id="w-date" onchange="validateWizardDate(this.value)">
-                </div>
-                <div class="auth-group">
-                    <label>Franja Horaria</label>
-                    <select id="w-time" onchange="saveWizardField('time', this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; cursor:pointer;">
-                        <option value="">Selecciona una franja...</option>
-                        <option value="Mañana (9am - 12pm)">Mañana (9am - 12pm)</option>
-                        <option value="Tarde (2pm - 6pm)">Tarde (2pm - 6pm)</option>
-                    </select>
-                </div>
+            <!-- DEDICATORIA -->
+            <div class="auth-group" style="margin-bottom:24px;">
+                <label style="color:#d81b60; font-weight:bold; font-size:1.1rem; margin-bottom:8px; display:block;">4. Dedicatoria</label>
+                <input type="text" id="w-message" placeholder="Ej: ¡Feliz Cumpleaños Mamá! Te amamos" oninput="saveWizardField('message', this.value)" style="width:100%; border-radius: 12px; padding: 14px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.95rem; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#f43f5e'; this.style.boxShadow='0 0 0 3px rgba(244,63,94,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
             </div>
 
-            <!-- BOTONES NAVEGACION -->
-            <div class="wizard-footer">
-                <button class="btn-gold" id="btn-w-prev" onclick="prevWizardStep()" style="display:none; background:#f1f5f9; color:#475569;">Atrás</button>
-                <div style="flex:1;"></div>
-                <button class="btn-gold" id="btn-w-next" onclick="nextWizardStep()">Siguiente ➔</button>
-                <button class="btn-gold" id="btn-w-finish" onclick="addCustomCakeToCart()" style="display:none; background:#881337;">Agregar al Carrito 🛒</button>
+            <!-- FECHA Y HORA -->
+            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">5. Fecha y Hora de Entrega</h3>
+            <div style="background:#FFF9F0; border:1px solid #FFE4C4; padding:10px 14px; border-radius:10px; margin-bottom:15px; font-size:0.9rem; color:#6D4C41; display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.2rem;">⏱️</span>
+                <span>Horneado fresco para tu evento: Pedidos con mínimo 24h de anticipación (Anticipo del 50% para agendar).</span>
             </div>
+            <div class="auth-group" style="margin-bottom:15px;">
+                <label>Fecha de entrega</label>
+                <input type="date" id="w-date" onchange="validateWizardDateNew(this.value)">
+            </div>
+            <div class="auth-group" style="margin-bottom:24px;">
+                <label>Hora preferida</label>
+                <select id="w-time" onchange="saveWizardField('time', this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; cursor:pointer;">
+                    <option value="">Selecciona un horario...</option>
+                    <option value="Mañana (9am - 12pm)">Mañana (9am - 12pm)</option>
+                    <option value="Tarde (2pm - 6pm)">Tarde (2pm - 6pm)</option>
+                </select>
+            </div>
+
+            <div id="w-error" style="display:none; color:#ef4444; background:#fef2f2; border:1px solid #f87171; padding:10px; border-radius:8px; margin-bottom:15px; text-align:center; font-weight:bold; font-size:0.9rem;"></div>
+            <button class="btn-gold" style="width:100%; background: linear-gradient(135deg, #f43f5e, #e11d48); color: white; font-weight: 800; font-size:1.2rem; padding:16px; border: none; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(225, 29, 72, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 10px 25px rgba(225, 29, 72, 0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 20px rgba(225, 29, 72, 0.3)';" onclick="addCustomCakeToCartNew()">Agregar al Carrito 🛒</button>
         </div>
     </div>
 
