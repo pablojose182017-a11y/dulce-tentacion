@@ -7,7 +7,7 @@
     <meta name="description"
         content="Panadería y Repostería Dulce Tentación P y S - Pan fresco, tortas y postres artesanales en Cúcuta. Hecho con amor, endulzamos tu día.">
     <title>P&S Punto Dulce | Tortas de Celebración en Cúcuta</title>
-    <link rel="icon" type="image/jpeg" href="logo.jpg?v=6">
+    <link rel="icon" type="image/jpeg" href="logo-pys.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -15,6 +15,10 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="styles.css?v=13">
+    <!-- Flatpickr CSS y JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 </head>
 
 <body>
@@ -23,10 +27,10 @@
     <!-- ===== DESKTOP HEADER ===== -->
     <header>
         <div class="logo-container brand-link" onclick="showSection('inicio', document.querySelectorAll('.nav-link')[0])">
-            <img src="logo.jpg?v=6" class="nav-logo-img" alt="P&S Punto Dulce Logo">
+            <img src="logo-pys.png" class="nav-logo-img" alt="Logo P&S Punto Dulce">
             <div class="logo-text-block brand-text">
-                <h1 class="brand-title"><span class="gold-initials">P&amp;S</span> Punto Dulce</h1>
-                <span class="brand-tagline">TORTAS DE CELEBRACIÓN • REPOSTERÍA ARTESANAL</span>
+                <h1 class="brand-title">P&amp;S Punto Dulce</h1>
+                <span class="brand-tagline">Pastelería Artesanal</span>
             </div>
         </div>
 
@@ -93,7 +97,7 @@
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
-                        <div class="dropdown-link-item" onclick="openOrdersModal()">
+                        <div class="dropdown-link-item" onclick="openOrderHistory()">
                             📦 Mis Pedidos
                         </div>
 
@@ -121,10 +125,10 @@
     <!-- ===== MOBILE HEADER ===== -->
     <div class="mobile-header" id="mobileHeader">
         <div class="mobile-logo brand-link" onclick="showSection('inicio', null)" style="display:flex; align-items:center; gap:8px;">
-            <img src="logo.jpg?v=6" class="nav-logo-img" alt="P&S Punto Dulce Logo">
+            <img src="logo-pys.png" class="nav-logo-img" alt="Logo P&S Punto Dulce">
             <div class="mobile-logo-text brand-text">
-                <h1 class="brand-title" style="font-size: 18px;"><span class="gold-initials">P&amp;S</span> Punto Dulce</h1>
-                <span class="brand-tagline" style="font-size: 8px;">TORTAS DE CELEBRACIÓN</span>
+                <h1 class="brand-title">P&amp;S Punto Dulce</h1>
+                <span class="brand-tagline">Pastelería Artesanal</span>
             </div>
         </div>
         <div class="mobile-header-actions">
@@ -331,14 +335,14 @@
     <section id="inicio" class="section active">
         <div class="hero">
             <div class="hero-welcome-card">
-                <img src="logo.jpg?v=7" class="hero-logo-img" alt="P&S Punto Dulce Logo">
+                <img src="logo-pys.png" class="hero-logo-img" alt="Logo P&S Punto Dulce">
                 <h2 class="hero-quote">“Hecho con amor, endulzamos tu día” 💖</h2>
                 <p class="hero-desc">Tortas de celebración hechas a la medida & panadería artesanal horneada cada mañana en Cúcuta.</p>
                 <div class="hero-order-hint">
-                    ⭐ Horneado fresco cada mañana · ¡Elige tu opción! <span class="bouncing-hand">👇</span>
+                    ✨ Haz tu pedido fácil en línea · ¡Elige tu opción! <span class="bouncing-hand">👇</span>
                 </div>
                 <div class="hero-buttons-group">
-                    <button class="btn-hero-primary" onclick="goToCatalog(event)">
+                    <button class="btn-hero-primary" onclick="filterCategory('todos', null); goToCatalog(event)">
                         🍰 ¡Quiero antojarme y pedir! ➔
                     </button>
                     <button class="btn-hero-secondary" onclick="filterCategory('eventos', this); goToCatalog(event)">
@@ -561,7 +565,7 @@
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
             </div>
 
-            <div class="dropdown-link-item" onclick="openOrdersModal()" style="margin-top: 12px; margin-bottom: -4px;">
+            <div class="dropdown-link-item" onclick="openOrderHistory()" style="margin-top: 12px; margin-bottom: -4px;">
                 📦 Mis Pedidos
             </div>
 
@@ -575,10 +579,7 @@
                 onclick="closeMobileProfile(); openKitchenModal();"
                 style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:10px 0;">👨‍🍳
                 Modo Cocina / Despacho</button>
-            <button class="dropdown-btn"
-                onclick="closeMobileProfile(); alert('Funcionalidad en desarrollo: Aquí podrás ver el historial de tus pedidos.');"
-                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:10px;">📦 Mis pedidos
-                recientes</button>
+
             <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();"
                 style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:10px;">🛒 Ver mi Carrito
                 (<span class="dropdown-cart-qty">0</span>)</button>
@@ -611,7 +612,7 @@
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
         <div class="auth-card" style="padding:24px; text-align:center;">
             <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
-            <img src="logo.jpg?v=6" alt="Logo"
+            <img src="logo-pys.png" alt="Logo P&S Punto Dulce"
                 style="width:80px; height:80px; border-radius:50%; margin-bottom:15px; border:2px solid var(--brand-pink);">
 
             <div class="auth-tabs">
@@ -621,7 +622,7 @@
 
             <div class="auth-incentive-banner">
                 <span style="font-size: 1.4rem;">🥐</span>
-                <span>¡Únete a la familia Dulce Tentación y acumula puntos en tus pedidos favoritos!</span>
+                <span>¡Únete al Club P&S Punto Dulce y acumula puntos en tus pedidos favoritos! 🍰</span>
             </div>
 
             <div id="authMsg" class="auth-msg"></div>
@@ -689,6 +690,19 @@
                             <span class="field-icon">🔒</span>
                             <input type="password" id="regPassword" placeholder="••••••••">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>🎂 Fecha de Cumpleaños (Descuento especial en tu día)</label>
+                        <div class="input-wrap">
+                            <span class="field-icon">🎁</span>
+                            <input type="text" id="reg-birthday" placeholder="Selecciona tu fecha">
+                        </div>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: start; gap: 8px; margin-top: 10px; margin-bottom: 15px;">
+                        <input type="checkbox" id="reg-terms" required style="margin-top: 4px; accent-color: var(--brand-pink);">
+                        <label for="reg-terms" style="font-size: 0.75rem; color: #555; line-height: 1.3; font-weight: 500;">
+                            Acepto los Términos y Condiciones y la autorización de uso de datos para gestión de pedidos y beneficios exclusivos.
+                        </label>
                     </div>
                     <button type="submit" class="btn-auth-submit">Crear Cuenta</button>
                 </form>
@@ -789,7 +803,7 @@
                         </div>
                         <div>
                             <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;">Hora del evento:</label>
-                            <input type="time" id="eventTime" class="checkout-input" style="margin-bottom:0;">
+                            <input type="text" id="eventTime" class="checkout-input" style="margin-bottom:0;" readonly placeholder="Selecciona la hora">
                         </div>
                         <div class="event-alert">
                             ⚠️ Para pedidos de eventos se requiere un anticipo del 50% para reservar la producción.
@@ -830,10 +844,21 @@
             <span class="order-toast-icon">🔔</span>
             <div class="order-toast-text">
                 <strong id="orderToastTitle">¡Nuevo Pedido Recibido!</strong>
-                <p id="orderToastBody">Cliente: Juan Pérez</p>
+                <p id="orderToastBody"></p>
             </div>
         </div>
         <button class="btn-gold" style="padding: 6px 12px; font-size: 0.8rem; flex-shrink:0;" onclick="goToOrders()">Ver</button>
+    </div>
+
+    <!-- ===== MODAL ORDER HISTORY ===== -->
+    <div class="auth-modal" id="modal-order-history" style="display:none; z-index:1100;">
+        <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f0e2e5; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="color:var(--brand-pink); margin:0;">📦 Mis Pedidos</h3>
+                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()">✕</button>
+            </div>
+            <div id="order-history-content" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
     </div>
 
     <!-- Floating WhatsApp FAB -->
@@ -1083,6 +1108,25 @@
 
     <!-- ===== JAVASCRIPT ===== -->
     <script src="script.js"></script>
-</body>
+    <script>
+        window.updateProductPrice = function(productId, val) {
+            const unidadesMap = { 101: 25, 102: 50, 103: 100 };
+            const preciosMap = { queso: 2000, bocadillo_queso: 2000, pollo: 3000, jamon_queso: 3000, especial: 3500 };
 
+            const unidades = unidadesMap[productId] || 25;
+            const precioUnit = preciosMap[val] || 2000;
+            const total = unidades * precioUnit;
+
+            const priceEl = document.getElementById(`price-${productId}`);
+            if (!priceEl) return;
+
+            if (val === 'especial') {
+                const tachado = unidades * 3700;
+                priceEl.innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.8rem; margin-right:5px;">$${tachado.toLocaleString('es-CO')}</span> <span class="current-price" style="color:#e11d48;">$${total.toLocaleString('es-CO')}</span> <span class="badge-promo-filling">🔥 5% DTO</span>`;
+            } else {
+                priceEl.innerHTML = `<span class="current-price">$${total.toLocaleString('es-CO')}</span>`;
+            }
+        };
+    </script>
+</body>
 </html>

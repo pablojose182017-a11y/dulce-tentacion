@@ -16,10 +16,20 @@
             { id: 13, name: "Combo Desayuno Tentación", price: 5500, oldPrice: 7000, cat: "combos", featured: true, tag: "✨ Ahorro 15%", desc: "1 Croissant + 2 Pan Cascarita + Café caliente. El combo perfecto.", img: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=500&q=80" },
             { id: 14, name: "Café con Leche / Capuchino 9oz", price: 2000, cat: "antojos", featured: false, tag: "☕ Caliente", desc: "Café colombiano de origen con leche espumosa preparado al instante.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
             { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, oldPrice: 30000, cat: "combos", featured: true, tag: "💝 Regalo Especial", desc: "2 Croissants, 2 Porciones Torta, 5 Pan Cascarita, 5 Bolitas Queso y empaque premium.", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=500&q=80" },
-            { id: 16, name: "Bandeja x50 Bolitas de Queso", price: 25000, cat: "eventos", featured: true, tag: "🎉 Fiestas", desc: "50 bolitas de queso calienticas listas para repartir.", img: "https://images.unsplash.com/photo-1626200419189-322197e887e0?auto=format&fit=crop&w=500&q=80" },
-            { id: 17, name: "Bandeja x30 Mini Hojaldres", price: 45000, cat: "eventos", featured: true, tag: "🎉 Gourmet", desc: "Mini croissants y palitos de queso ideales para pasabocas.", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80" },
-            { id: 18, name: "Combo Cumpleaños Familiar", price: 75000, cat: "eventos", featured: false, tag: "🎂 Cumple", desc: "Torta grande, 20 pasabocas de sal y 10 mini postres.", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80" }
+            { id: 101, name: "Combo Compartir Familiar (25 und)", desc: "25 pasabocas gourmet horneados en hojaldre fino crocante para reuniones en casa.", cat: "eventos", unidades: 25, price: 50000, permiteRelleno: true, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80" },
+            { id: 102, name: "Combo Oficina & Fiesta (50 und)", desc: "50 pasabocas surtidos de hojaldre recién horneados, ideales para reuniones de equipo.", cat: "eventos", unidades: 50, price: 100000, permiteRelleno: true, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80" },
+            { id: 103, name: "Combo Gran Gala & Evento (100 und)", desc: "100 pasabocas hojaldrados de alta gama para matrimonios, grados y eventos corporativos.", cat: "eventos", unidades: 100, price: 200000, permiteRelleno: true, img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80" },
+            { id: 104, name: "Pan de Jamón Navideño Especial (~1 kg)", desc: "Masa brioche con jamón ahumado de pierna, tocineta crocante, aceitunas rellenas y pasas.", cat: "panaderia", unidades: 1, price: 65000, permiteRelleno: false, img: "https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=600&q=80" },
+            { id: 105, name: "Pancitos de Cena / Leche (Paquete x20)", desc: "Pancitos dorados con mantequilla artesanal, suaves y esponjosos para acompañar cenas.", cat: "panaderia", unidades: 20, price: 25000, permiteRelleno: false, img: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=600&q=80" },
+            { id: 106, name: "Rosca Navideña Trenzada", desc: "Trenza brioche hojaldrada rellena de arequipe artesanal y queso campesino.", cat: "eventos", unidades: 1, price: 48000, permiteRelleno: false, img: "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=600&q=80" }
         ];
+        const OPCIONES_RELLENO = {
+            'queso': { nombre: '🧀 Queso Campesino — $2.000 c/u', precioUnitario: 2000, promo: false },
+            'bocadillo_queso': { nombre: '🍯 Bocadillo con Queso — $2.000 c/u', precioUnitario: 2000, promo: false },
+            'pollo': { nombre: '🍗 Pechuga de Pollo — $3.000 c/u', precioUnitario: 3000, promo: false },
+            'jamon_queso': { nombre: '🥓 Jamón y Queso — $3.000 c/u', precioUnitario: 3000, promo: false },
+            'especial': { nombre: '🔥 Especial Trío (Pollo+Jamón+Queso) — $3.500 c/u', precioUnitario: 3500, promo: true, tachadoUnitario: 3700 }
+        };
 
         let cart = [];
         let orderType = 'inmediato';
@@ -39,6 +49,29 @@
             try { const p = localStorage.getItem('dt_pedidos_historial'); if (p) pedidosHistorial = JSON.parse(p); } catch (e) { }
             try { const s = localStorage.getItem('dt_sound_enabled'); if (s) orderSoundEnabled = (s === 'true'); } catch (e) { }
             
+            // Initialize Flatpickr for birthday
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr("#reg-birthday", {
+                    locale: "es",
+                    dateFormat: "d/m/Y",
+                    maxDate: "today",
+                    disableMobile: true,
+                    yearSelectorType: "static"
+                });
+                flatpickr("#eventTime", {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "h:i K",
+                    time_24hr: false,
+                    defaultHour: 15,
+                    defaultMinute: 0,
+                    minTime: "08:00",
+                    maxTime: "19:30",
+                    minuteIncrement: 15,
+                    disableMobile: true
+                });
+            }
+
             lastOrderCount = pedidosHistorial.length;
             const soundTog = document.getElementById('soundToggle');
             if (soundTog) soundTog.checked = orderSoundEnabled;
@@ -48,6 +81,36 @@
             renderProducts(products);
             updateCart();
             syncUserUI();
+
+            // Configurar scroll de categorías con el ratón en PC
+            const sliders = document.querySelectorAll('.cat-chip-scroll');
+            sliders.forEach(slider => {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+
+                slider.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    slider.style.cursor = 'grabbing';
+                    startX = e.pageX - slider.offsetLeft;
+                    scrollLeft = slider.scrollLeft;
+                });
+                slider.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    slider.style.cursor = 'grab';
+                });
+                slider.addEventListener('mouseup', () => {
+                    isDown = false;
+                    slider.style.cursor = 'grab';
+                });
+                slider.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - slider.offsetLeft;
+                    const walk = (x - startX) * 1.5; // Velocidad del arrastre
+                    slider.scrollLeft = scrollLeft - walk;
+                });
+            });
         });
 
         function saveCart() { try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch (e) { } }
@@ -189,9 +252,10 @@
             const phone = document.getElementById('regPhone').value.trim();
             const email = document.getElementById('regEmail').value.trim().toLowerCase();
             const pass = document.getElementById('regPassword').value;
+            const birthday = document.getElementById('reg-birthday') ? document.getElementById('reg-birthday').value : '';
 
             if (!name || !phone || !email || !pass) {
-                return showAuthMessage('Por favor, completa todos los campos para registrarte.', 'error');
+                return showAuthMessage('Por favor, completa todos los campos obligatorios para registrarte.', 'error');
             }
 
             if (db_users.find(u => u.email === email)) {
@@ -203,6 +267,7 @@
                 email,
                 phone,
                 password: pass,
+                birthday: birthday,
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
                 points: 15
             };
@@ -212,7 +277,7 @@
             saveUser();
             syncUserUI();
             closeAuthModal();
-            showToast("¡Registro exitoso! Bienvenido.", "🎉");
+            showToast("¡Registro exitoso! Bienvenido al Club P&S Punto Dulce 🍰", "🎉");
         }
 
         const pointRewards = [
@@ -275,6 +340,58 @@
             document.getElementById('modal-puntos').style.display = 'none';
             showToast("¡Premio canjeado! Revisa tu carrito 🎉", "🎊");
             toggleCart();
+        }
+
+        function openOrderHistory() {
+            const modal = document.getElementById('modal-order-history');
+            const container = document.getElementById('order-history-content');
+            if (!modal || !container) return;
+
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+
+            const todosLosPedidos = pedidosHistorial || [];
+            const misPedidos = todosLosPedidos.filter(p => p.clienteEmail === currentUser.email || p.email === currentUser.email);
+
+            if (misPedidos.length === 0) {
+                container.innerHTML = `
+                <div style="text-align:center; padding:30px 10px; color:#6b7280;">
+                    <div style="font-size:3rem; margin-bottom:15px;">🧁</div>
+                    <strong style="display:block; font-size:1.1rem; color:#374151; margin-bottom:5px;">Aún no tienes pedidos registrados.</strong>
+                    <p style="font-size:0.9rem;">¡Haz tu primer antojito y aparecerá aquí en tiempo real!</p>
+                </div>`;
+            } else {
+                misPedidos.reverse();
+                container.innerHTML = misPedidos.map(pedido => {
+                    const statusColor = pedido.estado === 'Entregado' ? '#10b981' : (pedido.estado === 'En preparación' ? '#3b82f6' : '#f59e0b');
+                    return `
+                    <div class="history-order-card">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <strong>Pedido #${pedido.id || Math.floor(Math.random()*9000 + 1000)}</strong>
+                            <span class="badge-status" style="background:${statusColor}20; color:${statusColor};">${pedido.estado || 'Pendiente'}</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:10px;">${pedido.fecha || 'Fecha reciente'}</div>
+                        <div style="font-size:0.85rem; color:#4b5563; margin-bottom:10px;">
+                            ${(pedido.items || []).map(item => `
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>${item.cantidad || 1}x ${item.nombre || item.title}</span>
+                            </div>
+                            `).join('')}
+                        </div>
+                        <div style="display:flex; justify-content:flex-end; border-top:1px solid #f3f4f6; padding-top:10px;">
+                            <strong>Total: $${(pedido.total || 0).toLocaleString('es-CO')}</strong>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeOrderHistory() {
+            const modal = document.getElementById('modal-order-history');
+            if (modal) modal.style.display = 'none';
         }
 
         function openOrdersModal() {
@@ -702,22 +819,27 @@
         function handleMobileProfileBdrop(e) { if (e.target === document.getElementById('mobileProfileModal')) closeMobileProfile(); }
 
         let db_users = [];
-        let adminEmails = ['dulcestentaciones2004@gmail.com'];
+        const ADMIN_EMAILS = [
+            'pablojose182017@gmail.com',
+            'pablojose182020@gmail.com'
+        ];
+        let adminEmails = [...ADMIN_EMAILS];
         let workerEmails = [];
         let stockConfig = {};
         window.addEventListener('DOMContentLoaded', () => {
             try { const db = localStorage.getItem('dt_users_db'); if (db) db_users = JSON.parse(db); } catch (e) { }
-            try { const adms = localStorage.getItem('dt_admin_emails'); if (adms) adminEmails = JSON.parse(adms); } catch (e) { }
+            try { const adms = localStorage.getItem('dt_admin_emails'); if (adms) { adminEmails = [...new Set([...JSON.parse(adms), ...ADMIN_EMAILS])]; } } catch (e) { }
             try { const wks = localStorage.getItem('dt_worker_emails'); if (wks) workerEmails = JSON.parse(wks); } catch (e) { }
             try { const stk = localStorage.getItem('dt_stock_config'); if (stk) stockConfig = JSON.parse(stk); } catch (e) { }
             
             // 2. Función de migración / sincronización automática
             if (currentUser && currentUser.email) {
-                let existingUser = db_users.find(u => u.email === currentUser.email);
+                const normEmail = currentUser.email.toLowerCase().trim();
+                let existingUser = db_users.find(u => u.email === normEmail);
                 if (!existingUser) {
                     existingUser = {
-                        name: currentUser.name || currentUser.email.split('@')[0],
-                        email: currentUser.email,
+                        name: currentUser.name || normEmail.split('@')[0],
+                        email: normEmail,
                         picture: currentUser.picture || '',
                         points: currentUser.points || 15,
                         joinDate: currentUser.joinDate || new Date().toLocaleDateString('es-CO'),
@@ -725,16 +847,27 @@
                         phone: currentUser.phone || ''
                     };
                     db_users.push(existingUser);
-                    saveUsersDB();
-                } else {
-                    // Refrescar currentUser con datos de db_users por si los cambió un admin
-                    currentUser = { ...currentUser, ...existingUser };
-                    saveUser();
                 }
+                
+                // Forzar rol de admin si está en la whitelist
+                if (ADMIN_EMAILS.includes(normEmail)) {
+                    existingUser.role = 'admin';
+                    existingUser.isAdmin = true;
+                    if (!adminEmails.includes(normEmail)) adminEmails.push(normEmail);
+                }
+
+                // Refrescar currentUser con datos de db_users por si los cambió un admin
+                currentUser = { ...currentUser, ...existingUser };
+                
+                saveUsersDB();
+                saveAdminEmails();
+                saveUser();
             }
         });
         function saveAdminEmails() {
-            if (!adminEmails.includes('dulcestentaciones2004@gmail.com')) adminEmails.push('dulcestentaciones2004@gmail.com');
+            ADMIN_EMAILS.forEach(email => {
+                if (!adminEmails.includes(email)) adminEmails.push(email);
+            });
             try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch (e) { }
             try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
         }
@@ -1142,9 +1275,23 @@
                 const isUserAdmin = adminEmails.includes(u.email);
                 const isUserWorker = workerEmails.includes(u.email);
 
-                let levelHtml = isUserAdmin ? '<span style="color:#1d4ed8;font-weight:bold;">Administrador</span>' 
-                              : (isUserWorker ? '<span style="color:#8b5cf6;font-weight:bold;">Trabajador</span>'
-                              : (u.vip ? '<span style="color:#d97706;font-weight:bold;">VIP Oro</span>' : '<span style="color:#64748b;font-weight:bold;">Normal</span>'));
+                let levelHtml = '';
+                if (isUserAdmin) {
+                    levelHtml = '<span style="color:#1d4ed8;font-weight:bold;">Administrador</span>';
+                } else if (isUserWorker) {
+                    levelHtml = '<span style="color:#8b5cf6;font-weight:bold;">Trabajador</span>';
+                } else if (u.vip) {
+                    if (u.vipExpiresAt) {
+                        const fechaExp = new Date(u.vipExpiresAt);
+                        const diasRestantes = Math.ceil((fechaExp - new Date()) / (1000 * 60 * 60 * 24));
+                        const fechaFormateada = fechaExp.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        levelHtml = `<span style="color:#d97706;font-weight:bold;">👑 VIP Oro</span><br><small style="color:#888;">Vence: ${fechaFormateada}<br>(${diasRestantes > 0 ? diasRestantes + ' días' : 'Vencido'})</small>`;
+                    } else {
+                        levelHtml = '<span style="color:#d97706;font-weight:bold;">👑 VIP Oro</span>';
+                    }
+                } else {
+                    levelHtml = '<span style="color:#64748b;font-weight:bold;">Cliente Normal</span>';
+                }
                 
                 return `
             <tr style="border-bottom:1px solid #eee; background:${u.blocked ? '#fff1f2' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent'))}">
@@ -1159,12 +1306,16 @@
                 <td style="padding:10px; text-align:center;">
                     ${(u.email === 'dulcestentaciones2004@gmail.com') ? '-' : `
                     <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-                        <div style="display:flex; gap:4px; width:100%; justify-content:center;">
-                            <button onclick="adminToggleAdmin('${u.email}')" style="background:${isUserAdmin ? '#1e40af' : '#dbeafe'}; color:${isUserAdmin ? '#fff' : '#1e40af'}; border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.7rem; flex:1;">Admin</button>
-                            <button onclick="adminToggleWorker('${u.email}')" style="background:${isUserWorker ? '#7c3aed' : '#ede9fe'}; color:${isUserWorker ? '#fff' : '#6d28d9'}; border:1px solid #ddd6fe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.7rem; flex:1;">Trabajador</button>
+                        <div style="display:flex; gap:4px; width:100%; align-items:center;">
+                            <select id="roleSel_${u.email.replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
+                                <option value="normal" ${!isUserAdmin && !isUserWorker && !u.vip ? 'selected' : ''}>Normal</option>
+                                <option value="vip" ${u.vip && !isUserAdmin && !isUserWorker ? 'selected' : ''}>VIP</option>
+                                <option value="trabajador" ${isUserWorker ? 'selected' : ''}>Trabajador</option>
+                                <option value="admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
+                            </select>
+                            <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
                         </div>
                         ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">🔑 Cambiar Clave</button>` : ''}
-                        <button onclick="adminToggleVIP('${u.email}')" style="background:#fef3c7; color:#d97706; border:1px solid #fde68a; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.vip ? 'Quitar VIP' : 'Hacer VIP'}</button>
                         <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
                         <button onclick="adminDeleteUser('${u.email}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">Eliminar</button>
                     </div>`}
@@ -1176,6 +1327,56 @@
 
         function filterAdminUsers() {
             renderAdminUsers();
+        }
+
+        function confirmRoleChange(email) {
+            const selectEl = document.getElementById(`roleSel_${email.replace(/[@.]/g, '_')}`);
+            if (!selectEl) return;
+            const newRole = selectEl.value;
+
+            if (ADMIN_EMAILS.includes(email) && newRole !== 'admin') {
+                showToast('No se puede quitar el rol al administrador principal', 'error');
+                return;
+            }
+
+            const u = db_users.find(x => x.email === email);
+            if (!u) return;
+
+            // Reset roles
+            adminEmails = adminEmails.filter(e => e !== email);
+            workerEmails = workerEmails.filter(e => e !== email);
+            u.vip = false;
+            u.role = 'cliente';
+            u.isAdmin = false;
+
+            // Apply new role
+            if (newRole === 'admin') {
+                adminEmails.push(email);
+                u.role = 'admin';
+                u.isAdmin = true;
+            } else if (newRole === 'trabajador') {
+                workerEmails.push(email);
+                u.role = 'trabajador';
+            } else if (newRole === 'vip') {
+                let baseTime = Date.now();
+                if (u.vip && u.vipExpiresAt && new Date(u.vipExpiresAt) > new Date()) {
+                    baseTime = new Date(u.vipExpiresAt).getTime();
+                }
+                u.vipExpiresAt = new Date(baseTime + (30 * 24 * 60 * 60 * 1000)).toISOString();
+                u.vip = true;
+                u.role = 'cliente'; // As requested by user, reset role to 'cliente' (base behavior for VIPs typically)
+            }
+
+            saveAdminEmails();
+            saveUsersDB();
+            renderAdminUsers();
+            if (currentUser && currentUser.email === email) { syncUserUI(); }
+            
+            if (newRole === 'vip') {
+                alert(`Membresía VIP actualizada para ${email}. Vigente hasta el ${new Date(u.vipExpiresAt).toLocaleDateString('es-CO')}.`);
+            } else {
+                showToast('Rol actualizado a: ' + newRole, '✅');
+            }
         }
 
         function adminToggleAdmin(email) {
@@ -1396,7 +1597,6 @@
                 if (deskBtn) {
                     deskBtn.style.display = (isAdmin || isWorker) ? 'flex' : 'none';
                     deskBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '⚙️ Panel Operativo';
-                    // We change the onclick behavior in HTML to call renderLiveOrders and renderStockAdmin, so let's update that dynamically or leave it to HTML
                     deskBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin();");
                 }
                 if (mobBtn) {
@@ -1464,6 +1664,53 @@
         function openCartFromDropdown(e) { e.stopPropagation(); document.getElementById('user-dropdown-menu')?.classList.remove('active'); toggleCart(); }
 
         // ===== PRODUCTS =====
+
+
+        window.updateProductPrice = function(productId, param) {
+            let fillingKey = '';
+            if (param && param.value) {
+                fillingKey = param.value;
+            } else if (typeof param === 'string') {
+                fillingKey = param;
+            } else {
+                const sel = document.getElementById(`filling-sel-${productId}`);
+                fillingKey = sel ? sel.value : 'queso';
+            }
+
+            const precios = {
+                'queso': 2000,
+                'bocadillo_queso': 2000,
+                'pollo': 3000,
+                'jamon_queso': 3000,
+                'especial': 3500
+            };
+
+            const unidadesMap = { 101: 25, 102: 50, 103: 100 };
+            const unidades = unidadesMap[productId] || (productId == 101 ? 25 : (productId == 102 ? 50 : 100));
+            const unitPrice = precios[fillingKey] || 2000;
+            const total = unidades * unitPrice;
+            const isPromo = (fillingKey === 'especial');
+
+            const priceEl = document.getElementById(`price-${productId}`) || 
+                            document.querySelector(`#price-box-${productId}`) ||
+                            document.querySelector(`[data-product-id="${productId}"] .product-price`);
+
+            if (!priceEl) return;
+
+            if (isPromo) {
+                const tachado = unidades * 3700;
+                priceEl.innerHTML = `
+                    <div style="display:flex; align-items:center;">
+                        <span style="text-decoration:line-through; color:#999; font-size:0.8rem; margin-right:5px;">$${tachado.toLocaleString('es-CO')}</span>
+                        <span class="badge-promo-filling">🔥 5% DTO</span>
+                    </div>
+                    <span class="current-price" style="color:#e11d48;">$${total.toLocaleString('es-CO')}</span>
+                `;
+            } else {
+                priceEl.innerHTML = `<span class="current-price">$${total.toLocaleString('es-CO')}</span>`;
+            }
+        };
+
         function createCardHTML(p) {
             const isOut = stockConfig[p.id] === true;
             const opac = isOut ? '0.5' : '1';
@@ -1490,6 +1737,7 @@
                 </div>
             `;
 
+            let fillingSelectHTML = '';
             let priceHTML = `
                 <div class="price-row" style="opacity:${opac};">
                     <span class="price">$${p.price.toLocaleString()}</span>
@@ -1498,17 +1746,36 @@
             `;
             if (p.oldPrice && p.oldPrice > p.price) {
                 priceHTML = `
-                <div class="price-row" style="opacity:${opac}; align-items:flex-end;">
-                    <div style="display:flex; flex-direction:column; line-height:1.1; align-items:flex-start;">
-                        <span class="price-old">$${p.oldPrice.toLocaleString()}</span>
-                        <span class="price-current">$${p.price.toLocaleString()}</span>
+                <div class="price-row" style="opacity:${opac}; flex-direction:column; align-items:flex-start; gap:0;">
+                    <span style="text-decoration:line-through; color:#999; font-size:0.8rem;">$${p.oldPrice.toLocaleString()}</span>
+                    <div>
+                        <span class="price" style="color:#e11d48;">$${p.price.toLocaleString()}</span>
+                        <span class="price-label">COP c/u</span>
                     </div>
-                    <span class="price-label" style="margin-bottom:2px; margin-left:4px;">COP c/u</span>
-                </div>
+                </div>`;
+            }
+
+            if (p.permiteRelleno === true) {
+                const units = p.unidades || 1;
+                fillingSelectHTML = `
+                    <div class="product-filling-wrapper">
+                        <label class="filling-label">Elige tu sabor/relleno:</label>
+                        <div class="custom-select-box">
+                            <select id="filling-sel-${p.id}" class="filling-select" style="outline: none !important;" onchange="window.updateProductPrice(${p.id}, this.value)">
+                                ${Object.entries(OPCIONES_RELLENO).map(([id, r]) => `<option value="${id}" data-unit-price="${r.precioUnitario}" data-promo="${r.promo}">${r.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                `;
+                const baseR = OPCIONES_RELLENO['queso'];
+                priceHTML = `
+                    <div id="price-${p.id}" class="price-row" style="opacity:${opac}; flex-direction:column; align-items:flex-start; margin-top:8px;">
+                        <span class="current-price">$${(units * baseR.precioUnitario).toLocaleString('es-CO')}</span>
+                    </div>
                 `;
             }
 
-            return `<div class="card" id="card-${p.id}" style="position:relative;">
+            return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${btnAction} }" style="position:relative;">
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt};">
                 <img src="${p.img}" alt="${p.name}" class="pimg-${p.id}" loading="lazy">
@@ -1517,12 +1784,13 @@
                 <div style="opacity:${opac};">
                     <h3>${p.name}</h3>
                     <p class="card-desc">${p.desc}</p>
+                    ${fillingSelectHTML}
                 </div>
                 <div>
                     ${priceHTML}
                     <div class="quantity-control" style="opacity:${opac}; pointer-events:${isOut ? 'none' : 'auto'};">
                         <button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button>
-                        <input type="number" class="qty-input qinp-${p.id}" value="1" min="1" onblur="validateQty(this)">
+                        <input type="number" class="qty-input qinp-${p.id}" id="qty-${p.id}" value="1" min="1" onblur="validateQty(this)">
                         <button class="qty-btn" onclick="changeQty(${p.id},1)">+</button>
                     </div>
                     <button class="${btnClass}" ${btnAction} style="${isOut ? 'background:#cbd5e1; color:#475569; pointer-events:none;' : ''}">
@@ -1589,12 +1857,37 @@
         }
 
         function addToCart(id, e) {
+            if (e) e.stopPropagation();
             const p = products.find(x => x.id === id); if (!p) return;
             if (stockConfig[id]) return showToast("Este producto está agotado por hoy.", "🚫");
-            const inp = document.querySelector(`.qinp-${id}`);
+            
+            let finalPrice = p.price;
+            let finalName = p.name;
+            let selectedFilling = null;
+
+            const fillingSelect = document.getElementById(`filling-sel-${id}`);
+            if (fillingSelect) {
+                const fillingKey = fillingSelect.value;
+                const filling = OPCIONES_RELLENO[fillingKey];
+                if (filling && p.permiteRelleno) {
+                    const units = p.unidades || 1;
+                    finalPrice = filling.precioUnitario * units;
+                    finalName = `${p.name} (${filling.nombre})`;
+                    selectedFilling = filling;
+                    selectedFilling.id = fillingKey;
+                }
+            }
+
+            const inp = document.querySelector(`.qinp-${id}`) || document.getElementById(`qty-${id}`);
             let qty = parseInt(inp?.value) || 1; if (qty < 1) qty = 1;
-            const existing = cart.find(i => i.id === id);
-            if (existing) existing.quantity += qty; else cart.push({ ...p, quantity: qty });
+            
+            const cartId = selectedFilling ? (id + '_' + selectedFilling.id) : id;
+            const existing = cart.find(x => (x.cartId || x.id) === cartId || (x.id === id && x.name === finalName));
+            if (existing) {
+                existing.quantity += qty;
+            } else {
+                cart.push({ ...p, quantity: qty, name: finalName, price: finalPrice, cartId, filling: selectedFilling });
+            }
             flyAnimation(id);
             document.querySelectorAll(`.badd-${id}`).forEach(b => {
                 b.classList.add('added'); b.innerHTML = '<span>✓ ¡Agregado!</span>';
@@ -1605,20 +1898,31 @@
             showToast(`¡${qty}x ${p.name} al carrito!`, '🥐');
         }
 
-        function updCartQty(id, d) {
-            const i = cart.find(x => x.id === id); if (!i) return;
-            i.quantity += d; if (i.quantity <= 0) cart = cart.filter(x => x.id !== id);
-            updateCart(); saveCart();
+        function updateQty(cartId, delta) {
+            const item = cart.find(x => (x.cartId || x.id) == cartId);
+            if (!item) return;
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(x => (x.cartId || x.id) != cartId);
+            }
+            updateCart();
+            saveCart();
         }
-        function setCartQty(id, v) {
-            const i = cart.find(x => x.id === id); if (!i) return;
-            const nv = parseInt(v); i.quantity = isNaN(nv) || nv < 1 ? 1 : nv;
-            updateCart(); saveCart();
+        function setItemQty(cartId, val) {
+            const item = cart.find(x => (x.cartId || x.id) == cartId);
+            if (!item) return;
+            const nv = parseInt(val);
+            item.quantity = isNaN(nv) || nv < 1 ? 1 : nv;
+            updateCart();
+            saveCart();
         }
-        function removeFromCart(id) {
-            cart = cart.filter(i => i.id !== id); updateCart(); saveCart();
+        function removeCartItem(cartId) {
+            cart = cart.filter(x => (x.cartId || x.id) != cartId);
+            updateCart();
+            saveCart();
             showToast("Producto eliminado.", "🗑️");
         }
+
         function updateCart() {
             const totalQty = cart.reduce((a, i) => a + i.quantity, 0);
             let totalPrice = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
@@ -1628,12 +1932,28 @@
             const pRow = document.getElementById('cart-vip-priority');
             const cartContent = document.querySelector('#cartModal .cart-content');
             if (currentUser && totalPrice > 0 && adminConfig.vipEnabled && totalPrice >= adminConfig.minPurchase) {
-                if (currentUser.vip) {
-                    discount = Math.floor(totalPrice * 0.05);
-                    if(cartContent) cartContent.classList.add('cart-vip-mode');
+                let isCumple = false;
+                if (currentUser.birthday) {
+                    const parts = currentUser.birthday.split('-');
+                    if (parts.length === 3) {
+                        const hoy = new Date();
+                        const bDay = parseInt(parts[2], 10);
+                        const bMonth = parseInt(parts[1], 10) - 1;
+                        if (hoy.getDate() === bDay && hoy.getMonth() === bMonth) {
+                            isCumple = true;
+                        }
+                    }
+                }
+
+                if (isCumple) {
+                    discount = Math.floor(totalPrice * (currentUser.vip ? 0.08 : 0.04));
                 } else {
-                    discount = Math.floor(totalPrice * 0.06);
-                    if(cartContent) cartContent.classList.remove('cart-vip-mode');
+                    discount = currentUser.vip ? Math.floor(totalPrice * 0.05) : 0;
+                }
+
+                if(cartContent) {
+                    if (currentUser.vip) cartContent.classList.add('cart-vip-mode');
+                    else cartContent.classList.remove('cart-vip-mode');
                 }
 
                 if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
@@ -1738,7 +2058,9 @@
                 cs.style.display = 'none'; if (cc) cc.style.display = 'none'; bw.style.display = 'none';
             } else {
                 cs.style.display = 'block'; cs.style.opacity = '1'; if (cc) cc.style.display = 'flex'; bw.style.display = 'flex'; bw.style.opacity = '1'; bw.style.pointerEvents = 'auto';
-                ci.innerHTML = cart.map(item => `
+                ci.innerHTML = cart.map(item => {
+                    const cid = item.cartId || item.id;
+                    return `
                 <div class="cart-item-row">
                     <img src="${item.img}" class="cart-item-img" alt="${item.name}">
                     <div class="cart-item-info">
@@ -1746,12 +2068,13 @@
                         <div class="cart-item-price">$${item.price.toLocaleString()} c/u • <strong>$${(item.price * item.quantity).toLocaleString()} COP</strong></div>
                     </div>
                     <div class="cart-item-actions">
-                        <button onclick="updCartQty(${item.id},-1)">−</button>
-                        <input type="number" value="${item.quantity}" min="1" onchange="setCartQty(${item.id},this.value)">
-                        <button onclick="updCartQty(${item.id},1)">+</button>
-                        <button class="btn-delete-item" onclick="removeFromCart(${item.id})"><svg viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg></button>
+                        <button onclick="updateQty('${cid}', -1)">−</button>
+                        <input type="number" value="${item.quantity}" min="1" onchange="setItemQty('${cid}', this.value)">
+                        <button onclick="updateQty('${cid}', 1)">+</button>
+                        <button class="btn-delete-item" onclick="removeCartItem('${cid}')"><svg viewBox="0 0 24 24"><path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg></button>
                     </div>
-                </div>`).join('');
+                </div>`;
+                }).join('');
             }
         }
 
@@ -1843,10 +2166,23 @@
             let finalTotal = tp;
 
             if (currentUser && typeof adminConfig !== 'undefined' && adminConfig.vipEnabled && tp >= adminConfig.minPurchase) {
-                if (currentUser.vip) {
-                    discount = Math.floor(tp * 0.05);
+                let isCumple = false;
+                if (currentUser.birthday) {
+                    const parts = currentUser.birthday.split('-');
+                    if (parts.length === 3) {
+                        const hoy = new Date();
+                        const bDay = parseInt(parts[2], 10);
+                        const bMonth = parseInt(parts[1], 10) - 1;
+                        if (hoy.getDate() === bDay && hoy.getMonth() === bMonth) {
+                            isCumple = true;
+                        }
+                    }
+                }
+
+                if (isCumple) {
+                    discount = Math.floor(tp * (currentUser.vip ? 0.08 : 0.04));
                 } else {
-                    discount = Math.floor(tp * 0.06);
+                    discount = currentUser.vip ? Math.floor(tp * 0.05) : 0;
                 }
 
                 if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
