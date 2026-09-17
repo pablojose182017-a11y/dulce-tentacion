@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -182,13 +182,24 @@
 
     <section id="admin-dashboard" class="section">
         <div class="section-title" id="admin-title-panel">📊 Panel Administrativo & Financiero</div>
+        
+        <!-- PESTAÑAS (TABS) ADMIN -->
+        <div class="admin-tabs-nav">
+            <button class="admin-tab-btn active" id="admin-tab-btn-pedidos" onclick="cambiarPestanaAdmin('pedidos')">📋 Pedidos en Vivo</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-productos" onclick="cambiarPestanaAdmin('productos')">🥐 Control de Productos y Stock</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-contabilidad" onclick="cambiarPestanaAdmin('contabilidad')">📊 Contabilidad y Finanzas</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-usuarios" onclick="cambiarPestanaAdmin('usuarios')">👥 Usuarios y Personal</button>
+        </div>
+
         <div id="admin-local-warning"
             style="background:#fff3cd; border:1px solid #ffe69c; color:#664d03; padding:12px; border-radius:8px; text-align:center; margin-bottom:20px; font-size:0.9rem;">
             <strong>¡Aviso!</strong> Datos guardados localmente. Integrar backend (Firebase/Supabase) para
             multi-dispositivo.
         </div>
 
-        <!-- CONTROL DE STOCK DIARIO -->
+        <!-- TAB 2: PRODUCTOS -->
+        <div id="admin-tab-productos" class="admin-tab-container" style="display:none;">
+            <!-- CONTROL DE STOCK DIARIO -->
         <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
             <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1.1rem;">🥖 Disponibilidad de Productos del Día</h4>
             
@@ -205,8 +216,12 @@
                 <!-- Se llena con JS -->
             </div>
         </div>
+            </div>
+        </div>
 
-        <!-- MONITOR DE PEDIDOS EN VIVO -->
+        <!-- TAB 1: PEDIDOS -->
+        <div id="admin-tab-pedidos" class="admin-tab-container">
+            <!-- MONITOR DE PEDIDOS EN VIVO -->
         <div style="margin-bottom:20px;">
             <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:15px; gap:10px;">
                 <h4 style="margin:0; color:var(--brand-pink); font-size:1.1rem;">📦 Monitor de Pedidos en Vivo</h4>
@@ -231,8 +246,13 @@
             </div>
         </div>
 
-        <!-- ADMIN ONLY CONTAINERS -->
+            </div>
+        </div>
+
+        <!-- ADMIN ONLY CONTAINERS (wraps the rest for security, but now divided into tabs) -->
         <div id="admin-only-sections">
+            <!-- TAB 3: CONTABILIDAD -->
+            <div id="admin-tab-contabilidad" class="admin-tab-container" style="display:none;">
             <!-- DASHBOARD TARJETAS -->
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:25px;"
                 id="admin-dashboard-cards">
@@ -263,7 +283,12 @@
                     <button class="btn-gold" onclick="saveConfigFromAdmin()" style="padding:8px 20px;">Guardar</button>
                 </div>
             </div>
+                </div>
+            </div>
+            </div> <!-- End Tab Contabilidad -->
 
+            <!-- TAB 4: USUARIOS -->
+            <div id="admin-tab-usuarios" class="admin-tab-container" style="display:none;">
             <!-- REGISTRAR CLIENTE / PERSONAL -->
             <div
                 style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
@@ -325,7 +350,9 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div> <!-- Fin Tab Usuarios -->
+        </div> <!-- Fin admin-only-sections -->
+        
         <div style="text-align:center; margin-top:20px;">
             <button class="btn-gold" onclick="showSection('inicio')">⬅ Volver al Inicio</button>
         </div>
@@ -477,7 +504,7 @@
     <section id="nosotros" class="section">
         <div class="info-card">
             <h2>¿Quiénes somos?</h2>
-            <p class="about-lead">Somos <strong>Dulce Tentación P y S</strong>, una panadería y pastelería 100% cucuteña
+            <p class="about-lead">Somos <strong>P&S Punto Dulce</strong>, una panadería y pastelería 100% cucuteña
                 donde la calidez humana, la pasión por la masa y el sabor casero se unen para consentir tu paladar.</p>
             <p style="color:#475569;font-size:1rem;margin-bottom:14px;">Nos esforzamos cada madrugada por amasar los
                 mejores ingredientes y garantizar panes frescos, esponjosos y crujientes que lleguen a la mesa de las
@@ -528,8 +555,7 @@
                 </div>
                 <div class="contact-box">
                     <h4>📞 Contacto / Pedidos</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 313 304
-                        0870<br><strong>Cobertura:</strong> Toda Cúcuta y Los Patios.<br><strong>Tiempo
+                    <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 322 951 2693<br><strong>Cobertura:</strong> Toda Cúcuta y Los Patios.<br><strong>Tiempo
                             estimado:</strong> 25 a 45 minutos.</p>
                 </div>
                 <div class="contact-box">
@@ -650,11 +676,7 @@
                 <div class="auth-divider"><span>o accede rápidamente con</span></div>
 
                 <div style="display:flex; justify-content:center; align-items:center;">
-                    <div id="g_id_onload"
-                        data-client_id="463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com"
-                        data-context="signin" data-ux_mode="popup" data-callback="handleCredentialResponse"
-                        data-auto_prompt="false">
-                    </div>
+                    
                     <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
                         data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left">
                     </div>
@@ -1107,8 +1129,17 @@
     </div>
 
     <!-- ===== JAVASCRIPT ===== -->
+    
+    <!-- Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Sync Module -->
+    <script src="firebase-sync.js"></script>
+    
     <script src="script.js"></script>
     <script src="control-roles.js"></script>
+    <script src="contabilidad.js"></script>
     <script>
         window.updateProductPrice = function(productId, val) {
             const unidadesMap = { 101: 25, 102: 50, 103: 100 };
@@ -1129,5 +1160,24 @@
             }
         };
     </script>
+    <script>
+    window.addEventListener('load', () => {
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            if (typeof google !== 'undefined' && google.accounts) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: "463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com",
+                        callback: handleCredentialResponse
+                    });
+                    const gsiDivs = document.querySelectorAll('.g_id_signin');
+                    gsiDivs.forEach(div => {
+                        google.accounts.id.renderButton(div, { type: "standard", size: "large", theme: "outline", text: "sign_in_with", shape: "rectangular", logo_alignment: "left" });
+                    });
+                } catch(e) { console.warn('GSI Init Error', e); }
+            }
+        }
+    });
+    </script>
 </body>
 </html>
+

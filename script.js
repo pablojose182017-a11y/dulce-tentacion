@@ -1,4 +1,4 @@
-        const PHONE = "573133040870";
+        const PHONE = "573229512693";
 
         const products = [
             { id: 1, name: "Pan Cascarita Tradicional", price: 500, cat: "panaderia", featured: true, tag: "🔥 Más Pedido", desc: "Crocante por fuera y miga suave por dentro. El rey de las mañanas cucuteñas.", img: "pan cascarita 500 pesos.jpeg" },
@@ -281,9 +281,9 @@
         }
 
         const pointRewards = [
-            { id: 'r1', name: 'Café Americano o Latte', cost: 100, img: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=100' },
-            { id: 'r2', name: 'Croissant Artesanal Relleno', cost: 150, img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=100' },
-            { id: 'r3', name: 'Caja de Galletas Especiales', cost: 300, img: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=100' }
+            { id: 'r1', name: 'Hojaldre de Bocadillo y Queso', cost: 1000, img: 'logo-pys.png' },
+            { id: 'r2', name: 'Hojaldre de Pollo', cost: 2000, img: 'logo-pys.png' },
+            { id: 'r3', name: 'Hojaldre de Pollo, Jamón y Queso', cost: 3000, img: 'logo-pys.png' }
         ];
 
         function openPointsModal() {
@@ -712,7 +712,7 @@
                 }
 
                 // Phone for WhatsApp
-                const cPhone = (u && u.phone) ? u.phone.replace(/\D/g, '') : '573133040870';
+                const cPhone = (u && u.phone) ? u.phone.replace(/\D/g, '') : '573229512693';
                 
                 let actionsHtml = '';
                 if (tabId === 'activos') {

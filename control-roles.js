@@ -8,13 +8,13 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 1. INYECTAR MODAL DE CONTRASEÑA SI NO EXISTE ---
     if (!document.getElementById('adminPasswordModal')) {
         const modalHTML = `
-        <div id="adminPasswordModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+        <div id="adminPasswordModal" class="modal-overlay" style="display:none !important; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
             <div class="modal-content" style="max-width:400px; padding:20px; text-align:center; background:#fff; border-radius:12px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
                 <h3 style="color:var(--brand-pink); margin-bottom:15px; font-size:1.5rem;">🔑 Restablecer Contraseña</h3>
                 <p id="adminPasswordModalUser" style="margin-bottom:15px; font-weight:bold; color:#475569; font-size:0.95rem;"></p>
                 <input type="password" id="adminNewPasswordInput" placeholder="Nueva Contraseña..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:1rem;">
                 <div style="display:flex; gap:10px; justify-content:center;">
-                    <button class="btn-hero-secondary" onclick="document.getElementById('adminPasswordModal').style.display='none'" style="padding:10px 20px; border:1px solid #ddd; background:#f1f5f9; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Cancelar</button>
+                    <button class="btn-hero-secondary" onclick="document.getElementById('adminPasswordModal').style.setProperty('display', 'none', 'important')" style="padding:10px 20px; border:1px solid #ddd; background:#f1f5f9; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Cancelar</button>
                     <button class="btn-gold" onclick="saveAdminNewPassword()" style="padding:10px 20px; border:none; background:var(--brand-pink); color:#fff; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Guardar</button>
                 </div>
             </div>
@@ -22,20 +22,12 @@ window.addEventListener('DOMContentLoaded', () => {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
 
-    // --- 2. INYECTAR TABS DE NAVEGACIÓN EN ADMIN ---
-    const titlePanel = document.getElementById('admin-title-panel');
-    if (titlePanel && !document.getElementById('admin-tabs-nav')) {
-        const tabsNav = document.createElement('div');
-        tabsNav.id = 'admin-tabs-nav';
-        tabsNav.innerHTML = `
-            <div style="display:flex; gap:10px; margin-bottom:20px; overflow-x:auto; padding-bottom:5px; scrollbar-width:none;">
-                <button class="cat-chip active" id="tab-btn-pedidos" onclick="cambiarPestanaAdmin('pedidos', this)">📦 Pedidos</button>
-                <button class="cat-chip" id="tab-btn-productos" onclick="cambiarPestanaAdmin('productos', this)">🥖 Productos</button>
-                <button class="cat-chip" id="tab-btn-contabilidad" onclick="cambiarPestanaAdmin('contabilidad', this)">📊 Contabilidad</button>
-                <button class="cat-chip" id="tab-btn-usuarios" onclick="cambiarPestanaAdmin('usuarios', this)">👥 Usuarios</button>
-            </div>
-        `;
-        titlePanel.insertAdjacentElement('afterend', tabsNav);
+    // --- SANITIZACIÓN DE CARRITO DE EMERGENCIA ---
+    if (typeof cart !== 'undefined' && Array.isArray(cart)) {
+        cart = cart.filter(i => !isNaN(Number(i.price)) && Number(i.price) >= 0);
+        cart.forEach(i => { i.quantity = Number(i.quantity) || 1; i.price = Number(i.price) || 0; });
+        try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch(e){}
+        if (typeof updateCart === 'function') updateCart();
     }
 
     // --- 3. SOBRESCRIBIR SYNCUSERUI ---
@@ -70,13 +62,13 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (mobAdminBtn) {
                         mobAdminBtn.style.display = 'flex';
                         mobAdminBtn.innerText = '⚙️ Panel Administrador';
-                        mobAdminBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos', document.getElementById('tab-btn-pedidos'));");
+                        mobAdminBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
                     }
                     if (adminOnlyDiv) adminOnlyDiv.style.display = 'block';
                     if (adminTitle) adminTitle.innerText = '📊 Panel Administrativo & Financiero';
                     
                     if (deskAdminBtn) {
-                         deskAdminBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos', document.getElementById('tab-btn-pedidos'));");
+                         deskAdminBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
                     }
                 } else if (isWorker) {
                     if (deskKitchenBtn) deskKitchenBtn.style.display = 'flex';
@@ -186,46 +178,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // --- FUNCIONES GLOBALES INTERCEPTADAS ---
 
-window.cambiarPestanaAdmin = function(tabId, btnElement) {
-    const nav = document.getElementById('admin-tabs-nav');
-    if (nav && btnElement) {
-        nav.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-        btnElement.classList.add('active');
-    }
-
-    // Identificar las secciones envueltas 
-    const stockDiv = document.getElementById('admin-stock-grid')?.parentElement; // Productos
-    const ordersDiv = document.getElementById('live-orders-grid')?.parentElement?.parentElement; // Pedidos
-    const adminOnlyDiv = document.getElementById('admin-only-sections'); 
-
-    if (stockDiv) stockDiv.style.display = (tabId === 'productos' || tabId === 'todos') ? 'block' : 'none';
-    if (ordersDiv) ordersDiv.style.display = (tabId === 'pedidos' || tabId === 'todos') ? 'block' : 'none';
-
-    if (adminOnlyDiv) {
-        const cardsDiv = document.getElementById('admin-dashboard-cards');
-        const configDiv = document.getElementById('adminMinPurchase')?.closest('div[style*="background:#fff"]');
-        const registerDiv = document.getElementById('adminNewName')?.closest('div[style*="background:#fff"]');
-        const top5Div = document.getElementById('admin-top-clients')?.closest('div[style*="display:flex"]');
-        
-        const userSearch = document.getElementById('adminUserSearch');
-        const tableHeading = userSearch?.previousElementSibling; 
-        const userTabs = userSearch?.nextElementSibling;
-        const userTableWrapper = userTabs?.nextElementSibling; // div that wraps table
-        
-        // Contabilidad
-        if (cardsDiv) cardsDiv.style.display = (tabId === 'contabilidad' || tabId === 'todos') ? 'grid' : 'none';
-        if (configDiv) configDiv.style.display = (tabId === 'contabilidad' || tabId === 'todos') ? 'block' : 'none';
-        if (top5Div) top5Div.style.display = (tabId === 'contabilidad' || tabId === 'todos') ? 'flex' : 'none';
-
-        // Usuarios
-        if (registerDiv) registerDiv.style.display = (tabId === 'usuarios' || tabId === 'todos') ? 'block' : 'none';
-        if (tableHeading) tableHeading.style.display = (tabId === 'usuarios' || tabId === 'todos') ? 'block' : 'none';
-        if (userSearch) userSearch.style.display = (tabId === 'usuarios' || tabId === 'todos') ? 'block' : 'none';
-        if (userTabs) userTabs.style.display = (tabId === 'usuarios' || tabId === 'todos') ? 'flex' : 'none';
-        if (userTableWrapper) userTableWrapper.style.display = (tabId === 'usuarios' || tabId === 'todos') ? 'block' : 'none';
-    }
-};
-
 window.confirmRoleChange = function(email) {
     const selectEl = document.getElementById(`roleSel_${email.replace(/[@.]/g, '_')}`);
     if (!selectEl) return;
@@ -298,7 +250,7 @@ window.adminChangePassword = function(email) {
     const input = document.getElementById('adminNewPasswordInput');
     if (input) input.value = '';
     const modal = document.getElementById('adminPasswordModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) modal.style.setProperty('display', 'flex', 'important');
 };
 
 window.saveAdminNewPassword = function() {
@@ -317,7 +269,7 @@ window.saveAdminNewPassword = function() {
     if (typeof saveUsersDB === 'function') saveUsersDB();
     
     const modal = document.getElementById('adminPasswordModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.style.setProperty('display', 'none', 'important');
     if(typeof showToast === 'function') showToast('Contraseña restablecida exitosamente', '✅');
 };
 
@@ -399,3 +351,251 @@ window.updateUserRole = function(email, role) {
     confirmRoleChange(email);
     selWrapper.remove();
 };
+
+
+// === AJUSTES Y PESTAÑAS (SOBREESCRITURAS) ===
+window.cambiarPestanaAdmin = function(tab) {
+    const containers = document.querySelectorAll('.admin-tab-container');
+    containers.forEach(c => c.style.setProperty('display', 'none', 'important'));
+
+    const selected = document.getElementById('admin-tab-' + tab);
+    if (selected) {
+        selected.style.setProperty('display', 'block', 'important');
+    }
+
+    const btnIds = ['pedidos', 'productos', 'contabilidad', 'usuarios'];
+    btnIds.forEach(id => {
+        const btn = document.getElementById('admin-tab-btn-' + id);
+        if (btn) btn.classList.remove('active');
+    });
+    
+    const activeBtn = document.getElementById('admin-tab-btn-' + tab);
+    if (activeBtn) activeBtn.classList.add('active');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 3. EVITAR PANTALLA EN BLANCO Y REPARAR CARRITO:
+    const modales = ['modal-detalle-pedido', 'rankingModal', 'adminPasswordModal'];
+    modales.forEach(id => {
+        const m = document.getElementById(id);
+        if (m) {
+            m.style.setProperty('display', 'none', 'important');
+        }
+    });
+
+    if (typeof cambiarPestanaAdmin === 'function') {
+        cambiarPestanaAdmin('pedidos');
+    }
+});
+
+// === RESCATE DE FUNCIONES PERDIDAS ===
+
+// 1. RESCATE DE WHATSAPP LIMPIO Y SIN ROMBOS
+window.sendOrder = function() {
+    if (cart.length === 0) return alert("¡Tu carrito está vacío!");
+
+    const nameElement = document.getElementById('orderName');
+    const addrElement = document.getElementById('orderAddress');
+    const notesElement = document.getElementById('orderNotes');
+    
+    const name = nameElement ? nameElement.value.trim() : (typeof currentUser !== 'undefined' && currentUser ? currentUser.name : '');
+    const addr = addrElement ? addrElement.value.trim() : '';
+    const notes = notesElement ? notesElement.value.trim() : '';
+
+    if (!name || !addr) return alert("Por favor, llena tu nombre y dirección.");
+    if (typeof selectedPay === 'undefined' || !selectedPay) return alert("Por favor, selecciona un método de pago.");
+
+    if (cart.some(i => i.type === 'evento' || i.id.toString().startsWith('custom'))) {
+        orderType = 'evento';
+    }
+
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        const u = typeof db_users !== 'undefined' ? db_users.find(x => x.email === currentUser.email) : null;
+        if (u && u.blocked) {
+            return alert("Tu cuenta ha sido bloqueada. No puedes realizar pedidos.");
+        }
+    }
+
+    const tq = cart.reduce((a, i) => a + i.quantity, 0);
+    const tp = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
+    
+    let discount = 0;
+    let finalTotal = tp;
+
+    if (typeof currentUser !== 'undefined' && currentUser && typeof adminConfig !== 'undefined' && adminConfig.vipEnabled && tp >= adminConfig.minPurchase) {
+        let isCumple = false;
+        if (currentUser.birthday) {
+            const parts = currentUser.birthday.split('-');
+            if (parts.length === 3) {
+                const hoy = new Date();
+                const bDay = parseInt(parts[2], 10);
+                const bMonth = parseInt(parts[1], 10) - 1;
+                if (hoy.getDate() === bDay && hoy.getMonth() === bMonth) {
+                    isCumple = true;
+                }
+            }
+        }
+
+        if (isCumple) {
+            discount = Math.floor(tp * (currentUser.vip ? 0.08 : 0.04));
+        } else {
+            discount = currentUser.vip ? Math.floor(tp * 0.05) : 0;
+        }
+
+        if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
+        finalTotal = tp - discount;
+
+        let ptsEarned = Math.floor(tp / 1000);
+
+        if (ptsEarned > 0 && typeof db_users !== 'undefined') {
+            currentUser.points = (currentUser.points || 0) + ptsEarned;
+            const uidx = db_users.findIndex(u => u.email === currentUser.email);
+            if (uidx !== -1) { db_users[uidx].points = currentUser.points; if (typeof saveUsersDB === 'function') saveUsersDB(); }
+            if (typeof saveUser === 'function') saveUser();
+            if (typeof syncUserUI === 'function') syncUserUI();
+        }
+    }
+
+    // Generar Orden y Guardar en Historial
+    const orderId = 'DT-' + Date.now().toString().slice(-4);
+    const dateStr = new Date().toLocaleString('es-CO');
+    const newOrder = {
+        id: orderId,
+        date: dateStr,
+        customer: name,
+        email: typeof currentUser !== 'undefined' && currentUser?.email ? currentUser.email : 'N/A',
+        phone: typeof currentUser !== 'undefined' && currentUser?.phone ? currentUser.phone : 'N/A',
+        address: addr,
+        products: cart.map(i => `${i.quantity}x ${i.name}`).join(', '),
+        subtotal: tp,
+        discount: discount,
+        total: finalTotal,
+        status: 'Pendiente',
+        payStatus: 'Pendiente - ' + (typeof selectedPay !== 'undefined' ? selectedPay : ''),
+        type: (typeof orderType !== 'undefined' ? orderType : 'inmediato'),
+        timestamp: Date.now()
+    };
+    
+    if (typeof pedidosHistorial !== 'undefined') {
+        pedidosHistorial.push(newOrder);
+        if (typeof lastOrderCount !== 'undefined') { lastOrderCount = pedidosHistorial.length; }
+        if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
+    }
+    
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        if (!currentUser.history) currentUser.history = [];
+        currentUser.history.push(newOrder);
+        if (typeof db_users !== 'undefined') {
+            const uidx = db_users.findIndex(u => u.email === currentUser.email);
+            if (uidx !== -1) { db_users[uidx].history = currentUser.history; if (typeof saveUsersDB === 'function') saveUsersDB(); }
+        }
+        if (typeof saveUser === 'function') saveUser();
+    }
+
+    let msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.vip) {
+        msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
+    }
+    msg += `📲 *NUEVO PEDIDO ${orderId}*\n`;
+    if (typeof orderType !== 'undefined' && orderType === 'evento') {
+        msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.vip) {
+            msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
+        }
+        msg += `🎂 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*\n`;
+        const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
+        if (evtItem && evtItem.customData) {
+            msg += `📅 *Fecha de entrega:* ${evtItem.customData.date}\n`;
+            msg += `⏰ *Hora:* ${evtItem.customData.time}\n`;
+        } else {
+            msg += `📅 *Fecha:* ${document.getElementById('eventDate')?.value || 'N/A'}\n`;
+            msg += `⏰ *Hora:* ${document.getElementById('eventTime')?.value || 'N/A'}\n`;
+        }
+    }
+    msg += `📍 *Ciudad:* Cúcuta, Norte de Santander\n`;
+    if (typeof currentUser !== 'undefined' && currentUser && discount > 0) {
+        if (currentUser.vip) {
+            msg += `👑 *[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]*\n`;
+        } else {
+            msg += `🎁 *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
+        }
+    }
+    msg += `—————————————————————\n`;
+    msg += `👤 *Cliente:* ${name}\n`;
+    msg += `🏠 *Dirección / Barrio:* ${addr}\n`;
+    msg += `💵 *Pago:* ${typeof selectedPay !== 'undefined' ? selectedPay : ''}\n`;
+    if (notes) msg += `📝 *Notas:* ${notes}\n`;
+    msg += `—————————————————————\n`;
+    msg += `*PRODUCTOS PEDIDOS:*\n`;
+    cart.forEach(i => {
+        if (i.id.toString().startsWith('custom')) {
+            msg += `  • 🎂 ${i.name}\n`;
+            msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString()} COP\n`;
+            if(i.customData) {
+                msg += `    *Detalles:* Sabor: ${i.customData.sabor} | Tamaño: ${i.customData.tamano} | Diseño: ${i.customData.diseno}\n`;
+                if (i.customData.message) msg += `    *Mensaje:* "${i.customData.message}"\n`;
+                msg += `    🎁 *Kit de Fiesta GRATIS Incluido*\n`;
+            }
+        } else {
+            msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString()} COP\n`;
+        }
+    });
+    msg += `—————————————————————\n`;
+    msg += `*Total unidades:* ${tq}\n`;
+    if (discount > 0) {
+        msg += `💰 *Subtotal:* $${tp.toLocaleString()} COP\n`;
+        msg += `*Descuento ${typeof currentUser !== 'undefined' && currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString()} COP\n`;
+    }
+    msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString()} COP\n`;
+    if (typeof orderType !== 'undefined' && orderType === 'evento') {
+        const dep = Math.ceil(finalTotal / 2);
+        msg += `\n⚠️ *Pedido de Evento (Anticipo requerido)*\n`;
+        msg += `*Abonar 50% para reservar:* $${dep.toLocaleString()} COP\n`;
+        msg += `*Saldo pendiente contra entrega:* $${(finalTotal - dep).toLocaleString()} COP\n`;
+    }
+    msg += `—————————————————————\n`;
+    msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! 🙏`;
+
+    // Saneamiento FINAL: Quita los rombos corruptos si la version original los trajo escondidos y previene "undefined"
+    msg = msg.replace(/\uFFFD/g, '').replace(/undefined/g, '');
+
+    // Vaciar carrito
+    cart = [];
+    if (typeof saveCart === 'function') saveCart();
+    if (typeof updateCart === 'function') updateCart();
+    if (typeof showToast === 'function') showToast("Procesando pedido...", "⏳", 1500);
+
+    setTimeout(() => {
+        window.open(`https://wa.me/573229512693?text=${encodeURIComponent(msg)}`, '_blank');
+    }, 1000);
+};
+
+// 2. RESCATE DEL SELECTOR DE FECHAS
+document.addEventListener('DOMContentLoaded', () => {
+    const wDate = document.getElementById('w-date');
+    const eDate = document.getElementById('eventDate');
+    const inputs = [];
+    if (wDate) inputs.push(wDate);
+    if (eDate) inputs.push(eDate);
+
+    // Mañana en formato YYYY-MM-DD
+    const tomorrow = new Date(Date.now() + 86400000);
+    const minDateStr = tomorrow.toISOString().split('T')[0];
+
+    inputs.forEach(input => {
+        input.min = minDateStr;
+        input.addEventListener('click', () => {
+            if (typeof input.showPicker === 'function') {
+                try { input.showPicker(); } catch(e){}
+            }
+        });
+    });
+});
+
+// 3. RESCATE DE PROTECCIÓN DE IMÁGENES ROTAS
+window.addEventListener('error', function(e) {
+    if (e.target && e.target.tagName === 'IMG') {
+        e.target.onerror = null;
+        e.target.src = 'logo-pys.png';
+    }
+}, true);

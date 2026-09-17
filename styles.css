@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
 
         /* ===== BRAND VARIABLES ===== */
         :root {
@@ -4318,4 +4318,274 @@
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+}
+/* =========================================
+   TABS ADMINISTRADOR
+========================================= */
+.admin-tabs-nav {
+    display: flex;
+    gap: 10px;
+    background: #f4f4f6;
+    padding: 10px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+.admin-tabs-nav::-webkit-scrollbar {
+    display: none;
+}
+.admin-tab-btn {
+    flex: 1;
+    min-width: 200px;
+    background: transparent;
+    color: #64748b;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    white-space: nowrap;
+}
+.admin-tab-btn:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+.admin-tab-btn.active {
+    background: #fff;
+    color: #e6396b;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.admin-tab-container {
+    animation: fadeInTab 0.3s ease-in-out;
+}
+@keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+/* =========================================
+   TARJETAS M�TRICAS INTERACTIVAS
+========================================= */
+.metric-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.1) !important;
+}
+/* =========================================
+   BARRA DE FILTROS LIBRO CONTABLE
+========================================= */
+.contable-filtros-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin: 15px 0;
+    flex-wrap: wrap;
+    background: #f8fafc;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.contable-filtros-bar input {
+    border-radius: 8px;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    font-size: 0.9rem;
+    outline: none;
+    flex: 1;
+    min-width: 200px;
+}
+.contable-filtros-bar input:focus {
+    border-color: var(--brand-pink);
+    box-shadow: 0 0 0 2px rgba(230, 57, 107, 0.1);
+}
+.btn-secundario {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+.btn-secundario:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+/* =========================================
+   AJUSTE DE SELECT DE RELLENOS EN MOVILES
+========================================= */
+.filling-select {
+  font-size: 0.76rem !important;
+  padding: 6px 8px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.filling-label {
+  font-size: 0.75rem !important;
+}
+/* =========================================
+   ESTADOS DE PEDIDOS
+========================================= */
+.status-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.status-pendiente { background-color: #fff3cd !important; color: #856404 !important; border-color: #ffeeba !important; }
+.status-en-horno { background-color: #e1f5fe !important; color: #0277bd !important; border-color: #b3e5fc !important; }
+.status-entregado { background-color: #e8f5e9 !important; color: #2e7d32 !important; border-color: #c8e6c9 !important; }
+
+/* =========================================
+   ESTILO MODERNO PARA SELECTOR DE FECHA
+========================================= */
+.cake-delivery-date, input[type="date"].form-control, #w-date, #eventDate {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  background-color: #fff9fa;
+  border: 1.8px solid #f6c5d2;
+  border-radius: 12px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.25s ease-in-out;
+  box-shadow: 0 2px 6px rgba(230, 57, 107, 0.05);
+}
+
+.cake-delivery-date:hover, input[type="date"].form-control:hover, #w-date:hover, #eventDate:hover {
+  border-color: #e6396b;
+  background-color: #ffffff;
+}
+
+.cake-delivery-date:focus, input[type="date"].form-control:focus, #w-date:focus, #eventDate:focus {
+  border-color: #e6396b;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(230, 57, 107, 0.15);
+}
+
+/* Estilizar el icono del calendario nativo */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(32%) sepia(85%) saturate(2280%) hue-rotate(324deg) brightness(91%) contrast(93%);
+  padding: 4px;
+  transform: scale(1.15);
+  transition: transform 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  transform: scale(1.3);
+}
+
+/* =========================================
+   ESTILOS PARA TARJETAS DE ADMIN MEJORADAS
+========================================= */
+.admin-order-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    min-width: 320px;
+    flex: 1 1 320px;
+    box-sizing: border-box;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.admin-order-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.admin-order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+}
+
+.badge-type {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    flex-shrink: 1;
+}
+
+.order-total {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: var(--brand-pink);
+    white-space: nowrap; /* Evita que el precio se corte en varias lneas */
+    flex-shrink: 0;
+}
+
+.pay-sin { background-color: #fee2e2 !important; color: #991b1b !important; }
+.pay-anticipo { background-color: #fef3c7 !important; color: #b45309 !important; }
+.pay-pagado { background-color: #dcfce3 !important; color: #166534 !important; }
+
+/* CSS RESTRUCTURING FOR ADMIN GRID */
+#live-orders-grid, .orders-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+    gap: 20px !important;
+    padding: 15px 0 !important;
+    width: 100% !important;
+}
+
+.admin-order-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    transition: transform 0.2s, box-shadow 0.2s;
+    /* width is now handled by CSS grid */
+    min-width: 0;
+}
+
+.admin-order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+}
+
+.order-total {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: #e6396b !important;
+    white-space: nowrap !important;
+}
+
+/* Estilos para las tarjetas de métricas interactivas */
+.metric-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
