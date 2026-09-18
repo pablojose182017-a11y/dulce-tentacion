@@ -1898,6 +1898,11 @@ window.abrirModalPromoRegalo = function() {
             <button class="auth-close-btn" onclick="document.getElementById('modal-promo-regalo').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
             <h3 style="margin-top:0; color:#8b5cf6; text-align:center;">🎁 Configurar Regalo</h3>
             
+            <div style="margin-bottom:12px; text-align:left;">
+                <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:5px;">Nombre o Mensaje de la Promoción:</label>
+                <input type="text" id="promo-regalo-nombre" value="${conf.nombrePromo || ''}" placeholder="Ej: ❤️ Especial Amor y Amistad" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+            </div>
+            
             <div style="margin-bottom:15px; text-align:left;">
                 <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Monto mínimo de compra (COP)</label>
                 <input type="number" id="promo-regalo-monto" value="${conf.montoMinimo || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 50000">
@@ -1932,6 +1937,7 @@ window.abrirModalPromoRegalo = function() {
 window.guardarPromoRegalo = function() {
     window.dt_promo_regalo = {
         activa: document.getElementById('promo-regalo-activa').checked,
+        nombrePromo: document.getElementById('promo-regalo-nombre').value.trim() || 'Promo Especial',
         montoMinimo: parseInt(document.getElementById('promo-regalo-monto').value) || 0,
         productoId: parseInt(document.getElementById('promo-regalo-producto').value) || null,
         cantidad: parseInt(document.getElementById('promo-regalo-qty').value) || 1

@@ -467,11 +467,54 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- SINCRONIZACIÓN DE PROMO REGALO ---
+    window.renderPromoBanner = function() {
+        let banner = document.getElementById('dt-promo-banner');
+        const conf = window.dt_promo_regalo;
+        
+        if (!conf || !conf.activa) {
+            if (banner) banner.style.display = 'none';
+            return;
+        }
+        
+        const giftProduct = typeof products !== 'undefined' ? products.find(p => p.id == conf.productoId) : null;
+        if (!giftProduct) return;
+        
+        const nombrePromo = conf.nombrePromo || 'Promoción Especial';
+        
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'dt-promo-banner';
+            // Insertar debajo del hero o del navbar
+            const target = document.querySelector('.hero') || document.querySelector('header') || document.body.firstChild;
+            if (target && target.parentNode) {
+                target.parentNode.insertBefore(banner, target.nextSibling);
+            } else {
+                document.body.prepend(banner);
+            }
+        }
+        
+        banner.style.display = 'block';
+        banner.style.background = 'linear-gradient(90deg, #ec4899 0%, #8b5cf6 100%)';
+        banner.style.color = '#fff';
+        banner.style.padding = '12px 20px';
+        banner.style.textAlign = 'center';
+        banner.style.fontSize = '14px';
+        banner.style.position = 'relative';
+        banner.style.zIndex = '999';
+        banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+        
+        banner.innerHTML = `
+            <span style="display:inline-block; max-width:90%;">🎁 <strong>${nombrePromo}:</strong> ¡Por compras superiores a $${conf.montoMinimo.toLocaleString()} lleva ${conf.cantidad}x ${giftProduct.name} totalmente GRATIS!</span>
+            <button onclick="document.getElementById('dt-promo-banner').style.display='none'" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+        `;
+    };
+
     db.collection('config').doc('promocion_regalo').onSnapshot(doc => {
         if (doc.exists) {
             window.dt_promo_regalo = doc.data();
             localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
             if (typeof updateCart === 'function') updateCart();
+            window.renderPromoBanner();
         }
     }, err => console.warn("Error escuchando promocion_regalo:", err));
 
@@ -490,12 +533,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 if (conf.activa && subtotal >= conf.montoMinimo && conf.productoId) {
                     const giftExists = cart.find(item => item.isPromoGift);
+                    const nombrePromo = conf.nombrePromo || 'Promo Especial';
+                    const giftProduct = typeof products !== 'undefined' ? products.find(p => p.id == conf.productoId) : null;
+                    
                     if (!giftExists) {
-                        const giftProduct = typeof products !== 'undefined' ? products.find(p => p.id == conf.productoId) : null;
                         if (giftProduct) {
                             cart.push({
                                 id: 'promo-gift-' + Date.now(),
-                                name: `🎁 OBSEQUIO PROMO: ${giftProduct.name}`,
+                                name: `🎁 CORTESÍA (${nombrePromo}): ${giftProduct.name}`,
                                 price: 0,
                                 qty: conf.cantidad || 1,
                                 isPromoGift: true
@@ -503,9 +548,8 @@ window.addEventListener('DOMContentLoaded', () => {
                         }
                     } else {
                         // Actualizar cantidad y nombre por si el admin cambió la config
-                        const giftProduct = typeof products !== 'undefined' ? products.find(p => p.id == conf.productoId) : null;
                         if (giftProduct) {
-                            giftExists.name = `🎁 OBSEQUIO PROMO: ${giftProduct.name}`;
+                            giftExists.name = `🎁 CORTESÍA (${nombrePromo}): ${giftProduct.name}`;
                             giftExists.qty = conf.cantidad || 1;
                         }
                     }
@@ -518,7 +562,45 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-            return originalUpdateCart.apply(this, arguments);
+            
+            const res = originalUpdateCart.apply(this, arguments);
+            
+            // LÓGICA DEL MOTIVADOR
+            if (typeof cart !== 'undefined' && window.dt_promo_regalo && window.dt_promo_regalo.activa && document.getElementById('cartModal')) {
+                const conf = window.dt_promo_regalo;
+                const realItems = cart.filter(item => !item.isPromoGift);
+                let subtotal = 0;
+                realItems.forEach(item => {
+                    subtotal += (item.price * item.qty);
+                });
+                
+                let motivator = document.getElementById('dt-cart-motivator');
+                const cartContainer = document.getElementById('cart-items-container');
+                
+                if (subtotal > 0 && subtotal < conf.montoMinimo) {
+                    if (!motivator) {
+                        motivator = document.createElement('div');
+                        motivator.id = 'dt-cart-motivator';
+                        if (cartContainer) {
+                            cartContainer.parentNode.insertBefore(motivator, cartContainer.nextSibling);
+                        }
+                    }
+                    const faltante = conf.montoMinimo - subtotal;
+                    const porcentaje = Math.min(100, Math.round((subtotal / conf.montoMinimo) * 100));
+                    motivator.innerHTML = `
+                        <div style="background:#fdf2f8; border:1px solid #fbcfe8; border-radius:10px; padding:12px; margin:15px 0; text-align:center;">
+                            <p style="margin:0 0 8px 0; color:#db2777; font-size:13px; font-weight:bold;">¡Te faltan $${faltante.toLocaleString()} para recibir tu regalo de cortesía 🎁!</p>
+                            <div style="width:100%; background:#fce7f3; height:8px; border-radius:4px; overflow:hidden;">
+                                <div style="width:${porcentaje}%; background:linear-gradient(90deg, #ec4899 0%, #db2777 100%); height:100%; transition:width 0.4s ease-out;"></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (motivator) {
+                    motivator.remove();
+                }
+            }
+            
+            return res;
         };
     }
 
