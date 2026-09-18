@@ -1256,69 +1256,73 @@ window.abrirModalEdicionProducto = function(pId = null) {
     
     const modalTitle = pId ? '✏️ Editar Producto' : '✨ Crear Nuevo Producto';
     const btnGuardarText = pId ? '💾 Guardar Cambios' : '💾 Crear Producto';
-    const btnRestaurar = pId ? `<button onclick="window.restaurarProductoOriginal(${pId})" style="width:100%; padding:10px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">🔄 Restaurar Original</button>` : '';
-    const btnEliminar = pId ? `<button type="button" id="btn-borrar-prod-modal" onclick="window.eliminarProducto(${pId})" style="background:#ef4444; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; margin-top:8px;">🗑️ Eliminar Producto</button>` : '';
+    const btnRestaurar = pId ? `<button type="button" onclick="window.restaurarProductoOriginal(${pId})" style="flex:1; padding:8px 12px; background:transparent; color:#64748b; border:1px solid #cbd5e1; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">🔄 Restaurar</button>` : '';
+    const btnEliminar = pId ? `<button type="button" id="btn-borrar-prod-modal" onclick="window.eliminarProducto(${pId})" style="flex:1; background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fee2e2';" onmouseout="this.style.background='#fef2f2';">🗑️ Eliminar Producto</button>` : '';
 
     
     const modal = document.getElementById('modal-editar-producto');
     modal.innerHTML = `
-        <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-            <button class="auth-close-btn" onclick="document.getElementById('modal-editar-producto').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
-            <h3 style="margin-top:0; color:#10b981; text-align:center;">${modalTitle}</h3>
+        <div class="auth-content" style="max-width:420px; width:92%; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 12px 32px rgba(0,0,0,0.15);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-editar-producto').style.display='none'" style="position:absolute; top:12px; right:12px; background:#fff; border:1px solid #e2e8f0; border-radius:50%; width:32px; height:32px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">✕</button>
             
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Nombre del Producto</label>
-                <input type="text" id="edit-prod-name" value="${cleanName}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. Pan Navideño">
+            <div style="text-align:center; margin-bottom:20px;">
+                <h3 style="margin:0; font-size:18px; font-weight:700; color:#0f172a;">${modalTitle}</h3>
+                <p style="margin:4px 0 0 0; color:#64748b; font-size:12px;">Completa los datos para actualizar el catálogo en tiempo real.</p>
             </div>
             
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="font-size:13px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">Categoría del Producto:</label>
-                <select id="edit-prod-category" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:1rem;">
-                    <option value="panaderia" ${catSelect === 'panaderia' ? 'selected' : ''}>🥖 Panadería (Pan)</option>
-                    <option value="paquetes" ${catSelect === 'paquetes' ? 'selected' : ''}>📦 Paquetes</option>
-                    <option value="antojos" ${catSelect === 'antojos' ? 'selected' : ''}>🍪 Antojos y Galletería</option>
-                    <option value="pasteleria" ${catSelect === 'pasteleria' ? 'selected' : ''}>🎂 Tortas & Postres</option>
-                    <option value="combos" ${catSelect === 'combos' ? 'selected' : ''}>🔥 Ofertas y Combos</option>
-                    <option value="eventos" ${catSelect === 'eventos' ? 'selected' : ''}>🎉 Eventos & Fiestas</option>
-                </select>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Nombre del Producto</label>
+                <input type="text" id="edit-prod-name" value="${cleanName}" style="width:100%; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:14px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Ej. Pan Navideño">
             </div>
             
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Precio Base (COP)</label>
-                <input type="number" id="edit-prod-price" value="${actualBasePrice || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 1500">
-            </div>
-            
-            <div style="margin-bottom:20px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Nombre de Archivo / URL de Imagen</label>
-                <input type="text" id="edit-prod-img" value="${actualImg}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. foto.jpg">
-                
-                <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center;">
-                    <input type="file" id="edit-prod-file-input" accept="image/*" style="display: none;" onchange="
-                        if(this.files && this.files[0]) {
-                            const file = this.files[0];
-                            document.getElementById('edit-prod-img').value = file.name;
-                            document.getElementById('edit-prod-file-name').innerText = file.name;
-                            const previewImg = document.getElementById('edit-prod-preview');
-                            previewImg.src = URL.createObjectURL(file);
-                            previewImg.style.display = 'inline-block';
-                        }
-                    ">
-                    <button type="button" id="btn-examinar-img" onclick="document.getElementById('edit-prod-file-input').click()" style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
-                        📁 Examinar del equipo...
-                    </button>
-                    <span id="edit-prod-file-name" style="font-size: 12px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"></span>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                <div>
+                    <label style="font-size:13px; font-weight:600; color:#475569; display:block; margin-bottom:6px;">Categoría del Producto</label>
+                    <select id="edit-prod-category" style="width:100%; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:14px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+                        <option value="panaderia" ${catSelect === 'panaderia' ? 'selected' : ''}>🥖 Panadería (Pan)</option>
+                        <option value="paquetes" ${catSelect === 'paquetes' ? 'selected' : ''}>📦 Paquetes</option>
+                        <option value="antojos" ${catSelect === 'antojos' ? 'selected' : ''}>🍪 Antojos y Galletería</option>
+                        <option value="pasteleria" ${catSelect === 'pasteleria' ? 'selected' : ''}>🎂 Tortas & Postres</option>
+                        <option value="combos" ${catSelect === 'combos' ? 'selected' : ''}>🔥 Ofertas y Combos</option>
+                        <option value="eventos" ${catSelect === 'eventos' ? 'selected' : ''}>🎉 Eventos & Fiestas</option>
+                    </select>
                 </div>
-                
-                <div style="margin-top: 10px; text-align: center;">
-                    <img id="edit-prod-preview" src="${actualImg}" alt="Vista previa" style="max-height: 90px; max-width: 100%; border-radius: 8px; object-fit: contain; border: 1px dashed #cbd5e1; padding: 4px; display: ${actualImg ? 'inline-block' : 'none'};">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Precio Base (COP)</label>
+                    <div style="position:relative;">
+                        <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:14px;">$</span>
+                        <input type="number" id="edit-prod-price" value="${actualBasePrice || ''}" style="width:100%; padding:10px 14px 10px 24px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:14px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'" placeholder="1500">
+                    </div>
                 </div>
             </div>
             
-            <div style="display:flex; gap:10px; flex-direction:column;">
-                <button onclick="window.guardarEdicionProducto(${pId ? pId : 'null'})" style="width:100%; padding:12px; background:#10b981; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">${btnGuardarText}</button>
-                ${btnRestaurar}
-                ${btnEliminar}
+            <div style="margin-bottom:24px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Fotografía del Producto</label>
+                <div style="border:1.5px dashed #cbd5e1; border-radius:12px; background:#f8fafc; padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; position:relative; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='#cbd5e1'">
+                    <img id="edit-prod-preview" src="${actualImg}" alt="Vista previa" style="height:100px; width:100px; border-radius:8px; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.08); display: ${actualImg ? 'block' : 'none'};">
+                    
+                    <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+                        <input type="file" id="edit-prod-file-input" accept="image/*" style="display:none;" onchange="
+                            if(this.files && this.files[0]) {
+                                const file = this.files[0];
+                                document.getElementById('edit-prod-img').value = file.name;
+                                const previewImg = document.getElementById('edit-prod-preview');
+                                previewImg.src = URL.createObjectURL(file);
+                                previewImg.style.display = 'block';
+                            }
+                        ">
+                        <button type="button" onclick="document.getElementById('edit-prod-file-input').click()" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">
+                            📁 Seleccionar Foto
+                        </button>
+                    </div>
+                    
+                    <input type="text" id="edit-prod-img" value="${actualImg}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #e2e8f0; font-size:11px; color:#64748b; text-align:center; background:#fff; margin-top:4px; outline:none;" placeholder="Nombre de archivo o URL">
+                </div>
             </div>
+            
+            <button onclick="window.guardarEdicionProducto(${pId ? pId : 'null'})" style="width:100%; padding:12px; background:#10b981; color:#fff; border:none; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer; box-shadow:0 4px 12px rgba(16,185,129,0.25); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(16,185,129,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.25)';">${btnGuardarText}</button>
+            
+            ${pId ? `<div style="display:flex; gap:10px; margin-top:12px;">${btnRestaurar}${btnEliminar}</div>` : ''}
         </div>
     `;
     modal.style.display = 'flex';
@@ -1627,69 +1631,97 @@ window.renderModalConfigTortasInterno = function() {
     let disenosHtml = '';
     config.disenos.forEach((d, index) => {
         disenosHtml += `
-            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center; background:#f8fafc;">
-                <img id="preview-torta-img-${index}" src="${d.img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; border:1px dashed #cbd5e1;">
-                <input type="text" id="torta-name-${index}" value="${d.name}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.8rem; text-align:center;">
-                <input type="text" id="torta-img-${index}" value="${d.img}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.7rem;" placeholder="URL / Archivo">
+            <div style="background:#fff; border:1px solid #f1f5f9; border-radius:14px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.06); position:relative;">
+                <div style="position:absolute; top:8px; left:8px; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; z-index:2;">
+                    ${d.name}
+                </div>
+                <img id="preview-torta-img-${index}" src="${d.img}" style="width:100%; height:140px; object-fit:cover; display:block;">
                 
-                <div style="display:flex; width:100%; gap:4px; margin-top:auto;">
-                    <input type="file" id="torta-file-${index}" accept="image/*" style="display:none;" onchange="
-                        if(this.files && this.files[0]) {
-                            const file = this.files[0];
-                            document.getElementById('torta-img-${index}').value = file.name;
-                            document.getElementById('preview-torta-img-${index}').src = URL.createObjectURL(file);
-                        }
-                    ">
-                    <button type="button" onclick="document.getElementById('torta-file-${index}').click()" style="flex:1; background:#e2e8f0; color:#1e293b; border:1px solid #cbd5e1; padding:4px; border-radius:4px; font-size:0.7rem; font-weight:600; cursor:pointer;">✏️ Cambiar</button>
-                    <button type="button" onclick="window.eliminarDisenoTorta(${index})" style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:600; cursor:pointer;">🗑️</button>
+                <div style="padding:10px; display:flex; flex-direction:column; gap:8px;">
+                    <input type="text" id="torta-name-${index}" value="${d.name}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; font-size:0.8rem; text-align:center; outline:none;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
+                    <input type="hidden" id="torta-img-${index}" value="${d.img}">
+                    
+                    <div style="display:flex; width:100%; gap:6px;">
+                        <input type="file" id="torta-file-${index}" accept="image/*" style="display:none;" onchange="
+                            if(this.files && this.files[0]) {
+                                const file = this.files[0];
+                                document.getElementById('torta-img-${index}').value = file.name;
+                                document.getElementById('preview-torta-img-${index}').src = URL.createObjectURL(file);
+                            }
+                        ">
+                        <button type="button" onclick="document.getElementById('torta-file-${index}').click()" style="flex:1; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; padding:6px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.2s;">✏️ Cambiar</button>
+                        <button type="button" onclick="window.eliminarDisenoTorta(${index})" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 10px; border-radius:6px; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">🗑️</button>
+                    </div>
                 </div>
             </div>
         `;
     });
 
     modal.innerHTML = `
-        <div class="auth-content" style="max-width:600px; width:95%; max-height:90vh; overflow-y:auto; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-            <button class="auth-close-btn" onclick="document.getElementById('modal-config-tortas').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer; z-index:10;">✕</button>
-            <h3 style="margin-top:0; color:#db2777; text-align:center;">🎂 Diseños y Precios de Tortas</h3>
+        <div class="auth-content" style="max-width:800px; width:95%; max-height:90vh; overflow-y:auto; padding:30px; background:#f8fafc; border-radius:24px; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-config-tortas').style.display='none'" style="position:absolute; top:15px; right:15px; background:#fff; border:1px solid #e2e8f0; border-radius:50%; width:36px; height:36px; font-size:1.2rem; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:#64748b; box-shadow:0 2px 5px rgba(0,0,0,0.05);">✕</button>
+            <div style="text-align:center; margin-bottom:24px;">
+                <h2 style="margin:0; color:#1e293b; font-size:1.6rem; font-weight:800;">🎂 Configuración de Tortas</h2>
+                <p style="margin:6px 0 0 0; color:#64748b; font-size:0.95rem;">Gestiona los precios base por tamaño y la galería de diseños públicos.</p>
+            </div>
             
             <!-- BLOQUE A: PRECIOS -->
-            <div style="background:#fdf2f8; border:1px solid #fbcfe8; padding:15px; border-radius:10px; margin-bottom:20px;">
-                <h4 style="margin-top:0; margin-bottom:12px; color:#be185d;">💰 Precios por Tamaño Base</h4>
+            <div style="background:#fff; border:1px solid #f1f5f9; padding:20px; border-radius:16px; margin-bottom:24px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
+                <h4 style="margin-top:0; margin-bottom:16px; color:#1e293b; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                    <span>💰</span> Precios por Tamaño Base
+                </h4>
                 
-                <h5 style="margin:10px 0 5px 0; color:#831843;">🍰 Ponqué Clásico (Tradicional)</h5>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-                    <div><label style="font-size:0.8rem;">1/4 Lb:</label><input type="number" id="precio-ponque-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.q : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                    <div><label style="font-size:0.8rem;">1/2 Lb:</label><input type="number" id="precio-ponque-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.m : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                    <div><label style="font-size:0.8rem;">1 Lb:</label><input type="number" id="precio-ponque-1" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.l : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                </div>
-
-                <h5 style="margin:10px 0 5px 0; color:#831843;">🥛 Clásica Tres Leches</h5>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-                    <div><label style="font-size:0.8rem;">1/4 Lb:</label><input type="number" id="precio-tresleches-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.q : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                    <div><label style="font-size:0.8rem;">1/2 Lb:</label><input type="number" id="precio-tresleches-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.m : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                    <div><label style="font-size:0.8rem;">1 Lb:</label><input type="number" id="precio-tresleches-1" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.l : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                </div>
-
-                <h5 style="margin:10px 0 5px 0; color:#831843;">🍫 Chocoarequipe</h5>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-                    <div><label style="font-size:0.8rem;">1/4 Lb:</label><input type="number" id="precio-choco-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.q : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                    <div><label style="font-size:0.8rem;">1/2 Lb:</label><input type="number" id="precio-choco-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.m : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
-                    <div><label style="font-size:0.8rem;">1 Lb:</label><input type="number" id="precio-choco-1" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.l : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; min-width:500px;">
+                        <thead>
+                            <tr style="border-bottom:2px solid #f1f5f9;">
+                                <th style="text-align:left; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">Línea / Sabor</th>
+                                <th style="text-align:center; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">1/4 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(10 porc.)</span></th>
+                                <th style="text-align:center; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">1/2 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(20 porc.)</span></th>
+                                <th style="text-align:center; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">1 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(30 porc.)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Ponqué -->
+                            <tr style="border-bottom:1px solid #f1f5f9;">
+                                <td style="padding:12px 8px; font-weight:600; color:#334155; font-size:0.95rem;">🍰 Ponqué Clásico</td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-ponque-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.q : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-ponque-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.m : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-ponque-1" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.l : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                            </tr>
+                            <!-- Tres Leches -->
+                            <tr style="border-bottom:1px solid #f1f5f9;">
+                                <td style="padding:12px 8px; font-weight:600; color:#334155; font-size:0.95rem;">🥛 Clásica Tres Leches</td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-tresleches-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.q : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-tresleches-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.m : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-tresleches-1" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.l : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                            </tr>
+                            <!-- Chocoarequipe -->
+                            <tr>
+                                <td style="padding:12px 8px; font-weight:600; color:#334155; font-size:0.95rem;">🍫 Chocoarequipe</td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-choco-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.q : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-choco-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.m : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-choco-1" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.l : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- BLOQUE B: DISEÑOS -->
-            <div style="margin-bottom:20px;">
-                <h4 style="margin-top:0; margin-bottom:12px; color:#334155;">🖼️ Galería de Diseños Disponibles</h4>
+            <div style="margin-bottom:24px;">
+                <h4 style="margin-top:0; margin-bottom:16px; color:#1e293b; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                    <span>🖼️</span> Galería de Diseños Disponibles
+                </h4>
                 
-                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:15px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:16px; margin-bottom:20px;">
                     ${disenosHtml}
                 </div>
                 
-                <button type="button" onclick="window.agregarDisenoTorta()" style="width:100%; padding:10px; background:#e2e8f0; color:#334155; border:1px dashed #cbd5e1; border-radius:8px; font-weight:bold; cursor:pointer;">➕ Agregar Nuevo Diseño de Torta</button>
+                <button type="button" onclick="window.agregarDisenoTorta()" style="width:100%; padding:14px; background:#f8fafc; color:#334155; border:2px dashed #cbd5e1; border-radius:12px; font-weight:bold; cursor:pointer; font-size:0.95rem; transition:all 0.2s;" onmouseover="this.style.borderColor='#94a3b8'; this.style.background='#f1f5f9';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">➕ Agregar Nuevo Diseño de Torta</button>
             </div>
             
-            <button onclick="window.guardarConfigTortas()" style="width:100%; padding:14px; background:#10b981; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 6px rgba(16,185,129,0.3);">💾 Guardar Configuración de Tortas</button>
+            <button onclick="window.guardarConfigTortas()" style="width:100%; padding:16px; background:#db2777; color:#fff; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 14px rgba(219,39,119,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(219,39,119,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(219,39,119,0.3)';">💾 Guardar Configuración</button>
         </div>
     `;
     modal.style.display = 'flex';
