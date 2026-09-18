@@ -466,6 +466,430 @@ window.addEventListener('DOMContentLoaded', () => {
         console.warn("Error escuchando tortas_config:", err);
     });
 
+    // --- SINCRONIZACIÓN DE RECOMPENSAS (DULCE-PUNTOS) ---
+    window.renderRecompensasPublico = function() {
+        const modal = document.getElementById('modal-puntos');
+        const container = document.getElementById('rewards-container');
+        if (!container || !modal) return;
+        
+        const rewards = window.dt_puntos_recompensas || [];
+        const user = window.currentUser;
+        const userPoints = user ? (user.points || 0) : 0;
+        
+        // Renderizar diferenciación VIP vs Normal
+        let headerDiv = document.getElementById('dt-puntos-header');
+        if (!headerDiv) {
+            headerDiv = document.createElement('div');
+            headerDiv.id = 'dt-puntos-header';
+            headerDiv.style.marginBottom = '20px';
+            container.parentNode.insertBefore(headerDiv, container);
+        }
+        
+        // Ocultar la info genérica que estaba en el modal
+        const infoGenerica = Array.from(modal.querySelectorAll('div')).find(div => 
+            div.innerText && 
+            div.innerText.includes('Beneficios Club VIP') && 
+            div.id !== 'dt-puntos-header' && 
+            !div.classList.contains('auth-modal-content') && 
+            div !== modal &&
+            !div.querySelector('.auth-modal-content')
+        );
+        if (infoGenerica) infoGenerica.style.display = 'none';
+
+        window.esExVip = function(usuario) {
+            if (!usuario) return false;
+            if (usuario.rol === 'vip' || usuario.vip) return false; // Sigue siendo VIP
+            if (usuario.historialVIP && usuario.historialVIP.length > 0) {
+                // Si tiene historial y no es VIP actualmente, es Ex-VIP
+                return true;
+            }
+            return false;
+        };
+
+        const esExVip = window.esExVip(user);
+
+        // Limpiar para renderizar
+        headerDiv.innerHTML = '';
+        
+        if (user && user.rol === 'vip') {
+            headerDiv.innerHTML = `
+                <div style="background:linear-gradient(135deg, #fef08a 0%, #f59e0b 100%); padding:16px; border-radius:12px; text-align:left; color:#78350f; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <div style="font-weight:900; font-size:1.1rem; display:flex; align-items:center; gap:6px;">
+                            👑 Miembro VIP Activo
+                        </div>
+                        <button onclick="window.abrirHistorialPuntos()" style="background:#fde68a; border:1px solid #f59e0b; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; color:#b45309; cursor:pointer;">📜 Movimientos</button>
+                    </div>
+                    <div style="font-size:0.9rem;">
+                        ✨ Tu membresía VIP está activa: Tienes 5% de descuento directo en tus compras y acumulación preferencial de puntos.
+                    </div>
+                </div>
+            `;
+        } else {
+            headerDiv.innerHTML = `
+                <div style="background:linear-gradient(135deg, #fff7ed 0%, #fff1f2 100%); border:1px solid #fecdd3; padding:14px 16px; border-radius:14px; text-align:left; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; font-size:13px; display:flex; align-items:center; gap:6px; color:#9f1239;">
+                            ✨ Membresía Dulce Tentación
+                        </div>
+                        <button onclick="window.abrirHistorialPuntos()" style="background:none; border:none; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:700; color:#b45309; text-decoration:underline; cursor:pointer;">📜 Ver Mis Movimientos</button>
+                    </div>
+                    <div style="font-size:12px; color:#713f12; margin-top:4px;">
+                        Acumulas 1 punto por cada $1.000 COP en tus compras.
+                    </div>
+                </div>
+                      <span>💰</span> 5% OFF en cada compra
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                      <span>⚡</span> Acumulas Puntos x2
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                      <span>🎂</span> Descuento Especial Cumpleaños
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                      <span>🚀</span> Despacho prioritario
+                    </div>
+                  </div>
+
+                  <button onclick="window.abrirModalTerminosVIP()" style="display:flex; align-items:center; justify-content:center; gap:8px; width:100%; background:#d97706; color:#ffffff; font-weight:700; font-size:13px; padding:10px; border-radius:10px; border:none; cursor:pointer; box-shadow:0 3px 8px rgba(217, 119, 6, 0.3); transition:all 0.2s ease; box-sizing:border-box;">
+                    👑 ¡Quiero ser Miembro VIP!
+                  </button>
+                </div>
+            `;
+        }
+        
+        if (rewards.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; font-size:13px; padding:20px;">No hay recompensas configuradas en este momento.</p>';
+            return;
+        }
+        
+        let html = '';
+        rewards.forEach((rec, i) => {
+            const canRedeem = userPoints >= rec.puntos;
+            html += `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#ffffff; border:1px solid #f1f5f9; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <img src="${rec.img || 'logo-pys.png'}" style="width:52px; height:52px; border-radius:10px; object-fit:cover; box-shadow:0 2px 5px rgba(0,0,0,0.08);" onerror="this.src='logo-pys.png'">
+                  <div>
+                    <h4 style="margin:0; font-size:13px; color:#1e293b; text-transform:capitalize;">${rec.nombre}</h4>
+                    <span style="font-size:11px; font-weight:700; color:#b45309;">🎟️ ${rec.puntos} Pts</span>
+                  </div>
+                </div>
+                <div>
+                    ${canRedeem 
+                        ? `<button onclick="window.canjearRecompensa('${rec.nombre}', ${rec.puntos})" style="background:#e11d48; color:#fff; border:none; padding:6px 14px; border-radius:20px; font-weight:700; cursor:pointer; font-size:12px; box-shadow:0 2px 6px rgba(225,29,72,0.25);">🎁 Canjear</button>`
+                        : `<span style="background:#f8fafc; color:#94a3b8; border:1px solid #e2e8f0; padding:5px 10px; border-radius:20px; font-weight:600; font-size:11px;">Te faltan ${rec.puntos - userPoints} pts</span>`
+                    }
+                </div>
+              </div>
+            `;
+        });
+        container.innerHTML = html;
+        
+        // Restaurar visibilidad del modal si estuviera oculto por CSS residual
+        modal.style.display = 'flex';
+        const modalContent = modal.querySelector('.auth-modal-content');
+        if (modalContent) {
+            modalContent.style.display = 'block';
+            modalContent.style.opacity = '1';
+        }
+        
+        // Actualizar el valor del modal si es posible y destacar el color a carmín
+        const valEl = document.getElementById('modal-ticket-val');
+        if (valEl) {
+            valEl.textContent = userPoints;
+            valEl.style.color = '#be123c';
+        }
+    };
+    
+    // --- SISTEMA DE HISTORIAL Y AUDITORÍA DE PUNTOS ---
+    window.registrarMovimientoPuntos = function(monto, tipo, concepto) {
+        if (!window.currentUser || typeof db === 'undefined') return;
+        const nuevoSaldo = window.currentUser.points || 0;
+        const isCanje = tipo === 'canje';
+        const log = {
+            id: "MOV-" + Date.now(),
+            fecha: new Date().toLocaleString('es-CO'),
+            tipo: tipo, // 'ganancia' o 'canje'
+            monto: monto,
+            saldoRestante: nuevoSaldo,
+            concepto: concepto,
+            codigoBono: isCanje ? "CJ-" + Math.floor(1000 + Math.random() * 9000) : null,
+            entregado: isCanje ? false : true
+        };
+        
+        // Guardar en array local de history_puntos para facilidad inmediata
+        if (!window.currentUser.historialPuntos) window.currentUser.historialPuntos = [];
+        window.currentUser.historialPuntos.unshift(log);
+        
+        // Sincronizar usuario completo si existe saveUsersDB en script.js
+        if (typeof db_users !== 'undefined' && typeof saveUsersDB === 'function') {
+            const uidx = db_users.findIndex(u => u.email === window.currentUser.email);
+            if (uidx !== -1) {
+                db_users[uidx].historialPuntos = window.currentUser.historialPuntos;
+                saveUsersDB();
+            }
+        }
+        
+        // Guardar en Firestore
+        db.collection('usuarios').doc(window.currentUser.email.toLowerCase()).collection('movimientos_puntos').doc(log.id).set(log).catch(e => console.warn('No se pudo guardar el log en firestore', e));
+    };
+
+    // Interceptar processOrder para registrar ganancias de puntos
+    if (typeof window.processOrder === 'function' && !window.processOrder_interceptada) {
+        const originalProcessOrder = window.processOrder;
+        window.processOrder = function() {
+            const pointsBefore = (window.currentUser && window.currentUser.points) || 0;
+            originalProcessOrder.apply(this, arguments);
+            const pointsAfter = (window.currentUser && window.currentUser.points) || 0;
+            if (pointsAfter > pointsBefore) {
+                window.registrarMovimientoPuntos(pointsAfter - pointsBefore, 'ganancia', 'Puntos por compra de pedido');
+            }
+        };
+        window.processOrder_interceptada = true;
+    }
+
+    // Interceptar updateUserPoints (ajustes manuales de administrador)
+    if (typeof window.updateUserPoints === 'function' && !window.updateUserPoints_interceptada) {
+        const originalUpdateUserPoints = window.updateUserPoints;
+        window.updateUserPoints = function(email, change) {
+            const uidx = db_users.findIndex(u => u.email === email);
+            if (uidx !== -1) {
+                const pointsBefore = db_users[uidx].points || 0;
+                originalUpdateUserPoints.apply(this, arguments);
+                const pointsAfter = db_users[uidx].points || 0;
+                if (pointsAfter !== pointsBefore) {
+                    const tipo = pointsAfter > pointsBefore ? 'ganancia' : 'canje';
+                    const diff = Math.abs(pointsAfter - pointsBefore);
+                    // Para que se guarde en currentUser si es el admin que se suma a sí mismo (raro, pero bueno)
+                    // Haremos el registro directo para ese usuario.
+                    const log = {
+                        id: "MOV-" + Date.now(),
+                        fecha: new Date().toLocaleString('es-CO'),
+                        tipo: tipo,
+                        monto: diff,
+                        saldoRestante: pointsAfter,
+                        concepto: 'Ajuste manual del administrador',
+                        codigoBono: tipo === 'canje' ? "CJ-" + Math.floor(1000 + Math.random() * 9000) : null,
+                        entregado: tipo === 'canje' ? false : true
+                    };
+                    if (!db_users[uidx].historialPuntos) db_users[uidx].historialPuntos = [];
+                    db_users[uidx].historialPuntos.unshift(log);
+                    saveUsersDB();
+                    if (window.currentUser && window.currentUser.email === email) {
+                        window.currentUser.historialPuntos = db_users[uidx].historialPuntos;
+                    }
+                    if (typeof db !== 'undefined') {
+                        db.collection('usuarios').doc(email.toLowerCase()).collection('movimientos_puntos').doc(log.id).set(log).catch(e => {});
+                    }
+                }
+            } else {
+                originalUpdateUserPoints.apply(this, arguments);
+            }
+        };
+        window.updateUserPoints_interceptada = true;
+    }
+
+    // Función de canje interceptada con registro
+    window.canjearRecompensa = function(nombre, puntos) {
+        if (!window.currentUser || (window.currentUser.points || 0) < puntos) return;
+        
+        // Restar puntos localmente
+        window.currentUser.points -= puntos;
+        
+        // Persistir en array global de script.js
+        if (typeof db_users !== 'undefined' && typeof saveUsersDB === 'function') {
+            const uidx = db_users.findIndex(u => u.email === window.currentUser.email);
+            if (uidx !== -1) { 
+                db_users[uidx].points = window.currentUser.points; 
+                saveUsersDB(); 
+            }
+        }
+        if (typeof saveUser === 'function') saveUser();
+        
+        // Registrar el movimiento
+        window.registrarMovimientoPuntos(puntos, 'canje', 'Canje de recompensa: ' + nombre);
+        
+        if(typeof showToast === 'function') showToast(`Has canjeado: ${nombre}. Revisa tu historial.`, '🎉');
+        
+        // Actualizar UI
+        window.renderRecompensasPublico();
+        if (typeof syncUserUI === 'function') syncUserUI();
+    };
+
+    // Modal de Historial
+    window.abrirHistorialPuntos = function() {
+        const container = document.getElementById('rewards-container');
+        if (!container || !window.currentUser) return;
+        
+        let html = '<div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">';
+        html += '<h3 style="margin:0; color:#b45309;">📜 Mis Movimientos</h3>';
+        html += '<button onclick="window.renderRecompensasPublico()" style="background:#f1f5f9; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:bold; color:#64748b;">⬅ Volver</button>';
+        html += '</div>';
+        
+        const historial = window.currentUser.historialPuntos || [];
+        
+        if (historial.length === 0) {
+            html += '<p style="text-align:center; color:#64748b; font-size:13px; padding:20px;">Aún no tienes movimientos registrados.</p>';
+        } else {
+            historial.forEach(mov => {
+                const isCanje = mov.tipo === 'canje';
+                const sign = isCanje ? '-' : '+';
+                const color = isCanje ? '#ef4444' : '#16a34a';
+                const icon = isCanje ? '🎁' : '🛍️';
+                html += `
+                    <div style="background:#fff; border:1px solid #f1f5f9; border-radius:12px; padding:12px; margin-bottom:10px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:11px; color:#94a3b8;">${mov.fecha}</span>
+                            <span style="font-weight:800; font-size:14px; color:${color};">${sign}${mov.monto} Pts</span>
+                        </div>
+                        <div style="font-size:13px; color:#334155; font-weight:600; margin-bottom:6px;">
+                            ${icon} ${mov.concepto}
+                        </div>
+                        ${isCanje ? `
+                            <div style="background:#fffbeb; border:1px dashed #f59e0b; padding:8px; border-radius:8px; text-align:center;">
+                                <div style="font-size:11px; color:#92400e; margin-bottom:4px;">Código de Canje:</div>
+                                <div style="font-size:16px; font-weight:900; color:#b45309; letter-spacing:1px;">${mov.codigoBono}</div>
+                                <div style="font-size:11px; font-weight:bold; color:#d97706; margin-top:4px;">
+                                    ${mov.entregado ? '✅ Reclamado' : '⏳ Pendiente por reclamar en mostrador'}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        }
+        
+        container.innerHTML = html;
+        const valEl = document.getElementById('modal-ticket-val');
+        if (valEl) {
+            valEl.textContent = window.currentUser.points || 0;
+        }
+    };
+
+    // Sobrescribir openPointsModal
+    if (typeof window.openPointsModal === 'function' && !window.openPointsModal_interceptada) {
+        const originalOpenPointsModal = window.openPointsModal;
+        window.openPointsModal = function() {
+            originalOpenPointsModal.apply(this, arguments);
+            // Inmediatamente después de que el original renderiza los hojaldres, los pisamos con la info en vivo:
+            window.renderRecompensasPublico();
+        };
+        window.openPointsModal_interceptada = true;
+    }
+    
+    // --- FLUJO DE SUSCRIPCIÓN VIP ---
+    window.abrirModalTerminosVIP = function(esReactivacion = false) {
+        if (!document.getElementById('modal-suscripcion-vip')) {
+            const modal = document.createElement('div');
+            modal.className = 'auth-modal';
+            modal.id = 'modal-suscripcion-vip';
+            modal.style.display = 'none';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.zIndex = '999999';
+            document.body.appendChild(modal);
+        }
+        
+        const m = document.getElementById('modal-suscripcion-vip');
+        const precio = esReactivacion ? "14.900" : "19.900";
+        const tachado = esReactivacion ? `<span style="text-decoration:line-through; color:#92400e; font-size:14px; font-weight:normal; margin-right:6px;">$19.900</span>` : '';
+        const tituloPromo = esReactivacion ? "🎁 Reactivación VIP Punto Dulce" : "👑 Membresía Club VIP Punto Dulce";
+        const montoEnvio = esReactivacion ? 14900 : 19900;
+        
+        m.innerHTML = `
+            <div class="auth-content" style="max-width:400px; width:90%; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <button class="auth-close-btn" onclick="document.getElementById('modal-suscripcion-vip').style.display='none'" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;">✕</button>
+                <h3 style="margin-top:0; color:#d97706; text-align:center; font-size:1.3rem;">${tituloPromo}</h3>
+                
+                <div style="background:#fffbeb; border:1px solid #fde68a; padding:12px; border-radius:12px; text-align:center; margin-bottom:14px;">
+                    <span style="font-size:12px; color:#92400e; font-weight:700; text-transform:uppercase;">Inversión Mensual</span>
+                    <div style="font-size:24px; font-weight:900; color:#b45309;">${tachado}$${precio} COP <span style="font-size:13px; font-weight:600; color:#78350f;">/ mes</span></div>
+                </div>
+                
+                <div style="margin-bottom:16px; font-size:13px; color:#334155;">
+                    <strong style="display:block; margin-bottom:8px; color:#1e293b;">Resumen de Beneficios:</strong>
+                    <ul style="margin:0; padding-left:20px; list-style-type:circle;">
+                        <li style="margin-bottom:4px;">5% OFF automático en cada compra.</li>
+                        <li style="margin-bottom:4px;">Acumulación doble de Dulce-Puntos (Puntos x2).</li>
+                        <li style="margin-bottom:4px;">Descuento especial y sorpresa el día de tu cumpleaños.</li>
+                        <li style="margin-bottom:4px;">Atención y despacho prioritario en cocina.</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <strong style="display:block; margin-bottom:4px; font-size:12px; color:#64748b;">Términos y Condiciones:</strong>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px; height:80px; overflow-y:auto; font-size:11px; color:#64748b; line-height:1.4;">
+                        - La suscripción VIP tiene vigencia de 30 días calendario renovables.<br>
+                        - Los beneficios aplican únicamente a la cuenta del titular registrado.<br>
+                        - La membresía se activa una vez validado el comprobante de pago por transferencia o en caja.<br>
+                        - Nos reservamos el derecho de modificar los beneficios notificando a los miembros activos.
+                    </div>
+                </div>
+                
+                <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#334155; margin:12px 0 16px 0; cursor:pointer;">
+                    <input type="checkbox" id="check-acepto-vip" onchange="document.getElementById('btn-confirmar-solicitud-vip').disabled = !this.checked">
+                    He leído y acepto los términos y beneficios de la membresía.
+                </label>
+                
+                <button id="btn-confirmar-solicitud-vip" disabled onclick="window.confirmarSolicitudVIP(${montoEnvio})" style="width:100%; background:#d97706; color:#fff; font-weight:700; padding:12px; border-radius:10px; border:none; cursor:pointer;">
+                    ✅ Confirmar y Activar por WhatsApp
+                </button>
+            </div>
+        `;
+        m.style.display = 'flex';
+        // Ocultar modal de puntos para dar paso a este
+        const mp = document.getElementById('modal-puntos');
+        if (mp) mp.style.display = 'none';
+    };
+    
+    window.confirmarSolicitudVIP = function(monto) {
+        const user = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const nombreCliente = user.name || user.nombre || 'Cliente Registrado';
+        const phoneCliente = user.phone || 'No registrado';
+        const emailCliente = user.email || '';
+        const precio = monto || 19900;
+        
+        if (typeof db !== 'undefined') {
+            db.collection('solicitudes_vip').add({
+                cliente: nombreCliente,
+                telefono: phoneCliente,
+                email: emailCliente,
+                fecha: new Date().toISOString(),
+                estado: 'pendiente_pago',
+                monto: precio
+            }).then(() => {
+                const phoneApp = typeof PHONE !== 'undefined' ? PHONE : '573229512693';
+                let msgWp = `Hola P&S Punto Dulce, acabo de aceptar los términos y condiciones de la membresía VIP en la plataforma web.\n\n`;
+                if (precio < 19900) {
+                    msgWp += `*¡Aproveché la Promo de Reactivación por $${precio.toLocaleString()} COP!*\n\n`;
+                } else {
+                    msgWp += `*Inversión:* $${precio.toLocaleString()} COP/mes\n\n`;
+                }
+                msgWp += `¿A qué cuenta Nequi o Bancolombia puedo transferir para activarla?`;
+                window.open(`https://wa.me/${phoneApp}?text=${encodeURIComponent(msgWp)}`, '_blank');
+                document.getElementById('modal-suscripcion-vip').style.display = 'none';
+                if(typeof showToast === 'function') showToast('Redirigiendo a WhatsApp...', '👑');
+            }).catch(e => {
+                console.error("Error registrando solicitud VIP:", e);
+                alert("Hubo un error al registrar la solicitud, por favor contáctanos directamente.");
+            });
+        }
+    };
+
+    db.collection('config').doc('puntos_recompensas').onSnapshot(doc => {
+        if (doc.exists) {
+            window.dt_puntos_recompensas = doc.data().recompensas || [];
+            localStorage.setItem('dt_puntos_recompensas', JSON.stringify(window.dt_puntos_recompensas));
+            window.renderRecompensasPublico();
+            if (document.getElementById('modal-config-puntos') && document.getElementById('modal-config-puntos').style.display !== 'none') {
+                if (typeof window.renderModalConfigPuntosInterno === 'function') {
+                    window.renderModalConfigPuntosInterno();
+                }
+            }
+        }
+    }, err => console.warn("Error escuchando puntos_recompensas:", err));
+
     // --- SINCRONIZACIÓN DE PROMO REGALO ---
     window.renderPromoBanner = function() {
         let banner = document.getElementById('dt-promo-banner');
