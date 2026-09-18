@@ -77,13 +77,6 @@ window.addEventListener('DOMContentLoaded', () => {
                         mobKitchenBtn.setAttribute('onclick', "closeMobileProfile(); openKitchenModal();");
                     }
                 }
-                
-                // Iniciar alerta de solicitudes VIP si es admin o trabajador
-                if (isAdmin || isWorker) {
-                    if (typeof window.iniciarEscuchaSolicitudesVIP === 'function') {
-                        window.iniciarEscuchaSolicitudesVIP();
-                    }
-                }
             }
         };
         if (typeof currentUser !== 'undefined' && currentUser) {
@@ -107,82 +100,6 @@ window.addEventListener('DOMContentLoaded', () => {
             originalLoginCustomUser(e);
         };
     }
-    
-    // --- SISTEMA DE ALERTAS VIP (PANEL ADMIN) ---
-    let vipAlertListenerUnsubscribe = null;
-
-    window.iniciarEscuchaSolicitudesVIP = function() {
-        if (typeof db === 'undefined' || !window.currentUser) return;
-        const isAdmin = (typeof adminEmails !== 'undefined') && adminEmails.includes(window.currentUser.email);
-        const isWorker = (typeof workerEmails !== 'undefined') && workerEmails.includes(window.currentUser.email);
-        
-        if (!isAdmin && !isWorker) return;
-        
-        if (vipAlertListenerUnsubscribe) {
-            vipAlertListenerUnsubscribe();
-        }
-        
-        vipAlertListenerUnsubscribe = db.collection('solicitudes_vip')
-            .where('estado', '==', 'pendiente_pago')
-            .onSnapshot(snapshot => {
-                const adminDashboard = document.getElementById('admin-dashboard');
-                if (!adminDashboard) return;
-                
-                let alertDiv = document.getElementById('alerta-solicitudes-vip');
-                
-                if (snapshot.empty) {
-                    if (alertDiv) alertDiv.style.display = 'none';
-                    return;
-                }
-                
-                if (!alertDiv) {
-                    alertDiv = document.createElement('div');
-                    alertDiv.id = 'alerta-solicitudes-vip';
-                    alertDiv.style.background = '#fef08a';
-                    alertDiv.style.border = '1px solid #f59e0b';
-                    alertDiv.style.padding = '12px 16px';
-                    alertDiv.style.borderRadius = '12px';
-                    alertDiv.style.marginBottom = '20px';
-                    alertDiv.style.color = '#92400e';
-                    alertDiv.style.fontWeight = 'bold';
-                    alertDiv.style.display = 'flex';
-                    alertDiv.style.alignItems = 'center';
-                    alertDiv.style.gap = '10px';
-                    alertDiv.style.boxShadow = '0 4px 6px rgba(245,158,11,0.2)';
-                    alertDiv.style.animation = 'pulseVIP 2s infinite';
-                    
-                    // Animación de pulso
-                    if (!document.getElementById('style-pulse-vip')) {
-                        const style = document.createElement('style');
-                        style.id = 'style-pulse-vip';
-                        style.innerHTML = `
-                            @keyframes pulseVIP {
-                                0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-                                70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-                                100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-                            }
-                        `;
-                        document.head.appendChild(style);
-                    }
-                    
-                    const tabsNav = adminDashboard.querySelector('.admin-tabs-nav');
-                    if (tabsNav) {
-                        tabsNav.parentNode.insertBefore(alertDiv, tabsNav);
-                    } else {
-                        adminDashboard.prepend(alertDiv);
-                    }
-                }
-                
-                const count = snapshot.size;
-                let newestName = '';
-                snapshot.forEach(doc => { newestName = doc.data().cliente; });
-                
-                alertDiv.innerHTML = \`<span style="font-size:1.2rem;">👑</span> <span>¡Atención! Hay <strong>\${count}</strong> solicitud(es) VIP pendiente(s). Última: <em>\${newestName}</em></span>\`;
-                alertDiv.style.display = 'flex';
-            }, err => {
-                console.warn('Error al escuchar solicitudes VIP:', err);
-            });
-    };
 
     // --- 5. RENDER ADMIN USERS (Roles Estandarizados: Normal, VIP, Trabajador, Admin) ---
     window.renderAdminUsers = function() {
@@ -217,23 +134,14 @@ window.addEventListener('DOMContentLoaded', () => {
             const isUserWorker = workerEmails.includes(u.email);
 
             let levelHtml = '';
-            let btnRecuperarHtml = '';
-            
-            // Determinar si es Ex-VIP
-            const esExVip = !u.vip && !isUserAdmin && !isUserWorker && u.historialVIP && u.historialVIP.length > 0;
-
             if (isUserAdmin) {
                 levelHtml = '<span style="color:#1d4ed8;font-weight:bold;">Administrador</span>';
             } else if (isUserWorker) {
                 levelHtml = '<span style="color:#8b5cf6;font-weight:bold;">Trabajador</span>';
             } else if (u.vip) {
-                const venc = u.vipExpiresAt ? new Date(u.vipExpiresAt).toLocaleDateString('es-CO') : 'Sin fecha';
-                levelHtml = `<span style="background:#d97706; color:#fff; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">👑 VIP Activo (Vence: ${venc})</span>`;
-            } else if (esExVip) {
-                levelHtml = '<span style="background:#fef08a; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">⏳ Ex-VIP (Inactivo)</span>';
-                btnRecuperarHtml = `<button onclick="window.enviarPromoRecuperacion('${u.email}')" style="background:#f97316; color:#fff; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%; font-weight:bold; margin-top:4px;">💬 Recuperar</button>`;
+                levelHtml = '<span style="color:#d97706;font-weight:bold;">👑 VIP</span>';
             } else {
-                levelHtml = '<span style="background:#f1f5f9; color:#64748b; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">🌱 Frecuente</span>';
+                levelHtml = '<span style="color:#64748b;font-weight:bold;">Normal</span>';
             }
             
             return `
@@ -245,9 +153,6 @@ window.addEventListener('DOMContentLoaded', () => {
             <td style="padding:10px; font-size:0.85rem; color:#555;">${u.phone || '-'}</td>
             <td style="padding:10px; font-size:0.85rem; color:#555;">${u.email}</td>
             <td style="padding:10px; text-align:center;">${levelHtml}</td>
-            <td style="padding:10px; text-align:center;">
-                <div style="font-weight:900; color:#b45309; font-size:1.1rem;">${u.points || 0}</div>
-            </td>
             <td style="padding:10px; text-align:center; font-weight:bold; color:${u.blocked ? '#e11d48' : '#10b981'};">${u.blocked ? 'Bloqueado' : 'Activo'}</td>
             <td style="padding:10px; text-align:center;">
                 ${(u.email === 'dulcestentaciones2004@gmail.com') ? '-' : `
@@ -261,8 +166,6 @@ window.addEventListener('DOMContentLoaded', () => {
                         </select>
                         <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
                     </div>
-                    ${btnRecuperarHtml}
-                    <button onclick="window.abrirAuditoriaUsuario('${u.email}')" style="background:#fffbeb; color:#92400e; border:1px solid #fde68a; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%; font-weight:bold;">🔍 Movimientos</button>
                     ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">🔑 Cambiar Clave</button>` : ''}
                     <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
                 </div>`}
@@ -271,105 +174,6 @@ window.addEventListener('DOMContentLoaded', () => {
         `;
         }).join('');
     };
-
-    // --- 6. FUNCIONES DE AUDITORÍA Y VALIDACIÓN DE PUNTOS ---
-    window.validarCodigoBono = function() {
-        const input = document.getElementById('input-validar-codigo');
-        if (!input) return;
-        const codigo = input.value.trim().toUpperCase();
-        if (!codigo) {
-            alert('Por favor, ingresa un código de canje.');
-            return;
-        }
-
-        let codigoEncontrado = false;
-        
-        // Buscar en todos los usuarios locales
-        db_users.forEach((u, index) => {
-            if (u.historialPuntos && u.historialPuntos.length > 0) {
-                const movIndex = u.historialPuntos.findIndex(m => m.codigoBono === codigo);
-                if (movIndex !== -1) {
-                    codigoEncontrado = true;
-                    const mov = u.historialPuntos[movIndex];
-                    if (mov.entregado) {
-                        alert(`El bono ${codigo} ya fue marcado como ENTREGADO el ${mov.fecha}.`);
-                    } else {
-                        if (confirm(`🎁 Premio: ${mov.concepto}\n👤 Cliente: ${u.name}\n\n¿Marcar este premio como ENTREGADO?`)) {
-                            u.historialPuntos[movIndex].entregado = true;
-                            saveUsersDB();
-                            input.value = '';
-                            alert('Premio marcado como entregado exitosamente.');
-                            // Sincronizar con Firebase si es posible
-                            if (typeof db !== 'undefined') {
-                                db.collection('usuarios').doc(u.email.toLowerCase()).collection('movimientos_puntos').doc(mov.id).update({ entregado: true }).catch(e=>console.warn(e));
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        if (!codigoEncontrado) {
-            alert('Código no encontrado o inválido.');
-        }
-    };
-
-    window.abrirAuditoriaUsuario = function(email) {
-        const u = db_users.find(x => x.email === email);
-        if (!u) return;
-        
-        if (!document.getElementById('modal-auditoria-puntos')) {
-            const modal = document.createElement('div');
-            modal.className = 'modal-overlay';
-            modal.id = 'modal-auditoria-puntos';
-            modal.style.display = 'none';
-            modal.style.alignItems = 'center';
-            modal.style.justifyContent = 'center';
-            modal.style.zIndex = '999999';
-            document.body.appendChild(modal);
-        }
-        
-        const m = document.getElementById('modal-auditoria-puntos');
-        const historial = u.historialPuntos || [];
-        
-        let htmlRows = '';
-        if (historial.length === 0) {
-            htmlRows = '<p style="text-align:center; padding:20px; color:#64748b;">No hay movimientos registrados para este usuario.</p>';
-        } else {
-            historial.forEach(mov => {
-                const isCanje = mov.tipo === 'canje';
-                const color = isCanje ? '#e11d48' : '#10b981';
-                htmlRows += `
-                    <div style="border-bottom:1px solid #e2e8f0; padding:10px 0;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                            <span style="font-size:0.8rem; color:#64748b;">${mov.fecha}</span>
-                            <strong style="color:${color};">${isCanje ? '-' : '+'}${mov.monto}</strong>
-                        </div>
-                        <div style="font-size:0.9rem; color:#1e293b;">${mov.concepto}</div>
-                        ${isCanje ? `
-                            <div style="font-size:0.8rem; margin-top:4px; display:flex; justify-content:space-between;">
-                                <span>Código: <strong>${mov.codigoBono}</strong></span>
-                                <span style="color:${mov.entregado ? '#10b981' : '#d97706'}; font-weight:bold;">${mov.entregado ? 'Entregado' : 'Pendiente'}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            });
-        }
-        
-        m.innerHTML = `
-            <div class="modal-content" style="max-width:500px; width:90%; padding:20px; background:#fff; border-radius:12px; position:relative; max-height:80vh; display:flex; flex-direction:column;">
-                <button onclick="document.getElementById('modal-auditoria-puntos').style.display='none'" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;">✕</button>
-                <h3 style="color:#b45309; margin-bottom:5px; margin-top:0;">🔍 Auditoría de Puntos</h3>
-                <div style="margin-bottom:15px; font-weight:bold; color:#1e293b;">Usuario: ${u.name} | Saldo: ${u.points || 0} pts</div>
-                <div style="overflow-y:auto; flex:1; border-top:1px solid #e2e8f0; padding-top:10px;">
-                    ${htmlRows}
-                </div>
-            </div>
-        `;
-        m.style.display = 'flex';
-    };
-
 });
 
 // --- FUNCIONES GLOBALES INTERCEPTADAS ---
@@ -390,18 +194,6 @@ window.confirmRoleChange = function(email) {
     // Limpiar roles previos
     adminEmails = adminEmails.filter(e => e !== email);
     workerEmails = workerEmails.filter(e => e !== email);
-    
-    // Si era VIP y se le quita el rol, marcar como vencido
-    if (u.vip) {
-        if (!u.historialVIP) u.historialVIP = [];
-        // Buscar el último activo y ponerlo vencido
-        const lastActive = u.historialVIP.find(h => h.estado === 'activo');
-        if (lastActive) {
-            lastActive.estado = 'vencido';
-            lastActive.fin = new Date().toISOString().split('T')[0];
-        }
-    }
-    
     u.vip = false;
     delete u.vipExpiresAt;
     u.role = 'cliente';
@@ -419,17 +211,6 @@ window.confirmRoleChange = function(email) {
         u.vip = true;
         u.role = 'vip';
         u.vipExpiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // Vigencia 30 días
-        
-        // Añadir a historial VIP
-        if (!u.historialVIP) u.historialVIP = [];
-        const fInicio = new Date();
-        const fFin = new Date(u.vipExpiresAt);
-        u.historialVIP.push({
-            inicio: fInicio.toISOString().split('T')[0],
-            fin: fFin.toISOString().split('T')[0],
-            monto: 19900,
-            estado: 'activo'
-        });
     }
 
     // Persistir localmente en los DB targets explícitos
@@ -470,18 +251,6 @@ window.adminChangePassword = function(email) {
     if (input) input.value = '';
     const modal = document.getElementById('adminPasswordModal');
     if (modal) modal.style.setProperty('display', 'flex', 'important');
-};
-
-window.enviarPromoRecuperacion = function(email) {
-    const u = db_users.find(x => x.email === email);
-    if (!u) return;
-    const phoneApp = u.phone || '';
-    if (!phoneApp) {
-        alert("Este usuario no tiene teléfono registrado.");
-        return;
-    }
-    const msg = `¡Hola ${u.name}! Te extrañamos en el Club VIP de Punto Dulce. Queremos consentirte: reactiva tu membresía este mes con descuento exclusivo por solo $14.900 COP. ¿Te gustaría reactivarla hoy?`;
-    window.open(`https://wa.me/57${phoneApp.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
 window.saveAdminNewPassword = function() {
@@ -1743,26 +1512,6 @@ if (originalRenderStockAdminOfertas) {
                 regaloBtn.onclick = () => window.abrirModalPromoRegalo();
                 controlsDiv.appendChild(regaloBtn);
             }
-            if (!document.getElementById('btn-config-puntos')) {
-                const puntosBtn = document.createElement('button');
-                puntosBtn.id = 'btn-config-puntos';
-                puntosBtn.type = 'button';
-                puntosBtn.style.background = '#7c3aed';
-                puntosBtn.style.color = '#fff';
-                puntosBtn.style.border = 'none';
-                puntosBtn.style.padding = '8px 16px';
-                puntosBtn.style.borderRadius = '20px';
-                puntosBtn.style.fontWeight = '700';
-                puntosBtn.style.cursor = 'pointer';
-                puntosBtn.style.fontSize = '13px';
-                puntosBtn.style.display = 'inline-flex';
-                puntosBtn.style.alignItems = 'center';
-                puntosBtn.style.gap = '6px';
-                puntosBtn.style.boxShadow = '0 2px 4px rgba(124,58,237,0.2)';
-                puntosBtn.innerHTML = '🎟️ Recompensas Dulce-Puntos';
-                puntosBtn.onclick = () => window.abrirModalConfigPuntos();
-                controlsDiv.appendChild(puntosBtn);
-            }
         }
         
         // Modificar cada tarjeta de la grilla de stock
@@ -2215,122 +1964,4 @@ window.guardarPromoRegalo = function() {
     
     // Forzar re-evaluacion del carrito por si cambia el estado activo
     if (typeof updateCart === 'function') updateCart();
-};
-
-// --- SISTEMA DE RECOMPENSAS (CLUB DULCE-PUNTOS) ---
-window.dt_puntos_recompensas = window.dt_puntos_recompensas || [];
-
-window.abrirModalConfigPuntos = function() {
-    if (!document.getElementById('modal-config-puntos')) {
-        const modal = document.createElement('div');
-        modal.className = 'auth-modal';
-        modal.id = 'modal-config-puntos';
-        modal.style.display = 'none';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.zIndex = '999999';
-        document.body.appendChild(modal);
-    }
-    
-    window.renderModalConfigPuntosInterno();
-};
-
-window.renderModalConfigPuntosInterno = function() {
-    const m = document.getElementById('modal-config-puntos');
-    if (!m) return;
-    
-    let htmlLista = '';
-    window.dt_puntos_recompensas.forEach((rec, i) => {
-        htmlLista += `
-            <div style="display:flex; align-items:center; gap:12px; background:#f8fafc; padding:12px; border-radius:12px; margin-bottom:12px; border:1px solid #e2e8f0;">
-                <div style="width:60px; height:60px; flex-shrink:0; border-radius:8px; overflow:hidden; background:#e2e8f0;">
-                    <img src="${rec.img || 'logo-pys.png'}" id="preview-recompensa-${i}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='logo-pys.png'">
-                </div>
-                <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px;">
-                    <input type="text" id="nombre-recompensa-${i}" value="${rec.nombre || ''}" placeholder="Ej: Hojaldre de Queso" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="number" id="puntos-recompensa-${i}" value="${rec.puntos || ''}" placeholder="Puntos" style="width:100px; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
-                        <label style="background:#f1f5f9; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; border:1px solid #cbd5e1;">
-                            📁 Cambiar Foto
-                            <input type="file" accept="image/*" style="display:none;" onchange="window.cambiarFotoRecompensa(event, ${i})">
-                        </label>
-                    </div>
-                </div>
-                <button type="button" onclick="window.eliminarRecompensa(${i})" style="background:#ef4444; color:#fff; border:none; width:40px; height:40px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px;">🗑️</button>
-            </div>
-        `;
-    });
-    
-    m.innerHTML = `
-        <div class="auth-content" style="max-width:500px; width:95%; max-height:90vh; overflow-y:auto; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-            <button class="auth-close-btn" onclick="document.getElementById('modal-config-puntos').style.display='none'" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;">✕</button>
-            <h3 style="margin-top:0; color:#7c3aed; text-align:center; font-size:1.3rem;">🎟️ Configurar Recompensas</h3>
-            <p style="text-align:center; color:#64748b; font-size:0.9rem; margin-bottom:20px;">Define los premios que los clientes pueden canjear con sus Dulce-Puntos.</p>
-            
-            <div style="margin-bottom:20px;">
-                ${htmlLista}
-            </div>
-            
-            <button type="button" onclick="window.agregarRecompensa()" style="width:100%; padding:12px; background:#f8fafc; color:#334155; border:2px dashed #cbd5e1; border-radius:12px; font-weight:bold; cursor:pointer; font-size:0.95rem; margin-bottom:16px;">➕ Añadir Nueva Recompensa</button>
-            
-            <button type="button" onclick="window.guardarConfigRecompensas()" style="width:100%; padding:14px; background:#7c3aed; color:#fff; border:none; border-radius:12px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 14px rgba(124,58,237,0.3);">💾 Guardar Recompensas</button>
-        </div>
-    `;
-    m.style.display = 'flex';
-};
-
-window.cambiarFotoRecompensa = function(event, i) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64 = e.target.result;
-        window.dt_puntos_recompensas[i].img = base64;
-        const preview = document.getElementById(`preview-recompensa-${i}`);
-        if (preview) preview.src = base64;
-    };
-    reader.readAsDataURL(file);
-};
-
-window.agregarRecompensa = function() {
-    window.guardarEstadoTemporalRecompensas();
-    window.dt_puntos_recompensas.push({ nombre: '', puntos: 1000, img: '' });
-    window.renderModalConfigPuntosInterno();
-};
-
-window.eliminarRecompensa = function(i) {
-    if (!confirm("¿Eliminar esta recompensa?")) return;
-    window.guardarEstadoTemporalRecompensas();
-    window.dt_puntos_recompensas.splice(i, 1);
-    window.renderModalConfigPuntosInterno();
-};
-
-window.guardarEstadoTemporalRecompensas = function() {
-    window.dt_puntos_recompensas.forEach((rec, i) => {
-        const nNombre = document.getElementById(`nombre-recompensa-${i}`);
-        const nPuntos = document.getElementById(`puntos-recompensa-${i}`);
-        if (nNombre) rec.nombre = nNombre.value;
-        if (nPuntos) rec.puntos = parseInt(nPuntos.value) || 0;
-    });
-};
-
-window.guardarConfigRecompensas = function() {
-    window.guardarEstadoTemporalRecompensas();
-    
-    localStorage.setItem('dt_puntos_recompensas', JSON.stringify(window.dt_puntos_recompensas));
-    
-    if (typeof db !== 'undefined') {
-        db.collection('config').doc('puntos_recompensas').set({ recompensas: window.dt_puntos_recompensas })
-            .then(() => {
-                if(typeof showToast === 'function') showToast("Recompensas guardadas", "🎟️");
-            })
-            .catch(e => console.error("Error guardando recompensas:", e));
-    }
-    
-    document.getElementById('modal-config-puntos').style.display = 'none';
-    
-    if (typeof window.renderRecompensasPublico === 'function') {
-        window.renderRecompensasPublico();
-    }
 };

@@ -329,14 +329,6 @@
             <!-- TABLA CLIENTES -->
             <h4 style="margin-bottom:10px; color:var(--text-dark); font-size:1.1rem;">👥 Control de Usuarios Registrados
             </h4>
-            
-            <!-- Caja de Validación de Códigos -->
-            <div style="background:#fffbeb; border:1px dashed #f59e0b; padding:12px; border-radius:10px; margin-bottom:15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <strong style="color:#92400e; font-size:0.9rem;">🎁 Validar Código de Canje:</strong>
-                <input type="text" id="input-validar-codigo" placeholder="Ej: CJ-1234" style="padding:6px; border:1px solid #fde68a; border-radius:6px; flex:1; min-width:150px; outline:none;">
-                <button onclick="window.validarCodigoBono()" style="background:#d97706; color:#fff; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold;">Validar y Entregar</button>
-            </div>
-
             <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="🔍 Buscar cliente por nombre, correo o teléfono...">
             
             <div class="user-filters-tabs" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px;">
@@ -356,7 +348,6 @@
                             <th style="padding:12px;">Teléfono / WhatsApp</th>
                             <th style="padding:12px;">Correo</th>
                             <th style="padding:12px; text-align:center;">Nivel</th>
-                            <th style="padding:12px; text-align:center;">Puntos</th>
                             <th style="padding:12px; text-align:center;">Estado</th>
                             <th style="padding:12px; text-align:center;">Acciones</th>
                         </tr>
