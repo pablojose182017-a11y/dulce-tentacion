@@ -1327,7 +1327,7 @@ const PHONE = "573229512693";
                     ${(u.email === 'dulcestentaciones2004@gmail.com') ? '-' : `
                     <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
                         <div style="display:flex; gap:4px; width:100%; align-items:center;">
-                            <select id="roleSel_${u.email.replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
+                            <select id="roleSel_${(u.email || '').replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
                                 <option value="normal" ${!isUserAdmin && !isUserWorker && !u.vip ? 'selected' : ''}>Normal</option>
                                 <option value="vip" ${u.vip && !isUserAdmin && !isUserWorker ? 'selected' : ''}>VIP</option>
                                 <option value="trabajador" ${isUserWorker ? 'selected' : ''}>Trabajador</option>
@@ -1350,7 +1350,7 @@ const PHONE = "573229512693";
         }
 
         function confirmRoleChange(email) {
-            const selectEl = document.getElementById(`roleSel_${email.replace(/[@.]/g, '_')}`);
+            const selectEl = document.getElementById(`roleSel_${(email || '').replace(/[@.]/g, '_')}`);
             if (!selectEl) return;
             const newRole = selectEl.value;
 

@@ -70,12 +70,29 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (deskAdminBtn) {
                          deskAdminBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
                     }
+                    
+                    const tabContabilidad = document.getElementById('admin-tab-btn-contabilidad');
+                    const tabUsuarios = document.getElementById('admin-tab-btn-usuarios');
+                    if(tabContabilidad) tabContabilidad.style.display = '';
+                    if(tabUsuarios) tabUsuarios.style.display = '';
                 } else if (isWorker) {
-                    if (deskKitchenBtn) deskKitchenBtn.style.display = 'flex';
-                    if (mobKitchenBtn) {
-                        mobKitchenBtn.style.display = 'flex';
-                        mobKitchenBtn.setAttribute('onclick', "closeMobileProfile(); openKitchenModal();");
+                    if (deskAdminBtn) {
+                        deskAdminBtn.style.display = 'flex';
+                        deskAdminBtn.innerText = '⚙️ Panel Operativo';
+                        deskAdminBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
                     }
+                    if (mobAdminBtn) {
+                        mobAdminBtn.style.display = 'flex';
+                        mobAdminBtn.innerText = '⚙️ Panel Operativo';
+                        mobAdminBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
+                    }
+                    if (adminOnlyDiv) adminOnlyDiv.style.display = 'block';
+                    if (adminTitle) adminTitle.innerText = '👨‍🍳 Panel Operativo Diario';
+                    
+                    const tabContabilidad = document.getElementById('admin-tab-btn-contabilidad');
+                    const tabUsuarios = document.getElementById('admin-tab-btn-usuarios');
+                    if(tabContabilidad) tabContabilidad.style.display = 'none';
+                    if(tabUsuarios) tabUsuarios.style.display = 'none';
                 }
             }
         };
@@ -158,7 +175,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 ${(u.email === 'dulcestentaciones2004@gmail.com') ? '-' : `
                 <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
                     <div style="display:flex; gap:4px; width:100%; align-items:center;">
-                        <select id="roleSel_${u.email.replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
+                        <select id="roleSel_${(u.email || '').replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
                             <option value="Normal" ${!isUserAdmin && !isUserWorker && !u.vip ? 'selected' : ''}>Normal</option>
                             <option value="VIP" ${u.vip && !isUserAdmin && !isUserWorker ? 'selected' : ''}>VIP</option>
                             <option value="Trabajador" ${isUserWorker ? 'selected' : ''}>Trabajador</option>
@@ -179,7 +196,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // --- FUNCIONES GLOBALES INTERCEPTADAS ---
 
 window.confirmRoleChange = function(email) {
-    const selectEl = document.getElementById(`roleSel_${email.replace(/[@.]/g, '_')}`);
+    const selectEl = document.getElementById(`roleSel_${(email || '').replace(/[@.]/g, '_')}`);
     if (!selectEl) return;
     const newRole = selectEl.value; // 'Normal', 'VIP', 'Trabajador', 'Admin'
 
@@ -346,7 +363,7 @@ window.renderKitchenUsers = function() {
 window.updateUserRole = function(email, role) {
     // Redirige al método de admin para evitar duplicar lógica
     const selWrapper = document.createElement('div');
-    selWrapper.innerHTML = `<select id="roleSel_${email.replace(/[@.]/g, '_')}"><option value="${role}" selected></option></select>`;
+    selWrapper.innerHTML = `<select id="roleSel_${(email || '').replace(/[@.]/g, '_')}"><option value="${role}" selected></option></select>`;
     document.body.appendChild(selWrapper);
     confirmRoleChange(email);
     selWrapper.remove();
@@ -355,6 +372,21 @@ window.updateUserRole = function(email, role) {
 
 // === AJUSTES Y PESTAÑAS (SOBREESCRITURAS) ===
 window.cambiarPestanaAdmin = function(tab) {
+    const isWorker = (typeof currentUser !== 'undefined' && currentUser && typeof workerEmails !== 'undefined' && workerEmails.includes(currentUser.email));
+    const isAdmin = (typeof currentUser !== 'undefined' && currentUser && typeof adminEmails !== 'undefined' && adminEmails.includes(currentUser.email));
+
+    // 1. Bloqueo estricto para clientes comunes y VIP
+    if (!isWorker && !isAdmin) {
+        if(typeof showSection === 'function') showSection('inicio');
+        return;
+    }
+
+    // 2. Bloqueo de secciones para trabajador
+    if (isWorker && !isAdmin && (tab === 'contabilidad' || tab === 'usuarios')) {
+        tab = 'pedidos'; // Redirección defensiva
+        if (typeof showToast === 'function') showToast('Acceso denegado: Área exclusiva de administración.', '🚫');
+    }
+
     const containers = document.querySelectorAll('.admin-tab-container');
     containers.forEach(c => c.style.setProperty('display', 'none', 'important'));
 
@@ -726,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Extender el guardado de rol para actualizar en Firestore directamente
 const originalConfirmRoleChangeFS = window.confirmRoleChange;
 window.confirmRoleChange = function(emailTarget) {
-    const selectEl = document.getElementById(`roleSel_${emailTarget.replace(/[@.]/g, '_')}`);
+    const selectEl = document.getElementById(`roleSel_${(emailTarget || '').replace(/[@.]/g, '_')}`);
     if (selectEl) {
         const nuevoRol = selectEl.value;
         db.collection('usuarios').doc(emailTarget).update({ rol: nuevoRol })

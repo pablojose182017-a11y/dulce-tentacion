@@ -90,7 +90,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 btnRanking.onclick = openRankingModal;
                 topClientsDiv.appendChild(btnRanking);
             }
-            }
 
             // --- HACER TARJETAS INTERACTIVAS ---
             const cardsContainer = document.getElementById('admin-dashboard-cards');
@@ -443,33 +442,33 @@ window.renderizarTablaContable = function(pedidos) {
             if (isEvent) {
                 const abono = Math.ceil(p.total / 2);
                 const saldo = p.total - abono;
-                pagoHtml = \`<span style="color:#10b981; font-weight:bold;">Abono: $\${abono.toLocaleString()}</span><br><span style="color:#ef4444; font-size:0.8rem;">Saldo: $\${saldo.toLocaleString()}</span>\`;
+                pagoHtml = `<span style="color:#10b981; font-weight:bold;">Abono: $${abono.toLocaleString()}</span><br><span style="color:#ef4444; font-size:0.8rem;">Saldo: $${saldo.toLocaleString()}</span>`;
             } else {
-                pagoHtml = \`<span style="color:#10b981; font-weight:bold;">Pagado completo</span>\`;
+                pagoHtml = `<span style="color:#10b981; font-weight:bold;">Pagado completo</span>`;
             }
 
-            html += \`
+            html += `
             <tr style="border-bottom:1px solid #eee;">
-                <td style="padding:10px; color:#64748b; font-size:0.85rem;">\${pDate}</td>
-                <td style="padding:10px; font-weight:bold;">#\${p.id}</td>
-                <td style="padding:10px;"><strong>\${p.customer || 'N/A'}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">\${p.phone || 'N/A'}</span></td>
-                <td style="padding:10px; text-align:center;">\${artText}</td>
-                <td style="padding:10px; text-align:right; font-weight:bold; color:var(--brand-pink);">$\${(p.total || 0).toLocaleString()}</td>
-                <td style="padding:10px; text-align:center;">\${pagoHtml}</td>
+                <td style="padding:10px; color:#64748b; font-size:0.85rem;">${pDate}</td>
+                <td style="padding:10px; font-weight:bold;">#${p.id}</td>
+                <td style="padding:10px;"><strong>${p.customer || 'N/A'}</strong><br><span style="font-size:0.75rem; color:#94a3b8;">${p.phone || 'N/A'}</span></td>
+                <td style="padding:10px; text-align:center;">${artText}</td>
+                <td style="padding:10px; text-align:right; font-weight:bold; color:var(--brand-pink);">$${(p.total || 0).toLocaleString()}</td>
+                <td style="padding:10px; text-align:center;">${pagoHtml}</td>
                 <td style="padding:10px; text-align:center;">
-                    <button onclick="viewAccountingOrderDetails('\${p.id}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem; transition:background 0.2s;">Ver Detalle</button>
+                    <button onclick="viewAccountingOrderDetails('${p.id}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:4px 8px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem; transition:background 0.2s;">Ver Detalle</button>
                 </td>
-            </tr>\`;
+            </tr>`;
         });
     }
 
-    html += \`</tbody></table>\`;
+    html += `</tbody></table>`;
     document.getElementById('libro-contable-content').innerHTML = html;
     
     // Actualizar resumen
     const resumen = document.getElementById('resumen-filtrado');
     if (resumen) {
-        resumen.innerHTML = \`Mostrando: \${pedidos.length} pedidos &bull; Total: $\${totalCOP.toLocaleString()} COP\`;
+        resumen.innerHTML = `Mostrando: ${pedidos.length} pedidos &bull; Total: $${totalCOP.toLocaleString()} COP`;
     }
 };
 
