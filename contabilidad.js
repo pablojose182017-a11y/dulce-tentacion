@@ -27,32 +27,40 @@ window.addEventListener('DOMContentLoaded', () => {
                 <button class="btn-hero-secondary" onclick="document.getElementById('rankingModal').style.setProperty('display', 'none', 'important')" style="padding:8px 16px; border:1px solid #ddd; background:#f1f5f9; border-radius:8px; cursor:pointer; font-weight:bold;">Cerrar</button>
             </div>
         </div>
-        </div>
-    </div>
-
-    <!-- Modal Libro Contable de Pedidos -->
-    <div id="modal-libro-contable" class="modal-overlay" style="display:none !important; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
-        <div class="modal-content" style="max-width:900px; padding:20px; text-align:left; background:#fff; border-radius:12px; width:95%; box-shadow:0 10px 25px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto; display:flex; flex-direction:column;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
-                <h3 style="color:var(--brand-pink); margin:0; font-size:1.4rem;">📖 Libro Contable de Pedidos</h3>
-                <button onclick="exportarPedidosCSV()" class="btn-gold" style="background:#10b981; color:#fff; border:none; padding:8px 16px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 4px 6px rgba(16,185,129,0.2);">📥 Descargar Reporte en Excel</button>
-            </div>
-            
-            <div class="contable-filtros-bar">
-                <input type="text" id="input-buscar-contable" oninput="filtrarLibroContable()" placeholder="🔍 Buscar por cliente, teléfono o #DT...">
-                <input type="date" id="input-fecha-contable" onchange="filtrarLibroContable()">
-                <button id="btn-limpiar-filtros" class="btn-secundario" onclick="limpiarFiltrosContable()">Limpiar / Ver Todos</button>
-                <span id="resumen-filtrado" style="font-weight: 600; color: #555;"></span>
-            </div>
-
-            <div id="libro-contable-content" style="margin-bottom:20px; overflow-y:auto; flex:1;"></div>
-            <div style="text-align:right;">
-                <button class="btn-hero-secondary" onclick="document.getElementById('modal-libro-contable').style.setProperty('display', 'none', 'important')" style="padding:8px 16px; border:1px solid #ddd; background:#f1f5f9; border-radius:8px; cursor:pointer; font-weight:bold;">Cerrar</button>
-            </div>
-        </div>
     </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalsHTML);
+
+    // 1B. INYECTAR EL LIBRO CONTABLE DIRECTAMENTE EN LA PESTAÑA
+    const contabilidadTab = document.getElementById('admin-tab-contabilidad');
+    if (contabilidadTab) {
+        const libroContableHTML = `
+        <div id="seccion-libro-contable" style="background:#fff; border-radius:12px; padding:20px; box-shadow:var(--shadow-s); margin-bottom:25px; border:1px solid #f1e8e4;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
+                <h3 style="color:var(--brand-pink); margin:0; font-size:1.4rem;">📖 Libro Contable de Pedidos</h3>
+                <button id="btn-export-excel" onclick="exportarPedidosCSV()" class="btn-export-excel" style="background:#10b981; color:#fff; font-weight:600; padding:10px 18px; border-radius:8px; border:none; cursor:pointer; box-shadow:0 4px 6px rgba(16,185,129,0.2);">
+                    📥 Descargar Reporte en Excel
+                </button>
+            </div>
+            
+            <div class="contable-filtros-bar" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; align-items:center;">
+                <input type="text" id="input-buscar-contable" oninput="filtrarLibroContable()" placeholder="🔍 Buscar por cliente, teléfono o #DT..." style="flex:1; min-width:200px; padding:8px; border-radius:6px; border:1px solid #ddd;">
+                <input type="date" id="input-fecha-contable" onchange="filtrarLibroContable()" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+                <button id="btn-limpiar-filtros" class="btn-secundario" onclick="limpiarFiltrosContable()" style="padding:8px 16px; border-radius:6px; background:#f1f5f9; border:1px solid #ddd; cursor:pointer;">Limpiar / Ver Todos</button>
+                <span id="resumen-filtrado" style="font-weight: 600; color: #555; margin-left:10px;"></span>
+            </div>
+
+            <div id="libro-contable-content" style="max-height:500px; overflow-y:auto; border:1px solid #eee; border-radius:8px;"></div>
+        </div>
+        `;
+        
+        const dashboardCards = document.getElementById('admin-dashboard-cards');
+        if (dashboardCards) {
+            dashboardCards.insertAdjacentHTML('afterend', libroContableHTML);
+        } else {
+            contabilidadTab.insertAdjacentHTML('afterbegin', libroContableHTML);
+        }
+    }
 
     // 2. INTERCEPTAR RENDER ADMIN DASHBOARD PARA MÉTRICAS Y EXPORTACIÓN
     const originalRenderAdminDashboard = window.renderAdminDashboard;
@@ -314,8 +322,8 @@ window.exportarPedidosCSV = function() {
     }
     
     // Configurar UTF-8 BOM para que Excel reconozca tildes y caracteres especiales
-    let csvContent = "\uFEFF"; 
-    csvContent += "Fecha,ID,Nombre Cliente,Teléfono,Dirección,Método Pago,Total COP,Abono COP,Saldo Pendiente COP,Detalle Productos\n";
+    const bom = "\uFEFF"; 
+    let csvContent = "Fecha,ID,Nombre Cliente,Teléfono,Dirección,Método Pago,Total COP,Abono COP,Saldo Pendiente COP,Detalle Productos\n";
     
     listaAExportar.forEach(p => {
         const pDate = p.timestamp ? new Date(p.timestamp).toLocaleString('es-CO') : p.date;
@@ -337,7 +345,7 @@ window.exportarPedidosCSV = function() {
         csvContent += `${date},${p.id},${customer},${phone},${address},${method},${p.total},${abono},${saldo},${details}\n`;
     });
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -467,8 +475,10 @@ window.renderizarTablaContable = function(pedidos) {
 
 window.openLibroContableModal = function() {
     limpiarFiltrosContable();
-    document.getElementById('modal-libro-contable').style.setProperty('display', 'flex', 'important');
+    const sec = document.getElementById('seccion-libro-contable');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
+window.abrirLibroContable = window.openLibroContableModal;
 
 
 // === CALCULADORA DE ABONOS Y SANEAMIENTO (SOBREESCRITURAS) ===

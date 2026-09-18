@@ -599,3 +599,1180 @@ window.addEventListener('error', function(e) {
         e.target.src = 'logo-pys.png';
     }
 }, true);
+
+// =========================================================
+// MÓDULO MAESTRO DE USUARIOS Y FIRESTORE EN TIEMPO REAL
+// =========================================================
+
+// 1. REGISTRO Y LOGIN MANUAL MULTI-DISPOSITIVO
+const originalRegisterCustomUser = window.registerCustomUser;
+window.registerCustomUser = function(e) {
+    if (originalRegisterCustomUser) originalRegisterCustomUser(e);
+    
+    const nombre = document.getElementById('regName')?.value.trim();
+    const correoNormalizado = document.getElementById('regEmail')?.value.trim().toLowerCase();
+    const telefono = document.getElementById('regPhone')?.value.trim();
+    const password = document.getElementById('regPassword')?.value.trim();
+    
+    if (correoNormalizado && password && nombre) {
+        db.collection('usuarios').doc(correoNormalizado).set({
+            nombre: nombre,
+            email: correoNormalizado,
+            telefono: telefono || 'Sin registrar',
+            password: password,
+            rol: 'cliente',
+            estado: 'activo',
+            fechaRegistro: new Date().toLocaleDateString(),
+            origen: 'manual'
+        }, { merge: true });
+    }
+};
+
+window.loginCustomUser = function(e) {
+    e.preventDefault();
+    const correoInput = document.getElementById('loginEmail')?.value.trim().toLowerCase();
+    const passInput = document.getElementById('loginPassword')?.value.trim();
+    
+    if (!correoInput || !passInput) {
+        if (typeof showAuthMessage === 'function') showAuthMessage('Por favor ingresa correo y contraseña', 'error');
+        return;
+    }
+
+    db.collection('usuarios').doc(correoInput).get().then((doc) => {
+        if (!doc.exists) return alert('El usuario no existe.');
+        const data = doc.data();
+        if (data.estado === 'bloqueado' || data.blocked) return alert('Tu cuenta está suspendida.');
+        if (data.password !== passInput) return alert('Contraseña incorrecta.');
+        
+        localStorage.setItem('dt_logged_user', JSON.stringify(data));
+        
+        if (typeof currentUser !== 'undefined') {
+            currentUser = data;
+        }
+        
+        if (typeof actualizarInterfazSesion === 'function') {
+            actualizarInterfazSesion(data);
+        } else if (typeof syncUserUI === 'function') {
+            syncUserUI();
+            if (typeof closeMobileProfile === 'function') closeMobileProfile();
+            if (typeof showToast === 'function') showToast('¡Bienvenido, ' + (data.nombre || data.name) + '!', '🎉');
+        }
+    }).catch(err => {
+        console.error("Error consultando Firestore:", err);
+    });
+};
+
+// 2. AUTO-REGISTRO POR GOOGLE SIGN-IN
+const originalHandleCredentialResponse = window.handleCredentialResponse;
+window.handleCredentialResponse = function(response) {
+    if (originalHandleCredentialResponse) originalHandleCredentialResponse(response);
+    
+    try {
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const decoded = JSON.parse(jsonPayload);
+        
+        db.collection('usuarios').doc(decoded.email).set({
+            nombre: decoded.name || 'Usuario Google',
+            email: decoded.email,
+            telefono: 'Sin registrar',
+            rol: 'cliente',
+            estado: 'activo',
+            foto: decoded.picture || '',
+            origen: 'google',
+            ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    } catch(e) {
+        console.error("Error procesando token de Google:", e);
+    }
+};
+
+// 3. TABLA DE USUARIOS DEL ADMINISTRADOR EN TIEMPO REAL
+window.renderUsersTable = function() {
+    db.collection('usuarios').onSnapshot((snapshot) => {
+        const listaUsuarios = [];
+        snapshot.forEach(doc => listaUsuarios.push({ id: doc.id, ...doc.data() }));
+        localStorage.setItem('dt_users_db', JSON.stringify(listaUsuarios));
+        
+        if (typeof pintarTablaUsuarios === 'function') {
+            pintarTablaUsuarios(listaUsuarios);
+        } else {
+            // Compatibilidad con el sistema actual
+            if (typeof db_users !== 'undefined') {
+                db_users.length = 0;
+                listaUsuarios.forEach(u => {
+                    // Mapeo para asegurar compatibilidad
+                    if(!u.name) u.name = u.nombre;
+                    if(!u.blocked) u.blocked = (u.estado === 'bloqueado');
+                    db_users.push(u);
+                });
+            }
+            if (typeof renderAdminUsers === 'function') renderAdminUsers();
+        }
+    });
+};
+
+// Llenar tabla en tiempo real tan pronto inicie
+document.addEventListener('DOMContentLoaded', () => {
+    if(typeof db !== 'undefined') {
+        window.renderUsersTable();
+    }
+});
+
+// Extender el guardado de rol para actualizar en Firestore directamente
+const originalConfirmRoleChangeFS = window.confirmRoleChange;
+window.confirmRoleChange = function(emailTarget) {
+    const selectEl = document.getElementById(`roleSel_${emailTarget.replace(/[@.]/g, '_')}`);
+    if (selectEl) {
+        const nuevoRol = selectEl.value;
+        db.collection('usuarios').doc(emailTarget).update({ rol: nuevoRol })
+            .catch(err => console.warn('No se pudo guardar el rol en Firestore:', err));
+    }
+    if (originalConfirmRoleChangeFS) originalConfirmRoleChangeFS(emailTarget);
+};
+
+// Extender el bloqueo para actualizar en Firestore
+const originalAdminToggleBlockFS = window.adminToggleBlock;
+window.adminToggleBlock = function(emailTarget) {
+    const u = typeof db_users !== 'undefined' ? db_users.find(x => x.email === emailTarget) : null;
+    if (u) {
+        const nuevoEstado = !u.blocked ? 'bloqueado' : 'activo';
+        db.collection('usuarios').doc(emailTarget).update({ estado: nuevoEstado, blocked: !u.blocked })
+            .catch(err => console.warn('No se pudo guardar el estado en Firestore:', err));
+    }
+    if (originalAdminToggleBlockFS) originalAdminToggleBlockFS(emailTarget);
+};
+
+// =========================================================
+// CORRECCIÓN DE RELLENOS Y PRECIOS DINÁMICOS DE COMBOS
+// =========================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 2. AJUSTE VISUAL PARA MÓVILES (CSS y opciones limpias)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        select.filling-select, .filling-selector select {
+            width: 100% !important;
+            font-size: 0.82rem !important;
+            padding: 7px 10px !important;
+            border-radius: 8px !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Función para limpiar textos de options sin romper valor
+    const limpiarOpcionesCombos = () => {
+        const selects = document.querySelectorAll('select.filling-select, .filling-selector select');
+        selects.forEach(select => {
+            Array.from(select.options).forEach(opt => {
+                if (opt.dataset.cleaned) return; // Evita recursión infinita
+                let text = opt.text.toLowerCase();
+                if (text.includes('queso') && !text.includes('bocadillo') && !text.includes('jamon') && !text.includes('jamón')) {
+                    opt.text = "🧀 Queso Campesino ($2.000)";
+                    opt.value = "queso";
+                } else if (text.includes('bocadillo')) {
+                    opt.text = "🍯 Bocadillo con Queso ($2.000)";
+                    opt.value = "bocadillo_queso";
+                } else if (text.includes('pollo')) {
+                    opt.text = "🍗 Pollo Desmechado ($3.000)";
+                    opt.value = "pollo";
+                } else if (text.includes('jamon') || text.includes('jamón')) {
+                    opt.text = "🥓 Jamón y Queso ($3.000)";
+                    opt.value = "jamon_queso";
+                } else if (text.includes('especial')) {
+                    opt.text = "🔥 Especial Trío ($3.500)";
+                    opt.value = "especial";
+                }
+                opt.dataset.cleaned = 'true'; // Marcado como procesado
+            });
+        });
+    };
+
+    // 1. RECÁLCULO DINÁMICO DE PRECIO SEGÚN RELLENO
+    document.body.addEventListener('change', (e) => {
+        if (e.target.matches('select.filling-select, .filling-selector select')) {
+            const selectEl = e.target;
+            const card = selectEl.closest('.product-card');
+            if (!card) return;
+
+            let productId = null;
+            const btn = card.querySelector('button[onclick^="addToCart"]');
+            if (btn) {
+                const match = btn.getAttribute('onclick').match(/addToCart\((\d+)/);
+                if (match) productId = match[1];
+            }
+            if (!productId) {
+                const priceContainerId = card.querySelector('[id^="price-"]')?.id;
+                if(priceContainerId) productId = priceContainerId.replace('price-', '');
+            }
+
+            if (!productId) return;
+
+            let unidades = 25; // Default fallback
+            if (productId == '101') unidades = 25;
+            else if (productId == '102') unidades = 50;
+            else if (productId == '103') unidades = 100;
+
+            const val = selectEl.value;
+            const preciosMap = { queso: 2000, bocadillo_queso: 2000, pollo: 3000, jamon_queso: 3000, especial: 3500 };
+            const precioUnit = preciosMap[val] || 2000;
+            const total = unidades * precioUnit;
+
+            // Actualizar interfaz visual
+            const priceContainer = document.getElementById(`price-${productId}`) || card.querySelector('.current-price')?.parentElement;
+            if (priceContainer) {
+                if (typeof window.updateProductPrice === 'function') {
+                    window.updateProductPrice(productId, val);
+                } else {
+                    if (val === 'especial') {
+                        const tachado = unidades * 3700;
+                        priceContainer.innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.8rem; margin-right:5px;">$${tachado.toLocaleString('es-CO')}</span> <span class="current-price" style="color:#e11d48;">$${total.toLocaleString('es-CO')}</span> <span class="badge-promo-filling">🔥 5% DTO</span>`;
+                    } else {
+                        priceContainer.innerHTML = `<span class="current-price">$${total.toLocaleString('es-CO')}</span>`;
+                    }
+                }
+            }
+
+            // Actualizar datos en memoria para el botón (interceptando db_products)
+            if (typeof db_products !== 'undefined') {
+                const prod = db_products.find(p => p.id == productId);
+                if (prod) {
+                    prod.price = total;
+                    // Actualizar temporalmente el nombre o el relleno (dependiendo de la implementación del cart)
+                    prod.selectedFilling = val;
+                }
+            }
+        }
+    });
+
+    // Limpiar al inicio y observar cambios en el DOM para inyectar dinámicamente
+    limpiarOpcionesCombos();
+    const observer = new MutationObserver((mutations) => {
+        let shouldClean = false;
+        mutations.forEach(m => { if (m.addedNodes.length) shouldClean = true; });
+        if (shouldClean) {
+            observer.disconnect(); // Desconectar antes de limpiar para evitar recursión
+            limpiarOpcionesCombos();
+            const grids = document.querySelectorAll('.grid, #productGrid, #featuredGrid');
+            grids.forEach(grid => observer.observe(grid, { childList: true, subtree: true }));
+        }
+    });
+    
+    const grids = document.querySelectorAll('.grid, #productGrid, #featuredGrid');
+    grids.forEach(grid => observer.observe(grid, { childList: true, subtree: true }));
+});
+// =========================================================
+// CORRECCIÓN DE SELECTOR DE CANTIDAD EN PRODUCTOS Y RÁFAGA RÁPIDA
+// =========================================================
+
+window.addToCart = function(productId, arg2) {
+    let e = null;
+    let forcedQty = null;
+
+    if (typeof arg2 === 'object' && arg2 !== null) {
+        e = arg2;
+    } else if (typeof arg2 === 'number') {
+        forcedQty = arg2;
+    }
+
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    const p = (typeof db_products !== 'undefined' ? db_products : products).find(x => x.id == productId);
+    if (!p) return;
+
+    if (typeof stockConfig !== 'undefined' && stockConfig[productId]) {
+        if(typeof showToast === 'function') showToast("Este producto está agotado por hoy.", "🚫");
+        return;
+    }
+
+    let qty = 1;
+    let currentCard = e && e.target ? e.target.closest('.card, .product-card') : null;
+
+    if (forcedQty && forcedQty > 1) {
+        qty = forcedQty;
+    } else if (currentCard) {
+        const inp = currentCard.querySelector(`.qinp-${productId}, #qty-${productId}, .qty-input`);
+        if (inp) qty = parseInt(inp.value) || 1;
+    } else {
+        const inp = document.querySelector(`.qinp-${productId}`) || document.getElementById(`qty-${productId}`);
+        qty = parseInt(inp?.value) || 1;
+    }
+    if (qty < 1) qty = 1;
+
+    let finalPrice = p.price;
+    let finalName = p.name;
+    let selectedFilling = null;
+
+    let fillingSelect = currentCard ? currentCard.querySelector(`select.filling-select`) : document.getElementById(`filling-sel-${productId}`);
+    if (fillingSelect && typeof OPCIONES_RELLENO !== 'undefined') {
+        const fillingKey = fillingSelect.value;
+        const filling = OPCIONES_RELLENO[fillingKey];
+        if (filling && p.permiteRelleno) {
+            const units = p.unidades || 1;
+            finalPrice = filling.precioUnitario * units;
+            finalName = `${p.name} (${filling.nombre})`;
+            selectedFilling = filling;
+            selectedFilling.id = fillingKey;
+        }
+    }
+
+    const cartId = selectedFilling ? (productId + '_' + selectedFilling.id) : productId;
+    const existing = typeof cart !== 'undefined' ? cart.find(x => (x.cartId || x.id) == cartId || (x.id == productId && x.name === finalName)) : null;
+
+    if (existing) {
+        existing.quantity += qty;
+    } else if (typeof cart !== 'undefined') {
+        cart.push({ ...p, quantity: qty, name: finalName, price: finalPrice, cartId, filling: selectedFilling });
+    }
+
+    if (typeof flyAnimation === 'function') flyAnimation(productId);
+
+    if (currentCard) {
+        const inp = currentCard.querySelector(`.qinp-${productId}, #qty-${productId}, .qty-input`);
+        if (inp) inp.value = 1; // Restablecer inmediatamente a 1 después de capturarlo para clics rápidos
+        
+        const btn = currentCard.querySelector(`.badd-${productId}, button[onclick^="addToCart"]`);
+        if (btn) {
+            // Eliminar bloqueos visuales y permitir ráfagas de clic
+            btn.style.pointerEvents = 'auto';
+            btn.classList.remove('added'); // Por si el CSS viejo lo bloqueaba
+            
+            // Agrupar visualmente en vez de congelar
+            btn.innerHTML = `<span>✓ ¡Agregado (${qty})!</span>`;
+            
+            // Limpiar timeout previo si lo hay para que no se superpongan
+            if (btn.dataset.timeoutId) {
+                clearTimeout(parseInt(btn.dataset.timeoutId));
+            }
+            const tid = setTimeout(() => { 
+                btn.innerHTML = '<span>➕ Agregar al Carrito</span>'; 
+            }, 800);
+            btn.dataset.timeoutId = tid;
+        }
+    }
+
+    if (typeof updateCart === 'function') updateCart();
+    if (typeof saveCart === 'function') saveCart();
+    if (typeof showToast === 'function') showToast(`¡${qty}x ${p.name} al carrito!`, '🥐');
+};
+
+// --- 5. AUTOMATIZACIÓN DE RENDERIZADO INICIAL Y LIMPIEZA DE DOM ---
+const originalShowSectionAdmin = window.showSection;
+if (originalShowSectionAdmin) {
+    window.showSection = function(sectionId, btn) {
+        originalShowSectionAdmin.apply(this, arguments);
+        
+        // Limpieza visual: Ocultar bottom-nav y footer al entrar al admin
+        if (sectionId === 'admin-dashboard') {
+            document.body.classList.add('admin-view-active');
+            
+            // Forzar disparo para que todo se pinte bien
+            setTimeout(() => {
+                if (typeof window.cambiarPestanaAdmin === 'function') {
+                    window.cambiarPestanaAdmin('pedidos');
+                }
+            }, 50);
+        } else {
+            // Restaurar navegación si sale a otra sección
+            document.body.classList.remove('admin-view-active');
+        }
+    };
+}
+
+const originalCambiarPestanaRol = window.cambiarPestanaAdmin;
+if (originalCambiarPestanaRol) {
+    window.cambiarPestanaAdmin = function(tabId) {
+        originalCambiarPestanaRol.apply(this, arguments);
+        
+        if (tabId === 'pedidos') {
+            const dateInput = document.querySelector('#filtro-fecha-pedidos, input[type="date"], #orderDateFilter');
+            if (dateInput) {
+                const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+                const today = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+                if (!dateInput.value) {
+                    dateInput.value = today;
+                    if (typeof window.orderDateFilterValue !== 'undefined') window.orderDateFilterValue = today;
+                    dateInput.dispatchEvent(new Event('change'));
+                }
+            }
+            if (typeof renderLiveOrders === 'function') renderLiveOrders();
+        }
+        else if (tabId === 'productos') {
+            // Asegurar que el botón "Todos" esté activo visualmente
+            const catButtons = document.querySelectorAll('#admin-tab-productos .cat-chip');
+            catButtons.forEach(btn => btn.classList.remove('active'));
+            if(catButtons.length > 0) catButtons[0].classList.add('active');
+
+            // Renderizar inmediatamente la grilla de stock con la función correcta
+            if (typeof renderStockAdmin === 'function') {
+                setTimeout(() => { renderStockAdmin(); }, 10);
+            }
+        }
+    };
+}
+
+// Inyectar CSS global para asegurar que footer y bottom-nav desaparezcan completamente en la vista admin
+const adminStyles = document.createElement('style');
+adminStyles.innerHTML = `
+    body.admin-view-active .mobile-bottom-nav,
+    body.admin-view-active .bottom-nav,
+    body.admin-view-active footer,
+    body.admin-view-active .info-sections,
+    body.admin-view-active .identity-banner {
+        display: none !important;
+    }
+`;
+document.head.appendChild(adminStyles);
+
+// --- 6. MÓDULO DE GESTIÓN DINÁMICA DE OFERTAS Y DESCUENTOS ---
+window.dtOfertasActivas = JSON.parse(localStorage.getItem('dt_ofertas_activas') || '{}');
+
+window.saveOfertas = function() {
+    localStorage.setItem('dt_ofertas_activas', JSON.stringify(window.dtOfertasActivas));
+};
+
+// 4. REFLEJO EN LA TIENDA DEL CLIENTE (Interceptar array en memoria)
+if (typeof products !== 'undefined') {
+    products.forEach(p => {
+        if (!p.originalName) p.originalName = p.name;
+        if (window.dtOfertasActivas[p.id]) {
+            p.oldPrice = window.dtOfertasActivas[p.id].precioOriginal;
+            p.price = window.dtOfertasActivas[p.id].precioOferta;
+            p.enOferta = true;
+            if (window.dtOfertasActivas[p.id].badgePromo) {
+                p.tag = window.dtOfertasActivas[p.id].badgePromo;
+                p.name = `${p.originalName} [Promo: ${window.dtOfertasActivas[p.id].badgePromo}]`;
+            }
+        }
+    });
+}
+
+// 2. MODAL DE CREACIÓN DE OFERTAS
+function createOfferModal() {
+    if (document.getElementById('modal-ofertas')) return;
+    const modal = document.createElement('div');
+    modal.className = 'auth-modal';
+    modal.id = 'modal-ofertas';
+    modal.style.display = 'none';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '999999';
+    modal.innerHTML = `
+        <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-ofertas').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
+            <h3 style="margin-top:0; color:#e11d48; text-align:center;">🏷️ Nueva Oferta</h3>
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Seleccionar Producto</label>
+                <select id="oferta-producto" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:1rem;" onchange="window.updateOfertaPrecio()">
+                    <option value="">-- Elige un producto --</option>
+                    ${typeof products !== 'undefined' ? products.map(p => `<option value="${p.id}" data-price="${p.oldPrice || p.price}">${p.name} ($${(p.oldPrice || p.price).toLocaleString()})</option>`).join('') : ''}
+                </select>
+            </div>
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Precio Regular</label>
+                <input type="number" id="oferta-precio-original" readonly style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; background:#f8fafc; font-size:1rem;">
+            </div>
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px; color:#e11d48;">Nuevo Precio (Oferta)</label>
+                <input type="number" id="oferta-precio-nuevo" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e11d48; font-size:1rem;" placeholder="Ej: 2000">
+            </div>
+            <div style="margin-bottom:20px; text-align:left;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:5px;">Insignia o Promoción Especial (Opcional):</label>
+                <input type="text" id="oferta-badge-promo" placeholder="Ej: 🎁 Lleva 1 gratis" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="window.guardarOfertaNueva()" style="flex:1; padding:12px; background:#e11d48; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">Guardar Oferta</button>
+                <button type="button" id="btn-eliminar-oferta" onclick="window.eliminarOfertaDesdeModal()" style="display:none; background:#ef4444; color:#fff; border:none; padding:12px 16px; border-radius:8px; font-weight:600; cursor:pointer;">🗑️ Eliminar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+window.updateOfertaPrecio = function() {
+    const sel = document.getElementById('oferta-producto');
+    const opt = sel.options[sel.selectedIndex];
+    const originalPriceInput = document.getElementById('oferta-precio-original');
+    const nuevoPrecioInput = document.getElementById('oferta-precio-nuevo');
+    const badgePromoInput = document.getElementById('oferta-badge-promo');
+    const btnEliminar = document.getElementById('btn-eliminar-oferta');
+
+    if (opt && opt.value) {
+        const pId = opt.value;
+        const isOferta = window.dtOfertasActivas[pId];
+        
+        if (isOferta) {
+            originalPriceInput.value = isOferta.precioOriginal;
+            nuevoPrecioInput.value = isOferta.precioOferta;
+            badgePromoInput.value = isOferta.badgePromo || '';
+            btnEliminar.style.display = 'block';
+        } else {
+            originalPriceInput.value = opt.getAttribute('data-price');
+            nuevoPrecioInput.value = '';
+            badgePromoInput.value = '';
+            btnEliminar.style.display = 'none';
+        }
+    } else {
+        originalPriceInput.value = '';
+        nuevoPrecioInput.value = '';
+        badgePromoInput.value = '';
+        btnEliminar.style.display = 'none';
+    }
+};
+
+window.abrirModalOferta = function() {
+    createOfferModal();
+    document.getElementById('oferta-producto').value = '';
+    document.getElementById('oferta-precio-original').value = '';
+    document.getElementById('oferta-precio-nuevo').value = '';
+    document.getElementById('oferta-badge-promo').value = '';
+    document.getElementById('btn-eliminar-oferta').style.display = 'none';
+    const m = document.getElementById('modal-ofertas');
+    m.style.display = 'flex';
+};
+
+window.guardarOfertaNueva = function() {
+    const id = document.getElementById('oferta-producto').value;
+    const precioOriginal = parseInt(document.getElementById('oferta-precio-original').value);
+    const precioOferta = parseInt(document.getElementById('oferta-precio-nuevo').value);
+    const badgePromo = document.getElementById('oferta-badge-promo').value.trim();
+    
+    if (!id || !precioOriginal || !precioOferta) {
+        if(typeof showToast === 'function') showToast('Llena todos los campos', '⚠️');
+        return;
+    }
+    if (precioOferta >= precioOriginal) {
+        if(typeof showToast === 'function') showToast('La oferta debe ser menor al precio', '⚠️');
+        return;
+    }
+    
+    window.dtOfertasActivas[id] = {
+        enOferta: true,
+        precioOferta: precioOferta,
+        precioOriginal: precioOriginal,
+        badgePromo: badgePromo
+    };
+    window.saveOfertas();
+    
+    // Aplicar en memoria al array products original
+    if (typeof products !== 'undefined') {
+        const p = products.find(x => x.id == id);
+        if (p) {
+            if (!p.originalName) p.originalName = p.name;
+            p.oldPrice = precioOriginal;
+            p.price = precioOferta;
+            p.enOferta = true;
+            if (badgePromo) {
+                p.tag = badgePromo;
+                p.name = `${p.originalName} [Promo: ${badgePromo}]`;
+            } else {
+                delete p.tag;
+                p.name = p.originalName;
+            }
+        }
+    }
+    
+    document.getElementById('modal-ofertas').style.display = 'none';
+    if(typeof showToast === 'function') showToast('Oferta guardada con éxito', '🔥');
+    
+    // Re-render
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderFeatured === 'function') renderFeatured();
+};
+
+window.eliminarOfertaDesdeModal = function() {
+    const id = document.getElementById('oferta-producto').value;
+    if (id) {
+        window.quitarOferta(id);
+        document.getElementById('modal-ofertas').style.display = 'none';
+    }
+};
+
+window.quitarOferta = function(id) {
+    if (!window.dtOfertasActivas[id]) return;
+    
+    // Restaurar en memoria
+    if (typeof products !== 'undefined') {
+        const p = products.find(x => x.id == id);
+        if (p) {
+            p.price = window.dtOfertasActivas[id].precioOriginal;
+            if (p.originalName) p.name = p.originalName;
+            delete p.oldPrice;
+            delete p.enOferta;
+            delete p.tag;
+        }
+    }
+    
+    delete window.dtOfertasActivas[id];
+    window.saveOfertas();
+    
+    if(typeof showToast === 'function') showToast('Oferta removida', '✅');
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderFeatured === 'function') renderFeatured();
+};
+
+window.abrirModalEdicionProducto = function(pId = null) {
+    let p = null;
+    let isOferta = null;
+    let actualBasePrice = 0;
+    let actualName = '';
+    let actualImg = '';
+    let catSelect = 'panaderia';
+    
+    if (pId) {
+        p = products.find(x => x.id === pId);
+        if (!p) return;
+        isOferta = window.dtOfertasActivas[pId];
+        actualBasePrice = isOferta ? isOferta.precioOriginal : p.price;
+        actualName = p.originalName || p.name;
+        actualImg = p.originalImg || p.img;
+        catSelect = p.cat;
+    }
+
+    if (!document.getElementById('modal-editar-producto')) {
+        const modal = document.createElement('div');
+        modal.className = 'auth-modal';
+        modal.id = 'modal-editar-producto';
+        modal.style.display = 'none';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '999999';
+        document.body.appendChild(modal);
+    }
+    
+    // Limpiar el badge de promo del nombre si existe
+    let cleanName = actualName;
+    if (cleanName.includes('[Promo:')) {
+        cleanName = cleanName.substring(0, cleanName.indexOf('[Promo:')).trim();
+    }
+    
+    const modalTitle = pId ? '✏️ Editar Producto' : '✨ Crear Nuevo Producto';
+    const btnGuardarText = pId ? '💾 Guardar Cambios' : '💾 Crear Producto';
+    const btnRestaurar = pId ? `<button onclick="window.restaurarProductoOriginal(${pId})" style="width:100%; padding:10px; background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">🔄 Restaurar Original</button>` : '';
+    const btnEliminar = pId ? `<button type="button" id="btn-borrar-prod-modal" onclick="window.eliminarProducto(${pId})" style="background:#ef4444; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; margin-top:8px;">🗑️ Eliminar Producto</button>` : '';
+
+    
+    const modal = document.getElementById('modal-editar-producto');
+    modal.innerHTML = `
+        <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-editar-producto').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
+            <h3 style="margin-top:0; color:#10b981; text-align:center;">${modalTitle}</h3>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Nombre del Producto</label>
+                <input type="text" id="edit-prod-name" value="${cleanName}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. Pan Navideño">
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="font-size:13px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">Categoría del Producto:</label>
+                <select id="edit-prod-category" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:1rem;">
+                    <option value="panaderia" ${catSelect === 'panaderia' ? 'selected' : ''}>🥖 Panadería (Pan)</option>
+                    <option value="paquetes" ${catSelect === 'paquetes' ? 'selected' : ''}>📦 Paquetes</option>
+                    <option value="antojos" ${catSelect === 'antojos' ? 'selected' : ''}>🍪 Antojos y Galletería</option>
+                    <option value="pasteleria" ${catSelect === 'pasteleria' ? 'selected' : ''}>🎂 Tortas & Postres</option>
+                    <option value="combos" ${catSelect === 'combos' ? 'selected' : ''}>🔥 Ofertas y Combos</option>
+                    <option value="eventos" ${catSelect === 'eventos' ? 'selected' : ''}>🎉 Eventos & Fiestas</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Precio Base (COP)</label>
+                <input type="number" id="edit-prod-price" value="${actualBasePrice || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 1500">
+            </div>
+            
+            <div style="margin-bottom:20px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Nombre de Archivo / URL de Imagen</label>
+                <input type="text" id="edit-prod-img" value="${actualImg}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. foto.jpg">
+                
+                <div style="display: flex; gap: 8px; margin-top: 6px; align-items: center;">
+                    <input type="file" id="edit-prod-file-input" accept="image/*" style="display: none;" onchange="
+                        if(this.files && this.files[0]) {
+                            const file = this.files[0];
+                            document.getElementById('edit-prod-img').value = file.name;
+                            document.getElementById('edit-prod-file-name').innerText = file.name;
+                            const previewImg = document.getElementById('edit-prod-preview');
+                            previewImg.src = URL.createObjectURL(file);
+                            previewImg.style.display = 'inline-block';
+                        }
+                    ">
+                    <button type="button" id="btn-examinar-img" onclick="document.getElementById('edit-prod-file-input').click()" style="background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                        📁 Examinar del equipo...
+                    </button>
+                    <span id="edit-prod-file-name" style="font-size: 12px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"></span>
+                </div>
+                
+                <div style="margin-top: 10px; text-align: center;">
+                    <img id="edit-prod-preview" src="${actualImg}" alt="Vista previa" style="max-height: 90px; max-width: 100%; border-radius: 8px; object-fit: contain; border: 1px dashed #cbd5e1; padding: 4px; display: ${actualImg ? 'inline-block' : 'none'};">
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:10px; flex-direction:column;">
+                <button onclick="window.guardarEdicionProducto(${pId ? pId : 'null'})" style="width:100%; padding:12px; background:#10b981; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">${btnGuardarText}</button>
+                ${btnRestaurar}
+                ${btnEliminar}
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
+window.guardarEdicionProducto = function(pId) {
+    const nuevoNombre = document.getElementById('edit-prod-name').value.trim();
+    const nuevoPrecioStr = document.getElementById('edit-prod-price').value;
+    const nuevaImg = document.getElementById('edit-prod-img').value.trim() || 'logo-pys.png';
+    const nuevaCategoria = document.getElementById('edit-prod-category').value;
+    
+    const nuevoPrecio = parseInt(nuevoPrecioStr.replace(/\D/g, ''));
+    if (!nuevoNombre || isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+        if(typeof showToast === 'function') showToast('Completa el nombre y precio', '⚠️');
+        return;
+    }
+    
+    let isNew = !pId;
+    let targetId = isNew ? Date.now() : pId;
+    
+    // Guardar en localStorage
+    let localCatalog = {};
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    
+    localCatalog[targetId] = {
+        name: nuevoNombre,
+        price: nuevoPrecio,
+        img: nuevaImg,
+        category: nuevaCategoria
+    };
+    
+    if (isNew) {
+        localCatalog[targetId].id = targetId;
+        localCatalog[targetId].isCustom = true;
+    }
+    localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+    
+    // Aplicar en memoria
+    if (isNew) {
+        products.push({
+            id: targetId,
+            name: nuevoNombre,
+            price: nuevoPrecio,
+            cat: nuevaCategoria,
+            img: nuevaImg,
+            desc: 'Producto fresco del día',
+            isCustom: true
+        });
+    } else {
+        const p = products.find(x => x.id === pId);
+        if (p) {
+            if (!p.originalName) p.originalName = p.name;
+            if (!p.originalImg) p.originalImg = p.img;
+            if (!p.originalCat) p.originalCat = p.cat;
+            
+            // Mantener badge de promo si existe en el nombre actual inyectado
+            const hasBadge = p.name.includes('[Promo:');
+            const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
+            p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
+            
+            p.img = nuevaImg;
+            p.cat = nuevaCategoria;
+            
+            const isOferta = window.dtOfertasActivas[pId];
+            if (isOferta) {
+                p.oldPrice = nuevoPrecio;
+                isOferta.precioOriginal = nuevoPrecio;
+                window.saveOfertas();
+            } else {
+                p.price = nuevoPrecio;
+            }
+        }
+    }
+    
+    // Guardar en Firestore
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('catalogo_personalizado').set({
+            [targetId]: localCatalog[targetId]
+        }, { merge: true }).catch(e => console.error("Error guardando producto", e));
+    }
+    
+    document.getElementById('modal-editar-producto').style.display = 'none';
+    if(typeof showToast === 'function') showToast(isNew ? 'Producto creado' : 'Producto actualizado', '✅');
+    
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderFeatured === 'function') renderFeatured();
+};
+
+window.restaurarProductoOriginal = function(pId) {
+    let localCatalog = {};
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    
+    if (localCatalog[pId]) {
+        delete localCatalog[pId];
+        localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+    }
+    
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('catalogo_personalizado').update({
+            [pId]: firebase.firestore.FieldValue.delete()
+        }).catch(e => console.error("Error restaurando", e));
+    }
+    
+    document.getElementById('modal-editar-producto').style.display = 'none';
+    if(typeof showToast === 'function') showToast('Restaurando valores por defecto...', '🔄');
+    setTimeout(() => window.location.reload(), 1000);
+};
+
+window.eliminarProducto = function(pId) {
+    if (!confirm("¿Seguro que deseas eliminar este producto del catálogo?")) return;
+    
+    let localCatalog = {};
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    
+    // Marcarlo como eliminado
+    localCatalog[pId] = localCatalog[pId] || {};
+    localCatalog[pId].eliminado = true;
+    
+    localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+    
+    // Eliminar de memoria
+    const idx = products.findIndex(x => x.id === pId);
+    if (idx > -1) products.splice(idx, 1);
+    
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('catalogo_personalizado').set({
+            [pId]: { eliminado: true }
+        }, { merge: true }).catch(e => console.error("Error eliminando", e));
+    }
+    
+    document.getElementById('modal-editar-producto').style.display = 'none';
+    if(typeof showToast === 'function') showToast('Producto eliminado', '✅');
+    
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderFeatured === 'function') renderFeatured();
+};
+
+// 3. ACCIONES DIRECTAS EN CADA TARJETA DE PRODUCTO y BOTÓN GLOBAL
+const originalRenderStockAdminOfertas = window.renderStockAdmin;
+if (originalRenderStockAdminOfertas) {
+    window.renderStockAdmin = function() {
+        originalRenderStockAdminOfertas.apply(this, arguments);
+        
+        // Agregar botones adicionales si no existen en la cabecera del stock
+        const controlsDiv = document.getElementById('admin-stock-filters-container');
+        if (controlsDiv) {
+            if (!document.getElementById('btn-global-offer')) {
+                const offerBtn = document.createElement('button');
+                offerBtn.id = 'btn-global-offer';
+                offerBtn.className = 'cat-chip';
+                offerBtn.style.background = '#e11d48';
+                offerBtn.style.color = '#fff';
+                offerBtn.style.fontWeight = 'bold';
+                offerBtn.innerHTML = '🏷️ + Poner Producto en Oferta';
+                offerBtn.onclick = () => window.abrirModalOferta();
+                controlsDiv.appendChild(offerBtn);
+            }
+        }
+        
+        // Modificar cada tarjeta de la grilla de stock
+        const grid = document.getElementById('admin-stock-grid');
+        if (!grid) return;
+        
+        Array.from(grid.children).forEach((child) => {
+            const btn = child.querySelector('button[onclick^="toggleStock"]');
+            if (btn) {
+                const match = btn.getAttribute('onclick').match(/\d+/);
+                if (match) {
+                    const pId = parseInt(match[0]);
+                    const isOferta = window.dtOfertasActivas[pId];
+                    
+                    // Botón Editar Producto
+                    const btnEditPrice = document.createElement('button');
+                    btnEditPrice.className = 'btn-edit-price';
+                    btnEditPrice.setAttribute('data-id', pId);
+                    btnEditPrice.style.width = '100%';
+                    btnEditPrice.style.padding = '6px';
+                    btnEditPrice.style.borderRadius = '6px';
+                    btnEditPrice.style.marginTop = '8px';
+                    btnEditPrice.style.cursor = 'pointer';
+                    btnEditPrice.style.border = '1px solid #cbd5e1';
+                    btnEditPrice.style.background = '#f8fafc';
+                    btnEditPrice.style.color = '#334155';
+                    btnEditPrice.style.fontWeight = 'bold';
+                    btnEditPrice.style.fontSize = '0.75rem';
+                    btnEditPrice.innerHTML = '✏️ Editar Producto';
+                    btnEditPrice.onclick = () => window.abrirModalEdicionProducto(pId);
+                    child.appendChild(btnEditPrice);
+                    
+                    // Botón Oferta
+                    const btnOferta = document.createElement('button');
+                    btnOferta.style.width = '100%';
+                    btnOferta.style.padding = '8px';
+                    btnOferta.style.borderRadius = '6px';
+                    btnOferta.style.marginTop = '4px';
+                    btnOferta.style.cursor = 'pointer';
+                    btnOferta.style.border = 'none';
+                    btnOferta.style.fontWeight = 'bold';
+                    btnOferta.style.fontSize = '0.8rem';
+                    
+                    if (isOferta) {
+                        btnOferta.innerHTML = '❌ Quitar de Oferta';
+                        btnOferta.style.background = '#f43f5e';
+                        btnOferta.style.color = '#fff';
+                        btnOferta.onclick = () => window.quitarOferta(pId);
+                        
+                        // Mostrar precio tachado en el título de la tarjeta de stock
+                        const titleStrong = child.querySelector('strong');
+                        if (titleStrong && typeof products !== 'undefined') {
+                            const p = products.find(x => x.id === pId);
+                            const baseName = p.originalName || p.name;
+                            if(p) titleStrong.innerHTML = `${baseName}<br><s style="color:#999;font-size:0.75rem;">$${isOferta.precioOriginal.toLocaleString()}</s> <span style="color:#e11d48;">$${isOferta.precioOferta.toLocaleString()}</span>`;
+                        }
+                    } else {
+                        btnOferta.innerHTML = '🏷️ Aplicar Oferta';
+                        btnOferta.style.background = '#3b82f6';
+                        btnOferta.style.color = '#fff';
+                        btnOferta.onclick = () => {
+                            window.abrirModalOferta();
+                            const sel = document.getElementById('oferta-producto');
+                            if(sel) {
+                                sel.value = pId;
+                                window.updateOfertaPrecio();
+                            }
+                        };
+                        
+                        // Mostrar nombre y precio base actualizados en el título de la tarjeta
+                        const titleStrong = child.querySelector('strong');
+                        if (titleStrong && typeof products !== 'undefined') {
+                            const p = products.find(x => x.id === pId);
+                            const cleanName = p ? (p.originalName || p.name).replace(/ \[Promo:.*?\]/, '') : '';
+                            let localCatalog = {};
+                            try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}'); } catch(e){}
+                            
+                            if (p && localCatalog[pId] !== undefined) {
+                                titleStrong.innerHTML = `${localCatalog[pId].name || cleanName}<br><span style="color:#10b981;">$${(localCatalog[pId].price || p.price).toLocaleString()}</span>`;
+                            }
+                        }
+                    }
+                    child.appendChild(btnOferta);
+                }
+            }
+        });
+    };
+}
+
+// 4. FORZAR RENDERIZADO INICIAL DEL CATÁLOGO "TODOS"
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (typeof renderFeatured === 'function') {
+            renderFeatured('todos');
+        }
+    }, 500); // Pequeño retraso para asegurar que los productos estén cargados
+});
+
+// --- MÓDULO DE GESTIÓN DINÁMICA DE TORTAS ---
+window.dt_tortas_config = {
+    precios: {
+        '1/4': 45000,
+        '1/2': 75000,
+        '1': 130000
+    },
+    disenos: [
+        { id: 1, name: '#1', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150' },
+        { id: 2, name: '#2', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150' },
+        { id: 3, name: '#3', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=150' },
+        { id: 4, name: '#4', img: 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=150' },
+        { id: 5, name: '#5', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=400&auto=format&fit=crop&q=80' },
+        { id: 6, name: '#6', img: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=150' }
+    ]
+};
+
+// Cargar desde localStorage inicialmente
+try {
+    const cached = localStorage.getItem('dt_tortas_config');
+    if (cached) {
+        window.dt_tortas_config = JSON.parse(cached);
+    }
+} catch(e){}
+
+window.abrirModalConfigTortas = function() {
+    if (!document.getElementById('modal-config-tortas')) {
+        const modal = document.createElement('div');
+        modal.className = 'auth-modal';
+        modal.id = 'modal-config-tortas';
+        modal.style.display = 'none';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '999999';
+        document.body.appendChild(modal);
+    }
+    window.renderModalConfigTortasInterno();
+};
+
+window.renderModalConfigTortasInterno = function() {
+    const config = window.dt_tortas_config;
+    const modal = document.getElementById('modal-config-tortas');
+    
+    let disenosHtml = '';
+    config.disenos.forEach((d, index) => {
+        disenosHtml += `
+            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:8px; align-items:center; background:#f8fafc;">
+                <img id="preview-torta-img-${index}" src="${d.img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; border:1px dashed #cbd5e1;">
+                <input type="text" id="torta-name-${index}" value="${d.name}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.8rem; text-align:center;">
+                <input type="text" id="torta-img-${index}" value="${d.img}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.7rem;" placeholder="URL / Archivo">
+                
+                <div style="display:flex; width:100%; gap:4px; margin-top:auto;">
+                    <input type="file" id="torta-file-${index}" accept="image/*" style="display:none;" onchange="
+                        if(this.files && this.files[0]) {
+                            const file = this.files[0];
+                            document.getElementById('torta-img-${index}').value = file.name;
+                            document.getElementById('preview-torta-img-${index}').src = URL.createObjectURL(file);
+                        }
+                    ">
+                    <button type="button" onclick="document.getElementById('torta-file-${index}').click()" style="flex:1; background:#e2e8f0; color:#1e293b; border:1px solid #cbd5e1; padding:4px; border-radius:4px; font-size:0.7rem; font-weight:600; cursor:pointer;">✏️ Cambiar</button>
+                    <button type="button" onclick="window.eliminarDisenoTorta(${index})" style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:0.7rem; font-weight:600; cursor:pointer;">🗑️</button>
+                </div>
+            </div>
+        `;
+    });
+
+    modal.innerHTML = `
+        <div class="auth-content" style="max-width:600px; width:95%; max-height:90vh; overflow-y:auto; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-config-tortas').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer; z-index:10;">✕</button>
+            <h3 style="margin-top:0; color:#db2777; text-align:center;">🎂 Diseños y Precios de Tortas</h3>
+            
+            <!-- BLOQUE A: PRECIOS -->
+            <div style="background:#fdf2f8; border:1px solid #fbcfe8; padding:15px; border-radius:10px; margin-bottom:20px;">
+                <h4 style="margin-top:0; margin-bottom:12px; color:#be185d;">💰 Precios por Tamaño Base</h4>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:4px; color:#831843;">1/4 Libra (10 porc.)</label>
+                        <input type="number" id="torta-precio-1-4-input" value="${config.precios['1/4']}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #fbcfe8;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:4px; color:#831843;">1/2 Libra (20 porc.)</label>
+                        <input type="number" id="torta-precio-1-2-input" value="${config.precios['1/2']}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #fbcfe8;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:4px; color:#831843;">1 Libra (30 porc.)</label>
+                        <input type="number" id="torta-precio-1-1-input" value="${config.precios['1']}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #fbcfe8;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE B: DISEÑOS -->
+            <div style="margin-bottom:20px;">
+                <h4 style="margin-top:0; margin-bottom:12px; color:#334155;">🖼️ Galería de Diseños Disponibles</h4>
+                
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:15px;">
+                    ${disenosHtml}
+                </div>
+                
+                <button type="button" onclick="window.agregarDisenoTorta()" style="width:100%; padding:10px; background:#e2e8f0; color:#334155; border:1px dashed #cbd5e1; border-radius:8px; font-weight:bold; cursor:pointer;">➕ Agregar Nuevo Diseño de Torta</button>
+            </div>
+            
+            <button onclick="window.guardarConfigTortas()" style="width:100%; padding:14px; background:#10b981; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; box-shadow:0 4px 6px rgba(16,185,129,0.3);">💾 Guardar Configuración de Tortas</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+};
+
+window.agregarDisenoTorta = function() {
+    window.guardarEstadoTemporalTortas();
+    
+    window.dt_tortas_config.disenos.push({
+        id: Date.now(),
+        name: '# Nuevo',
+        img: 'logo-pys.png'
+    });
+    window.renderModalConfigTortasInterno();
+};
+
+window.eliminarDisenoTorta = function(index) {
+    if (!confirm("¿Eliminar este diseño?")) return;
+    window.guardarEstadoTemporalTortas();
+    window.dt_tortas_config.disenos.splice(index, 1);
+    window.renderModalConfigTortasInterno();
+};
+
+window.guardarEstadoTemporalTortas = function() {
+    const config = window.dt_tortas_config;
+    const val14 = document.getElementById('torta-precio-1-4-input');
+    const val12 = document.getElementById('torta-precio-1-2-input');
+    const val11 = document.getElementById('torta-precio-1-1-input');
+    
+    if (val14) config.precios['1/4'] = parseInt(val14.value) || 0;
+    if (val12) config.precios['1/2'] = parseInt(val12.value) || 0;
+    if (val11) config.precios['1'] = parseInt(val11.value) || 0;
+    
+    config.disenos.forEach((d, i) => {
+        const nName = document.getElementById(`torta-name-${i}`);
+        const nImg = document.getElementById(`torta-img-${i}`);
+        if(nName) d.name = nName.value;
+        if(nImg) d.img = nImg.value;
+    });
+};
+
+window.guardarConfigTortas = function() {
+    window.guardarEstadoTemporalTortas();
+    
+    if (window.dt_tortas_config.precios['1/4'] <= 0) {
+        if(typeof showToast === 'function') showToast("Revisa los precios", "⚠️");
+        return;
+    }
+
+    localStorage.setItem('dt_tortas_config', JSON.stringify(window.dt_tortas_config));
+    
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('tortas_config').set(window.dt_tortas_config)
+            .then(() => {
+                if(typeof showToast === 'function') showToast("Configuración de tortas guardada", "✅");
+            })
+            .catch(e => console.error("Error guardando config tortas:", e));
+    } else {
+        if(typeof showToast === 'function') showToast("Guardado localmente", "✅");
+    }
+    
+    document.getElementById('modal-config-tortas').style.display = 'none';
+    window.renderConfigTortasPublica();
+};
+
+window.renderConfigTortasPublica = function() {
+    const config = window.dt_tortas_config;
+    
+    const p14 = document.getElementById('torta-precio-1-4');
+    const p12 = document.getElementById('torta-precio-1-2');
+    const p11 = document.getElementById('torta-precio-1-1');
+    
+    if (p14) p14.innerText = `$${config.precios['1/4'].toLocaleString()}`;
+    if (p12) p12.innerText = `$${config.precios['1/2'].toLocaleString()}`;
+    if (p11) p11.innerText = `$${config.precios['1'].toLocaleString()}`;
+    
+    const grid = document.getElementById('cake-design-grid');
+    if (grid) {
+        let html = '';
+        config.disenos.forEach(d => {
+            html += `
+                <div class="design-thumb" onclick="selectDiseno('${d.name}', this)">
+                    <img src="${d.img}" alt="Diseño ${d.name}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;" onerror="this.src='logo-pys.png'">
+                    <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">${d.name}</div>
+                </div>
+            `;
+        });
+        grid.innerHTML = html;
+    }
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (typeof window.renderConfigTortasPublica === 'function') {
+            window.renderConfigTortasPublica();
+        }
+    }, 500);
+});

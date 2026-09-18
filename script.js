@@ -1,27 +1,47 @@
-        const PHONE = "573229512693";
+const PHONE = "573229512693";
 
         const products = [
-            { id: 1, name: "Pan Cascarita Tradicional", price: 500, cat: "panaderia", featured: true, tag: "🔥 Más Pedido", desc: "Crocante por fuera y miga suave por dentro. El rey de las mañanas cucuteñas.", img: "pan cascarita 500 pesos.jpeg" },
-            { id: 2, name: "Bolita de Leche Azucarada", price: 500, cat: "antojos", featured: true, tag: "⭐ Favorito", desc: "Masa dulce y esponjosa horneada con leche fresca y toque azucarado.", img: "bolitas de leche 500 pesos.jpeg" },
-            { id: 3, name: "Bolitas de Maíz", price: 500, cat: "antojos", featured: false, tag: "✨ Tradición", desc: "Pan de maíz dulce y suave, con azúcar espolvoreada encima.", img: "bolitas de maiz 500 pesos.jpeg" },
-            { id: 4, name: "Bolita con Bocadillo", price: 500, cat: "antojos", featured: false, tag: "🍯 Dulce", desc: "Pan dulce relleno de delicioso bocadillo colombiano.", img: "bolita de bocadillo.jpeg" },
-            { id: 5, name: "Cema Integral", price: 500, cat: "panaderia", featured: false, tag: "🌾 Saludable", desc: "Pan integral rico en fibra, ideal para desayunos nutritivos.", img: "cema integral a.jpeg" },
-            { id: 6, name: "Paledonias", price: 500, cat: "antojos", featured: false, tag: "🥮 Clásico", desc: "Galleta tradicional tipo paledonia, perfecta para el café.", img: "paleedonias a 500.jpeg" },
-            { id: 7, name: "Galletas Corazón (Con Mermelada)", price: 500, cat: "antojos", featured: true, tag: "💖 Amor", desc: "Galletas dulces en forma de corazón con un toque de mermelada y chispas.", img: "galletas a 500.jpeg" },
-            { id: 8, name: "Pan de Maíz y de Leche", price: 1000, cat: "panaderia", featured: false, tag: "🍞 Suave", desc: "Pan grande con una combinación deliciosa de maíz y leche.", img: "pain de maiz y de leche.jpeg" },
-            { id: 9, name: "Roliqueso", price: 3000, cat: "antojos", featured: true, tag: "🧀 Quesudo", desc: "Rollito suave lleno de sabor a queso.", img: "roliqueso 3000.jpeg" },
-            { id: 10, name: "Pan Tajado Familiar", price: 4000, cat: "panaderia", featured: true, tag: "🥪 Desayunos", desc: "Paquete de pan tajado 100% fresco, ideal para sándwiches.", img: "pan tajado a 4000.jpeg" },
-            { id: 11, name: "Croissant Jamón & Queso", price: 2500, cat: "antojos", featured: false, tag: "🥐 Hojaldrado", desc: "Hojaldre artesanal en capas crujientes, jamón tierno y queso fundido.", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80" },
-            { id: 12, name: "Porción Torta Chocolate Húmeda", price: 4000, cat: "pasteleria", featured: true, tag: "🍫 Delicia", desc: "Bizcocho súper húmedo de chocolate con ganache artesanal.", img: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80" },
-            { id: 13, name: "Combo Desayuno Tentación", price: 5500, oldPrice: 7000, cat: "combos", featured: true, tag: "✨ Ahorro 15%", desc: "1 Croissant + 2 Pan Cascarita + Café caliente. El combo perfecto.", img: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=500&q=80" },
-            { id: 14, name: "Café con Leche / Capuchino 9oz", price: 2000, cat: "antojos", featured: false, tag: "☕ Caliente", desc: "Café colombiano de origen con leche espumosa preparado al instante.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
-            { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, oldPrice: 30000, cat: "combos", featured: true, tag: "💝 Regalo Especial", desc: "2 Croissants, 2 Porciones Torta, 5 Pan Cascarita, 5 Bolitas Queso y empaque premium.", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&w=500&q=80" },
-            { id: 101, name: "Combo Compartir Familiar (25 und)", desc: "25 pasabocas gourmet horneados en hojaldre fino crocante para reuniones en casa.", cat: "eventos", unidades: 25, price: 50000, permiteRelleno: true, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80" },
-            { id: 102, name: "Combo Oficina & Fiesta (50 und)", desc: "50 pasabocas surtidos de hojaldre recién horneados, ideales para reuniones de equipo.", cat: "eventos", unidades: 50, price: 100000, permiteRelleno: true, img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80" },
-            { id: 103, name: "Combo Gran Gala & Evento (100 und)", desc: "100 pasabocas hojaldrados de alta gama para matrimonios, grados y eventos corporativos.", cat: "eventos", unidades: 100, price: 200000, permiteRelleno: true, img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80" },
-            { id: 104, name: "Pan de Jamón Navideño Especial (~1 kg)", desc: "Masa brioche con jamón ahumado de pierna, tocineta crocante, aceitunas rellenas y pasas.", cat: "panaderia", unidades: 1, price: 65000, permiteRelleno: false, img: "https://images.unsplash.com/photo-1589367920969-ab8e050bbb04?auto=format&fit=crop&w=600&q=80" },
-            { id: 105, name: "Pancitos de Cena / Leche (Paquete x20)", desc: "Pancitos dorados con mantequilla artesanal, suaves y esponjosos para acompañar cenas.", cat: "panaderia", unidades: 20, price: 25000, permiteRelleno: false, img: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=600&q=80" },
-            { id: 106, name: "Rosca Navideña Trenzada", desc: "Trenza brioche hojaldrada rellena de arequipe artesanal y queso campesino.", cat: "eventos", unidades: 1, price: 48000, permiteRelleno: false, img: "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=600&q=80" }
+            // --- PANADERÍA TRADICIONAL ($500) ---
+            { id: 1, name: "Pan Cascarita Tradicional", price: 500, cat: "panaderia", img: "pan cascarita 500 pesos.jpeg", desc: "Pan tradicional de costra crocante y miga suave" },
+            { id: 2, name: "Pan de Maíz", price: 500, cat: "panaderia", img: "bolitas de maiz 500 pesos.jpeg", desc: "Sabor suave y tradicional de maíz horneado" },
+            { id: 3, name: "Pan de Leche", price: 500, cat: "panaderia", img: "bolitas de leche 500 pesos.jpeg", desc: "Miga extra esponjosa y dulce aroma a leche" },
+            { id: 4, name: "Pan de Bocadillo", price: 500, cat: "panaderia", img: "bolita de bocadillo.jpeg", desc: "Relleno del tradicional dulce de guayaba" },
+            { id: 16, name: "Lengua", price: 500, cat: "panaderia", img: "logo-pys.png", desc: "Pan tradicional alargado con toque dulce" },
+            { id: 17, name: "Tostado", price: 500, cat: "panaderia", img: "logo-pys.png", desc: "Pan crocante y tostado al punto ideal" },
+          
+            // --- PANES ESPECIALES ($1.000 a $4.000) ---
+            { id: 18, name: "Pan de Salchicha", price: 1000, cat: "panaderia", img: "logo-pys.png", desc: "Relleno de salchicha con masa fresca horneada" },
+            { id: 19, name: "Roscón", price: 2000, cat: "panaderia", img: "logo-pys.png", desc: "Clásico roscón azucarado con relleno tradicional" },
+            { id: 9, name: "Roliqueso", price: 2500, cat: "panaderia", img: "roliqueso 3000.jpeg", desc: "Rollo crocante relleno de abundante queso fundido" },
+            { id: 20, name: "Pan Largo de Leche", price: 3000, cat: "panaderia", img: "logo-pys.png", desc: "Presentación familiar suave y esponjosa" },
+            { id: 21, name: "Pan Largo de Maíz", price: 3000, cat: "panaderia", img: "logo-pys.png", desc: "Presentación familiar con auténtico sabor a maíz" },
+            { id: 22, name: "Pan Largo Azucarado", price: 3000, cat: "panaderia", img: "logo-pys.png", desc: "Pan familiar con cobertura dulce azucarada" },
+            { id: 10, name: "Pan Tajado Familiar", price: 4000, cat: "panaderia", img: "pan tajado a 4000.jpeg", desc: "Ideal para sándwiches y desayunos diarios" },
+          
+            // --- GALLETERÍA Y ANTOJOS POR UNIDAD ($500 a $700) ---
+            { id: 23, name: "Polvorosas", price: 500, cat: "antojos", img: "galletas a 500.jpeg", desc: "Galleta artesanal suave que se deshace en la boca" },
+            { id: 24, name: "Galleta de Grajea", price: 500, cat: "antojos", img: "galletas a 500.jpeg", desc: "Galleta crujiente con lluvia de colores" },
+            { id: 25, name: "Merengue", price: 500, cat: "antojos", img: "galletas a 500.jpeg", desc: "Dulce, crocante y horneado artesanalmente" },
+            { id: 26, name: "Paledonea Negra", price: 600, cat: "antojos", img: "paleedonias a 500.jpeg", desc: "Elaborada con auténtica panela y especias dulces" },
+            { id: 27, name: "Paledonea Blanca", price: 600, cat: "antojos", img: "paleedonias a 500.jpeg", desc: "Receta tradicional dorada y aromática" },
+            { id: 28, name: "Galleta de Coco", price: 700, cat: "antojos", img: "galletas a 500.jpeg", desc: "Crujiente con rico sabor a coco tostado" },
+            { id: 7, name: "Galletas Corazón", price: 500, cat: "antojos", img: "galletas a 500.jpeg", desc: "Con relleno central de mermelada" },
+          
+            // --- PAQUETES Y PARA LLEVAR ($3.000) ---
+            { id: 29, name: "Paquete Paledonea Negra (x5)", price: 3000, cat: "paquetes", img: "paleedonias a 500.jpeg", desc: "Bolsa sellada con 5 galletas de panela" },
+            { id: 30, name: "Paquete Paledonea Blanca (x5)", price: 3000, cat: "paquetes", img: "paleedonias a 500.jpeg", desc: "Bolsa sellada con 5 galletas tradicionales" },
+            { id: 31, name: "Paquete Galleta de Coco (x4)", price: 3000, cat: "paquetes", img: "galletas a 500.jpeg", desc: "Bolsa sellada con 4 galletas crujientes de coco" },
+          
+            // --- PASTELERÍA Y COMBOS (SE MANTIENEN) ---
+            { id: 12, name: "Porción Torta Chocolate Húmeda", price: 4000, cat: "pasteleria", img: "img/torta-chocolate.jpg", desc: "Rellena de chocolate húmedo especial" },
+            { id: 13, name: "Combo Desayuno Tentación", price: 5500, cat: "combos", img: "img/combo-desayuno.jpg", desc: "Café con leche + 2 panes cascarita + galleta" },
+            { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, cat: "combos", img: "img/caja-vip.jpg", desc: "Surtido especial en caja de regalo artesanal" },
+          
+            // --- EVENTOS Y FIESTAS (PRECIO BASE) ---
+            { id: 101, name: "Combo Compartir Familiar (25 und)", price: 50000, cat: "eventos", img: "img/combo-25.jpg", desc: "Pasabocas surtidos con relleno a elección", unidades: 25, permiteRelleno: true },
+            { id: 102, name: "Combo Oficina & Fiesta (50 und)", price: 100000, cat: "eventos", img: "img/combo-50.jpg", desc: "Ideal para reuniones y eventos corporativos", unidades: 50, permiteRelleno: true },
+            { id: 103, name: "Combo Gran Gala & Evento (100 und)", price: 200000, cat: "eventos", img: "img/combo-100.jpg", desc: "Bandeja para grandes celebraciones", unidades: 100, permiteRelleno: true },
+            { id: 106, name: "Rosca Navideña Trenzada", price: 48000, cat: "eventos", img: "img/rosca-navidena.jpg", desc: "Tradicional trenza navideña con frutas y glaseado", unidades: 1, permiteRelleno: false }
         ];
         const OPCIONES_RELLENO = {
             'queso': { nombre: '🧀 Queso Campesino — $2.000 c/u', precioUnitario: 2000, promo: false },
@@ -1778,7 +1798,7 @@
             return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${btnAction} }" style="position:relative;">
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt};">
-                <img src="${p.img}" alt="${p.name}" class="pimg-${p.id}" loading="lazy">
+                <img src="${p.img}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="console.error('Error al cargar imagen:', this.src); this.onerror=null; this.src='logo-pys.png';">
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
@@ -1811,8 +1831,10 @@
         function renderFeatured(cat = 'todos') {
             const g = document.getElementById('featuredGrid');
             if (!g) return;
-            let list = cat === 'todos' ? products.filter(p => p.featured) : products.filter(p => p.cat === cat);
-            if (list.length === 0) list = products.filter(p => p.cat === cat);
+            const isTodos = !cat || cat === 'todos' || cat === 'all' || cat === '';
+            let list = isTodos 
+                ? products 
+                : products.filter(p => p.cat === cat || (cat === 'ofertas' && p.enOferta) || (cat === 'combos' && p.enOferta));
             g.innerHTML = list.map(createCardHTML).join('');
         }
         function filterCategory(cat, el) {
