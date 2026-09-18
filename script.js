@@ -2390,24 +2390,43 @@ const PHONE = "573229512693";
             document.getElementById('modal-evento-personalizado').style.display = 'none';
         }
 
-        const cakePrices = {
-            'Ponqué Clásico': { '1/4 (10 porciones)': 35000, '1/2 (20 porciones)': 60000, '1 Libra (30 porciones)': 115000 },
-            'default': { '1/4 (10 porciones)': 45000, '1/2 (20 porciones)': 75000, '1 Libra (30 porciones)': 130000 }
-        };
+        function getCakePrices(sabor) {
+            let prices = { '1/4 (10 porciones)': 45000, '1/2 (20 porciones)': 75000, '1 Libra (30 porciones)': 130000 };
+            
+            if (window.dt_tortas_config && window.dt_tortas_config.preciosPorSabor) {
+                const config = window.dt_tortas_config.preciosPorSabor;
+                let s = 'tresleches';
+                if (sabor.includes('Ponqué')) s = 'ponque';
+                if (sabor.includes('Chocoarequipe')) s = 'chocoarequipe';
+                
+                if (config[s]) {
+                    prices['1/4 (10 porciones)'] = config[s].q;
+                    prices['1/2 (20 porciones)'] = config[s].m;
+                    prices['1 Libra (30 porciones)'] = config[s].l;
+                }
+            } else if (window.dt_tortas_config && window.dt_tortas_config.precios) {
+                prices['1/4 (10 porciones)'] = window.dt_tortas_config.precios['1/4'];
+                prices['1/2 (20 porciones)'] = window.dt_tortas_config.precios['1/2'];
+                prices['1 Libra (30 porciones)'] = window.dt_tortas_config.precios['1'];
+            }
+            return prices;
+        }
 
         function selectSabor(sabor, element) {
             wizardData.sabor = sabor;
             element.parentElement.querySelectorAll('.step-option-card').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
             
-            const prices = cakePrices[sabor] || cakePrices['default'];
+            const prices = getCakePrices(sabor);
             const sizeCards = document.querySelectorAll('#cake-size-grid .step-option-card');
             sizeCards.forEach(card => {
                 const size = card.getAttribute('data-size');
                 const price = prices[size];
-                card.querySelector('.size-price').innerText = `$${price.toLocaleString()} COP`;
-                if (wizardData.tamano === size) {
-                    wizardData.precio = price;
+                if (price) {
+                    card.querySelector('.size-price').innerText = `$${price.toLocaleString()}`;
+                    if (wizardData.tamano === size) {
+                        wizardData.precio = price;
+                    }
                 }
             });
         }

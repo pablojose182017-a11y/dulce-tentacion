@@ -1578,6 +1578,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // --- MÓDULO DE GESTIÓN DINÁMICA DE TORTAS ---
 window.dt_tortas_config = {
+    preciosPorSabor: {
+        ponque: { q: 38000, m: 65000, l: 110000 },
+        tresleches: { q: 45000, m: 75000, l: 130000 },
+        chocoarequipe: { q: 45000, m: 75000, l: 130000 }
+    },
     precios: {
         '1/4': 45000,
         '1/2': 75000,
@@ -1650,19 +1655,26 @@ window.renderModalConfigTortasInterno = function() {
             <!-- BLOQUE A: PRECIOS -->
             <div style="background:#fdf2f8; border:1px solid #fbcfe8; padding:15px; border-radius:10px; margin-bottom:20px;">
                 <h4 style="margin-top:0; margin-bottom:12px; color:#be185d;">💰 Precios por Tamaño Base</h4>
+                
+                <h5 style="margin:10px 0 5px 0; color:#831843;">🍰 Ponqué Clásico (Tradicional)</h5>
                 <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:4px; color:#831843;">1/4 Libra (10 porc.)</label>
-                        <input type="number" id="torta-precio-1-4-input" value="${config.precios['1/4']}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #fbcfe8;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:4px; color:#831843;">1/2 Libra (20 porc.)</label>
-                        <input type="number" id="torta-precio-1-2-input" value="${config.precios['1/2']}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #fbcfe8;">
-                    </div>
-                    <div>
-                        <label style="display:block; font-size:0.8rem; font-weight:bold; margin-bottom:4px; color:#831843;">1 Libra (30 porc.)</label>
-                        <input type="number" id="torta-precio-1-1-input" value="${config.precios['1']}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #fbcfe8;">
-                    </div>
+                    <div><label style="font-size:0.8rem;">1/4 Lb:</label><input type="number" id="precio-ponque-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.q : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                    <div><label style="font-size:0.8rem;">1/2 Lb:</label><input type="number" id="precio-ponque-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.m : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                    <div><label style="font-size:0.8rem;">1 Lb:</label><input type="number" id="precio-ponque-1" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.l : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                </div>
+
+                <h5 style="margin:10px 0 5px 0; color:#831843;">🥛 Clásica Tres Leches</h5>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                    <div><label style="font-size:0.8rem;">1/4 Lb:</label><input type="number" id="precio-tresleches-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.q : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                    <div><label style="font-size:0.8rem;">1/2 Lb:</label><input type="number" id="precio-tresleches-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.m : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                    <div><label style="font-size:0.8rem;">1 Lb:</label><input type="number" id="precio-tresleches-1" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.l : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                </div>
+
+                <h5 style="margin:10px 0 5px 0; color:#831843;">🍫 Chocoarequipe</h5>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                    <div><label style="font-size:0.8rem;">1/4 Lb:</label><input type="number" id="precio-choco-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.q : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                    <div><label style="font-size:0.8rem;">1/2 Lb:</label><input type="number" id="precio-choco-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.m : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
+                    <div><label style="font-size:0.8rem;">1 Lb:</label><input type="number" id="precio-choco-1" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.l : ''}" style="width:100%; padding:4px; border-radius:4px; border:1px solid #fbcfe8;"></div>
                 </div>
             </div>
 
@@ -1703,13 +1715,31 @@ window.eliminarDisenoTorta = function(index) {
 
 window.guardarEstadoTemporalTortas = function() {
     const config = window.dt_tortas_config;
-    const val14 = document.getElementById('torta-precio-1-4-input');
-    const val12 = document.getElementById('torta-precio-1-2-input');
-    const val11 = document.getElementById('torta-precio-1-1-input');
+    if (!config.preciosPorSabor) config.preciosPorSabor = { ponque: {}, tresleches: {}, chocoarequipe: {} };
     
-    if (val14) config.precios['1/4'] = parseInt(val14.value) || 0;
-    if (val12) config.precios['1/2'] = parseInt(val12.value) || 0;
-    if (val11) config.precios['1'] = parseInt(val11.value) || 0;
+    // Ponque
+    const pq = document.getElementById('precio-ponque-1-4');
+    const pm = document.getElementById('precio-ponque-1-2');
+    const pl = document.getElementById('precio-ponque-1');
+    if (pq) config.preciosPorSabor.ponque.q = parseInt(pq.value) || 0;
+    if (pm) config.preciosPorSabor.ponque.m = parseInt(pm.value) || 0;
+    if (pl) config.preciosPorSabor.ponque.l = parseInt(pl.value) || 0;
+
+    // Tres Leches
+    const tq = document.getElementById('precio-tresleches-1-4');
+    const tm = document.getElementById('precio-tresleches-1-2');
+    const tl = document.getElementById('precio-tresleches-1');
+    if (tq) config.preciosPorSabor.tresleches.q = parseInt(tq.value) || 0;
+    if (tm) config.preciosPorSabor.tresleches.m = parseInt(tm.value) || 0;
+    if (tl) config.preciosPorSabor.tresleches.l = parseInt(tl.value) || 0;
+
+    // Chocoarequipe
+    const cq = document.getElementById('precio-choco-1-4');
+    const cm = document.getElementById('precio-choco-1-2');
+    const cl = document.getElementById('precio-choco-1');
+    if (cq) config.preciosPorSabor.chocoarequipe.q = parseInt(cq.value) || 0;
+    if (cm) config.preciosPorSabor.chocoarequipe.m = parseInt(cm.value) || 0;
+    if (cl) config.preciosPorSabor.chocoarequipe.l = parseInt(cl.value) || 0;
     
     config.disenos.forEach((d, i) => {
         const nName = document.getElementById(`torta-name-${i}`);
@@ -1722,7 +1752,7 @@ window.guardarEstadoTemporalTortas = function() {
 window.guardarConfigTortas = function() {
     window.guardarEstadoTemporalTortas();
     
-    if (window.dt_tortas_config.precios['1/4'] <= 0) {
+    if (window.dt_tortas_config.preciosPorSabor && window.dt_tortas_config.preciosPorSabor.ponque.q <= 0) {
         if(typeof showToast === 'function') showToast("Revisa los precios", "⚠️");
         return;
     }
@@ -1746,13 +1776,14 @@ window.guardarConfigTortas = function() {
 window.renderConfigTortasPublica = function() {
     const config = window.dt_tortas_config;
     
-    const p14 = document.getElementById('torta-precio-1-4');
-    const p12 = document.getElementById('torta-precio-1-2');
-    const p11 = document.getElementById('torta-precio-1-1');
-    
-    if (p14) p14.innerText = `$${config.precios['1/4'].toLocaleString()}`;
-    if (p12) p12.innerText = `$${config.precios['1/2'].toLocaleString()}`;
-    if (p11) p11.innerText = `$${config.precios['1'].toLocaleString()}`;
+    // Forzar actualización de los precios según el sabor seleccionado actualmente
+    if (typeof wizardData !== 'undefined' && typeof selectSabor === 'function') {
+        const selectedEl = document.querySelector('.wizard-options-grid .step-option-card.selected') || document.querySelector('.wizard-options-grid .step-option-card');
+        const saborAUsar = wizardData.sabor || 'Clásica Tres Leches';
+        if (selectedEl) {
+            selectSabor(saborAUsar, selectedEl);
+        }
+    }
     
     const grid = document.getElementById('cake-design-grid');
     if (grid) {
