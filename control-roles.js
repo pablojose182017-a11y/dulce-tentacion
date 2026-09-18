@@ -1077,6 +1077,9 @@ function createOfferModal() {
             <div style="margin-bottom:15px; text-align:left;">
                 <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Precio Regular</label>
                 <input type="number" id="oferta-precio-original" readonly style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; background:#f8fafc; font-size:1rem;">
+                
+                <label style="font-size:13px; font-weight:600; color:#475569; display:block; margin-top:10px;">O calcular con % Descuento:</label>
+                <input type="number" id="input-oferta-porcentaje" placeholder="Ej: 5 (para 5%)" min="1" max="90" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px; margin-top:4px;" oninput="window.calcularDescuentoOferta()">
             </div>
             <div style="margin-bottom:15px; text-align:left;">
                 <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px; color:#e11d48;">Nuevo Precio (Oferta)</label>
@@ -1095,6 +1098,18 @@ function createOfferModal() {
     document.body.appendChild(modal);
 }
 
+window.calcularDescuentoOferta = function() {
+    const originalPrice = parseInt(document.getElementById('oferta-precio-original').value);
+    const porcentaje = parseFloat(document.getElementById('input-oferta-porcentaje').value);
+    
+    if (!isNaN(originalPrice) && !isNaN(porcentaje) && porcentaje > 0) {
+        const nuevoPrecio = Math.round(originalPrice * (1 - porcentaje / 100));
+        document.getElementById('oferta-precio-nuevo').value = nuevoPrecio;
+        document.getElementById('oferta-badge-promo').value = `🎉 ${porcentaje}% OFF`;
+    }
+};
+
+
 window.updateOfertaPrecio = function() {
     const sel = document.getElementById('oferta-producto');
     const opt = sel.options[sel.selectedIndex];
@@ -1111,17 +1126,20 @@ window.updateOfertaPrecio = function() {
             originalPriceInput.value = isOferta.precioOriginal;
             nuevoPrecioInput.value = isOferta.precioOferta;
             badgePromoInput.value = isOferta.badgePromo || '';
+            document.getElementById('input-oferta-porcentaje').value = '';
             btnEliminar.style.display = 'block';
         } else {
             originalPriceInput.value = opt.getAttribute('data-price');
             nuevoPrecioInput.value = '';
             badgePromoInput.value = '';
+            document.getElementById('input-oferta-porcentaje').value = '';
             btnEliminar.style.display = 'none';
         }
     } else {
         originalPriceInput.value = '';
         nuevoPrecioInput.value = '';
         badgePromoInput.value = '';
+        document.getElementById('input-oferta-porcentaje').value = '';
         btnEliminar.style.display = 'none';
     }
 };
@@ -1132,6 +1150,7 @@ window.abrirModalOferta = function() {
     document.getElementById('oferta-precio-original').value = '';
     document.getElementById('oferta-precio-nuevo').value = '';
     document.getElementById('oferta-badge-promo').value = '';
+    document.getElementById('input-oferta-porcentaje').value = '';
     document.getElementById('btn-eliminar-oferta').style.display = 'none';
     const m = document.getElementById('modal-ofertas');
     m.style.display = 'flex';
@@ -1481,6 +1500,17 @@ if (originalRenderStockAdminOfertas) {
                 offerBtn.innerHTML = '🏷️ + Poner Producto en Oferta';
                 offerBtn.onclick = () => window.abrirModalOferta();
                 controlsDiv.appendChild(offerBtn);
+            }
+            if (!document.getElementById('btn-promo-regalo')) {
+                const regaloBtn = document.createElement('button');
+                regaloBtn.id = 'btn-promo-regalo';
+                regaloBtn.className = 'cat-chip';
+                regaloBtn.style.background = '#8b5cf6';
+                regaloBtn.style.color = '#fff';
+                regaloBtn.style.fontWeight = 'bold';
+                regaloBtn.innerHTML = '🎁 Configurar Regalo por Monto';
+                regaloBtn.onclick = () => window.abrirModalPromoRegalo();
+                controlsDiv.appendChild(regaloBtn);
             }
         }
         
@@ -1839,3 +1869,93 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }, 500);
 });
+
+// --- SISTEMA DE PROMOCIÓN GLOBAL (REGALO POR COMPRA MÍNIMA) ---
+window.dt_promo_regalo = window.dt_promo_regalo || { activa: false, montoMinimo: 0, productoId: null, cantidad: 1 };
+
+window.abrirModalPromoRegalo = function() {
+    if (!document.getElementById('modal-promo-regalo')) {
+        const modal = document.createElement('div');
+        modal.className = 'auth-modal';
+        modal.id = 'modal-promo-regalo';
+        modal.style.display = 'none';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '999999';
+        document.body.appendChild(modal);
+    }
+    
+    const m = document.getElementById('modal-promo-regalo');
+    const conf = window.dt_promo_regalo;
+    
+    // Opciones de productos para el regalo
+    const prodOptions = typeof products !== 'undefined' 
+        ? products.map(p => `<option value="${p.id}" ${conf.productoId == p.id ? 'selected' : ''}>${p.name}</option>`).join('') 
+        : '';
+        
+    m.innerHTML = `
+        <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-promo-regalo').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
+            <h3 style="margin-top:0; color:#8b5cf6; text-align:center;">🎁 Configurar Regalo</h3>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Monto mínimo de compra (COP)</label>
+                <input type="number" id="promo-regalo-monto" value="${conf.montoMinimo || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 50000">
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Producto de Regalo</label>
+                <select id="promo-regalo-producto" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;">
+                    <option value="">-- Elige un producto --</option>
+                    ${prodOptions}
+                </select>
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Cantidad a regalar</label>
+                <input type="number" id="promo-regalo-qty" value="${conf.cantidad || 1}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" min="1">
+            </div>
+            
+            <div style="margin-bottom:20px; text-align:left;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#475569;">
+                    <input type="checkbox" id="promo-regalo-activa" ${conf.activa ? 'checked' : ''} style="width:18px; height:18px;">
+                    Activar Promoción
+                </label>
+            </div>
+            
+            <button onclick="window.guardarPromoRegalo()" style="width:100%; padding:12px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">💾 Guardar Configuración</button>
+        </div>
+    `;
+    m.style.display = 'flex';
+};
+
+window.guardarPromoRegalo = function() {
+    window.dt_promo_regalo = {
+        activa: document.getElementById('promo-regalo-activa').checked,
+        montoMinimo: parseInt(document.getElementById('promo-regalo-monto').value) || 0,
+        productoId: parseInt(document.getElementById('promo-regalo-producto').value) || null,
+        cantidad: parseInt(document.getElementById('promo-regalo-qty').value) || 1
+    };
+    
+    if (window.dt_promo_regalo.activa && (!window.dt_promo_regalo.montoMinimo || !window.dt_promo_regalo.productoId)) {
+        if(typeof showToast === 'function') showToast('Revisa monto y producto', '⚠️');
+        return;
+    }
+
+    localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
+    
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
+            .then(() => {
+                if(typeof showToast === 'function') showToast("Promo de regalo guardada", "🎁");
+            })
+            .catch(e => console.error("Error guardando promo:", e));
+    } else {
+        if(typeof showToast === 'function') showToast("Promo guardada localmente", "🎁");
+    }
+    
+    document.getElementById('modal-promo-regalo').style.display = 'none';
+    
+    // Forzar re-evaluacion del carrito por si cambia el estado activo
+    if (typeof updateCart === 'function') updateCart();
+};

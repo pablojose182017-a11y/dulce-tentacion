@@ -466,4 +466,60 @@ window.addEventListener('DOMContentLoaded', () => {
         console.warn("Error escuchando tortas_config:", err);
     });
 
+    // --- SINCRONIZACIÓN DE PROMO REGALO ---
+    db.collection('config').doc('promocion_regalo').onSnapshot(doc => {
+        if (doc.exists) {
+            window.dt_promo_regalo = doc.data();
+            localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
+            if (typeof updateCart === 'function') updateCart();
+        }
+    }, err => console.warn("Error escuchando promocion_regalo:", err));
+
+    // INTERCEPCIÓN DEL CARRITO PARA INYECTAR REGALO (Sin tocar script.js)
+    if (typeof window.updateCart === 'function') {
+        const originalUpdateCart = window.updateCart;
+        window.updateCart = function() {
+            if (typeof cart !== 'undefined' && window.dt_promo_regalo) {
+                const conf = window.dt_promo_regalo;
+                // Filtrar el carrito quitando regalos previos para calcular subtotal real
+                const realItems = cart.filter(item => !item.isPromoGift);
+                let subtotal = 0;
+                realItems.forEach(item => {
+                    subtotal += (item.price * item.qty);
+                });
+
+                if (conf.activa && subtotal >= conf.montoMinimo && conf.productoId) {
+                    const giftExists = cart.find(item => item.isPromoGift);
+                    if (!giftExists) {
+                        const giftProduct = typeof products !== 'undefined' ? products.find(p => p.id == conf.productoId) : null;
+                        if (giftProduct) {
+                            cart.push({
+                                id: 'promo-gift-' + Date.now(),
+                                name: `🎁 OBSEQUIO PROMO: ${giftProduct.name}`,
+                                price: 0,
+                                qty: conf.cantidad || 1,
+                                isPromoGift: true
+                            });
+                        }
+                    } else {
+                        // Actualizar cantidad y nombre por si el admin cambió la config
+                        const giftProduct = typeof products !== 'undefined' ? products.find(p => p.id == conf.productoId) : null;
+                        if (giftProduct) {
+                            giftExists.name = `🎁 OBSEQUIO PROMO: ${giftProduct.name}`;
+                            giftExists.qty = conf.cantidad || 1;
+                        }
+                    }
+                } else {
+                    // Remover regalos si no cumple el mínimo o si se desactivó
+                    for (let i = cart.length - 1; i >= 0; i--) {
+                        if (cart[i].isPromoGift) {
+                            cart.splice(i, 1);
+                        }
+                    }
+                }
+            }
+            return originalUpdateCart.apply(this, arguments);
+        };
+    }
+
 });
