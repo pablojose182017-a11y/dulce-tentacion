@@ -13,7 +13,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap"
         rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <link rel="stylesheet" href="styles.css?v=13">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -22,6 +22,8 @@
 </head>
 
 <body>
+    <!-- Google Identity Services Onload Configuration -->
+    <div id="g_id_onload" data-client_id="463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
 
 
     <!-- ===== DESKTOP HEADER ===== -->
@@ -71,13 +73,13 @@
                 <div id="user-pill-container" class="user-pill" style="display:none;"
                     onclick="toggleUserDropdown(event)">
                     <div id="header-avatar-wrap" style="position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%;">
-                        <img id="user-avatar" src="" alt="Avatar" class="user-avatar-img">
+                        <img id="user-avatar" src="logo-pys.png" alt="Avatar" class="user-avatar-img" onerror="this.onerror=null; this.src='logo-pys.png';">
                     </div>
                     <span id="user-name" class="user-pill-name"></span>
                     <span class="user-pill-arrow">▼</span>
                     <div id="user-dropdown-menu" class="user-dropdown-menu">
                         <div class="dropdown-profile-header">
-                            <img id="dropdown-avatar" src="" alt="">
+                            <img id="dropdown-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                             <div class="dropdown-profile-info">
                                 <strong id="dropdown-name">Usuario</strong>
                                 <small id="dropdown-email">correo@google.com</small>
@@ -157,7 +159,7 @@
                 <div id="mobile-user-pill" style="display:none; align-items:center; gap:5px; cursor:pointer;"
                     onclick="handleMobilePillClick()">
                     <div id="mobile-avatar-wrap" style="position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%;">
-                        <img id="mobile-user-avatar" src="" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--brand-pink);" alt="">
+                        <img id="mobile-user-avatar" src="logo-pys.png" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--brand-pink);" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                         <span id="mob-vip-crown" class="vip-crown-badge" style="display:none; font-size:0.7rem; top:-4px; right:-4px;">👑</span>
                     </div>
                 </div>
@@ -606,7 +608,7 @@
         <div class="auth-card" style="padding: 24px 16px; margin: auto 12px 12px 12px; align-self: flex-end;">
             <button class="auth-close-btn" onclick="closeMobileProfile()">✕</button>
             <div class="dropdown-profile-header">
-                <img id="mp-avatar" src="" alt="">
+                <img id="mp-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                 <div class="dropdown-profile-info">
                     <strong id="mp-name">Usuario</strong>
                     <small id="mp-email">correo@google.com</small>
@@ -1148,19 +1150,8 @@
     </script>
     <script>
     window.addEventListener('load', () => {
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            if (typeof google !== 'undefined' && google.accounts) {
-                try {
-                    google.accounts.id.initialize({
-                        client_id: "463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com",
-                        callback: handleCredentialResponse
-                    });
-                    const gsiDivs = document.querySelectorAll('.g_id_signin');
-                    gsiDivs.forEach(div => {
-                        google.accounts.id.renderButton(div, { type: "standard", size: "large", theme: "outline", text: "sign_in_with", shape: "rectangular", logo_alignment: "left" });
-                    });
-                } catch(e) { console.warn('GSI Init Error', e); }
-            }
+        if (typeof window.initGoogleSignIn === 'function') {
+            window.initGoogleSignIn();
         }
     });
     </script>

@@ -4,15 +4,37 @@
  * sin modificar script.js
  */
 
-const SUPER_ADMINS = Object.freeze([
+// Saneamiento preventivo de usuarios en localStorage
+try {
+    let storedUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+    if (Array.isArray(storedUsers)) {
+        const cleanedUsers = storedUsers.filter(u => u && u.email && typeof u.email === 'string' && u.email.trim() !== '' && u.email !== 'undefined');
+        if (cleanedUsers.length !== storedUsers.length) {
+            localStorage.setItem('dt_registered_users', JSON.stringify(cleanedUsers));
+        }
+    }
+} catch (e) { }
+
+try {
+    let storedDB = JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+    if (Array.isArray(storedDB)) {
+        const cleanedDB = storedDB.filter(u => u && u.email && typeof u.email === 'string' && u.email.trim() !== '' && u.email !== 'undefined');
+        if (cleanedDB.length !== storedDB.length) {
+            localStorage.setItem('dt_users_db', JSON.stringify(cleanedDB));
+        }
+    }
+} catch (e) { }
+
+window.SUPER_ADMINS = window.SUPER_ADMINS || Object.freeze([
     'pablojose182017@gmail.com',
     'dulcestentaciones2004@gmail.com'
 ]);
-window.SUPER_ADMINS = SUPER_ADMINS;
+var SUPER_ADMINS = window.SUPER_ADMINS;
 
 function isSuperAdmin(email) {
     if (!email) return false;
-    return SUPER_ADMINS.includes(email.toLowerCase().trim());
+    const list = window.SUPER_ADMINS || SUPER_ADMINS || [];
+    return list.includes(email.toLowerCase().trim());
 }
 window.isSuperAdmin = isSuperAdmin;
 
@@ -138,17 +160,23 @@ window.addEventListener('DOMContentLoaded', () => {
     if (originalLoginCustomUser) {
         window.loginCustomUser = function(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail')?.value.trim().toLowerCase();
-            const pass = document.getElementById('loginPassword')?.value.trim();
+            const emailInput = (document.getElementById('loginEmail')?.value || '').trim();
+            const email = emailInput.toLowerCase();
+            const pass = (document.getElementById('loginPassword')?.value || '').trim();
+
+            const users = (typeof db_users !== 'undefined' && Array.isArray(db_users))
+                ? db_users
+                : (JSON.parse(localStorage.getItem('dt_registered_users') || localStorage.getItem('dt_users_db') || '[]'));
+
+            const user = users.find(u => u && u.email && u.email.trim().toLowerCase() === emailInput.trim().toLowerCase());
+
             if (isSuperAdmin(email)) {
-                const saUser = (typeof db_users !== 'undefined') ? db_users.find(u => (u.email || '').trim().toLowerCase() === email) : null;
-                if (saUser) {
-                    saUser.blocked = false;
-                    saUser.role = 'admin';
-                    saUser.isAdmin = true;
+                if (user) {
+                    user.blocked = false;
+                    user.role = 'admin';
+                    user.isAdmin = true;
                 }
             } else {
-                const user = (typeof db_users !== 'undefined') ? db_users.find(u => (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && u.password === pass) : null;
                 if (user && user.blocked) {
                     if (typeof showAuthMessage === 'function') showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
                     return;
@@ -165,6 +193,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const q = (document.getElementById('adminUserSearch')?.value || '').toLowerCase();
         
         const filteredUsers = db_users.filter(u => {
+            if (!u || !u.email) return false;
             const matchSearch = (u.name || '').toLowerCase().includes(q) || 
                                 (u.email || '').toLowerCase().includes(q) || 
                                 (u.phone || '').toLowerCase().includes(q);
@@ -210,7 +239,7 @@ window.addEventListener('DOMContentLoaded', () => {
             return `
         <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
             <td style="padding:10px; display:flex; align-items:center; gap:10px;">
-                <img src="${u.picture}" style="width:30px;height:30px;border-radius:50%;">
+                <img src="${u.picture || 'logo-pys.png'}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:30px;height:30px;border-radius:50%;">
                 <strong>${u.name}</strong>
             </td>
             <td style="padding:10px; font-size:0.85rem; color:#555;">${u.phone || '-'}</td>
@@ -255,7 +284,7 @@ window.confirmRoleChange = function(email) {
     if (!selectEl) return;
     const newRole = selectEl.value; // 'Normal', 'VIP', 'Trabajador', 'Admin'
 
-    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
+    const u = db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail);
     if (!u) return;
 
     if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && newRole !== 'Admin') {
@@ -304,7 +333,7 @@ window.adminToggleBlock = function(email) {
         return;
     }
 
-    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
+    const u = db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail);
     if (!u) return;
     u.blocked = !u.blocked;
     if (typeof saveUsersDB === 'function') saveUsersDB();
@@ -320,7 +349,8 @@ window.adminToggleBlock = function(email) {
 };
 
 window.adminChangePassword = function(email) {
-    const user = db_users.find(u => u.email === email);
+    const target = (email || '').toLowerCase().trim();
+    const user = db_users.find(u => u && u.email && u.email.toLowerCase().trim() === target);
     if (!user) return;
     window.userToChangePassword = user;
     const label = document.getElementById('adminPasswordModalUser');
@@ -338,9 +368,10 @@ window.saveAdminNewPassword = function() {
         if(typeof showToast === 'function') showToast('La contraseña no puede estar vacía', 'error');
         return;
     }
-    if (!window.userToChangePassword) return;
+    if (!window.userToChangePassword || !window.userToChangePassword.email) return;
 
-    const u = db_users.find(x => x.email === window.userToChangePassword.email);
+    const targetEmail = window.userToChangePassword.email.toLowerCase().trim();
+    const u = db_users.find(x => x && x.email && x.email.toLowerCase().trim() === targetEmail);
     if (!u) return;
 
     u.password = newPass;
@@ -359,6 +390,7 @@ window.renderKitchenUsers = function() {
     const filter = document.getElementById('k-user-filter')?.value || 'todos';
     
     const filtered = db_users.filter(u => {
+        if (!u || !u.email) return false;
         const matchSearch = (u.name || '').toLowerCase().includes(q) || 
                             (u.email || '').toLowerCase().includes(q) || 
                             (u.phone || '').toLowerCase().includes(q);
@@ -519,7 +551,7 @@ window.sendOrder = function() {
     }
 
     if (typeof currentUser !== 'undefined' && currentUser) {
-        const u = typeof db_users !== 'undefined' ? db_users.find(x => x.email === currentUser.email) : null;
+        const u = typeof db_users !== 'undefined' ? db_users.find(x => x && x.email && currentUser && x.email === currentUser.email) : null;
         if (u && u.blocked) {
             return alert("Tu cuenta ha sido bloqueada. No puedes realizar pedidos.");
         }
@@ -558,7 +590,7 @@ window.sendOrder = function() {
 
         if (ptsEarned > 0 && typeof db_users !== 'undefined') {
             currentUser.points = (currentUser.points || 0) + ptsEarned;
-            const uidx = db_users.findIndex(u => u.email === currentUser.email);
+            const uidx = db_users.findIndex(u => u && u.email && currentUser && u.email === currentUser.email);
             if (uidx !== -1) { db_users[uidx].points = currentUser.points; if (typeof saveUsersDB === 'function') saveUsersDB(); }
             if (typeof saveUser === 'function') saveUser();
             if (typeof syncUserUI === 'function') syncUserUI();
@@ -595,7 +627,7 @@ window.sendOrder = function() {
         if (!currentUser.history) currentUser.history = [];
         currentUser.history.push(newOrder);
         if (typeof db_users !== 'undefined') {
-            const uidx = db_users.findIndex(u => u.email === currentUser.email);
+            const uidx = db_users.findIndex(u => u && u.email && currentUser && u.email === currentUser.email);
             if (uidx !== -1) { db_users[uidx].history = currentUser.history; if (typeof saveUsersDB === 'function') saveUsersDB(); }
         }
         if (typeof saveUser === 'function') saveUser();
@@ -872,6 +904,7 @@ window.renderUsersTable = function() {
             if (typeof db_users !== 'undefined') {
                 db_users.length = 0;
                 listaUsuarios.forEach(u => {
+                    if (!u || !u.email) return;
                     // Mapeo para asegurar compatibilidad
                     if(!u.name) u.name = u.nombre;
                     if(!u.blocked) u.blocked = (u.estado === 'bloqueado');
@@ -923,7 +956,7 @@ window.adminToggleBlock = function(emailTarget) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
         return;
     }
-    const u = typeof db_users !== 'undefined' ? db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail) : null;
+    const u = typeof db_users !== 'undefined' ? db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail) : null;
     if (u) {
         const nuevoEstado = !u.blocked ? 'bloqueado' : 'activo';
         db.collection('usuarios').doc(emailTarget).update({ estado: nuevoEstado, blocked: !u.blocked })
@@ -944,7 +977,7 @@ window.adminDeleteUser = function(emailTarget) {
         originalAdminDeleteUser(emailTarget);
     } else if (typeof db_users !== 'undefined') {
         if (!confirm(`¿Estás seguro de que deseas eliminar el correo ${emailTarget}?`)) return;
-        db_users = db_users.filter(u => (u.email || '').toLowerCase().trim() !== targetEmail);
+        db_users = db_users.filter(u => u && u.email && (u.email || '').toLowerCase().trim() !== targetEmail);
         if (typeof saveUsersDB === 'function') saveUsersDB();
         if (typeof renderAdminUsers === 'function') renderAdminUsers();
         if (typeof showToast === 'function') showToast('Cliente eliminado', '🗑️');
@@ -1522,7 +1555,7 @@ window.abrirModalEdicionProducto = function(pId = null) {
             <div style="margin-bottom:24px;">
                 <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Fotografía del Producto</label>
                 <div style="border:1.5px dashed #cbd5e1; border-radius:12px; background:#f8fafc; padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; position:relative; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <img id="edit-prod-preview" src="${actualImg}" alt="Vista previa" style="height:100px; width:100px; border-radius:8px; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.08); display: ${actualImg ? 'block' : 'none'};">
+                    <img id="edit-prod-preview" src="${actualImg || 'logo-pys.png'}" alt="Vista previa" onerror="this.onerror=null; this.src='logo-pys.png';" style="height:100px; width:100px; border-radius:8px; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.08); display: ${actualImg ? 'block' : 'none'};">
                     
                     <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
                         <input type="file" id="edit-prod-file-input" accept="image/*" style="display:none;" onchange="
@@ -1869,7 +1902,7 @@ window.renderModalConfigTortasInterno = function() {
                 <div style="position:absolute; top:8px; left:8px; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; z-index:2;">
                     ${d.name}
                 </div>
-                <img id="preview-torta-img-${index}" src="${d.img}" style="width:100%; height:140px; object-fit:cover; display:block;">
+                <img id="preview-torta-img-${index}" src="${d.img || 'logo-pys.png'}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:100%; height:140px; object-fit:cover; display:block;">
                 
                 <div style="padding:10px; display:flex; flex-direction:column; gap:8px;">
                     <input type="text" id="torta-name-${index}" value="${d.name}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; font-size:0.8rem; text-align:center; outline:none;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
@@ -2057,7 +2090,7 @@ window.renderConfigTortasPublica = function() {
         config.disenos.forEach(d => {
             html += `
                 <div class="design-thumb" onclick="selectDiseno('${d.name}', this)">
-                    <img src="${d.img}" alt="Diseño ${d.name}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;" onerror="this.src='logo-pys.png'">
+                    <img src="${d.img || 'logo-pys.png'}" alt="Diseño ${d.name}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;" onerror="this.onerror=null; this.src='logo-pys.png';">
                     <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">${d.name}</div>
                 </div>
             `;

@@ -1,5 +1,12 @@
 const PHONE = "573229512693";
 
+function safeImg(src) {
+    if (!src || src === 'undefined' || src === 'null' || typeof src !== 'string' || src.trim() === '' || src.startsWith('img/')) {
+        return 'logo-pys.png';
+    }
+    return src;
+}
+
 const products = [
     // --- PANADERÍA TRADICIONAL ($500) ---
     { id: 1, name: "Pan Cascarita Tradicional", price: 500, cat: "panaderia", img: "pan cascarita 500 pesos.jpeg", desc: "Pan tradicional de costra crocante y miga suave" },
@@ -33,15 +40,15 @@ const products = [
     { id: 31, name: "Paquete Galleta de Coco (x4)", price: 3000, cat: "paquetes", img: "galletas a 500.jpeg", desc: "Bolsa sellada con 4 galletas crujientes de coco" },
 
     // --- PASTELERÍA Y COMBOS (SE MANTIENEN) ---
-    { id: 12, name: "Porción Torta Chocolate Húmeda", price: 4000, cat: "pasteleria", img: "img/torta-chocolate.jpg", desc: "Rellena de chocolate húmedo especial" },
-    { id: 13, name: "Combo Desayuno Tentación", price: 5500, cat: "combos", img: "img/combo-desayuno.jpg", desc: "Café con leche + 2 panes cascarita + galleta" },
-    { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, cat: "combos", img: "img/caja-vip.jpg", desc: "Surtido especial en caja de regalo artesanal" },
+    { id: 12, name: "Porción Torta Chocolate Húmeda", price: 4000, cat: "pasteleria", img: "logo-pys.png", desc: "Rellena de chocolate húmedo especial" },
+    { id: 13, name: "Combo Desayuno Tentación", price: 5500, cat: "combos", img: "logo-pys.png", desc: "Café con leche + 2 panes cascarita + galleta" },
+    { id: 15, name: "👑 Caja VIP 'Dulce Despertar'", price: 25000, cat: "combos", img: "logo-pys.png", desc: "Surtido especial en caja de regalo artesanal" },
 
     // --- EVENTOS Y FIESTAS (PRECIO BASE) ---
-    { id: 101, name: "Combo Compartir Familiar (25 und)", price: 50000, cat: "eventos", img: "img/combo-25.jpg", desc: "Pasabocas surtidos con relleno a elección", unidades: 25, permiteRelleno: true },
-    { id: 102, name: "Combo Oficina & Fiesta (50 und)", price: 100000, cat: "eventos", img: "img/combo-50.jpg", desc: "Ideal para reuniones y eventos corporativos", unidades: 50, permiteRelleno: true },
-    { id: 103, name: "Combo Gran Gala & Evento (100 und)", price: 200000, cat: "eventos", img: "img/combo-100.jpg", desc: "Bandeja para grandes celebraciones", unidades: 100, permiteRelleno: true },
-    { id: 106, name: "Rosca Navideña Trenzada", price: 48000, cat: "eventos", img: "img/rosca-navidena.jpg", desc: "Tradicional trenza navideña con frutas y glaseado", unidades: 1, permiteRelleno: false }
+    { id: 101, name: "Combo Compartir Familiar (25 und)", price: 50000, cat: "eventos", img: "WhatsApp Image 2026-08-19 at 19.32.35.jpeg", desc: "Pasabocas surtidos con relleno a elección", unidades: 25, permiteRelleno: true },
+    { id: 102, name: "Combo Oficina & Fiesta (50 und)", price: 100000, cat: "eventos", img: "WhatsApp Image 2026-08-19 at 19.32.59.jpeg", desc: "Ideal para reuniones y eventos corporativos", unidades: 50, permiteRelleno: true },
+    { id: 103, name: "Combo Gran Gala & Evento (100 und)", price: 200000, cat: "eventos", img: "WhatsApp Image 2026-08-25 at 20.32.38.jpeg", desc: "Bandeja para grandes celebraciones", unidades: 100, permiteRelleno: true },
+    { id: 106, name: "Rosca Navideña Trenzada", price: 48000, cat: "eventos", img: "logo-pys.png", desc: "Tradicional trenza navideña con frutas y glaseado", unidades: 1, permiteRelleno: false }
 ];
 const OPCIONES_RELLENO = {
     'queso': { nombre: '🧀 Queso Campesino — $2.000 c/u', precioUnitario: 2000, promo: false },
@@ -255,7 +262,7 @@ function loginCustomUser(e) {
     }
 
     const localUsers = JSON.parse(localStorage.getItem('dt_users_db')) || db_users;
-    const user = localUsers.find(u => (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && u.password === pass);
+    const user = localUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && u.password === pass));
     if (!user) {
         return showAuthMessage('Usuario o contraseña incorrectos.', 'error');
     }
@@ -278,7 +285,7 @@ function registerCustomUser(e) {
         return showAuthMessage('Por favor, completa todos los campos obligatorios para registrarte.', 'error');
     }
 
-    if (db_users.find(u => u.email === email)) {
+    if (db_users.find(u => u && u.email && u.email.trim().toLowerCase() === email)) {
         return showAuthMessage('Este correo ya está registrado. Por favor inicia sesión.', 'error');
     }
 
@@ -332,7 +339,7 @@ function renderRewards() {
 
         return `
             <div class="ticket-card">
-                <img src="${r.img}" alt="${r.name}">
+                <img src="${safeImg(r.img)}" alt="${r.name}" onerror="this.onerror=null; this.src='logo-pys.png';">
                 <div class="ticket-card-info">
                     <h4>${r.name}</h4>
                     <p>🎟️ ${r.cost} Pts</p>
@@ -351,7 +358,16 @@ function openPointsModal() {
     if (inicioSec && !inicioSec.classList.contains('active')) {
         showSection('inicio', document.querySelectorAll('.nav-link')[0]);
     }
-    document.getElementById('club-puntos')?.scrollIntoView({ behavior: 'smooth' });
+    const target = document.getElementById('club-puntos');
+    if (target) {
+        const root = document.documentElement;
+        const prevBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = 'auto';
+        target.scrollIntoView({ behavior: 'auto', block: 'start' });
+        requestAnimationFrame(() => {
+            root.style.scrollBehavior = prevBehavior;
+        });
+    }
 }
 
 function redeemReward(rewardId) {
@@ -586,7 +602,7 @@ function renderKitchenStock() {
         return `
                 <div class="kitchen-stock-item">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <img src="${p.img}" alt="${p.name}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; ${isOut ? 'filter:grayscale(100%); opacity:0.5;' : ''}">
+                        <img src="${safeImg(p.img)}" alt="${p.name}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:40px; height:40px; border-radius:6px; object-fit:cover; ${isOut ? 'filter:grayscale(100%); opacity:0.5;' : ''}">
                         <div>
                             <strong style="display:block; font-size:1.1rem; margin-bottom:4px;">${p.name}</strong>
                             <span style="font-size:0.9rem; color:#64748b;">${isOut ? '🔴 Agotado' : '✅ Disponible'}</span>
@@ -874,6 +890,51 @@ function handleCredentialResponse(response) {
     loginUserObj(user);
 }
 
+window.initGoogleSignIn = function() {
+    if (window.googleGsiInitialized) return;
+
+    if (window.google && window.google.accounts && window.google.accounts.id && typeof window.google.accounts.id.initialize === 'function') {
+        try {
+            window.google.accounts.id.initialize({
+                client_id: "463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com",
+                callback: handleCredentialResponse,
+                auto_select: false
+            });
+            window.googleGsiInitialized = true;
+
+            const gsiDivs = document.querySelectorAll('.g_id_signin');
+            gsiDivs.forEach(div => {
+                try {
+                    window.google.accounts.id.renderButton(div, {
+                        type: "standard",
+                        size: "large",
+                        theme: "outline",
+                        text: div.getAttribute('data-text') || "sign_in_with",
+                        shape: "rectangular",
+                        logo_alignment: "left"
+                    });
+                } catch (btnErr) {
+                    console.warn('GSI renderButton Error:', btnErr);
+                }
+            });
+        } catch (e) {
+            console.warn('GSI initialize Error:', e);
+        }
+    } else {
+        // Wait until Google Identity Services is fully loaded
+        let attempts = 0;
+        const checkTimer = setInterval(() => {
+            attempts++;
+            if (window.google && window.google.accounts && window.google.accounts.id && typeof window.google.accounts.id.initialize === 'function') {
+                clearInterval(checkTimer);
+                window.initGoogleSignIn();
+            } else if (attempts >= 25) {
+                clearInterval(checkTimer);
+            }
+        }, 150);
+    }
+};
+
 function handleMobilePillClick() {
     if (currentUser) document.getElementById('mobileProfileModal').style.display = 'flex';
     else openAuthModal();
@@ -882,11 +943,11 @@ function closeMobileProfile() { document.getElementById('mobileProfileModal').st
 function handleMobileProfileBdrop(e) { if (e.target === document.getElementById('mobileProfileModal')) closeMobileProfile(); }
 
 let db_users = [];
-const SUPER_ADMINS = Object.freeze([
+window.SUPER_ADMINS = window.SUPER_ADMINS || Object.freeze([
     'pablojose182017@gmail.com',
     'dulcestentaciones2004@gmail.com'
 ]);
-window.SUPER_ADMINS = SUPER_ADMINS;
+var SUPER_ADMINS = window.SUPER_ADMINS;
 
 const ADMIN_EMAILS = [
     ...SUPER_ADMINS,
@@ -1322,7 +1383,7 @@ function renderStockAdmin() {
         const isOut = stockConfig[p.id] === true;
         return `
                 <div style="flex: 1 1 calc(33% - 10px); min-width: 140px; background:#fff; border:1px solid ${isOut ? '#fecdd3' : '#bbf7d0'}; border-radius:10px; padding:10px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
-                    <img src="${p.img}" style="width:50px; height:50px; object-fit:cover; border-radius:8px; opacity:${isOut ? '0.5' : '1'}; filter:${isOut ? 'grayscale(100%)' : 'none'};">
+                    <img src="${safeImg(p.img)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:50px; height:50px; object-fit:cover; border-radius:8px; opacity:${isOut ? '0.5' : '1'}; filter:${isOut ? 'grayscale(100%)' : 'none'};">
                     <strong style="font-size:0.85rem; line-height:1.2;">${p.name}</strong>
                     <button onclick="toggleStock(${p.id})" style="width:100%; padding:8px; border-radius:6px; font-weight:bold; font-size:0.8rem; cursor:pointer; border:none; color:#fff; background:${isOut ? '#e11d48' : '#10b981'}; transition:all 0.2s;">
                         ${isOut ? '❌ Agotado' : '✅ Disponible'}
@@ -1411,7 +1472,7 @@ function renderAdminUsers() {
         return `
             <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
                 <td style="padding:10px; display:flex; align-items:center; gap:10px;">
-                    <img src="${u.picture}" style="width:30px;height:30px;border-radius:50%;">
+                    <img src="${safeImg(u.picture)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:30px;height:30px;border-radius:50%;">
                     <strong>${u.name}</strong>
                 </td>
                 <td style="padding:10px; font-size:0.85rem; color:#555;">${u.phone || '-'}</td>
@@ -1911,7 +1972,7 @@ function createCardHTML(p) {
     return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${btnAction} }" style="position:relative;">
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt};">
-                <img src="${p.img}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="console.error('Error al cargar imagen:', this.src); this.onerror=null; this.src='logo-pys.png';">
+                <img src="${safeImg(p.img)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';">
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
@@ -2197,7 +2258,7 @@ function updateCart() {
             const cid = item.cartId || item.id;
             return `
                 <div class="cart-item-row">
-                    <img src="${item.img}" class="cart-item-img" alt="${item.name}">
+                    <img src="${safeImg(item.img)}" class="cart-item-img" alt="${item.name}" onerror="this.onerror=null; this.src='logo-pys.png';">
                     <div class="cart-item-info">
                         <div class="cart-item-title">${item.name}</div>
                         <div class="cart-item-price">$${item.price.toLocaleString()} c/u • <strong>$${(item.price * item.quantity).toLocaleString()} COP</strong></div>
@@ -2641,18 +2702,15 @@ function addCustomCakeToCartNew() {
     }
 }
 
-// ===== LISTENER CLUB PUNTOS & VIP SMOOTH SCROLL =====
+// ===== LISTENER CLUB PUNTOS & VIP (SALTO INMEDIATO) =====
 window.addEventListener('DOMContentLoaded', () => {
     if (typeof renderRewards === 'function') renderRewards();
+    if (typeof window.initGoogleSignIn === 'function') window.initGoogleSignIn();
     const navClubBtn = document.getElementById('nav-club-puntos');
     if (navClubBtn) {
         navClubBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            const inicioSec = document.getElementById('inicio');
-            if (inicioSec && !inicioSec.classList.contains('active')) {
-                showSection('inicio', document.querySelectorAll('.nav-link')[0]);
-            }
-            document.getElementById('club-puntos')?.scrollIntoView({ behavior: 'smooth' });
+            openPointsModal();
         });
     }
 });
