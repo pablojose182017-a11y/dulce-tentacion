@@ -49,8 +49,7 @@
             <button class="nav-link active" onclick="showSection('inicio', this)">Inicio</button>
             <button class="nav-link" onclick="showSection('productos', this)">Productos</button>
             <button class="nav-link" onclick="showSection('nosotros', this)">Nosotros</button>
-            <button class="nav-link" onclick="showSection('ubicacion', this)">Ubicación</button>
-            <button id="nav-club-puntos" class="nav-link nav-club-highlight" onclick="openPointsModal()">🎟️ Club Puntos & VIP</button>
+            <a href="#club-puntos" id="nav-club-puntos" class="nav-link nav-club-highlight" style="text-decoration:none; display:inline-flex; align-items:center;">🎟️ Club Puntos & VIP</a>
         </nav>
 
         <div class="header-actions">
@@ -480,10 +479,38 @@
                 <span class="feature-icon">⭐</span>
                 <div class="feature-text">
                     <strong>La Mejor Calidad a Solo $500</strong>
-                    <p>Precio justo con el mejor sabor de la ciudad. ¡Bolitas de queso, cascarita y más!</p>
+                    <p>Mantenemos recetas generosas con queso, bocadillo y mantequilla al mejor precio de la ciudad.</p>
                 </div>
             </div>
         </div>
+
+        <!-- ===== CLUB PUNTOS & VIP ===== -->
+        <section id="club-puntos" class="club-puntos-section">
+            <div class="club-puntos-header">
+                <span class="club-puntos-tag">🌟 Beneficios Exclusivos</span>
+                <h2 class="club-puntos-title">🎟️ Club Puntos &amp; Recompensas VIP</h2>
+                <div class="club-points-balance-card">
+                    <span class="cp-balance-icon">✨</span>
+                    <div class="cp-balance-text">
+                        <span>Puntos Acumulados</span>
+                        <p>Tienes <strong id="modal-ticket-val">0</strong> puntos disponibles</p>
+                    </div>
+                </div>
+                <p class="club-puntos-subtitle">¡Acumula puntos con cada compra y canjéalos por recompensas exclusivas recién horneadas!</p>
+            </div>
+
+            <div id="rewards-container" class="rewards-grid">
+                <!-- Recompensas inyectadas vía JS con fotos grandes y botones de canje -->
+            </div>
+
+            <div class="vip-perks-banner">
+                <div class="vip-perks-icon">👑</div>
+                <div class="vip-perks-info">
+                    <strong>Beneficios Club VIP:</strong>
+                    <p>Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.</p>
+                </div>
+            </div>
+        </section>
     </section>
 
     <!-- ===== SECTION: PRODUCTOS ===== -->
@@ -511,6 +538,7 @@
 
     <!-- ===== SECTION: NOSOTROS ===== -->
     <section id="nosotros" class="section">
+
         <div class="info-card">
             <h2>¿Quiénes somos?</h2>
             <p class="about-lead">Somos <strong>P&S Punto Dulce</strong>, una panadería y pastelería 100% cucuteña
@@ -547,12 +575,9 @@
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- ===== SECTION: UBICACIÓN ===== -->
-    <section id="ubicacion" class="section">
-        <div class="info-card">
-            <h2>📍 Visítanos o Pide Domicilio</h2>
+            <div class="info-card" style="margin-top: 24px;">
+                <h2>📍 Visítanos o Pide Domicilio</h2>
             <p style="color:var(--text-soft);font-size:1rem;">Disfruta de nuestros panes en nuestro punto físico o
                 recíbelos directamente en tu hogar en cualquier barrio de Cúcuta.</p>
             <div class="info-grid">
@@ -945,30 +970,6 @@
                 <span class="bn-icon">❤️</span>
                 <span class="bn-label">Nosotros</span>
             </button>
-            <button class="bottom-nav-btn" id="bnUbicacion" onclick="showSection('ubicacion', this)"
-                data-section="ubicacion">
-                <span class="bn-icon">📍</span>
-                <span class="bn-label">Ubicación</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- ===== MODAL DULCE-PUNTOS ===== -->
-    <div class="auth-modal" id="modal-puntos">
-        <div class="auth-modal-content" style="position: relative; max-width: 500px; padding: 24px; text-align: center; border-radius: 20px; background: #fffdfa;">
-            <button class="auth-close-btn" style="position: absolute; top: 16px; right: 16px;" onclick="document.getElementById('modal-puntos').style.display = 'none';">✕</button>
-            <h2 style="color: #d97706; margin-bottom: 8px; font-weight: 800; display:flex; align-items:center; justify-content:center; gap:8px;">
-                🎟️ Mis Dulce-Puntos
-            </h2>
-            <p>Tienes <strong id="modal-ticket-val" style="font-size: 1.6rem; color: #b45309;">0</strong> puntos acumulados.</p>
-            <p style="font-size: 0.95rem; color: #666; margin-bottom: 24px;">¡Canjéalos por recompensas exclusivas!</p>
-            
-            <div id="rewards-container" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
-                <!-- Recompensas inyectadas vía JS -->
-            </div>
-            <div style="background: #fff8f1; border: 1px solid #fbd38d; border-radius: 12px; padding: 16px; text-align: left; font-size: 0.9rem; color: #9c4221;">
-                <strong>👑 Beneficios Club VIP:</strong> Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.
-            </div>
         </div>
     </div>
 
@@ -1074,178 +1075,6 @@
                 </div>
                 <div class="step-option-card" data-size="1 Libra (30 porciones)" onclick="selectTamano(this)">
                     <h4>1 Libra</h4><p>30 porc.</p><strong class="size-price" id="torta-precio-1-1">$130.000</strong>
-                </div>
-            </div>
-
-            <!-- DISEÑO -->
-            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">3. Diseño</h3>
-            <div id="cake-design-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px;">
-                <!-- Dinámicamente poblado por renderConfigTortasPublica -->
-            </div>
-
-            <!-- DEDICATORIA -->
-            <div class="auth-group" style="margin-bottom:24px;">
-                <label style="color:#d81b60; font-weight:bold; font-size:1.1rem; margin-bottom:8px; display:block;">4. Dedicatoria</label>
-                <input type="text" id="w-message" placeholder="Ej: ¡Feliz Cumpleaños Mamá! Te amamos" oninput="saveWizardField('message', this.value)" style="width:100%; border-radius: 12px; padding: 14px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.95rem; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#f43f5e'; this.style.boxShadow='0 0 0 3px rgba(244,63,94,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
-            </div>
-
-            <!-- FECHA Y HORA -->
-            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">5. Fecha y Hora de Entrega</h3>
-            <div style="background:#FFF9F0; border:1px solid #FFE4C4; padding:10px 14px; border-radius:10px; margin-bottom:15px; font-size:0.9rem; color:#6D4C41; display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.2rem;">⏱️</span>
-                <span>Horneado fresco para tu evento: Pedidos con mínimo 24h de anticipación (Anticipo del 50% para agendar).</span>
-            </div>
-            <div class="auth-group" style="margin-bottom:15px;">
-                <label>Fecha de entrega</label>
-                <input type="date" id="w-date" onchange="validateWizardDateNew(this.value)">
-            </div>
-            <div class="auth-group" style="margin-bottom:24px;">
-                <label>Hora preferida</label>
-                <select id="w-time" onchange="saveWizardField('time', this.value)" style="width:100%; padding:12px; border-radius:8px; border:1px solid #cbd5e1; outline:none; cursor:pointer;">
-                    <option value="">Selecciona un horario...</option>
-                    <option value="Mañana (9am - 12pm)">Mañana (9am - 12pm)</option>
-                    <option value="Tarde (2pm - 6pm)">Tarde (2pm - 6pm)</option>
-                </select>
-            </div>
-
-            <div id="w-error" style="display:none; color:#ef4444; background:#fef2f2; border:1px solid #f87171; padding:10px; border-radius:8px; margin-bottom:15px; text-align:center; font-weight:bold; font-size:0.9rem;"></div>
-            <button class="btn-gold" style="width:100%; background: linear-gradient(135deg, #f43f5e, #e11d48); color: white; font-weight: 800; font-size:1.2rem; padding:16px; border: none; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(225, 29, 72, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 10px 25px rgba(225, 29, 72, 0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 20px rgba(225, 29, 72, 0.3)';" onclick="addCustomCakeToCartNew()">Agregar al Carrito 🛒</button>
-        </div>
-    </div>
-
-    <!-- ===== JAVASCRIPT ===== -->
-                <span class="bn-label">Nosotros</span>
-            </button>
-            <button class="bottom-nav-btn" id="bnUbicacion" onclick="showSection('ubicacion', this)"
-                data-section="ubicacion">
-                <span class="bn-icon">📍</span>
-                <span class="bn-label">Ubicación</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- ===== MODAL DULCE-PUNTOS ===== -->
-    <div class="auth-modal" id="modal-puntos">
-        <div class="auth-modal-content" style="position: relative; max-width: 500px; padding: 24px; text-align: center; border-radius: 20px; background: #fffdfa;">
-            <button class="auth-close-btn" style="position: absolute; top: 16px; right: 16px;" onclick="document.getElementById('modal-puntos').style.display = 'none';">✕</button>
-            <h2 style="color: #d97706; margin-bottom: 8px; font-weight: 800; display:flex; align-items:center; justify-content:center; gap:8px;">
-                🎟️ Mis Dulce-Puntos
-            </h2>
-            <p>Tienes <strong id="modal-ticket-val" style="font-size: 1.6rem; color: #b45309;">0</strong> puntos acumulados.</p>
-            <p style="font-size: 0.95rem; color: #666; margin-bottom: 24px;">¡Canjéalos por recompensas exclusivas!</p>
-            
-            <div id="rewards-container" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
-                <!-- Recompensas inyectadas vía JS -->
-            </div>
-            <div style="background: #fff8f1; border: 1px solid #fbd38d; border-radius: 12px; padding: 16px; text-align: left; font-size: 0.9rem; color: #9c4221;">
-                <strong>👑 Beneficios Club VIP:</strong> Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL MIS PEDIDOS ===== -->
-    <div class="auth-modal" id="modal-mis-pedidos">
-        <div class="auth-modal-content orders-modal-content">
-            <div class="cart-header" style="border-bottom: 1px solid #f0ece6; padding-bottom: 12px; margin-bottom: 16px;">
-                <h3 style="color: var(--brand-pink);">📦 Mis Pedidos</h3>
-                <button class="auth-close-btn" style="position:static;" onclick="document.getElementById('modal-mis-pedidos').style.display = 'none';">✕</button>
-            </div>
-            
-            <div class="orders-tabs">
-                <button class="order-tab-btn active" onclick="switchOrderTab('curso')" id="tab-btn-curso">En Curso</button>
-                <button class="order-tab-btn" onclick="switchOrderTab('eventos')" id="tab-btn-eventos">Eventos Agendados</button>
-                <button class="order-tab-btn" onclick="switchOrderTab('historial')" id="tab-btn-historial">Historial</button>
-            </div>
-
-            <div class="orders-tab-content active" id="tab-curso">
-                <!-- Se inyecta vía JS -->
-            </div>
-            
-            <div class="orders-tab-content" id="tab-eventos">
-                <!-- Se inyecta vía JS -->
-            </div>
-            
-            <div class="orders-tab-content" id="tab-historial">
-                <!-- Se inyecta vía JS -->
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL MODO COCINA ===== -->
-    <div class="auth-modal" id="kitchen-modal">
-        <div class="kitchen-modal-content">
-            <div class="kitchen-header">
-                <h2>👨‍🍳 Panel Operativo de Cocina y Despacho</h2>
-                <button class="kitchen-close-btn" onclick="closeKitchenModal()">Cerrar Vista</button>
-            </div>
-            
-            <div class="kitchen-tabs">
-                <button class="kitchen-tab-btn active" onclick="switchKitchenTab('activos')" id="k-tab-btn-activos">Pedidos Activos</button>
-                <button class="kitchen-tab-btn" onclick="switchKitchenTab('despachados')" id="k-tab-btn-despachados">Despachados Hoy</button>
-                <button class="kitchen-tab-btn" onclick="switchKitchenTab('stock')" id="k-tab-btn-stock">🥖 Disponibilidad del Día</button>
-                <button class="kitchen-tab-btn" onclick="switchKitchenTab('clientes')" id="k-tab-btn-clientes">👥 Clientes & Roles</button>
-            </div>
-
-            <div class="kitchen-tab-content active" id="k-tab-activos">
-                <!-- Comandas inyectadas por JS -->
-            </div>
-            
-            <div class="kitchen-tab-content" id="k-tab-despachados">
-                <!-- Comandas inyectadas por JS -->
-            </div>
-
-            <div class="kitchen-tab-content" id="k-tab-stock">
-                <!-- Lista de productos y toggles inyectada por JS -->
-            </div>
-
-            <div class="kitchen-tab-content" id="k-tab-clientes" style="flex-direction:column; gap:16px;">
-                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#334155; padding:12px; border-radius:12px;">
-                    <input type="search" id="k-user-search" placeholder="Buscar por nombre, email o teléfono..." oninput="renderKitchenUsers()" style="flex:1; min-width:250px; padding:10px; border-radius:8px; border:none; outline:none;">
-                    <select id="k-user-filter" onchange="renderKitchenUsers()" style="padding:10px; border-radius:8px; border:none; outline:none; background:#f8fafc; cursor:pointer;">
-                        <option value="todos">Todos los Clientes</option>
-                        <option value="vip">Solo ⭐ VIPs</option>
-                        <option value="cocina">👨‍🍳 Equipo Cocina</option>
-                        <option value="admin">🛡️ Administradores</option>
-                    </select>
-                </div>
-                <div id="k-users-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
-                    <!-- Tarjetas de clientes inyectadas por JS -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL ASISTENTE TORTAS ===== -->
-    <div class="auth-modal" id="modal-evento-personalizado">
-        <div class="wizard-modal-content" style="max-height: 90vh; overflow-y: auto; padding: 24px;">
-            <div class="wizard-header" style="position: sticky; top: -24px; background: #fff; padding-top: 24px; z-index: 10; margin-top: -24px; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 style="font-size:1.3rem; margin:0;">🎂 Personalizar Torta</h2>
-                <button class="kitchen-close-btn" onclick="closeWizard()" style="padding: 6px 12px; font-size: 0.9rem;">✕</button>
-            </div>
-            
-            <div style="background: #fefce8; border: 2px solid #fef08a; color: #854d0e; padding: 16px; border-radius: 12px; text-align: center; font-weight: bold; margin-bottom: 24px; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.1);">
-                ✨ Tu pedido incluye GRATIS: Platos, servilletas, cucharas y vela volcán
-            </div>
-
-            <!-- SABOR -->
-            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">1. Sabor / Línea</h3>
-            <div class="wizard-options-grid" style="margin-bottom:24px;">
-                <div class="step-option-card" onclick="selectSabor('Clásica Tres Leches', this)">Clásica Tres Leches</div>
-                <div class="step-option-card" onclick="selectSabor('Chocoarequipe', this)">Chocoarequipe</div>
-                <div class="step-option-card" onclick="selectSabor('Ponqué Clásico', this)">Ponqué Clásico</div>
-            </div>
-
-            <!-- TAMAÑO -->
-            <h3 style="margin-bottom:12px; color:#d81b60; font-size:1.1rem;">2. Tamaño</h3>
-            <div class="wizard-options-grid" style="margin-bottom:24px;" id="cake-size-grid">
-                <div class="step-option-card" data-size="1/4 (10 porciones)" onclick="selectTamano(this)">
-                    <h4>1/4</h4><p>10 porc.</p><strong class="size-price">$45.000</strong>
-                </div>
-                <div class="step-option-card" data-size="1/2 (20 porciones)" onclick="selectTamano(this)">
-                    <h4>1/2</h4><p>20 porc.</p><strong class="size-price">$75.000</strong>
-                </div>
-                <div class="step-option-card" data-size="1 Libra (30 porciones)" onclick="selectTamano(this)">
-                    <h4>1 Libra</h4><p>30 porc.</p><strong class="size-price">$130.000</strong>
                 </div>
             </div>
 

@@ -33,12 +33,23 @@ window.addEventListener('DOMContentLoaded', () => {
 
             // Obtener al usuario recién logueado
             if (window.currentUser) {
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(window.currentUser.email?.toLowerCase().trim()) : false;
+                if (isSuper) {
+                    window.currentUser.role = 'admin';
+                    window.currentUser.rol = 'admin';
+                    window.currentUser.isAdmin = true;
+                    window.currentUser.blocked = false;
+                }
                 try {
                     await db.collection("usuarios").doc(window.currentUser.email).set({
                         nombre: window.currentUser.name || window.currentUser.nombre || window.currentUser.email.split('@')[0],
                         email: window.currentUser.email,
                         foto: window.currentUser.picture || window.currentUser.foto || "",
-                        rol: window.currentUser.role || "cliente",
+                        rol: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
+                        role: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
+                        isAdmin: isSuper || (window.currentUser.role === 'admin'),
+                        estado: 'activo',
+                        blocked: false,
                         vip: window.currentUser.vip || false,
                         points: window.currentUser.points || 0,
                         ultimoIngreso: new Date().toISOString()
@@ -61,7 +72,22 @@ window.addEventListener('DOMContentLoaded', () => {
         // Actualizar db_users localmente (fusionando para no perder los no subidos si hay fallback)
         if (typeof db_users !== 'undefined') {
             firebaseUsers.forEach(fbUser => {
-                const idx = db_users.findIndex(u => u.email === fbUser.email);
+                const fbEmail = (fbUser.email || '').toLowerCase().trim();
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(fbEmail) : (fbEmail === 'pablojose182017@gmail.com' || fbEmail === 'dulcestentaciones2004@gmail.com');
+                if (isSuper) {
+                    fbUser.rol = 'admin';
+                    fbUser.role = 'admin';
+                    fbUser.isAdmin = true;
+                    fbUser.blocked = false;
+                    fbUser.estado = 'activo';
+                    if (typeof adminEmails !== 'undefined' && !adminEmails.includes(fbEmail)) {
+                        adminEmails.push(fbEmail);
+                    }
+                    if (typeof workerEmails !== 'undefined') {
+                        workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                    }
+                }
+                const idx = db_users.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
                 if (idx !== -1) {
                     db_users[idx] = { ...db_users[idx], ...fbUser };
                 } else {
@@ -142,12 +168,15 @@ window.addEventListener('DOMContentLoaded', () => {
         const uStr = localStorage.getItem('dt_logged_user');
         if (uStr) {
             const uObj = JSON.parse(uStr);
-            if (uObj && (uObj.rol === 'admin' || uObj.rol === 'trabajador')) {
+            const uEmail = (uObj.email || '').toLowerCase().trim();
+            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+            if (isSuper || (uObj && (uObj.rol === 'admin' || uObj.rol === 'trabajador' || uObj.role === 'admin' || uObj.role === 'trabajador'))) {
                 isPrivileged = true;
             }
         } else if (typeof currentUser !== 'undefined' && currentUser) {
-            // Fallback si usan currentUser global de script.js en su lugar
-            if (currentUser.rol === 'admin' || currentUser.rol === 'trabajador') {
+            const uEmail = (currentUser.email || '').toLowerCase().trim();
+            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+            if (isSuper || (currentUser.rol === 'admin' || currentUser.rol === 'trabajador' || currentUser.role === 'admin' || currentUser.role === 'trabajador')) {
                 isPrivileged = true;
             }
         }

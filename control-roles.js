@@ -4,6 +4,18 @@
  * sin modificar script.js
  */
 
+const SUPER_ADMINS = Object.freeze([
+    'pablojose182017@gmail.com',
+    'dulcestentaciones2004@gmail.com'
+]);
+window.SUPER_ADMINS = SUPER_ADMINS;
+
+function isSuperAdmin(email) {
+    if (!email) return false;
+    return SUPER_ADMINS.includes(email.toLowerCase().trim());
+}
+window.isSuperAdmin = isSuperAdmin;
+
 window.addEventListener('DOMContentLoaded', () => {
     // --- 1. INYECTAR MODAL DE CONTRASEÑA SI NO EXISTE ---
     if (!document.getElementById('adminPasswordModal')) {
@@ -34,11 +46,31 @@ window.addEventListener('DOMContentLoaded', () => {
     const originalSyncUserUI = window.syncUserUI;
     if (originalSyncUserUI) {
         window.syncUserUI = function() {
+            if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
+                const normEmail = currentUser.email.toLowerCase().trim();
+                if (isSuperAdmin(normEmail)) {
+                    currentUser.role = 'admin';
+                    currentUser.isAdmin = true;
+                    currentUser.blocked = false;
+                    currentUser.estado = 'activo';
+                    if (typeof adminEmails !== 'undefined' && !adminEmails.includes(normEmail)) {
+                        adminEmails.push(normEmail);
+                    }
+                    if (typeof workerEmails !== 'undefined') {
+                        workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== normEmail);
+                    }
+                    try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e){}
+                    try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e){}
+                }
+            }
+
             originalSyncUserUI();
 
             if (typeof currentUser !== 'undefined' && currentUser) {
-                const isAdmin = (typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email);
-                const isWorker = (typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email);
+                const normEmail = (currentUser.email || '').toLowerCase().trim();
+                const isSuper = isSuperAdmin(normEmail);
+                const isAdmin = isSuper || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
+                const isWorker = !isSuper && (typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email);
                 
                 const deskAdminBtn = document.getElementById('desk-admin-btn');
                 const mobAdminBtn = document.getElementById('mob-admin-btn');
@@ -108,17 +140,25 @@ window.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = document.getElementById('loginEmail')?.value.trim().toLowerCase();
             const pass = document.getElementById('loginPassword')?.value.trim();
-            const user = db_users.find(u => (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && u.password === pass);
-            
-            if (user && user.blocked) {
-                if (typeof showAuthMessage === 'function') showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
-                return;
+            if (isSuperAdmin(email)) {
+                const saUser = (typeof db_users !== 'undefined') ? db_users.find(u => (u.email || '').trim().toLowerCase() === email) : null;
+                if (saUser) {
+                    saUser.blocked = false;
+                    saUser.role = 'admin';
+                    saUser.isAdmin = true;
+                }
+            } else {
+                const user = (typeof db_users !== 'undefined') ? db_users.find(u => (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && u.password === pass) : null;
+                if (user && user.blocked) {
+                    if (typeof showAuthMessage === 'function') showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
+                    return;
+                }
             }
             originalLoginCustomUser(e);
         };
     }
 
-    // --- 5. RENDER ADMIN USERS (Roles Estandarizados: Normal, VIP, Trabajador, Admin) ---
+    // --- 5. RENDER ADMIN USERS (Roles Estandarizados: Normal, VIP, Trabajador, Admin, Super Admin) ---
     window.renderAdminUsers = function() {
         const tbody = document.getElementById('admin-users-table');
         if (!tbody) return;
@@ -130,8 +170,10 @@ window.addEventListener('DOMContentLoaded', () => {
                                 (u.phone || '').toLowerCase().includes(q);
             if(!matchSearch) return false;
 
-            const isAdm = adminEmails.includes(u.email);
-            const isWork = workerEmails.includes(u.email);
+            const uEmailNorm = (u.email || '').toLowerCase().trim();
+            const isSuper = isSuperAdmin(uEmailNorm);
+            const isAdm = isSuper || adminEmails.includes(u.email);
+            const isWork = !isSuper && workerEmails.includes(u.email);
 
             if (typeof currentRoleFilter !== 'undefined') {
                 if (currentRoleFilter === 'Administradores') return isAdm;
@@ -147,11 +189,15 @@ window.addEventListener('DOMContentLoaded', () => {
             return;
         }
         tbody.innerHTML = filteredUsers.map(u => {
-            const isUserAdmin = adminEmails.includes(u.email);
-            const isUserWorker = workerEmails.includes(u.email);
+            const uEmailNorm = (u.email || '').toLowerCase().trim();
+            const isSuper = isSuperAdmin(uEmailNorm);
+            const isUserAdmin = isSuper || adminEmails.includes(u.email);
+            const isUserWorker = !isSuper && workerEmails.includes(u.email);
 
             let levelHtml = '';
-            if (isUserAdmin) {
+            if (isSuper) {
+                levelHtml = '<span style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; font-weight:800; padding:4px 10px; border-radius:20px; font-size:0.8rem; box-shadow:0 2px 6px rgba(217,119,6,0.3); display:inline-flex; align-items:center; gap:4px;">👑 Super Admin (Dueño)</span>';
+            } else if (isUserAdmin) {
                 levelHtml = '<span style="color:#1d4ed8;font-weight:bold;">Administrador</span>';
             } else if (isUserWorker) {
                 levelHtml = '<span style="color:#8b5cf6;font-weight:bold;">Trabajador</span>';
@@ -162,7 +208,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             
             return `
-        <tr style="border-bottom:1px solid #eee; background:${u.blocked ? '#fff1f2' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent'))}">
+        <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
             <td style="padding:10px; display:flex; align-items:center; gap:10px;">
                 <img src="${u.picture}" style="width:30px;height:30px;border-radius:50%;">
                 <strong>${u.name}</strong>
@@ -170,9 +216,12 @@ window.addEventListener('DOMContentLoaded', () => {
             <td style="padding:10px; font-size:0.85rem; color:#555;">${u.phone || '-'}</td>
             <td style="padding:10px; font-size:0.85rem; color:#555;">${u.email}</td>
             <td style="padding:10px; text-align:center;">${levelHtml}</td>
-            <td style="padding:10px; text-align:center; font-weight:bold; color:${u.blocked ? '#e11d48' : '#10b981'};">${u.blocked ? 'Bloqueado' : 'Activo'}</td>
+            <td style="padding:10px; text-align:center; font-weight:bold; color:${isSuper ? '#10b981' : (u.blocked ? '#e11d48' : '#10b981')};">${isSuper ? 'Inmutable (Activo)' : (u.blocked ? 'Bloqueado' : 'Activo')}</td>
             <td style="padding:10px; text-align:center;">
-                ${(u.email === 'dulcestentaciones2004@gmail.com') ? '-' : `
+                ${isSuper ? `
+                <div style="display:inline-flex; align-items:center; gap:5px; background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:bold;">
+                    <span>🛡️ Cuenta Inmutable</span>
+                </div>` : `
                 <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
                     <div style="display:flex; gap:4px; width:100%; align-items:center;">
                         <select id="roleSel_${(u.email || '').replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
@@ -196,11 +245,17 @@ window.addEventListener('DOMContentLoaded', () => {
 // --- FUNCIONES GLOBALES INTERCEPTADAS ---
 
 window.confirmRoleChange = function(email) {
+    const targetEmail = (email || '').toLowerCase().trim();
+    if (SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
+        return;
+    }
+
     const selectEl = document.getElementById(`roleSel_${(email || '').replace(/[@.]/g, '_')}`);
     if (!selectEl) return;
     const newRole = selectEl.value; // 'Normal', 'VIP', 'Trabajador', 'Admin'
 
-    const u = db_users.find(x => x.email === email);
+    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
     if (!u) return;
 
     if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && newRole !== 'Admin') {
@@ -243,14 +298,20 @@ window.confirmRoleChange = function(email) {
 };
 
 window.adminToggleBlock = function(email) {
-    const u = db_users.find(x => x.email === email);
+    const targetEmail = (email || '').toLowerCase().trim();
+    if (SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
+        return;
+    }
+
+    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
     if (!u) return;
     u.blocked = !u.blocked;
     if (typeof saveUsersDB === 'function') saveUsersDB();
     renderAdminUsers();
     
     // Si el usuario bloqueado es el actual, forzar cierre
-    if (currentUser && currentUser.email === email && u.blocked) { 
+    if (currentUser && (currentUser.email || '').toLowerCase().trim() === targetEmail && u.blocked) { 
         if(typeof logoutUser === 'function') {
             logoutUser(new Event('click')); 
         }
@@ -302,8 +363,10 @@ window.renderKitchenUsers = function() {
                             (u.email || '').toLowerCase().includes(q) || 
                             (u.phone || '').toLowerCase().includes(q);
         if (!matchSearch) return false;
-        const isAdm = adminEmails.includes(u.email);
-        const isWork = workerEmails.includes(u.email);
+        const uEmailNorm = (u.email || '').toLowerCase().trim();
+        const isSuper = isSuperAdmin(uEmailNorm);
+        const isAdm = isSuper || adminEmails.includes(u.email);
+        const isWork = !isSuper && workerEmails.includes(u.email);
         
         if (filter === 'vip') return u.vip === true;
         if (filter === 'cocina') return isWork; 
@@ -312,22 +375,25 @@ window.renderKitchenUsers = function() {
     });
 
     container.innerHTML = filtered.map(u => {
-        const isAdm = adminEmails.includes(u.email);
-        const isWork = workerEmails.includes(u.email);
+        const uEmailNorm = (u.email || '').toLowerCase().trim();
+        const isSuper = isSuperAdmin(uEmailNorm);
+        const isAdm = isSuper || adminEmails.includes(u.email);
+        const isWork = !isSuper && workerEmails.includes(u.email);
         
         let currentRoleVal = 'Normal';
         let roleBadgeHtml = '<span class="k-role-badge k-role-regular">Normal</span>';
         
-        if (isAdm) { currentRoleVal = 'Admin'; roleBadgeHtml = '<span class="k-role-badge k-role-admin">🛡️ Administrador</span>'; }
+        if (isSuper) { currentRoleVal = 'Admin'; roleBadgeHtml = '<span class="k-role-badge" style="background:#fef3c7; color:#b45309; font-weight:800; border:1px solid #fde68a;">👑 Super Admin (Dueño)</span>'; }
+        else if (isAdm) { currentRoleVal = 'Admin'; roleBadgeHtml = '<span class="k-role-badge k-role-admin">🛡️ Administrador</span>'; }
         else if (isWork) { currentRoleVal = 'Trabajador'; roleBadgeHtml = '<span class="k-role-badge k-role-cocina">👨‍🍳 Trabajador</span>'; }
         else if (u.vip) { currentRoleVal = 'VIP'; roleBadgeHtml = '<span class="k-role-badge k-role-vip">⭐ VIP</span>'; }
 
         const pts = u.points || 0;
         
         return `
-        <div class="k-user-card">
+        <div class="k-user-card" style="${isSuper ? 'border: 2px solid #f59e0b; background:#fffdf5;' : ''}">
             <div class="k-user-header">
-                <div class="k-user-avatar">${(u.name || 'U').charAt(0).toUpperCase()}</div>
+                <div class="k-user-avatar" style="${isSuper ? 'background:linear-gradient(135deg,#f59e0b,#d97706);' : ''}">${(u.name || 'U').charAt(0).toUpperCase()}</div>
                 <div class="k-user-info">
                     <h3>${u.name || 'Sin Nombre'}</h3>
                     <p>📞 ${u.phone || 'Sin número'}</p>
@@ -340,12 +406,18 @@ window.renderKitchenUsers = function() {
                 ${roleBadgeHtml}
             </div>
 
+            ${isSuper ? `
+            <div style="background:#fef3c7; color:#b45309; padding:8px; border-radius:8px; font-size:0.8rem; font-weight:bold; text-align:center; margin-top:8px; border:1px solid #fde68a;">
+                🛡️ Rol Inmutable (Super Admin)
+            </div>
+            ` : `
             <select class="k-role-select" onchange="updateUserRole('${u.email}', this.value)">
                 <option value="Normal" ${currentRoleVal==='Normal'?'selected':''}>Normal</option>
                 <option value="VIP" ${currentRoleVal==='VIP'?'selected':''}>⭐ VIP</option>
                 <option value="Trabajador" ${currentRoleVal==='Trabajador'?'selected':''}>👨‍🍳 Trabajador</option>
                 <option value="Admin" ${currentRoleVal==='Admin'?'selected':''}>🛡️ Administrador</option>
             </select>
+            `}
 
             <div style="margin-top:8px;">
                 <span style="font-weight:bold; color:#475569; font-size:0.95rem; margin-bottom:8px; display:block;">Dulce-Puntos:</span>
@@ -361,6 +433,11 @@ window.renderKitchenUsers = function() {
 };
 
 window.updateUserRole = function(email, role) {
+    const targetEmail = (email || '').toLowerCase().trim();
+    if (SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
+        return;
+    }
     // Redirige al método de admin para evitar duplicar lógica
     const selWrapper = document.createElement('div');
     selWrapper.innerHTML = `<select id="roleSel_${(email || '').replace(/[@.]/g, '_')}"><option value="${role}" selected></option></select>`;
@@ -670,13 +747,32 @@ window.loginCustomUser = function(e) {
         return;
     }
 
+    const isSuper = isSuperAdmin(correoInput);
+
     db.collection('usuarios').doc(correoInput).get().then((doc) => {
         if (!doc.exists) return alert('El usuario no existe.');
         const data = doc.data();
-        if (data.estado === 'bloqueado' || data.blocked) return alert('Tu cuenta está suspendida.');
+        if (!isSuper && (data.estado === 'bloqueado' || data.blocked)) return alert('Tu cuenta está suspendida.');
         if (data.password !== passInput) return alert('Contraseña incorrecta.');
         
+        if (isSuper) {
+            data.rol = 'admin';
+            data.role = 'admin';
+            data.isAdmin = true;
+            data.blocked = false;
+            data.estado = 'activo';
+            if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
+                adminEmails.push(correoInput);
+                if (typeof saveAdminEmails === 'function') saveAdminEmails();
+            }
+            if (typeof workerEmails !== 'undefined') {
+                workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
+            }
+            db.collection('usuarios').doc(correoInput).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => {});
+        }
+
         localStorage.setItem('dt_logged_user', JSON.stringify(data));
+        localStorage.setItem('dt_user', JSON.stringify(data));
         
         if (typeof currentUser !== 'undefined') {
             currentUser = data;
@@ -707,17 +803,42 @@ window.handleCredentialResponse = function(response) {
         }).join(''));
         
         const decoded = JSON.parse(jsonPayload);
+        const emailLower = (decoded.email || '').toLowerCase().trim();
+        const isSuper = isSuperAdmin(emailLower);
         
-        db.collection('usuarios').doc(decoded.email).set({
+        const firestoreData = {
             nombre: decoded.name || 'Usuario Google',
-            email: decoded.email,
+            email: emailLower,
             telefono: 'Sin registrar',
-            rol: 'cliente',
+            rol: isSuper ? 'admin' : 'cliente',
+            role: isSuper ? 'admin' : 'cliente',
+            isAdmin: isSuper,
             estado: 'activo',
+            blocked: false,
             foto: decoded.picture || '',
             origen: 'google',
             ultimaConexion: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        };
+
+        if (isSuper) {
+            if (typeof adminEmails !== 'undefined' && !adminEmails.includes(emailLower)) {
+                adminEmails.push(emailLower);
+                if (typeof saveAdminEmails === 'function') saveAdminEmails();
+            }
+            if (typeof workerEmails !== 'undefined') {
+                workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== emailLower);
+            }
+            if (typeof currentUser !== 'undefined' && currentUser) {
+                currentUser.role = 'admin';
+                currentUser.isAdmin = true;
+                currentUser.blocked = false;
+                currentUser.estado = 'activo';
+                try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e){}
+                try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e){}
+            }
+        }
+        
+        db.collection('usuarios').doc(emailLower).set(firestoreData, { merge: true });
     } catch(e) {
         console.error("Error procesando token de Google:", e);
     }
@@ -727,7 +848,21 @@ window.handleCredentialResponse = function(response) {
 window.renderUsersTable = function() {
     db.collection('usuarios').onSnapshot((snapshot) => {
         const listaUsuarios = [];
-        snapshot.forEach(doc => listaUsuarios.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const email = (data.email || doc.id || '').toLowerCase().trim();
+            if (isSuperAdmin(email)) {
+                data.rol = 'admin';
+                data.role = 'admin';
+                data.isAdmin = true;
+                data.blocked = false;
+                data.estado = 'activo';
+                if (doc.data().rol !== 'admin' || doc.data().estado === 'bloqueado' || doc.data().blocked) {
+                    db.collection('usuarios').doc(doc.id).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => {});
+                }
+            }
+            listaUsuarios.push({ id: doc.id, ...data });
+        });
         localStorage.setItem('dt_users_db', JSON.stringify(listaUsuarios));
         
         if (typeof pintarTablaUsuarios === 'function') {
@@ -740,6 +875,14 @@ window.renderUsersTable = function() {
                     // Mapeo para asegurar compatibilidad
                     if(!u.name) u.name = u.nombre;
                     if(!u.blocked) u.blocked = (u.estado === 'bloqueado');
+                    const uEmail = (u.email || '').toLowerCase().trim();
+                    if (isSuperAdmin(uEmail)) {
+                        u.role = 'admin';
+                        u.rol = 'admin';
+                        u.isAdmin = true;
+                        u.blocked = false;
+                        u.estado = 'activo';
+                    }
                     db_users.push(u);
                 });
             }
@@ -758,6 +901,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Extender el guardado de rol para actualizar en Firestore directamente
 const originalConfirmRoleChangeFS = window.confirmRoleChange;
 window.confirmRoleChange = function(emailTarget) {
+    const targetEmail = (emailTarget || '').toLowerCase().trim();
+    if (SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
+        return;
+    }
     const selectEl = document.getElementById(`roleSel_${(emailTarget || '').replace(/[@.]/g, '_')}`);
     if (selectEl) {
         const nuevoRol = selectEl.value;
@@ -770,13 +918,37 @@ window.confirmRoleChange = function(emailTarget) {
 // Extender el bloqueo para actualizar en Firestore
 const originalAdminToggleBlockFS = window.adminToggleBlock;
 window.adminToggleBlock = function(emailTarget) {
-    const u = typeof db_users !== 'undefined' ? db_users.find(x => x.email === emailTarget) : null;
+    const targetEmail = (emailTarget || '').toLowerCase().trim();
+    if (SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
+        return;
+    }
+    const u = typeof db_users !== 'undefined' ? db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail) : null;
     if (u) {
         const nuevoEstado = !u.blocked ? 'bloqueado' : 'activo';
         db.collection('usuarios').doc(emailTarget).update({ estado: nuevoEstado, blocked: !u.blocked })
             .catch(err => console.warn('No se pudo guardar el estado en Firestore:', err));
     }
     if (originalAdminToggleBlockFS) originalAdminToggleBlockFS(emailTarget);
+};
+
+// Extender eliminación de usuario para proteger a los Super Admins
+const originalAdminDeleteUser = window.adminDeleteUser;
+window.adminDeleteUser = function(emailTarget) {
+    const targetEmail = (emailTarget || '').toLowerCase().trim();
+    if (SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
+        return;
+    }
+    if (originalAdminDeleteUser) {
+        originalAdminDeleteUser(emailTarget);
+    } else if (typeof db_users !== 'undefined') {
+        if (!confirm(`¿Estás seguro de que deseas eliminar el correo ${emailTarget}?`)) return;
+        db_users = db_users.filter(u => (u.email || '').toLowerCase().trim() !== targetEmail);
+        if (typeof saveUsersDB === 'function') saveUsersDB();
+        if (typeof renderAdminUsers === 'function') renderAdminUsers();
+        if (typeof showToast === 'function') showToast('Cliente eliminado', '🗑️');
+    }
 };
 
 // =========================================================

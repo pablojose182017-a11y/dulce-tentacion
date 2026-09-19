@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
 
         /* ===== BRAND VARIABLES ===== */
         :root {
@@ -2300,52 +2300,197 @@
             transform: translateY(0);
         }
 
+                /* ===== SECCIÃ“N CLUB PUNTOS & VIP ===== */
+        .club-puntos-section {
+            background: linear-gradient(180deg, #fffdfa 0%, #fff8f1 100%);
+            border: 1.5px solid #fde68a;
+            border-radius: var(--r-xl, 20px);
+            padding: 36px 24px;
+            margin: 35px auto;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.08);
+            scroll-margin-top: 90px;
+        }
+
+        .club-puntos-header {
+            text-align: center;
+            max-width: 650px;
+            margin: 0 auto 30px;
+        }
+
+        .club-puntos-tag {
+            display: inline-block;
+            background: #fef3c7;
+            color: #b45309;
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .club-puntos-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #78350f;
+            margin: 0 0 12px;
+        }
+
+        .club-points-balance-card {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            background: #ffffff;
+            border: 1.5px solid #fcd34d;
+            border-radius: 16px;
+            padding: 10px 22px;
+            margin: 10px 0 14px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);
+        }
+
+        .club-points-balance-card .cp-balance-icon {
+            font-size: 1.8rem;
+        }
+
+        .club-points-balance-card .cp-balance-text {
+            text-align: left;
+        }
+
+        .club-points-balance-card .cp-balance-text span {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            color: #92400e;
+            font-weight: 700;
+            display: block;
+        }
+
+        .club-points-balance-card .cp-balance-text p {
+            margin: 0;
+            font-size: 1rem;
+            color: #451a03;
+        }
+
+        .club-points-balance-card .cp-balance-text strong#modal-ticket-val {
+            font-size: 1.4rem;
+            color: #d97706;
+            font-weight: 800;
+        }
+
+        .club-puntos-subtitle {
+            font-size: 0.95rem;
+            color: #78350f;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        #rewards-container.rewards-grid,
+        #rewards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 22px;
+            margin-bottom: 28px;
+        }
+
         .ticket-card {
-            background: #fffdfa;
-            border: 2px dashed #f59e0b;
-            border-radius: 12px;
+            background: #ffffff;
+            border: 2px solid #fef3c7;
+            border-radius: 16px;
             padding: 16px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: space-between;
-            gap: 16px;
-            text-align: left;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            text-align: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+        }
+
+        .ticket-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(245, 158, 11, 0.16);
+            border-color: #fcd34d;
+        }
+
+        .ticket-card img {
+            width: 100%;
+            height: 180px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 12px;
+            border: 1px solid #fde68a;
+            background: #fffdfa;
         }
 
         .ticket-card-info h4 {
-            margin: 0 0 4px 0;
-            color: #451a03;
+            margin: 0 0 6px 0;
+            color: #1e293b;
             font-size: 1.1rem;
+            font-weight: 700;
         }
 
         .ticket-card-info p {
-            margin: 0;
+            margin: 0 0 14px 0;
             color: #d97706;
-            font-weight: 700;
-            font-size: 0.9rem;
+            font-weight: 800;
+            font-size: 1.05rem;
         }
 
-        .btn-redeem {
-            background: #d97706;
-            color: #fff;
+        .ticket-card .btn-redeem {
+            width: 100%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #ffffff;
             border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 18px;
+            border-radius: 12px;
             font-weight: 700;
+            font-size: 0.95rem;
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
             transition: all 0.2s ease;
         }
-        
-        .btn-redeem:hover:not(:disabled) {
-            background: #b45309;
+
+        .ticket-card .btn-redeem:hover:not(:disabled) {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(217, 119, 6, 0.35);
         }
 
-        .btn-redeem:disabled {
+        .ticket-card .btn-redeem:disabled {
             background: #e2e8f0;
             color: #94a3b8;
-            cursor: not-allowed;
             border: 1px solid #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .vip-perks-banner {
+            background: #fff8f1;
+            border: 1.5px solid #fbd38d;
+            border-radius: 14px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #9a3412;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .vip-perks-banner .vip-perks-icon {
+            font-size: 2.2rem;
+            flex-shrink: 0;
+        }
+
+        .vip-perks-banner strong {
+            color: #7c2d12;
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.98rem;
+        }
+
+        .vip-perks-banner p {
+            margin: 0;
         }
 
         /* --- ESTILOS PARA MIS PEDIDOS --- */
