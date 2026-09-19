@@ -71,7 +71,19 @@ let lastOrderCount = 0;
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
     try { const c = localStorage.getItem('dt_cart'); if (c) cart = JSON.parse(c); } catch (e) { }
-    try { const u = localStorage.getItem('dt_user'); if (u) currentUser = JSON.parse(u); } catch (e) { }
+    try {
+        const u = localStorage.getItem('dt_user');
+        if (u) {
+            const parsed = JSON.parse(u);
+            if (parsed && (parsed.email || '').toLowerCase().trim() === 'correo@google.com') {
+                localStorage.removeItem('dt_user');
+                localStorage.removeItem('dt_logged_user');
+                currentUser = null;
+            } else {
+                currentUser = parsed;
+            }
+        }
+    } catch (e) { }
     try { const a = localStorage.getItem('dt_admin_config'); if (a) adminConfig = JSON.parse(a); } catch (e) { }
     try { const p = localStorage.getItem('dt_pedidos_historial'); if (p) pedidosHistorial = JSON.parse(p); } catch (e) { }
     try { const s = localStorage.getItem('dt_sound_enabled'); if (s) orderSoundEnabled = (s === 'true'); } catch (e) { }
@@ -182,6 +194,20 @@ function toggleMobileSearch() {
 }
 
 // ===== AUTH =====
+window.togglePasswordVisibility = function(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+        btn.setAttribute('aria-label', 'Ocultar contraseña');
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+        btn.setAttribute('aria-label', 'Mostrar contraseña');
+    }
+};
+
 function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
 function closeAuthModal() {
     document.getElementById('authModal').style.display = 'none';
@@ -191,6 +217,11 @@ function closeAuthModal() {
         msgEl.className = 'auth-msg';
     }
     document.querySelectorAll('.custom-form input').forEach(inp => inp.value = '');
+    document.querySelectorAll('.password-wrapper input').forEach(inp => inp.type = 'password');
+    document.querySelectorAll('.btn-toggle-password').forEach(btn => {
+        btn.textContent = '👁️';
+        btn.setAttribute('aria-label', 'Mostrar contraseña');
+    });
 }
 function handleAuthBdrop(e) { if (e.target === document.getElementById('authModal')) closeAuthModal(); }
 
@@ -259,6 +290,28 @@ function loginCustomUser(e) {
 
     if (!email || !pass) {
         return showAuthMessage('Por favor, completa todos los campos.', 'error');
+    }
+
+    if (SUPER_ADMINS.includes(email) && pass === 'Admin123*') {
+        const adminName = (email === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
+        const superAdminObj = {
+            name: adminName,
+            email: email,
+            password: 'Admin123*',
+            role: 'admin',
+            isAdmin: true,
+            blocked: false,
+            points: 500,
+            picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
+        };
+        const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+        if (uidx !== -1) {
+            db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
+        } else {
+            db_users.push({ ...superAdminObj });
+        }
+        saveUsersDB();
+        return loginUserObj(superAdminObj);
     }
 
     const localUsers = JSON.parse(localStorage.getItem('dt_users_db')) || db_users;
@@ -962,18 +1015,34 @@ window.addEventListener('DOMContentLoaded', () => {
     try { const wks = localStorage.getItem('dt_worker_emails'); if (wks) workerEmails = JSON.parse(wks); } catch (e) { }
     try { const stk = localStorage.getItem('dt_stock_config'); if (stk) stockConfig = JSON.parse(stk); } catch (e) { }
 
-    // Garantizar Super Admins en adminEmails y db_users
+    // Garantizar Super Admins en adminEmails y db_users con contraseña fija Admin123*
     SUPER_ADMINS.forEach(saEmail => {
         const normSa = saEmail.toLowerCase().trim();
         if (!adminEmails.includes(normSa)) adminEmails.push(normSa);
         workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== normSa);
+        const adminName = (normSa === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
         let saUser = db_users.find(u => (u.email || '').toLowerCase().trim() === normSa);
         if (saUser) {
+            saUser.name = saUser.name || adminName;
             saUser.role = 'admin';
             saUser.isAdmin = true;
             saUser.blocked = false;
+            if (!saUser.password) saUser.password = 'Admin123*';
+            if (!saUser.points) saUser.points = 500;
+        } else {
+            db_users.push({
+                name: adminName,
+                email: normSa,
+                password: 'Admin123*',
+                role: 'admin',
+                isAdmin: true,
+                blocked: false,
+                points: 500,
+                picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
+            });
         }
     });
+    saveUsersDB();
 
     // 2. Función de migración / sincronización automática
     if (currentUser && currentUser.email) {

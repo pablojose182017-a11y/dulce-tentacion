@@ -82,7 +82,7 @@
                             <img id="dropdown-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                             <div class="dropdown-profile-info">
                                 <strong id="dropdown-name">Usuario</strong>
-                                <small id="dropdown-email">correo@google.com</small>
+                                <small id="dropdown-email"></small>
                             </div>
                         </div>
 
@@ -611,7 +611,7 @@
                 <img id="mp-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                 <div class="dropdown-profile-info">
                     <strong id="mp-name">Usuario</strong>
-                    <small id="mp-email">correo@google.com</small>
+                    <small id="mp-email"></small>
                 </div>
             </div>
 
@@ -702,7 +702,10 @@
                         <label>Contraseña</label>
                         <div class="input-wrap">
                             <span class="field-icon">🔒</span>
-                            <input type="password" id="loginPassword" placeholder="••••••••">
+                            <div class="password-wrapper">
+                                <input type="password" id="loginPassword" placeholder="••••••••">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar contraseña">👁️</button>
+                            </div>
                         </div>
                         <a href="#" onclick="showRecoveryForm(event)" style="font-size: 0.8rem; color: var(--brand-pink); text-decoration: none; display: block; margin-top: 5px; text-align: right;">¿Olvidaste tu contraseña?</a>
                     </div>
@@ -746,7 +749,10 @@
                         <label>Contraseña</label>
                         <div class="input-wrap">
                             <span class="field-icon">🔒</span>
-                            <input type="password" id="regPassword" placeholder="••••••••">
+                            <div class="password-wrapper">
+                                <input type="password" id="regPassword" placeholder="••••••••">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Mostrar contraseña">👁️</button>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">

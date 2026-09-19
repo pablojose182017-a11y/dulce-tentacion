@@ -4,6 +4,19 @@
  * sin modificar script.js
  */
 
+// 1. Limpieza preventiva de sesión fantasma ('correo@google.com')
+try {
+    const rawUser = localStorage.getItem('dt_user');
+    if (rawUser) {
+        const uObj = JSON.parse(rawUser);
+        if (uObj && (uObj.email || '').toLowerCase().trim() === 'correo@google.com') {
+            localStorage.removeItem('dt_user');
+            localStorage.removeItem('dt_logged_user');
+            if (typeof currentUser !== 'undefined') currentUser = null;
+        }
+    }
+} catch (e) { }
+
 // Saneamiento preventivo de usuarios en localStorage
 try {
     let storedUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
@@ -22,6 +35,76 @@ try {
         if (cleanedDB.length !== storedDB.length) {
             localStorage.setItem('dt_users_db', JSON.stringify(cleanedDB));
         }
+    }
+} catch (e) { }
+
+// Semilla de Super Admins locales ('dt_registered_users' y 'dt_users_db')
+try {
+    const superAdminSeeds = [
+        {
+            name: "Pablo Carrascal",
+            email: "pablojose182017@gmail.com",
+            password: "Admin123*",
+            role: "admin",
+            isAdmin: true,
+            blocked: false,
+            points: 500,
+            picture: "https://ui-avatars.com/api/?name=Pablo+Carrascal&background=e11d48&color=fff&bold=true"
+        },
+        {
+            name: "Dulce Tentación",
+            email: "dulcestentaciones2004@gmail.com",
+            password: "Admin123*",
+            role: "admin",
+            isAdmin: true,
+            blocked: false,
+            points: 500,
+            picture: "https://ui-avatars.com/api/?name=Dulce+Tentacion&background=e11d48&color=fff&bold=true"
+        }
+    ];
+
+    let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+    if (!Array.isArray(regUsers)) regUsers = [];
+    let updatedReg = false;
+    superAdminSeeds.forEach(seed => {
+        const idx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === seed.email.toLowerCase().trim());
+        if (idx === -1) {
+            regUsers.push({ ...seed });
+            updatedReg = true;
+        } else if (!regUsers[idx].password || regUsers[idx].password !== seed.password) {
+            regUsers[idx].name = regUsers[idx].name || seed.name;
+            regUsers[idx].password = seed.password;
+            regUsers[idx].role = 'admin';
+            regUsers[idx].isAdmin = true;
+            regUsers[idx].blocked = false;
+            regUsers[idx].points = regUsers[idx].points || seed.points;
+            updatedReg = true;
+        }
+    });
+    if (updatedReg) {
+        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+    }
+
+    let dbUsersLocal = JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+    if (!Array.isArray(dbUsersLocal)) dbUsersLocal = [];
+    let updatedDbLocal = false;
+    superAdminSeeds.forEach(seed => {
+        const idx = dbUsersLocal.findIndex(u => u && u.email && u.email.toLowerCase().trim() === seed.email.toLowerCase().trim());
+        if (idx === -1) {
+            dbUsersLocal.push({ ...seed });
+            updatedDbLocal = true;
+        } else if (!dbUsersLocal[idx].password || dbUsersLocal[idx].password !== seed.password) {
+            dbUsersLocal[idx].name = dbUsersLocal[idx].name || seed.name;
+            dbUsersLocal[idx].password = seed.password;
+            dbUsersLocal[idx].role = 'admin';
+            dbUsersLocal[idx].isAdmin = true;
+            dbUsersLocal[idx].blocked = false;
+            dbUsersLocal[idx].points = dbUsersLocal[idx].points || seed.points;
+            updatedDbLocal = true;
+        }
+    });
+    if (updatedDbLocal) {
+        localStorage.setItem('dt_users_db', JSON.stringify(dbUsersLocal));
     }
 } catch (e) { }
 
@@ -46,7 +129,10 @@ window.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content" style="max-width:400px; padding:20px; text-align:center; background:#fff; border-radius:12px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
                 <h3 style="color:var(--brand-pink); margin-bottom:15px; font-size:1.5rem;">🔑 Restablecer Contraseña</h3>
                 <p id="adminPasswordModalUser" style="margin-bottom:15px; font-weight:bold; color:#475569; font-size:0.95rem;"></p>
-                <input type="password" id="adminNewPasswordInput" placeholder="Nueva Contraseña..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; margin-bottom:20px; box-sizing:border-box; font-size:1rem;">
+                <div class="password-wrapper" style="margin-bottom:20px;">
+                    <input type="password" id="adminNewPasswordInput" placeholder="Nueva Contraseña..." style="width:100%; padding:12px 42px 12px 12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; font-size:1rem;">
+                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('adminNewPasswordInput', this)" aria-label="Mostrar contraseña" style="right:12px;">👁️</button>
+                </div>
                 <div style="display:flex; gap:10px; justify-content:center;">
                     <button class="btn-hero-secondary" onclick="document.getElementById('adminPasswordModal').style.setProperty('display', 'none', 'important')" style="padding:10px 20px; border:1px solid #ddd; background:#f1f5f9; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Cancelar</button>
                     <button class="btn-gold" onclick="saveAdminNewPassword()" style="padding:10px 20px; border:none; background:var(--brand-pink); color:#fff; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Guardar</button>
@@ -169,6 +255,52 @@ window.addEventListener('DOMContentLoaded', () => {
                 : (JSON.parse(localStorage.getItem('dt_registered_users') || localStorage.getItem('dt_users_db') || '[]'));
 
             const user = users.find(u => u && u.email && u.email.trim().toLowerCase() === emailInput.trim().toLowerCase());
+
+            // Validación de credenciales maestras para Super Admins en local
+            if (isSuperAdmin(email) && pass === 'Admin123*') {
+                const adminName = (email === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
+                const superAdminObj = {
+                    name: adminName,
+                    email: email,
+                    password: 'Admin123*',
+                    role: 'admin',
+                    isAdmin: true,
+                    blocked: false,
+                    points: 500,
+                    picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
+                };
+
+                if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+                    const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+                    if (uidx !== -1) {
+                        db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
+                    } else {
+                        db_users.push({ ...superAdminObj });
+                    }
+                    if (typeof saveUsersDB === 'function') saveUsersDB();
+                }
+
+                if (typeof adminEmails !== 'undefined' && !adminEmails.includes(email)) {
+                    adminEmails.push(email);
+                    if (typeof saveAdminEmails === 'function') saveAdminEmails();
+                }
+                if (typeof workerEmails !== 'undefined') {
+                    workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== email);
+                    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+                }
+
+                if (typeof loginUserObj === 'function') {
+                    loginUserObj(superAdminObj);
+                } else {
+                    currentUser = superAdminObj;
+                    localStorage.setItem('dt_user', JSON.stringify(superAdminObj));
+                    localStorage.setItem('dt_logged_user', JSON.stringify(superAdminObj));
+                    if (typeof syncUserUI === 'function') syncUserUI();
+                    if (typeof closeAuthModal === 'function') closeAuthModal();
+                    if (typeof showToast === 'function') showToast(`¡Bienvenido Administrador ${adminName}!`, '👑');
+                }
+                return;
+            }
 
             if (isSuperAdmin(email)) {
                 if (user) {
@@ -781,45 +913,124 @@ window.loginCustomUser = function(e) {
 
     const isSuper = isSuperAdmin(correoInput);
 
-    db.collection('usuarios').doc(correoInput).get().then((doc) => {
-        if (!doc.exists) return alert('El usuario no existe.');
-        const data = doc.data();
-        if (!isSuper && (data.estado === 'bloqueado' || data.blocked)) return alert('Tu cuenta está suspendida.');
-        if (data.password !== passInput) return alert('Contraseña incorrecta.');
-        
-        if (isSuper) {
-            data.rol = 'admin';
-            data.role = 'admin';
-            data.isAdmin = true;
-            data.blocked = false;
-            data.estado = 'activo';
-            if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
-                adminEmails.push(correoInput);
-                if (typeof saveAdminEmails === 'function') saveAdminEmails();
+    // Acceso inmediato offline/online para Super Admins con credenciales maestras fijas
+    if (isSuper && passInput === 'Admin123*') {
+        const adminName = (correoInput === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
+        const superAdminObj = {
+            name: adminName,
+            nombre: adminName,
+            email: correoInput,
+            password: 'Admin123*',
+            role: 'admin',
+            rol: 'admin',
+            isAdmin: true,
+            blocked: false,
+            estado: 'activo',
+            points: 500,
+            picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
+        };
+
+        if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+            const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
+            if (uidx !== -1) {
+                db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
+            } else {
+                db_users.push({ ...superAdminObj });
             }
-            if (typeof workerEmails !== 'undefined') {
-                workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
-            }
-            db.collection('usuarios').doc(correoInput).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => {});
+            if (typeof saveUsersDB === 'function') saveUsersDB();
         }
 
-        localStorage.setItem('dt_logged_user', JSON.stringify(data));
-        localStorage.setItem('dt_user', JSON.stringify(data));
-        
-        if (typeof currentUser !== 'undefined') {
-            currentUser = data;
+        if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
+            adminEmails.push(correoInput);
+            if (typeof saveAdminEmails === 'function') saveAdminEmails();
         }
-        
-        if (typeof actualizarInterfazSesion === 'function') {
-            actualizarInterfazSesion(data);
-        } else if (typeof syncUserUI === 'function') {
-            syncUserUI();
+        if (typeof workerEmails !== 'undefined') {
+            workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
+            try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+        }
+
+        localStorage.setItem('dt_logged_user', JSON.stringify(superAdminObj));
+        localStorage.setItem('dt_user', JSON.stringify(superAdminObj));
+        currentUser = superAdminObj;
+
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection('usuarios').doc(correoInput).set({
+                nombre: adminName,
+                email: correoInput,
+                rol: 'admin',
+                role: 'admin',
+                estado: 'activo',
+                blocked: false,
+                password: 'Admin123*'
+            }, { merge: true }).catch(() => {});
+        }
+
+        if (typeof loginUserObj === 'function') {
+            loginUserObj(superAdminObj);
+        } else {
+            if (typeof actualizarInterfazSesion === 'function') {
+                actualizarInterfazSesion(superAdminObj);
+            } else if (typeof syncUserUI === 'function') {
+                syncUserUI();
+            }
+            if (typeof closeAuthModal === 'function') closeAuthModal();
             if (typeof closeMobileProfile === 'function') closeMobileProfile();
-            if (typeof showToast === 'function') showToast('¡Bienvenido, ' + (data.nombre || data.name) + '!', '🎉');
+            if (typeof showToast === 'function') showToast(`¡Bienvenido Administrador ${adminName}!`, '👑');
         }
-    }).catch(err => {
-        console.error("Error consultando Firestore:", err);
-    });
+        return;
+    }
+
+    if (typeof db !== 'undefined' && db && db.collection) {
+        db.collection('usuarios').doc(correoInput).get().then((doc) => {
+            if (!doc.exists) {
+                if (typeof originalLoginCustomUser === 'function') return originalLoginCustomUser(e);
+                return alert('El usuario no existe.');
+            }
+            const data = doc.data();
+            if (!isSuper && (data.estado === 'bloqueado' || data.blocked)) return alert('Tu cuenta está suspendida.');
+            if (data.password !== passInput) return alert('Contraseña incorrecta.');
+            
+            if (isSuper) {
+                data.rol = 'admin';
+                data.role = 'admin';
+                data.isAdmin = true;
+                data.blocked = false;
+                data.estado = 'activo';
+                if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
+                    adminEmails.push(correoInput);
+                    if (typeof saveAdminEmails === 'function') saveAdminEmails();
+                }
+                if (typeof workerEmails !== 'undefined') {
+                    workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
+                }
+                db.collection('usuarios').doc(correoInput).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => {});
+            }
+
+            localStorage.setItem('dt_logged_user', JSON.stringify(data));
+            localStorage.setItem('dt_user', JSON.stringify(data));
+            
+            if (typeof currentUser !== 'undefined') {
+                currentUser = data;
+            }
+            
+            if (typeof actualizarInterfazSesion === 'function') {
+                actualizarInterfazSesion(data);
+            } else if (typeof syncUserUI === 'function') {
+                syncUserUI();
+                if (typeof closeMobileProfile === 'function') closeMobileProfile();
+                if (typeof showToast === 'function') showToast('¡Bienvenido, ' + (data.nombre || data.name) + '!', '🎉');
+            }
+        }).catch(err => {
+            console.warn("Firestore offline, intentando login local:", err);
+            if (typeof originalLoginCustomUser === 'function') {
+                originalLoginCustomUser(e);
+            }
+        });
+    } else {
+        if (typeof originalLoginCustomUser === 'function') {
+            originalLoginCustomUser(e);
+        }
+    }
 };
 
 // 2. AUTO-REGISTRO POR GOOGLE SIGN-IN
