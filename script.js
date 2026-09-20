@@ -70,6 +70,19 @@ let lastOrderCount = 0;
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
+    try {
+        const savedProds = JSON.parse(localStorage.getItem('dt_products'));
+        if (savedProds && Array.isArray(savedProds) && savedProds.length > 0) {
+            savedProds.forEach(sp => {
+                const idx = products.findIndex(p => p.id === sp.id);
+                if (idx > -1) {
+                    products[idx] = { ...products[idx], ...sp };
+                } else {
+                    products.push(sp);
+                }
+            });
+        }
+    } catch (e) { }
     try { const c = localStorage.getItem('dt_cart'); if (c) cart = JSON.parse(c); } catch (e) { }
     try {
         const u = localStorage.getItem('dt_user');
@@ -121,6 +134,7 @@ window.addEventListener('DOMContentLoaded', () => {
     updateCart();
     syncUserUI();
     if (window.renderAdminNotifList) window.renderAdminNotifList();
+    if (typeof window.checkRemoteUserSession === 'function') window.checkRemoteUserSession();
 
     // Configurar scroll de categorías con el ratón en PC
     const sliders = document.querySelectorAll('.cat-chip-scroll');
@@ -1106,17 +1120,44 @@ function saveStockConfig() { try { localStorage.setItem('dt_stock_config', JSON.
 function saveUsersDB() { try { localStorage.setItem('dt_users_db', JSON.stringify(db_users)); } catch (e) { } }
 
 function loginUserObj(userObj) {
-    if (userObj && userObj.email && (SUPER_ADMINS.includes(userObj.email.toLowerCase().trim()))) {
-        userObj.role = 'admin';
-        userObj.isAdmin = true;
-        userObj.blocked = false;
-        if (!adminEmails.includes(userObj.email.toLowerCase().trim())) adminEmails.push(userObj.email.toLowerCase().trim());
-        workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== userObj.email.toLowerCase().trim());
-        saveAdminEmails();
+    if (userObj && userObj.email) {
+        const uEmail = userObj.email.toLowerCase().trim();
+        const isSuper = (typeof SUPER_ADMINS !== 'undefined' && SUPER_ADMINS.includes(uEmail));
+        if (isSuper) {
+            userObj.role = 'admin';
+            userObj.rol = 'admin';
+            userObj.isAdmin = true;
+            userObj.blocked = false;
+            userObj.vip = true;
+            userObj.isVip = true;
+            userObj.vipStatus = 'activo';
+            if (typeof adminEmails !== 'undefined' && !adminEmails.includes(uEmail)) adminEmails.push(uEmail);
+            if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== uEmail);
+            saveAdminEmails();
+        } else {
+            // Cruzar con dt_registered_users o dt_users_db
+            const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            const dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+            const reg = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail) ||
+                        dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
+            if (reg) {
+                userObj.role = reg.role || reg.rol || userObj.role || 'cliente';
+                userObj.rol = userObj.role;
+                userObj.isAdmin = (userObj.role === 'admin');
+                userObj.isVip = !!(reg.isVip || reg.vip || (userObj.role === 'vip'));
+                userObj.vip = userObj.isVip;
+                userObj.vipStatus = reg.vipStatus || (userObj.isVip ? 'activo' : (userObj.vipStatus || 'inactivo'));
+                userObj.points = (reg.points !== undefined && reg.points !== null) ? reg.points : (userObj.points || 0);
+                if (reg.blocked !== undefined) userObj.blocked = !!reg.blocked;
+            }
+        }
     }
     currentUser = userObj;
     saveUser(); syncUserUI(); closeAuthModal();
     try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch (e) { }
+    if (typeof window.checkRemoteUserSession === 'function') {
+        window.checkRemoteUserSession();
+    }
     const orderName = document.getElementById('orderName');
     if (orderName && !orderName.value) orderName.value = currentUser.name;
     const firstName = (currentUser.name || '').split(' ')[0];
@@ -1468,7 +1509,7 @@ function renderStockAdmin() {
         const currentPoints = p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : 0);
         return `
                 <div class="admin-stock-card" data-id="${p.id}" style="flex: 1 1 calc(33% - 10px); min-width: 140px; background:#fff; border:1px solid ${isOut ? '#fecdd3' : '#bbf7d0'}; border-radius:10px; padding:10px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
-                    <img src="${safeImg(p.img)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:50px; height:50px; object-fit:cover; border-radius:8px; opacity:${isOut ? '0.5' : '1'}; filter:${isOut ? 'grayscale(100%)' : 'none'};">
+                    <img src="${safeImg(p.img || p.image)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:50px; height:50px; object-fit:cover; border-radius:8px; opacity:${isOut ? '0.5' : '1'}; filter:${isOut ? 'grayscale(100%)' : 'none'};">
                     <strong style="font-size:0.85rem; line-height:1.2;">${p.name}</strong>
                     <button onclick="toggleStock(${p.id})" style="width:100%; padding:8px; border-radius:6px; font-weight:bold; font-size:0.8rem; cursor:pointer; border:none; color:#fff; background:${isOut ? '#e11d48' : '#10b981'}; transition:all 0.2s;">
                         ${isOut ? '❌ Agotado' : '✅ Disponible'}
@@ -1549,6 +1590,40 @@ function updateProductPoints(pId, pointsVal) {
     if (typeof showToast === 'function') showToast(`Puntos asignados: ${pts} ⭐`, '✅');
 }
 window.updateProductPoints = updateProductPoints;
+
+// ===== CARGA Y EDICIÓN DE FOTOS DE PRODUCTOS (FILEREADER / BASE64) =====
+function handleProductPhotoUpload(input) {
+    if (input && input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = reader.result;
+            const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
+            if (previewImg) {
+                previewImg.src = dataUrl;
+                previewImg.style.display = 'block';
+            }
+            const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
+            if (imgInput) {
+                imgInput.value = dataUrl;
+                imgInput.setAttribute('data-file-name', file.name);
+            }
+            window.tempProductImg = dataUrl;
+            if (typeof showToast === 'function') showToast("Foto cargada con éxito", "📸");
+        };
+        reader.readAsDataURL(file);
+    }
+}
+window.handleProductPhotoUpload = handleProductPhotoUpload;
+
+function saveProduct(pId) {
+    if (typeof window.guardarEdicionProducto === 'function') {
+        window.guardarEdicionProducto(pId);
+        return;
+    }
+}
+window.saveProduct = saveProduct;
+window.updateProduct = saveProduct;
 
 // --- GESTIÓN DE RECOMPENSAS CLUB VIP & PUNTOS ---
 window.tempAdminRewards = null;
@@ -2153,6 +2228,58 @@ function logoutUser(e) {
 }
 
 function syncUserUI() {
+    // 1. Sincronización automática de sesión con dt_registered_users y dt_users_db
+    const storedUserRaw = localStorage.getItem('dt_user');
+    if (storedUserRaw) {
+        try {
+            const parsedUser = JSON.parse(storedUserRaw);
+            if (parsedUser && parsedUser.email) {
+                const uEmail = (parsedUser.email || '').toLowerCase().trim();
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
+                    ? window.SUPER_ADMINS.includes(uEmail)
+                    : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+
+                const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                const dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+                const registeredUser = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail) ||
+                                       dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
+
+                if (isSuper) {
+                    parsedUser.role = 'admin';
+                    parsedUser.rol = 'admin';
+                    parsedUser.isAdmin = true;
+                    parsedUser.blocked = false;
+                    parsedUser.vip = true;
+                    parsedUser.isVip = true;
+                    parsedUser.vipStatus = 'activo';
+                } else if (registeredUser) {
+                    parsedUser.role = registeredUser.role || registeredUser.rol || parsedUser.role || 'cliente';
+                    parsedUser.rol = parsedUser.role;
+                    parsedUser.isAdmin = (parsedUser.role === 'admin');
+                    parsedUser.isVip = !!(registeredUser.isVip || registeredUser.vip || (parsedUser.role === 'vip'));
+                    parsedUser.vip = parsedUser.isVip;
+                    parsedUser.vipStatus = registeredUser.vipStatus || (parsedUser.isVip ? 'activo' : (parsedUser.vipStatus || 'inactivo'));
+                    parsedUser.points = (registeredUser.points !== undefined && registeredUser.points !== null) ? registeredUser.points : (parsedUser.points || 0);
+                    if (registeredUser.blocked !== undefined) parsedUser.blocked = !!registeredUser.blocked;
+                }
+
+                currentUser = parsedUser;
+                localStorage.setItem('dt_user', JSON.stringify(currentUser));
+
+                if (typeof adminEmails !== 'undefined' && Array.isArray(adminEmails)) {
+                    if (parsedUser.role === 'admin' && !adminEmails.includes(parsedUser.email)) adminEmails.push(parsedUser.email);
+                    else if (parsedUser.role !== 'admin' && !isSuper) adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== uEmail);
+                }
+                if (typeof workerEmails !== 'undefined' && Array.isArray(workerEmails)) {
+                    if (parsedUser.role === 'trabajador' && !workerEmails.includes(parsedUser.email)) workerEmails.push(parsedUser.email);
+                    else if (parsedUser.role !== 'trabajador') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== uEmail);
+                }
+            }
+        } catch (e) {
+            console.warn("Error sincronizando sesión activa:", e);
+        }
+    }
+
     const loginBtn = document.getElementById('btn-google-login');
     const pill = document.getElementById('user-pill-container');
     const mobileGoogleBtn = document.getElementById('mobile-google-btn');
@@ -2163,7 +2290,7 @@ function syncUserUI() {
     if (currentUser) {
         if (loginBtn) loginBtn.style.display = 'none';
 
-        const isVip = currentUser.vip;
+        const isVip = !!(currentUser.vip || currentUser.isVip || currentUser.role === 'vip' || currentUser.vipStatus === 'activo');
         const vipLabel = isVip ? ' (VIP)' : '';
         const vipColor = isVip ? '#d97706' : '';
 
@@ -2182,7 +2309,7 @@ function syncUserUI() {
                 }
             }
 
-            const firstName = currentUser.name.split(' ')[0];
+            const firstName = (currentUser.name || 'Usuario').split(' ')[0];
             const uName = document.getElementById('user-name');
             uName.innerText = `Hola, ${firstName}`;
             uName.style.color = vipColor;
@@ -2240,7 +2367,7 @@ function syncUserUI() {
             }
         }
 
-        const vipHtml = currentUser.vip
+        const vipHtml = isVip
             ? `<div class="vip-card-golden"><strong>👑 Membresía VIP Mensual Activa</strong> • 5% Dcto Preferencial</div>`
             : `<button class="vip-upgrade-btn" onclick="window.openVipTermsModal && window.openVipTermsModal(event)">✨ Pasar a VIP Oro</button>`;
 
@@ -2252,8 +2379,12 @@ function syncUserUI() {
         if (hIncentive) hIncentive.style.display = 'none';
         if (cIncentive) cIncentive.style.display = 'none';
 
-        const isAdmin = adminEmails.includes(currentUser.email);
-        const isWorker = workerEmails.includes(currentUser.email);
+        const normEmail = (currentUser.email || '').toLowerCase().trim();
+        const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') 
+            ? window.SUPER_ADMINS.includes(normEmail) 
+            : (normEmail === 'pablojose182017@gmail.com' || normEmail === 'dulcestentaciones2004@gmail.com');
+        const isAdmin = isSuper || (currentUser.role === 'admin') || (currentUser.rol === 'admin') || (currentUser.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
+        const isWorker = !isSuper && !isAdmin && ((currentUser.role === 'trabajador') || (currentUser.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email)));
         const deskBtn = document.getElementById('desk-admin-btn');
         const mobBtn = document.getElementById('mob-admin-btn');
 
@@ -2300,6 +2431,53 @@ function syncUserUI() {
     if (typeof renderRewards === 'function') renderRewards();
     if (window.renderAdminNotifList) window.renderAdminNotifList();
 }
+
+window.checkRemoteUserSession = function() {
+    if (!currentUser || !currentUser.email) return;
+    const uEmail = currentUser.email.toLowerCase().trim();
+    if (window.db && typeof window.db.collection === 'function') {
+        window.db.collection('usuarios').doc(currentUser.email).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data) {
+                    let changed = false;
+                    const newRole = data.role || data.rol || currentUser.role || 'cliente';
+                    const newVip = !!(data.isVip || data.vip || (newRole === 'vip'));
+                    const newVipStatus = data.vipStatus || (newVip ? 'activo' : 'inactivo');
+                    const newPoints = (data.points !== undefined && data.points !== null) ? data.points : currentUser.points;
+
+                    if (currentUser.role !== newRole || currentUser.isVip !== newVip || currentUser.points !== newPoints || currentUser.vipStatus !== newVipStatus) {
+                        currentUser.role = newRole;
+                        currentUser.rol = newRole;
+                        currentUser.isAdmin = (newRole === 'admin');
+                        currentUser.isVip = newVip;
+                        currentUser.vip = newVip;
+                        currentUser.vipStatus = newVipStatus;
+                        currentUser.points = newPoints;
+                        localStorage.setItem('dt_user', JSON.stringify(currentUser));
+                        changed = true;
+                    }
+
+                    // Sincronizar también dt_registered_users
+                    let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                    if (!Array.isArray(regUsers)) regUsers = [];
+                    let rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
+                    if (rIdx !== -1) {
+                        regUsers[rIdx] = { ...regUsers[rIdx], ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints };
+                    } else {
+                        regUsers.push({ email: currentUser.email, ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints });
+                    }
+                    localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
+                    if (changed && typeof syncUserUI === 'function') {
+                        syncUserUI();
+                    }
+                }
+            }
+        }).catch(err => console.warn('Error consultando usuario remoto en Firestore:', err));
+    }
+};
+
 
 function toggleUserDropdown(e) {
     e.stopPropagation();
@@ -2443,7 +2621,7 @@ function createCardHTML(p) {
     return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${btnAction} }" style="position:relative;">
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt};">
-                <img src="${safeImg(p.img)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';">
+                <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';">
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
@@ -3170,23 +3348,110 @@ function requestVipWhatsApp() {
     window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-// ===== ASISTENTE DE TORTAS PERSONALIZADAS =====
+// ===== ASISTENTE DE TORTAS PERSONALIZADAS (WIZARD POR PASOS) =====
+let currentWizardStep = 1;
 let wizardData = {
-    sabor: '', tamano: '', precio: 0, diseno: '',
-    mensaje: '', date: '', time: ''
+    sabor: 'Clásica Tres Leches',
+    tamano: '1/4 (10 porciones)',
+    precio: 45000,
+    diseno: 'Diseño Tradicional',
+    disenoImg: '',
+    mensaje: '',
+    date: '',
+    time: '',
+    extras: {}
 };
 
 function openWizard() {
-    document.getElementById('modal-evento-personalizado').style.display = 'flex';
-    wizardData = { sabor: '', tamano: '', precio: 0, diseno: '', mensaje: '', date: '', time: '' };
-    document.querySelectorAll('.step-option-card, .design-thumb').forEach(el => el.classList.remove('selected'));
-    document.getElementById('w-message').value = '';
-    document.getElementById('w-date').value = '';
-    document.getElementById('w-time').value = '';
+    const modal = document.getElementById('modal-evento-personalizado');
+    if (modal) modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Inicializar datos por defecto
+    wizardData = {
+        sabor: 'Clásica Tres Leches',
+        tamano: '1/4 (10 porciones)',
+        precio: 45000,
+        diseno: 'Diseño Tradicional',
+        disenoImg: '',
+        mensaje: '',
+        date: '',
+        time: '',
+        extras: {}
+    };
+
+    // Calcular precios según sabor predeterminado
+    const prices = getCakePrices(wizardData.sabor);
+    updateSizePrices(prices);
+    wizardData.precio = prices[wizardData.tamano] || 45000;
+
+    // Seleccionar visualmente primera tarjeta de sabor
+    document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => {
+        if (el.getAttribute('data-flavor') === wizardData.sabor) el.classList.add('selected');
+        else el.classList.remove('selected');
+    });
+
+    // Seleccionar visualmente primera tarjeta de tamaño
+    document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => {
+        if (el.getAttribute('data-size') === wizardData.tamano) el.classList.add('selected');
+        else el.classList.remove('selected');
+    });
+
+    // Reiniciar bloque de subir foto propia
+    const uploadCard = document.getElementById('cardUploadCustomDesign');
+    if (uploadCard) uploadCard.classList.remove('selected');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
+    const uploadPreview = document.getElementById('upload-preview-block');
+    if (uploadPreview) uploadPreview.style.display = 'none';
+    const photoInput = document.getElementById('wizard-photo-input');
+    if (photoInput) photoInput.value = '';
+
+    // Si existen diseños en el catálogo, seleccionar el primero
+    const firstDesign = document.querySelector('#cake-design-grid .design-thumb');
+    if (firstDesign) {
+        document.querySelectorAll('#cake-design-grid .design-thumb').forEach(d => d.classList.remove('selected'));
+        firstDesign.classList.add('selected');
+        const img = firstDesign.querySelector('img');
+        const name = firstDesign.querySelector('div')?.innerText.trim() || 'Diseño de Catálogo';
+        wizardData.diseno = name;
+        if (img) wizardData.disenoImg = img.src;
+    }
+
+    // Reiniciar campos del paso 4
+    const msgInput = document.getElementById('w-message');
+    if (msgInput) msgInput.value = '';
+    const dateInput = document.getElementById('w-date');
+    if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const yyyy = tomorrow.getFullYear();
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        dateInput.min = `${yyyy}-${mm}-${dd}`;
+        dateInput.value = '';
+    }
+    const timeInput = document.getElementById('w-time');
+    if (timeInput) timeInput.value = '';
+    const topperBox = document.getElementById('extra-topper');
+    if (topperBox) topperBox.checked = false;
+    const velaBox = document.getElementById('extra-vela');
+    if (velaBox) velaBox.checked = false;
+    const errDiv = document.getElementById('w-error');
+    if (errDiv) errDiv.style.display = 'none';
+
+    goToWizardStep(1);
+    updateWizardSummary();
+
+    if (typeof window.renderConfigTortasPublica === 'function') {
+        window.renderConfigTortasPublica();
+    }
 }
 
 function closeWizard() {
-    document.getElementById('modal-evento-personalizado').style.display = 'none';
+    const modal = document.getElementById('modal-evento-personalizado');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
 }
 
 function getCakePrices(sabor) {
@@ -3195,8 +3460,8 @@ function getCakePrices(sabor) {
     if (window.dt_tortas_config && window.dt_tortas_config.preciosPorSabor) {
         const config = window.dt_tortas_config.preciosPorSabor;
         let s = 'tresleches';
-        if (sabor.includes('Ponqué')) s = 'ponque';
-        if (sabor.includes('Chocoarequipe')) s = 'chocoarequipe';
+        if (sabor && sabor.includes('Ponqué')) s = 'ponque';
+        if (sabor && sabor.includes('Chocoarequipe')) s = 'chocoarequipe';
 
         if (config[s]) {
             prices['1/4 (10 porciones)'] = config[s].q;
@@ -3211,54 +3476,234 @@ function getCakePrices(sabor) {
     return prices;
 }
 
-function selectSabor(sabor, element) {
+function updateSizePrices(prices) {
+    const p14 = document.getElementById('torta-precio-1-4');
+    if (p14 && prices['1/4 (10 porciones)']) p14.innerText = `$${prices['1/4 (10 porciones)'].toLocaleString('es-CO')} COP`;
+
+    const p12 = document.getElementById('torta-precio-1-2');
+    if (p12 && prices['1/2 (20 porciones)']) p12.innerText = `$${prices['1/2 (20 porciones)'].toLocaleString('es-CO')} COP`;
+
+    const p11 = document.getElementById('torta-precio-1-1');
+    if (p11 && prices['1 Libra (30 porciones)']) p11.innerText = `$${prices['1 Libra (30 porciones)'].toLocaleString('es-CO')} COP`;
+}
+
+function selectSaborCard(sabor, element) {
     wizardData.sabor = sabor;
-    element.parentElement.querySelectorAll('.step-option-card').forEach(el => el.classList.remove('selected'));
-    element.classList.add('selected');
+    document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => el.classList.remove('selected'));
+    if (element) element.classList.add('selected');
 
     const prices = getCakePrices(sabor);
-    const sizeCards = document.querySelectorAll('#cake-size-grid .step-option-card');
-    sizeCards.forEach(card => {
-        const size = card.getAttribute('data-size');
-        const price = prices[size];
-        if (price) {
-            card.querySelector('.size-price').innerText = `$${price.toLocaleString()}`;
-            if (wizardData.tamano === size) {
-                wizardData.precio = price;
-            }
-        }
-    });
+    updateSizePrices(prices);
+
+    if (wizardData.tamano && prices[wizardData.tamano]) {
+        wizardData.precio = prices[wizardData.tamano];
+    } else {
+        wizardData.precio = prices['1/4 (10 porciones)'] || 45000;
+    }
+
+    updateWizardSummary();
 }
 
+// Alias para compatibilidad con control-roles.js
+function selectSabor(sabor, element) {
+    selectSaborCard(sabor, element);
+}
+
+function selectTamanoCard(tamano, element) {
+    wizardData.tamano = tamano;
+    document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => el.classList.remove('selected'));
+    if (element) element.classList.add('selected');
+
+    const prices = getCakePrices(wizardData.sabor);
+    if (prices[tamano]) {
+        wizardData.precio = prices[tamano];
+    }
+
+    updateWizardSummary();
+}
+
+// Alias para compatibilidad
 function selectTamano(element) {
     const tamano = element.getAttribute('data-size');
-    const prices = cakePrices[wizardData.sabor] || cakePrices['default'];
-
-    wizardData.tamano = tamano;
-    wizardData.precio = prices[tamano];
-
-    element.parentElement.querySelectorAll('.step-option-card').forEach(el => el.classList.remove('selected'));
-    element.classList.add('selected');
+    selectTamanoCard(tamano, element);
 }
 
-function selectDiseno(diseno, element) {
+function selectDisenoCard(diseno, imgUrl, element) {
     wizardData.diseno = diseno;
-    element.parentElement.querySelectorAll('.design-thumb').forEach(el => el.classList.remove('selected'));
-    element.classList.add('selected');
+    wizardData.disenoImg = imgUrl || '';
+
+    // Quitar selección de foto personalizada si la hubiera
+    const uploadCard = document.getElementById('cardUploadCustomDesign');
+    if (uploadCard) uploadCard.classList.remove('selected');
+
+    // Seleccionar miniatura
+    document.querySelectorAll('.wizard-design-grid .design-thumb').forEach(el => el.classList.remove('selected'));
+    if (element) element.classList.add('selected');
+
+    updateWizardSummary();
+}
+
+// Alias para compatibilidad con control-roles.js
+function selectDiseno(diseno, element) {
+    const imgEl = element ? element.querySelector('img') : null;
+    const imgUrl = imgEl ? imgEl.src : '';
+    selectDisenoCard(diseno, imgUrl, element);
+}
+
+function handleWizardCustomPhoto(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            wizardData.diseno = 'Diseño Propio (Foto Cliente)';
+            wizardData.disenoImg = e.target.result;
+
+            const uploadCard = document.getElementById('cardUploadCustomDesign');
+            if (uploadCard) uploadCard.classList.add('selected');
+
+            const placeholder = document.getElementById('upload-placeholder');
+            if (placeholder) placeholder.style.display = 'none';
+
+            const preview = document.getElementById('upload-preview-block');
+            if (preview) preview.style.display = 'flex';
+
+            const previewImg = document.getElementById('upload-preview-img');
+            if (previewImg) previewImg.src = e.target.result;
+
+            const nameEl = document.getElementById('upload-file-name');
+            if (nameEl) nameEl.innerText = file.name;
+
+            // Desmarcar miniaturas del catálogo
+            document.querySelectorAll('.wizard-design-grid .design-thumb').forEach(el => el.classList.remove('selected'));
+
+            if (typeof showToast === 'function') showToast("Foto de diseño cargada correctamente", "📸");
+            updateWizardSummary();
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function toggleWizardExtra(name, price, checked) {
+    if (!wizardData.extras) wizardData.extras = {};
+    if (checked) {
+        wizardData.extras[name] = price;
+    } else {
+        delete wizardData.extras[name];
+    }
+    updateWizardSummary();
 }
 
 function saveWizardField(field, value) {
     wizardData[field] = value;
+    updateWizardSummary();
+}
+
+function updateWizardSummary() {
+    const summaryBadge = document.getElementById('wizard-summary-badge');
+    const summaryTotal = document.getElementById('wizard-summary-total');
+
+    let extrasTotal = 0;
+    if (wizardData.extras) {
+        Object.values(wizardData.extras).forEach(p => extrasTotal += (Number(p) || 0));
+    }
+
+    const basePrice = Number(wizardData.precio) || 45000;
+    const grandTotal = basePrice + extrasTotal;
+
+    if (summaryBadge) {
+        const tShort = (wizardData.tamano || '1/4').split(' ')[0];
+        const sShort = (wizardData.sabor || 'Tres Leches').replace('Clásica ', '');
+        summaryBadge.innerText = `${tShort} • ${sShort}`;
+    }
+
+    if (summaryTotal) {
+        summaryTotal.innerText = `$${grandTotal.toLocaleString('es-CO')} COP`;
+    }
+}
+
+function goToWizardStep(step) {
+    if (step < 1) step = 1;
+    if (step > 4) step = 4;
+
+    // Validar pasos previos al avanzar
+    if (step > 1 && !wizardData.sabor) {
+        if (typeof showToast === 'function') showToast("Por favor selecciona un sabor primero.", "⚠️");
+        return;
+    }
+    if (step > 2 && !wizardData.tamano) {
+        if (typeof showToast === 'function') showToast("Por favor selecciona un tamaño.", "⚠️");
+        return;
+    }
+    if (step > 3 && !wizardData.diseno && !wizardData.disenoImg) {
+        if (typeof showToast === 'function') showToast("Por favor selecciona un diseño o sube una foto.", "⚠️");
+        return;
+    }
+
+    currentWizardStep = step;
+
+    for (let i = 1; i <= 4; i++) {
+        const panel = document.getElementById(`wizard-panel-${i}`);
+        if (panel) {
+            if (i === step) {
+                panel.style.display = 'block';
+                panel.classList.add('active');
+            } else {
+                panel.style.display = 'none';
+                panel.classList.remove('active');
+            }
+        }
+
+        const nav = document.getElementById(`step-nav-${i}`);
+        if (nav) {
+            nav.classList.remove('active', 'completed');
+            if (i === step) nav.classList.add('active');
+            else if (i < step) nav.classList.add('completed');
+        }
+
+        if (i < 4) {
+            const conn = document.getElementById(`step-conn-${i}`);
+            if (conn) {
+                if (i < step) conn.classList.add('completed');
+                else conn.classList.remove('completed');
+            }
+        }
+    }
+
+    const body = document.querySelector('.wizard-body');
+    if (body) body.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const btnPrev = document.getElementById('btnWizardPrev');
+    const btnNext = document.getElementById('btnWizardNext');
+    const btnSubmit = document.getElementById('btnWizardSubmit');
+
+    if (btnPrev) btnPrev.style.display = (step === 1) ? 'none' : 'inline-flex';
+    if (btnNext) btnNext.style.display = (step === 4) ? 'none' : 'inline-flex';
+    if (btnSubmit) btnSubmit.style.display = (step === 4) ? 'inline-flex' : 'none';
+
+    updateWizardSummary();
+}
+
+function navWizardStep(delta) {
+    goToWizardStep(currentWizardStep + delta);
 }
 
 function validateWizardDateNew(val) {
-    const selected = new Date(val);
-    const now = new Date();
-    const diffTime = selected - now;
+    if (!val) {
+        wizardData.date = '';
+        return;
+    }
+    const selected = new Date(val + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffTime = selected.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 1) {
-        alert("Por favor selecciona una fecha con al menos 24 horas de anticipación para poder hornear tu pedido.");
+        if (typeof showToast === 'function') {
+            showToast("Por favor selecciona una fecha con al menos 24 horas de anticipación.", "⏱️");
+        } else {
+            alert("Por favor selecciona una fecha con al menos 24 horas de anticipación.");
+        }
         document.getElementById('w-date').value = '';
         wizardData.date = '';
     } else {
@@ -3272,42 +3717,74 @@ function addCustomCakeToCartNew() {
 
     if (!wizardData.sabor) return showToast("Por favor selecciona un sabor.", "⚠️");
     if (!wizardData.tamano) return showToast("Por favor selecciona un tamaño.", "⚠️");
-    if (!wizardData.diseno) return showToast("Por favor selecciona un diseño.", "⚠️");
+    if (!wizardData.diseno) return showToast("Por favor selecciona un diseño o sube una foto.", "⚠️");
 
     if (!wizardData.date || !wizardData.time) {
         if (errDiv) {
-            errDiv.innerText = "⚠️ Por favor selecciona la fecha de entrega y hora.";
+            errDiv.innerText = "⚠️ Por favor completa la fecha de entrega y el horario preferido.";
             errDiv.style.display = 'block';
         }
         const dateInput = document.getElementById('w-date');
-        if (dateInput) { dateInput.style.border = '2px solid #ef4444'; setTimeout(() => dateInput.style.border = '1px solid #cbd5e1', 3000); }
+        if (dateInput && !wizardData.date) {
+            dateInput.style.border = '2px solid #ef4444';
+            setTimeout(() => dateInput.style.border = '1px solid #cbd5e1', 3000);
+            dateInput.focus();
+        }
         const timeInput = document.getElementById('w-time');
-        if (timeInput) { timeInput.style.border = '2px solid #ef4444'; setTimeout(() => timeInput.style.border = '1px solid #cbd5e1', 3000); }
+        if (timeInput && !wizardData.time) {
+            timeInput.style.border = '2px solid #ef4444';
+            setTimeout(() => timeInput.style.border = '1px solid #cbd5e1', 3000);
+        }
         return;
     }
 
+    let extrasTotal = 0;
+    const extrasList = [];
+    if (wizardData.extras) {
+        for (const [k, v] of Object.entries(wizardData.extras)) {
+            if (v > 0) {
+                extrasTotal += v;
+                extrasList.push(k === 'topper' ? 'Topper Acrílico (+$8.000)' : (k === 'vela' ? 'Vela Especial (+$3.000)' : `${k} (+$${v.toLocaleString()})`));
+            }
+        }
+    }
+
+    const basePrice = Number(wizardData.precio) || 45000;
+    const finalPrice = basePrice + extrasTotal;
+
+    const extrasDesc = extrasList.length > 0 ? extrasList.join(', ') : 'Ninguno';
+    const descText = `${wizardData.tamano} • Sabor: ${wizardData.sabor} • Diseño: ${wizardData.diseno}${wizardData.mensaje ? ' • Dedicatoria: "' + wizardData.mensaje + '"' : ''}${extrasList.length > 0 ? ' • Extras: ' + extrasDesc : ''} • Entrega: ${wizardData.date} (${wizardData.time})`;
+
     const customProduct = {
         id: 'custom-' + Date.now(),
-        name: 'Torta Personalizada',
-        desc: `${wizardData.tamano} | Sabor: ${wizardData.sabor} | Diseño: ${wizardData.diseno}`,
-        price: wizardData.precio,
-        img: 'logo_dulce_tentacion.jpg',
+        name: `Torta: ${wizardData.sabor} (${wizardData.tamano.split(' ')[0]})`,
+        desc: descText,
+        price: finalPrice,
+        img: wizardData.disenoImg || 'logo-pys.png',
         type: 'evento',
-        customData: { ...wizardData }
+        customData: {
+            sabor: wizardData.sabor,
+            tamano: wizardData.tamano,
+            diseno: wizardData.diseno,
+            disenoImg: wizardData.disenoImg || '',
+            message: wizardData.mensaje,
+            mensaje: wizardData.mensaje,
+            extras: { ...wizardData.extras },
+            extrasDesc: extrasDesc,
+            date: wizardData.date,
+            time: wizardData.time,
+            basePrice: basePrice,
+            totalPrice: finalPrice
+        }
     };
 
-    const existingIndex = cart.findIndex(i => i.id === customProduct.id);
-    if (existingIndex > -1) {
-        cart[existingIndex].quantity += 1;
-    } else {
-        customProduct.quantity = 1;
-        cart.push(customProduct);
-    }
+    customProduct.quantity = 1;
+    cart.push(customProduct);
 
     saveCart();
     updateCart();
     closeWizard();
-    showToast("¡Torta de celebración agregada a tu carrito!", "🎂");
+    if (typeof showToast === 'function') showToast("¡Torta de celebración agregada a tu carrito!", "🎂");
 
     const cartBtn = document.querySelector('.cart-btn');
     if (cartBtn) {
@@ -3322,10 +3799,28 @@ function addCustomCakeToCartNew() {
         setTimeout(() => mobCartBadge.style.transform = 'scale(1)', 300);
     }
 
-    if (document.getElementById('cartModal').style.display !== 'flex') {
+    const cartModal = document.getElementById('cartModal');
+    if (cartModal && cartModal.style.display !== 'flex' && typeof toggleCart === 'function') {
         toggleCart();
     }
 }
+
+// Exponer funciones en window para acceso global directo
+window.openWizard = openWizard;
+window.closeWizard = closeWizard;
+window.goToWizardStep = goToWizardStep;
+window.navWizardStep = navWizardStep;
+window.selectSaborCard = selectSaborCard;
+window.selectSabor = selectSabor;
+window.selectTamanoCard = selectTamanoCard;
+window.selectTamano = selectTamano;
+window.selectDisenoCard = selectDisenoCard;
+window.selectDiseno = selectDiseno;
+window.handleWizardCustomPhoto = handleWizardCustomPhoto;
+window.toggleWizardExtra = toggleWizardExtra;
+window.saveWizardField = saveWizardField;
+window.validateWizardDateNew = validateWizardDateNew;
+window.addCustomCakeToCartNew = addCustomCakeToCartNew;
 
 // ===== LISTENER CLUB PUNTOS & VIP (SALTO INMEDIATO) =====
 window.addEventListener('DOMContentLoaded', () => {

@@ -177,8 +177,8 @@ window.addEventListener('DOMContentLoaded', () => {
             if (typeof currentUser !== 'undefined' && currentUser) {
                 const normEmail = (currentUser.email || '').toLowerCase().trim();
                 const isSuper = isSuperAdmin(normEmail);
-                const isAdmin = isSuper || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
-                const isWorker = !isSuper && (typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email);
+                const isAdmin = isSuper || (currentUser.role === 'admin') || (currentUser.rol === 'admin') || (currentUser.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
+                const isWorker = !isSuper && !isAdmin && ((currentUser.role === 'trabajador') || (currentUser.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email)));
                 
                 const deskAdminBtn = document.getElementById('desk-admin-btn');
                 const mobAdminBtn = document.getElementById('mob-admin-btn');
@@ -416,7 +416,9 @@ window.confirmRoleChange = function(email) {
     if (!selectEl) return;
     const newRole = selectEl.value; // 'Normal', 'VIP', 'Trabajador', 'Admin'
 
-    const u = db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail);
+    const u = (typeof db_users !== 'undefined' && Array.isArray(db_users))
+        ? db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail)
+        : null;
     if (!u) return;
 
     if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && newRole !== 'Admin') {
@@ -425,35 +427,111 @@ window.confirmRoleChange = function(email) {
     }
 
     // Limpiar roles previos
-    adminEmails = adminEmails.filter(e => e !== email);
-    workerEmails = workerEmails.filter(e => e !== email);
+    adminEmails = (typeof adminEmails !== 'undefined') ? adminEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail) : [];
+    workerEmails = (typeof workerEmails !== 'undefined') ? workerEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail) : [];
     u.vip = false;
+    u.isVip = false;
     delete u.vipExpiresAt;
     u.role = 'cliente';
+    u.rol = 'cliente';
+    u.vipStatus = 'inactivo';
     u.isAdmin = false;
 
     // Aplicar nuevo rol y vigencia VIP si aplica
     if (newRole === 'Admin') {
-        adminEmails.push(email);
+        adminEmails.push(u.email);
         u.role = 'admin';
+        u.rol = 'admin';
         u.isAdmin = true;
     } else if (newRole === 'Trabajador') {
-        workerEmails.push(email);
+        workerEmails.push(u.email);
         u.role = 'trabajador';
+        u.rol = 'trabajador';
+        u.isAdmin = false;
     } else if (newRole === 'VIP') {
         u.vip = true;
+        u.isVip = true;
         u.role = 'vip';
+        u.rol = 'vip';
+        u.vipStatus = 'activo';
         u.vipExpiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // Vigencia 30 días
+    } else { // Normal
+        u.role = 'cliente';
+        u.rol = 'cliente';
+        u.vip = false;
+        u.isVip = false;
+        u.vipStatus = 'inactivo';
     }
 
-    // Persistir localmente en los DB targets explícitos
+    // 1. Guardar en 'dt_registered_users'
+    let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+    if (!Array.isArray(regUsers)) regUsers = [];
+    let rIdx = regUsers.findIndex(x => x && x.email && x.email.toLowerCase().trim() === targetEmail);
+    const regObj = {
+        role: u.role,
+        rol: u.rol,
+        isAdmin: !!u.isAdmin,
+        vip: !!u.vip,
+        isVip: !!u.isVip,
+        vipStatus: u.vipStatus,
+        points: u.points !== undefined ? u.points : 0
+    };
+    if (rIdx !== -1) {
+        regUsers[rIdx] = { ...regUsers[rIdx], ...regObj };
+    } else {
+        regUsers.push({
+            name: u.name || '',
+            email: u.email,
+            phone: u.phone || '',
+            ...regObj
+        });
+    }
+    localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
+    // 2. Persistir localmente en los DB targets explícitos
     if (typeof saveAdminEmails === 'function') saveAdminEmails();
+    try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch(e){}
     try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
     if (typeof saveUsersDB === 'function') saveUsersDB();
-    
+
+    // 3. Si el usuario modificado es el que está logueado en este navegador, actualizar su 'dt_user' al instante
+    const currUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || 'null');
+    if (currUser && (currUser.email || '').toLowerCase().trim() === targetEmail) {
+        currUser.role = u.role;
+        currUser.rol = u.rol;
+        currUser.isAdmin = !!u.isAdmin;
+        currUser.vip = !!u.vip;
+        currUser.isVip = !!u.isVip;
+        currUser.vipStatus = u.vipStatus;
+        currUser.points = u.points !== undefined ? u.points : currUser.points;
+        currentUser = currUser;
+        localStorage.setItem('dt_user', JSON.stringify(currentUser));
+        localStorage.setItem('dt_logged_user', JSON.stringify(currentUser));
+        if (typeof window.syncUserUI === 'function') window.syncUserUI();
+    }
+
+    // 4. Sincronizar el documento correspondiente en Firestore
+    if (window.db && typeof window.db.collection === 'function') {
+        const firestoreData = {
+            nombre: u.name || '',
+            email: u.email,
+            rol: u.rol,
+            role: u.role,
+            isAdmin: !!u.isAdmin,
+            vip: !!u.vip,
+            isVip: !!u.isVip,
+            vipStatus: u.vipStatus,
+            points: u.points !== undefined ? u.points : 0,
+            blocked: !!u.blocked,
+            updatedAt: new Date().toISOString()
+        };
+        window.db.collection('usuarios').doc(u.email).set(firestoreData, { merge: true })
+            .then(() => console.log('Usuario sincronizado con Firestore exitosamente:', u.email))
+            .catch(err => console.warn('Error sincronizando usuario con Firestore:', err));
+    }
+
     renderAdminUsers();
     if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
-    if (currentUser && currentUser.email === email) { window.syncUserUI(); }
     
     if(typeof showToast === 'function') showToast('Rol actualizado a: ' + newRole, '✅');
 };
@@ -1142,22 +1220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Extender el guardado de rol para actualizar en Firestore directamente
-const originalConfirmRoleChangeFS = window.confirmRoleChange;
-window.confirmRoleChange = function(emailTarget) {
-    const targetEmail = (emailTarget || '').toLowerCase().trim();
-    if (SUPER_ADMINS.includes(targetEmail)) {
-        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
-        return;
-    }
-    const selectEl = document.getElementById(`roleSel_${(emailTarget || '').replace(/[@.]/g, '_')}`);
-    if (selectEl) {
-        const nuevoRol = selectEl.value;
-        db.collection('usuarios').doc(emailTarget).update({ rol: nuevoRol })
-            .catch(err => console.warn('No se pudo guardar el rol en Firestore:', err));
-    }
-    if (originalConfirmRoleChangeFS) originalConfirmRoleChangeFS(emailTarget);
-};
+// Sincronización integral de roles manejada en window.confirmRoleChange
 
 // Extender el bloqueo para actualizar en Firestore
 const originalAdminToggleBlockFS = window.adminToggleBlock;
@@ -1773,24 +1836,16 @@ window.abrirModalEdicionProducto = function(pId = null) {
             <div style="margin-bottom:24px;">
                 <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Fotografía del Producto</label>
                 <div style="border:1.5px dashed #cbd5e1; border-radius:12px; background:#f8fafc; padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; position:relative; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <img id="edit-prod-preview" src="${actualImg || 'logo-pys.png'}" alt="Vista previa" onerror="this.onerror=null; this.src='logo-pys.png';" style="height:100px; width:100px; border-radius:8px; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.08); display: ${actualImg ? 'block' : 'none'};">
+                    <img id="editProductImgPreview" class="product-img-preview" src="${actualImg || 'logo-pys.png'}" alt="Vista previa" onerror="this.onerror=null; this.src='logo-pys.png';" style="height:100px; width:100px; border-radius:8px; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.08); display: ${actualImg ? 'block' : 'none'};">
                     
                     <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
-                        <input type="file" id="edit-prod-file-input" accept="image/*" style="display:none;" onchange="
-                            if(this.files && this.files[0]) {
-                                const file = this.files[0];
-                                document.getElementById('edit-prod-img').value = file.name;
-                                const previewImg = document.getElementById('edit-prod-preview');
-                                previewImg.src = URL.createObjectURL(file);
-                                previewImg.style.display = 'block';
-                            }
-                        ">
+                        <input type="file" id="edit-prod-file-input" class="product-file-input" accept="image/*" style="display:none;" onchange="window.handleProductPhotoUpload && window.handleProductPhotoUpload(this)">
                         <button type="button" onclick="document.getElementById('edit-prod-file-input').click()" style="background:#fff; color:#334155; border:1px solid #cbd5e1; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">
                             📁 Seleccionar Foto
                         </button>
                     </div>
                     
-                    <input type="text" id="edit-prod-img" value="${actualImg}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #e2e8f0; font-size:11px; color:#64748b; text-align:center; background:#fff; margin-top:4px; outline:none;" placeholder="Nombre de archivo o URL">
+                    <input type="text" id="edit-prod-img" class="product-img-input" value="${actualImg}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #e2e8f0; font-size:11px; color:#64748b; text-align:center; background:#fff; margin-top:4px; outline:none;" placeholder="Nombre de archivo o URL" oninput="const prev = document.querySelector('#editProductImgPreview, .product-img-preview'); if(prev) { prev.src = this.value; prev.style.display = 'block'; }">
                 </div>
             </div>
             
@@ -1802,24 +1857,48 @@ window.abrirModalEdicionProducto = function(pId = null) {
     modal.style.display = 'flex';
 };
 
+window.handleProductPhotoUpload = function(input) {
+    if (input && input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = reader.result;
+            const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
+            if (previewImg) {
+                previewImg.src = dataUrl;
+                previewImg.style.display = 'block';
+            }
+            const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
+            if (imgInput) {
+                imgInput.value = dataUrl;
+                imgInput.setAttribute('data-file-name', file.name);
+            }
+            window.tempProductImg = dataUrl;
+            if (typeof showToast === 'function') showToast("Foto cargada con éxito", "📸");
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
 window.guardarEdicionProducto = function(pId) {
-    const nuevoNombre = document.getElementById('edit-prod-name').value.trim();
-    const nuevoPrecioStr = document.getElementById('edit-prod-price').value;
-    const nuevaImg = document.getElementById('edit-prod-img').value.trim() || 'logo-pys.png';
-    const nuevaCategoria = document.getElementById('edit-prod-category').value;
+    const nuevoNombre = (document.getElementById('edit-prod-name')?.value || '').trim();
+    const nuevoPrecioStr = document.getElementById('edit-prod-price')?.value || '0';
+    const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
+    const nuevaImg = (window.tempProductImg || (imgInput ? imgInput.value.trim() : '') || 'logo-pys.png');
+    const nuevaCategoria = document.getElementById('edit-prod-category')?.value || 'panaderia';
     const puntosInput = document.getElementById('newProductPoints');
     const nuevosPuntos = puntosInput && puntosInput.value.trim() !== '' ? Math.max(0, parseInt(puntosInput.value) || 0) : 0;
     
     const nuevoPrecio = parseInt(nuevoPrecioStr.replace(/\D/g, ''));
     if (!nuevoNombre || isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
-        if(typeof showToast === 'function') showToast('Completa el nombre y precio', '⚠️');
+        if (typeof showToast === 'function') showToast('Completa el nombre y precio', '⚠️');
         return;
     }
     
     let isNew = !pId;
     let targetId = isNew ? Date.now() : pId;
     
-    // Guardar en localStorage
+    // Guardar en catálogo personalizado
     let localCatalog = {};
     try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
     
@@ -1827,6 +1906,7 @@ window.guardarEdicionProducto = function(pId) {
         name: nuevoNombre,
         price: nuevoPrecio,
         img: nuevaImg,
+        image: nuevaImg,
         category: nuevaCategoria,
         points: nuevosPuntos,
         puntos: nuevosPuntos
@@ -1838,7 +1918,7 @@ window.guardarEdicionProducto = function(pId) {
     }
     localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
     
-    // Aplicar en memoria
+    // Aplicar en memoria (products)
     if (isNew) {
         products.push({
             id: targetId,
@@ -1846,6 +1926,7 @@ window.guardarEdicionProducto = function(pId) {
             price: nuevoPrecio,
             cat: nuevaCategoria,
             img: nuevaImg,
+            image: nuevaImg,
             points: nuevosPuntos,
             puntos: nuevosPuntos,
             desc: 'Producto fresco del día',
@@ -1864,35 +1945,50 @@ window.guardarEdicionProducto = function(pId) {
             p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
             
             p.img = nuevaImg;
+            p.image = nuevaImg;
             p.cat = nuevaCategoria;
             p.points = nuevosPuntos;
             p.puntos = nuevosPuntos;
             
-            const isOferta = window.dtOfertasActivas[pId];
+            const isOferta = window.dtOfertasActivas ? window.dtOfertasActivas[pId] : null;
             if (isOferta) {
                 p.oldPrice = nuevoPrecio;
                 isOferta.precioOriginal = nuevoPrecio;
-                window.saveOfertas();
+                if (typeof window.saveOfertas === 'function') window.saveOfertas();
             } else {
                 p.price = nuevoPrecio;
             }
         }
+    }
+
+    // Guardar en localStorage('dt_products')
+    try {
+        localStorage.setItem('dt_products', JSON.stringify(products));
+    } catch(e) {
+        console.warn("No se pudo guardar dt_products:", e);
     }
     
     // Guardar en Firestore
     if (typeof db !== 'undefined') {
         db.collection('config').doc('catalogo_personalizado').set({
             [targetId]: localCatalog[targetId]
-        }, { merge: true }).catch(e => console.error("Error guardando producto", e));
+        }, { merge: true }).catch(e => console.error("Error guardando producto en Firestore:", e));
     }
     
-    document.getElementById('modal-editar-producto').style.display = 'none';
-    if(typeof showToast === 'function') showToast(isNew ? 'Producto creado' : 'Producto actualizado', '✅');
+    window.tempProductImg = null;
+    const modalEdit = document.getElementById('modal-editar-producto');
+    if (modalEdit) modalEdit.style.display = 'none';
     
-    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof showToast === 'function') showToast(isNew ? 'Producto creado' : 'Producto actualizado', '✅');
+    
+    // Refrescar el catálogo inmediatamente
     if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
     if (typeof renderFeatured === 'function') renderFeatured();
 };
+
+window.saveProduct = window.guardarEdicionProducto;
+window.updateProduct = window.guardarEdicionProducto;
 
 window.restaurarProductoOriginal = function(pId) {
     let localCatalog = {};
@@ -2366,7 +2462,7 @@ window.renderConfigTortasPublica = function() {
     
     // Forzar actualización de los precios según el sabor seleccionado actualmente
     if (typeof wizardData !== 'undefined' && typeof selectSabor === 'function') {
-        const selectedEl = document.querySelector('.wizard-options-grid .step-option-card.selected') || document.querySelector('.wizard-options-grid .step-option-card');
+        const selectedEl = document.querySelector('.wizard-flavor-grid .flavor-card.selected') || document.querySelector('.wizard-flavor-grid .flavor-card') || document.querySelector('.wizard-options-grid .step-option-card.selected') || document.querySelector('.wizard-options-grid .step-option-card');
         const saborAUsar = wizardData.sabor || 'Clásica Tres Leches';
         if (selectedEl) {
             selectSabor(saborAUsar, selectedEl);

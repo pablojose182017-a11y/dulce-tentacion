@@ -4831,3 +4831,523 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     }
 }
 
+/* =========================================
+   WIZARD DE PERSONALIZACIÓN DE TORTAS (MODERNO)
+========================================= */
+
+@keyframes popIn {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeInPanel {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-modal-content {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid #fed7aa;
+    position: relative;
+    max-width: 640px;
+    width: 95%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Stepper Superior */
+.wizard-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: #fffbf7;
+    border-bottom: 1px solid #fce7f3;
+}
+
+.stepper-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.stepper-step:hover {
+    color: #be123c;
+}
+
+.stepper-step.active {
+    color: #be123c;
+    font-weight: 800;
+}
+
+.stepper-step.completed {
+    color: #15803d;
+}
+
+.step-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #64748b;
+    transition: all 0.25s ease;
+}
+
+.stepper-step.active .step-badge {
+    background: linear-gradient(135deg, #d81b60, #f43f5e);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(216, 27, 96, 0.35);
+}
+
+.stepper-step.completed .step-badge {
+    background: #16a34a;
+    color: #fff;
+}
+
+.stepper-connector {
+    flex: 1;
+    height: 2px;
+    background: #e2e8f0;
+    margin: 0 8px;
+    border-radius: 2px;
+    transition: background 0.25s ease;
+}
+
+.stepper-connector.completed {
+    background: #16a34a;
+}
+
+/* Cuerpo del Wizard */
+.wizard-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    background: #fffbf7;
+}
+
+.wizard-panel {
+    display: none;
+}
+
+.wizard-panel.active {
+    display: block;
+    animation: fadeInPanel 0.25s ease forwards;
+}
+
+/* Tarjetas de Sabor / Relleno (Paso 1) */
+.wizard-flavor-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.flavor-card {
+    position: relative;
+    background: #fff;
+    border: 2px solid #f1e5d8;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.flavor-card:hover {
+    border-color: #f43f5e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(216, 27, 96, 0.08);
+}
+
+.flavor-card.selected {
+    border-color: #d81b60;
+    background: #fff5f7;
+    box-shadow: 0 6px 18px rgba(216, 27, 96, 0.14);
+}
+
+.card-check-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #d81b60;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.flavor-card.selected .card-check-icon,
+.size-card.selected .card-check-icon {
+    display: flex;
+    animation: popIn 0.2s ease;
+}
+
+.flavor-icon {
+    font-size: 1.8rem;
+    background: #fff1f2;
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.flavor-info {
+    flex: 1;
+}
+
+.flavor-info strong {
+    font-size: 0.92rem;
+    color: #1e293b;
+    display: block;
+    margin-bottom: 3px;
+    font-weight: 800;
+}
+
+.flavor-badge-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+    background: #ffe4e6;
+    color: #be123c;
+    margin-bottom: 5px;
+}
+
+.flavor-info p {
+    font-size: 0.76rem;
+    color: #64748b;
+    line-height: 1.35;
+    margin: 0;
+}
+
+/* Tarjetas de Tamaño (Paso 2) */
+.wizard-size-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.size-card {
+    position: relative;
+    background: #fff;
+    border: 2px solid #f1e5d8;
+    border-radius: 16px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.size-card:hover {
+    border-color: #f43f5e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(216, 27, 96, 0.08);
+}
+
+.size-card.selected {
+    border-color: #d81b60;
+    background: #fff5f7;
+    box-shadow: 0 6px 18px rgba(216, 27, 96, 0.14);
+}
+
+.size-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.size-icon {
+    font-size: 1.4rem;
+}
+
+.size-title-block strong {
+    font-size: 0.92rem;
+    color: #1e293b;
+    display: block;
+    font-weight: 800;
+}
+
+.size-title-block small {
+    font-size: 0.72rem;
+    color: #15803d;
+    font-weight: 700;
+    display: block;
+}
+
+.size-featured-tag {
+    background: linear-gradient(135deg, #d81b60, #ff4081);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 8px;
+    align-self: flex-start;
+    margin-bottom: 6px;
+}
+
+.size-desc {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    flex: 1;
+}
+
+.size-price-tag {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #d81b60;
+    background: #fff1f2;
+    padding: 8px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid #fecdd3;
+}
+
+/* Tarjeta Subir Foto y Galería (Paso 3) */
+.upload-custom-design-card {
+    border: 2px dashed #f43f5e;
+    background: #fff5f7;
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-custom-design-card:hover {
+    background: #ffe4e6;
+    border-color: #d81b60;
+}
+
+.upload-custom-design-card.selected {
+    border: 2px solid #16a34a;
+    background: #f0fdf4;
+}
+
+.wizard-design-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+}
+
+.design-thumb {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.design-thumb:hover {
+    border-color: #f43f5e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(216, 27, 96, 0.08);
+}
+
+.design-thumb.selected {
+    border-color: #d81b60;
+    background: #fff5f7;
+    box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.2);
+}
+
+.extra-item-row {
+    transition: all 0.2s ease;
+}
+
+.extra-item-row:hover {
+    border-color: #f43f5e !important;
+    background: #fff5f7 !important;
+}
+
+/* Footer Sticky Fijo */
+.wizard-footer-sticky {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid #fce7f3;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.04);
+    z-index: 20;
+}
+
+.wizard-footer-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#wizard-summary-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    display: block;
+}
+
+#wizard-summary-total {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #d81b60;
+    display: block;
+}
+
+.wizard-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#btnWizardPrev {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: none;
+}
+
+#btnWizardPrev:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+#btnWizardNext {
+    background: linear-gradient(135deg, #d81b60, #ff4081);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 11px 22px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(216, 27, 96, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#btnWizardNext:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(216, 27, 96, 0.35);
+}
+
+#btnWizardSubmit {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 11px 22px;
+    font-weight: 800;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#btnWizardSubmit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+}
+
+/* Adaptabilidad Responsive en Móviles */
+@media (max-width: 600px) {
+    .wizard-modal-content {
+        width: 100% !important;
+        max-height: 95vh !important;
+        border-radius: 20px 20px 0 0 !important;
+        margin-top: auto !important;
+    }
+
+    .wizard-stepper {
+        padding: 10px 14px;
+    }
+
+    .stepper-step span {
+        font-size: 0.72rem;
+    }
+
+    .step-badge {
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+
+    .stepper-connector {
+        margin: 0 4px;
+    }
+
+    .wizard-body {
+        padding: 16px 14px;
+    }
+
+    .wizard-flavor-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wizard-size-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wizard-footer-sticky {
+        padding: 10px 14px;
+    }
+
+    #wizard-summary-badge {
+        font-size: 0.75rem;
+    }
+
+    #wizard-summary-total {
+        font-size: 1.1rem;
+    }
+
+    #btnWizardPrev, #btnWizardNext, #btnWizardSubmit {
+        padding: 9px 14px;
+        font-size: 0.84rem;
+        border-radius: 10px;
+    }
+}
+
+

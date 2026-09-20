@@ -69,8 +69,12 @@ window.addEventListener('DOMContentLoaded', () => {
             firebaseUsers.push(doc.data());
         });
         
-        // Actualizar db_users localmente (fusionando para no perder los no subidos si hay fallback)
+        // Actualizar db_users y dt_registered_users localmente (fusionando en tiempo real)
         if (typeof db_users !== 'undefined') {
+            let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            if (!Array.isArray(regUsers)) regUsers = [];
+            let currentUserUpdated = false;
+
             firebaseUsers.forEach(fbUser => {
                 const fbEmail = (fbUser.email || '').toLowerCase().trim();
                 const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(fbEmail) : (fbEmail === 'pablojose182017@gmail.com' || fbEmail === 'dulcestentaciones2004@gmail.com');
@@ -86,19 +90,72 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (typeof workerEmails !== 'undefined') {
                         workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
                     }
+                } else {
+                    const r = fbUser.role || fbUser.rol || 'cliente';
+                    if (r === 'admin') {
+                        if (typeof adminEmails !== 'undefined' && !adminEmails.includes(fbEmail)) adminEmails.push(fbEmail);
+                        if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                    } else if (r === 'trabajador') {
+                        if (typeof workerEmails !== 'undefined' && !workerEmails.includes(fbEmail)) workerEmails.push(fbEmail);
+                        if (typeof adminEmails !== 'undefined') adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                    } else {
+                        if (typeof adminEmails !== 'undefined') adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                        if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                    }
                 }
+
+                // Sincronizar en db_users
                 const idx = db_users.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
                 if (idx !== -1) {
                     db_users[idx] = { ...db_users[idx], ...fbUser };
                 } else {
                     db_users.push(fbUser);
                 }
+
+                // Sincronizar en dt_registered_users
+                const rIdx = regUsers.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
+                if (rIdx !== -1) {
+                    regUsers[rIdx] = { ...regUsers[rIdx], ...fbUser };
+                } else {
+                    regUsers.push(fbUser);
+                }
+
+                // Sincronizar en currentUser si es el usuario activo
+                if (typeof currentUser !== 'undefined' && currentUser && (currentUser.email || '').toLowerCase().trim() === fbEmail) {
+                    const updatedRole = isSuper ? 'admin' : (fbUser.role || fbUser.rol || currentUser.role || 'cliente');
+                    const updatedIsVip = isSuper || !!(fbUser.isVip || fbUser.vip || (updatedRole === 'vip'));
+                    const updatedVipStatus = fbUser.vipStatus || (updatedIsVip ? 'activo' : (currentUser.vipStatus || 'inactivo'));
+                    const updatedPoints = (fbUser.points !== undefined && fbUser.points !== null) ? fbUser.points : currentUser.points;
+
+                    currentUser.role = updatedRole;
+                    currentUser.rol = updatedRole;
+                    currentUser.isAdmin = isSuper || (updatedRole === 'admin');
+                    currentUser.isVip = updatedIsVip;
+                    currentUser.vip = updatedIsVip;
+                    currentUser.vipStatus = updatedVipStatus;
+                    currentUser.points = updatedPoints;
+                    if (fbUser.blocked !== undefined) currentUser.blocked = !!fbUser.blocked;
+                    currentUserUpdated = true;
+                }
             });
+
             localStorage.setItem('dt_users_db', JSON.stringify(db_users));
+            localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+            if (typeof saveAdminEmails === 'function') saveAdminEmails();
+            try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+
+            if (currentUserUpdated) {
+                localStorage.setItem('dt_user', JSON.stringify(currentUser));
+                localStorage.setItem('dt_logged_user', JSON.stringify(currentUser));
+                if (typeof window.syncUserUI === 'function') window.syncUserUI();
+            }
             
             // Re-renderizar si estamos en la vista de admin de usuarios
             if (typeof renderAdminUsers === 'function') {
                 renderAdminUsers();
+            }
+            if (typeof renderKitchenUsers === 'function') {
+                renderKitchenUsers();
             }
         }
     });
