@@ -1626,38 +1626,57 @@ window.closeAdminPointsModal = function(e) {
 };
 const closeAdminPointsModal = window.closeAdminPointsModal;
 
-window.syncAdminRewardsFromDOM = function() {
-    if (!window.tempAdminRewards || !Array.isArray(window.tempAdminRewards)) return;
-    const items = document.querySelectorAll('.admin-reward-item');
-    items.forEach(item => {
-        const idxStr = item.getAttribute('data-reward-index');
-        if (idxStr === null) return;
-        const idx = parseInt(idxStr, 10);
-        if (isNaN(idx) || !window.tempAdminRewards[idx]) return;
+function createRewardCardHtml(r = {}) {
+    const nameVal = r.name !== undefined && r.name !== null ? String(r.name).replace(/"/g, '&quot;') : '';
+    const pointsVal = (r.cost !== undefined && r.cost !== null && r.cost !== '') ? r.cost : (r.points !== undefined && r.points !== null ? r.points : '');
+    const imgVal = r.img ? String(r.img).replace(/"/g, '&quot;') : 'logo-pys.png';
+    const previewSrc = safeImg(imgVal);
 
-        const nameInp = item.querySelector('.admin-reward-name-input');
-        const costInp = item.querySelector('.admin-reward-cost-input');
-        const imgInp = item.querySelector('.admin-reward-img-input');
+    return `
+    <div class="admin-reward-item" style="display:flex; flex-direction:column; gap:10px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:border-color 0.2s;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="position:relative; width:56px; height:56px; flex:0 0 56px;">
+                <img class="reward-preview-img" src="${previewSrc}" alt="Foto premio" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:56px; height:56px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; background:#fff; display:block;">
+            </div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                <div>
+                    <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:2px;">Nombre de la Recompensa</label>
+                    <input type="text" class="reward-name-input admin-reward-name-input" value="${nameVal}" placeholder="Nombre de la recompensa (ej: Combo Café + Pan)" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; color:#1e293b; background:#fff; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='#e91e63'" onblur="this.style.borderColor='#cbd5e1'">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <label style="font-size:11px; font-weight:700; color:#e11d48; white-space:nowrap;">🎟️ Puntos:</label>
+                    <input type="number" min="1" step="50" class="reward-points-input admin-reward-cost-input" value="${pointsVal}" placeholder="Puntos necesarios" style="width:130px; padding:6px 10px; border:1px solid #fecdd3; border-radius:8px; font-size:13px; font-weight:700; color:#e11d48; background:#fff1f2; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#fecdd3'">
+                </div>
+            </div>
+            <button type="button" onclick="this.closest('.admin-reward-item').remove()" title="Eliminar Recompensa" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:700; font-size:13px; flex:0 0 auto; display:flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
+                🗑️ <span style="font-size:11px;">Eliminar</span>
+            </button>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+            <span style="font-size:11px; font-weight:600; color:#64748b; white-space:nowrap;">🖼️ Foto / URL:</span>
+            <input type="text" class="reward-img-input admin-reward-img-input" value="${imgVal}" placeholder="URL o sube foto" oninput="const p = this.closest('.admin-reward-item').querySelector('.reward-preview-img'); if(p) p.src = safeImg(this.value);" style="flex:1; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; color:#475569; background:#fff; outline:none; box-sizing:border-box;">
+            <label style="background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 4px rgba(37,99,235,0.2);" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                📁 Subir Foto
+                <input type="file" accept="image/*" style="display:none;" onchange="window.handleRewardFileUpload(this)">
+            </label>
+        </div>
+    </div>`;
+}
 
-        if (nameInp) window.tempAdminRewards[idx].name = nameInp.value;
-        if (costInp) window.tempAdminRewards[idx].cost = Math.max(1, parseInt(costInp.value) || 0);
-        if (imgInp && imgInp.value.trim() !== '') window.tempAdminRewards[idx].img = imgInp.value.trim();
-    });
-};
-
-window.handleRewardFileUpload = function(idx, fileInput) {
+window.handleRewardFileUpload = function(fileInput) {
     if (!fileInput.files || !fileInput.files[0]) return;
     const file = fileInput.files[0];
     const reader = new FileReader();
+    const itemCard = fileInput.closest('.admin-reward-item');
     reader.onload = function(e) {
         const base64Data = e.target.result;
-        if (window.tempAdminRewards && window.tempAdminRewards[idx]) {
-            window.tempAdminRewards[idx].img = base64Data;
+        if (itemCard) {
+            const preview = itemCard.querySelector('.reward-preview-img');
+            if (preview) preview.src = base64Data;
+            const textInp = itemCard.querySelector('.reward-img-input, .admin-reward-img-input');
+            if (textInp) textInp.value = file.name;
+            itemCard.setAttribute('data-uploaded-img', base64Data);
         }
-        const imgEl = document.getElementById(`admin-reward-prev-${idx}`);
-        if (imgEl) imgEl.src = base64Data;
-        const textInp = document.getElementById(`admin-reward-img-${idx}`);
-        if (textInp) textInp.value = file.name;
     };
     reader.readAsDataURL(file);
 };
@@ -1666,44 +1685,13 @@ function renderAdminPointsModalContent() {
     const modal = getAdminPointsModal();
     if (!modal) return;
 
-    const rewards = window.tempAdminRewards || [];
+    const rewards = (window.tempAdminRewards && Array.isArray(window.tempAdminRewards)) 
+        ? window.tempAdminRewards 
+        : (window.pointRewards || pointRewards || defaultPointRewards);
 
     const rewardsRows = rewards.length === 0 
-        ? `<div style="text-align:center; padding:28px 16px; color:#64748b; font-size:0.95rem; background:#f8fafc; border-radius:14px; border:2px dashed #cbd5e1;">No hay recompensas configuradas aún. Pulsa el botón verde abajo para agregar la primera.</div>`
-        : rewards.map((r, idx) => {
-            const safeName = (r.name || '').replace(/"/g, '&quot;');
-            const safeImgVal = (r.img || '').replace(/"/g, '&quot;');
-            const previewSrc = safeImg(r.img);
-            return `
-            <div class="admin-reward-item" data-reward-index="${idx}" style="display:flex; flex-direction:column; gap:10px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:border-color 0.2s;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="position:relative; width:56px; height:56px; flex:0 0 56px;">
-                        <img id="admin-reward-prev-${idx}" src="${previewSrc}" alt="Foto premio" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:56px; height:56px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; background:#fff; display:block;">
-                    </div>
-                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
-                        <div>
-                            <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:2px;">Nombre de la Recompensa</label>
-                            <input type="text" class="admin-reward-name-input" value="${safeName}" placeholder="Ej: Hojaldre de Bocadillo y Queso" oninput="updateAdminRewardField(${idx}, 'name', this.value)" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; color:#1e293b; background:#fff; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='#e91e63'" onblur="this.style.borderColor='#cbd5e1'">
-                        </div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <label style="font-size:11px; font-weight:700; color:#e11d48; white-space:nowrap;">🎟️ Puntos Requeridos:</label>
-                            <input type="number" min="1" step="50" class="admin-reward-cost-input" value="${r.cost || 1000}" placeholder="Puntos" oninput="updateAdminRewardField(${idx}, 'cost', this.value)" style="width:110px; padding:6px 10px; border:1px solid #fecdd3; border-radius:8px; font-size:13px; font-weight:700; color:#e11d48; background:#fff1f2; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#fecdd3'">
-                        </div>
-                    </div>
-                    <button type="button" onclick="removeAdminRewardItem(${idx})" title="Eliminar Recompensa" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:700; font-size:13px; flex:0 0 auto; display:flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
-                        🗑️ <span style="font-size:11px;">Eliminar</span>
-                    </button>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <span style="font-size:11px; font-weight:600; color:#64748b; white-space:nowrap;">🖼️ Foto / URL:</span>
-                    <input type="text" id="admin-reward-img-${idx}" class="admin-reward-img-input" value="${safeImgVal}" placeholder="URL o nombre de archivo" oninput="updateAdminRewardField(${idx}, 'img', this.value); const imgEl = document.getElementById('admin-reward-prev-${idx}'); if(imgEl) imgEl.src = safeImg(this.value);" style="flex:1; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; color:#475569; background:#fff; outline:none; box-sizing:border-box;">
-                    <label style="background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 4px rgba(37,99,235,0.2);" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                        📁 Subir Foto
-                        <input type="file" accept="image/*" style="display:none;" onchange="handleRewardFileUpload(${idx}, this)">
-                    </label>
-                </div>
-            </div>`;
-        }).join('');
+        ? `<div class="empty-rewards-msg" style="text-align:center; padding:28px 16px; color:#64748b; font-size:0.95rem; background:#f8fafc; border-radius:14px; border:2px dashed #cbd5e1;">No hay recompensas configuradas aún. Pulsa el botón verde abajo para agregar la primera.</div>`
+        : rewards.map((r, idx) => createRewardCardHtml(r)).join('');
 
     modal.innerHTML = `
         <div class="auth-content" style="max-width:560px; width:94%; max-height:88vh; display:flex; flex-direction:column; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.25); overflow:hidden;">
@@ -1724,12 +1712,12 @@ function renderAdminPointsModalContent() {
             </div>
 
             <div style="display:flex; flex-direction:column; gap:10px; flex:0 0 auto; border-top:1px solid #f1f5f9; padding-top:14px;">
-                <button type="button" onclick="addAdminRewardItem()" style="width:100%; padding:11px; background:#f0fdf4; color:#16a34a; border:1.5px dashed #86efac; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                <button type="button" onclick="window.addAdminRewardItem()" style="width:100%; padding:11px; background:#f0fdf4; color:#16a34a; border:1.5px dashed #86efac; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
                     ➕ Agregar Nueva Recompensa
                 </button>
                 <div style="display:flex; gap:10px;">
                     <button type="button" onclick="window.closeAdminPointsModal()" style="flex:1; padding:11px; background:#f1f5f9; color:#475569; border:none; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancelar</button>
-                    <button type="button" onclick="saveAdminPointsConfig()" style="flex:2; padding:11px; background:linear-gradient(135deg, #e91e63, #ff5722); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 4px 12px rgba(233,30,99,0.3); transition:all 0.2s;" onmouseover="this.style.opacity='0.95'" onmouseout="this.style.opacity='1'">💾 Guardar Cambios</button>
+                    <button type="button" onclick="window.saveAdminPointsConfig()" style="flex:2; padding:11px; background:linear-gradient(135deg, #e91e63, #ff5722); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 4px 12px rgba(233,30,99,0.3); transition:all 0.2s;" onmouseover="this.style.opacity='0.95'" onmouseout="this.style.opacity='1'">💾 Guardar Cambios</button>
                 </div>
             </div>
         </div>
@@ -1740,61 +1728,126 @@ window.renderAdminRewardsTable = renderAdminPointsModalContent;
 window.renderAdminPointsRewards = renderAdminPointsModalContent;
 
 window.addAdminRewardItem = function() {
-    window.syncAdminRewardsFromDOM();
-    if (!window.tempAdminRewards) window.tempAdminRewards = [];
-    window.tempAdminRewards.push({
-        id: 'r_' + Date.now(),
+    const container = document.getElementById('admin-rewards-list-container');
+    if (!container) return;
+
+    const emptyMsg = container.querySelector('.empty-rewards-msg');
+    if (emptyMsg) emptyMsg.remove();
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = createRewardCardHtml({
         name: '',
-        cost: 1000,
+        cost: '',
         img: 'logo-pys.png'
     });
-    renderAdminPointsModalContent();
-    const cont = document.getElementById('admin-rewards-list-container');
-    if (cont) cont.scrollTop = cont.scrollHeight;
+
+    const newCard = tempDiv.firstElementChild;
+    container.appendChild(newCard);
+    container.scrollTop = container.scrollHeight;
+
+    const nameInput = newCard.querySelector('.reward-name-input');
+    if (nameInput) nameInput.focus();
 };
 const addAdminRewardItem = window.addAdminRewardItem;
 
-window.removeAdminRewardItem = function(idx) {
-    window.syncAdminRewardsFromDOM();
-    if (!window.tempAdminRewards || !window.tempAdminRewards[idx]) return;
-    const item = window.tempAdminRewards[idx];
-    const name = item.name ? `"${item.name}"` : 'esta recompensa';
-    if (confirm(`¿Estás seguro de eliminar ${name}?`)) {
-        window.tempAdminRewards.splice(idx, 1);
-        renderAdminPointsModalContent();
+window.removeAdminRewardItem = function(buttonOrIdx) {
+    if (typeof buttonOrIdx === 'number') {
+        const container = document.getElementById('admin-rewards-list-container');
+        if (container) {
+            const items = container.querySelectorAll('.admin-reward-item');
+            if (items[buttonOrIdx]) items[buttonOrIdx].remove();
+        }
+    } else if (buttonOrIdx && buttonOrIdx.closest) {
+        buttonOrIdx.closest('.admin-reward-item')?.remove();
     }
 };
 const removeAdminRewardItem = window.removeAdminRewardItem;
 
-window.updateAdminRewardField = function(idx, field, value) {
-    if (!window.tempAdminRewards || !window.tempAdminRewards[idx]) return;
-    if (field === 'cost') {
-        window.tempAdminRewards[idx][field] = Math.max(1, parseInt(value) || 0);
-    } else {
-        window.tempAdminRewards[idx][field] = value;
-    }
+window.syncAdminRewardsFromDOM = function() {
+    const container = document.getElementById('admin-rewards-list-container');
+    if (!container) return [];
+    const cards = container.querySelectorAll('.admin-reward-item');
+    const list = [];
+    cards.forEach((card, idx) => {
+        const nameInp = card.querySelector('.reward-name-input, .admin-reward-name-input');
+        const costInp = card.querySelector('.reward-points-input, .admin-reward-cost-input');
+        const imgInp = card.querySelector('.reward-img-input, .admin-reward-img-input');
+        const uploadedImg = card.getAttribute('data-uploaded-img');
+
+        const name = (nameInp ? nameInp.value : '').trim();
+        const costVal = costInp ? costInp.value.trim() : '';
+        let img = (imgInp ? imgInp.value.trim() : '');
+        if (uploadedImg) img = uploadedImg;
+        else if (!img) img = 'logo-pys.png';
+
+        list.push({
+            id: 'r_' + (idx + 1) + '_' + Date.now(),
+            name: name,
+            cost: costVal === '' ? '' : parseInt(costVal, 10),
+            img: img
+        });
+    });
+    window.tempAdminRewards = list;
+    return list;
 };
-const updateAdminRewardField = window.updateAdminRewardField;
 
 window.saveAdminPointsConfig = function() {
-    window.syncAdminRewardsFromDOM();
-    if (!window.tempAdminRewards) return;
+    const container = document.getElementById('admin-rewards-list-container');
+    if (!container) return;
 
-    const cleaned = window.tempAdminRewards
-        .map(r => ({
-            id: r.id || ('r_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
-            name: (r.name || '').trim(),
-            cost: Math.max(1, parseInt(r.cost) || 1000),
-            img: (r.img || '').trim() || 'logo-pys.png'
-        }))
-        .filter(r => r.name !== '');
+    const cards = container.querySelectorAll('.admin-reward-item');
+    const rewards = [];
+    let hasError = false;
+    let errorMsg = '';
 
-    if (cleaned.length === 0 && window.tempAdminRewards.length > 0) {
-        if (typeof showToast === 'function') showToast('Debes asignar un nombre a cada recompensa', '⚠️');
+    cards.forEach(card => {
+        const nameInp = card.querySelector('.reward-name-input, .admin-reward-name-input');
+        const costInp = card.querySelector('.reward-points-input, .admin-reward-cost-input');
+        const imgInp = card.querySelector('.reward-img-input, .admin-reward-img-input');
+        const uploadedImg = card.getAttribute('data-uploaded-img');
+
+        const name = (nameInp ? nameInp.value : '').trim();
+        const costStr = costInp ? costInp.value.trim() : '';
+        const cost = parseInt(costStr, 10);
+        let img = (imgInp ? imgInp.value.trim() : '');
+        if (uploadedImg) img = uploadedImg;
+        else if (!img) img = 'logo-pys.png';
+
+        // Validar si campos están vacíos
+        if (!name) {
+            hasError = true;
+            errorMsg = 'Debes ingresar el nombre de cada recompensa.';
+            if (nameInp) nameInp.style.borderColor = '#ef4444';
+            return;
+        }
+
+        if (costStr === '' || isNaN(cost) || cost <= 0) {
+            hasError = true;
+            errorMsg = 'Debes ingresar una cantidad de puntos válida (mayor a 0) en cada recompensa.';
+            if (costInp) costInp.style.borderColor = '#ef4444';
+            return;
+        }
+
+        rewards.push({
+            id: 'r_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+            name: name,
+            cost: cost,
+            img: img
+        });
+    });
+
+    if (hasError) {
+        if (typeof showToast === 'function') showToast(errorMsg, '⚠️');
+        else alert(errorMsg);
         return;
     }
 
-    const finalList = cleaned.length > 0 ? cleaned : defaultPointRewards;
+    if (rewards.length === 0 && cards.length > 0) {
+        alert('No se encontraron recompensas para guardar.');
+        return;
+    }
+
+    const finalList = rewards.length > 0 ? rewards : defaultPointRewards;
     pointRewards = finalList;
     window.pointRewards = finalList;
     localStorage.setItem('dt_point_rewards', JSON.stringify(finalList));
@@ -1812,8 +1865,9 @@ window.saveAdminPointsConfig = function() {
 
     window.closeAdminPointsModal();
 
-    if (typeof showToast === 'function') showToast("¡Configuración de Club Puntos guardada con éxito!", "🎉");
+    if (typeof showToast === 'function') showToast("¡Recompensas actualizadas y guardadas con éxito!", "🎉");
 };
+window.saveAdminPointsRewards = window.saveAdminPointsConfig;
 const saveAdminPointsConfig = window.saveAdminPointsConfig;
 
 function markOrderState(id, state) {
