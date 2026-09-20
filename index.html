@@ -495,11 +495,14 @@
                     <p>Varios horneados diarios de 6:00 AM a 9:00 PM. Siempre calientico y crocante.</p>
                 </div>
             </div>
-            <div class="feature-card">
+            <div class="feature-card delivery-clickable" onclick="openDeliveryCoverageModal()" aria-label="Ver condiciones de entrega" role="button" tabindex="0">
                 <span class="feature-icon">🛵</span>
                 <div class="feature-text">
                     <strong>Entrega Rápida en Cúcuta</strong>
                     <p>Cubrimos todos los barrios. Tu pedido llega empacado y protegido en 25-45 min.</p>
+                    <span class="delivery-conditions-link" style="color: #d81b60; font-size: 0.82rem; font-weight: 700; text-decoration: underline; margin-top: 6px; display: inline-block;">
+                        Ver zonas y condiciones ℹ️
+                    </span>
                 </div>
             </div>
             <div class="feature-card">
@@ -621,13 +624,14 @@
                 </div>
                 <div class="contact-box">
                     <h4>📞 Contacto / Pedidos</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 322 951 2693<br><strong>Cobertura:</strong> Toda Cúcuta y Los Patios.<br><strong>Tiempo
-                            estimado:</strong> 25 a 45 minutos.</p>
+                    <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 322 951 2693<br><strong>Cobertura:</strong> Toda Cúcuta, Los Patios y Villa del Rosario.<br><strong>Tiempo estimado:</strong> 25 a 45 minutos.</p>
+                    <span class="delivery-conditions-link" onclick="openDeliveryCoverageModal()" style="color: #d81b60; font-size: 0.82rem; font-weight: 700; text-decoration: underline; margin-top: 6px; display: inline-block; cursor: pointer;">
+                        Ver zonas y condiciones ℹ️
+                    </span>
                 </div>
                 <div class="contact-box">
-                    <h4>📍 Dirección</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;">Cúcuta, Norte de Santander.<br>Punto de despacho
-                        central con atención en mostrador.</p>
+                    <h4>📍 Dirección Sede Principal</h4>
+                    <p style="color:var(--text-soft);line-height:1.6;">Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta.<br>Punto de despacho central con atención en mostrador.</p>
                 </div>
             </div>
         </div>
@@ -1481,6 +1485,44 @@
          </button>
        </div>
     </div>
+
+    <!-- ===== MODAL COBERTURA Y POLÍTICAS DE DOMICILIO ===== -->
+    <div id="deliveryCoverageModal" class="modal-backdrop-generic" style="display:none;" onclick="closeDeliveryCoverageModal(event)">
+       <div class="modal-content-card" onclick="event.stopPropagation()">
+         <div class="modal-header-custom">
+           <h3>🛵 Políticas y Zonas de Entrega</h3>
+           <button type="button" class="btn-close-modal" onclick="closeDeliveryCoverageModal()">&times;</button>
+         </div>
+         <div class="modal-body-custom">
+           <div class="coverage-alert-box" style="background:#fff3cd; border-left:4px solid #ffc107; padding:10px 12px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; color:#664d03;">
+             <strong>Nota importante:</strong> Los domicilios gratis aplican únicamente para la zona urbana de Cúcuta en pedidos a partir de $10.000 COP en productos.
+           </div>
+           
+           <div class="coverage-zone-item" style="margin-bottom:12px;">
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">📍 Cúcuta (Zona Urbana Habitual)</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">• Pedidos menores a $10.000 COP: <strong>$5.000 COP</strong>.<br>• Pedidos de $10.000 COP o más: <strong>¡GRATIS!</strong></p>
+           </div>
+
+           <div class="coverage-zone-item" style="margin-bottom:12px;">
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">🛣️ Sectores Periféricos / Salidas de Cúcuta</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">Barrios o conjuntos en límites lejanos de la ciudad o anillo vial apartado pueden requerir un excedente convenido con el repartidor según la distancia.</p>
+           </div>
+
+           <div class="coverage-zone-item" style="margin-bottom:12px;">
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">🏙️ Los Patios y Villa del Rosario</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">Para municipios vecinos de Los Patios y Villa del Rosario <strong>no aplica domicilio gratis</strong>. La tarifa se liquida directamente vía WhatsApp según la distancia exacta del trayecto.</p>
+           </div>
+
+           <div class="coverage-zone-item">
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">🏬 Recogida en Tienda (Pick-Up)</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">Siempre <strong>100% GRATIS</strong> en nuestro local del Barrio Doña Nidia.</p>
+           </div>
+         </div>
+         <div class="modal-footer-custom" style="text-align:center; padding-top:12px;">
+           <button type="button" class="btn-primary-custom" onclick="closeDeliveryCoverageModal()" style="background:#d81b60; color:#fff; border:none; padding:8px 20px; border-radius:10px; font-weight:700; cursor:pointer;">Entendido</button>
+         </div>
+       </div>
+     </div>
 
     <!-- ===== JAVASCRIPT ===== -->
     

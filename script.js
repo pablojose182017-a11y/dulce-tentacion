@@ -3625,6 +3625,25 @@ function closeCartModal() {
 }
 window.closeCartModal = closeCartModal;
 
+window.openDeliveryCoverageModal = function() {
+    const m = document.getElementById('deliveryCoverageModal');
+    if (m) {
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeDeliveryCoverageModal = function(e) {
+    if (e && e.target && e.target !== e.currentTarget && e.target.id !== 'deliveryCoverageModal') {
+        return;
+    }
+    const m = document.getElementById('deliveryCoverageModal');
+    if (m) {
+        m.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
+
 function toggleCart() {
     const m = document.getElementById('cartModal');
     if (!m) return;

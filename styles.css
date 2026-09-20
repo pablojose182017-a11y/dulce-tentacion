@@ -1446,6 +1446,32 @@
             line-height: 1.4;
         }
 
+        .feature-card.delivery-clickable {
+            cursor: pointer;
+            border-color: #fce7f3;
+            background: linear-gradient(180deg, #ffffff 0%, #fffbfd 100%);
+        }
+
+        .feature-card.delivery-clickable:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.16);
+            border-color: #f472b6;
+        }
+
+        .delivery-conditions-link {
+            color: #d81b60;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: underline;
+            margin-top: 6px;
+            display: inline-block;
+            transition: color 0.2s ease;
+        }
+
+        .delivery-conditions-link:hover {
+            color: #ad1457;
+        }
+
         /* Info Sections (Nosotros / Ubicación) */
         .info-card {
             background: #fff;
@@ -1616,6 +1642,93 @@
                 opacity: 1;
                 transform: scale(1);
             }
+        }
+
+        /* Modal Genérico y Políticas de Cobertura */
+        .modal-backdrop-generic {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+            animation: fadeInModal 0.25s ease-out;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+            padding: 24px;
+            box-sizing: border-box;
+            position: relative;
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-header-custom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .modal-header-custom h3 {
+            margin: 0;
+            font-size: 1.18rem;
+            font-weight: 800;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-close-modal {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 1.3rem;
+            line-height: 1;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-close-modal:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .modal-body-custom {
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .coverage-zone-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
         }
 
         .auth-logo {

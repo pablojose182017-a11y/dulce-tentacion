@@ -2767,3 +2767,22 @@ window.closeCartModal = function() {
         document.body.style.overflow = '';
     }
 };
+
+window.openDeliveryCoverageModal = function() {
+    const m = document.getElementById('deliveryCoverageModal');
+    if (m) {
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeDeliveryCoverageModal = function(e) {
+    if (e && e.target && e.target !== e.currentTarget && e.target.id !== 'deliveryCoverageModal') {
+        return;
+    }
+    const m = document.getElementById('deliveryCoverageModal');
+    if (m) {
+        m.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
