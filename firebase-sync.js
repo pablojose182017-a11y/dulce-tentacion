@@ -201,21 +201,25 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. GESTOR DE AUDIO SILENCIOSO Y SEGURO ---
     window.sonarCampanaNuevoPedido = function() {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // Tono D5
-            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // Sube a A5
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.8);
-        } catch (e) {
-            console.warn('Audio bloqueado hasta primer clic del usuario:', e);
+        if (typeof window.playOrderAlert === 'function') {
+            window.playOrderAlert();
+        } else {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {
+                console.warn('Audio bloqueado hasta primer clic del usuario:', e);
+            }
         }
     };
 
@@ -256,10 +260,19 @@ window.addEventListener('DOMContentLoaded', () => {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === 'added') {
                         hayNuevos = true;
+                        const data = change.doc.data();
+                        const orderObj = { id: change.doc.id, ...data };
+                        if (typeof window.recordNewOrderNotification === 'function') {
+                            window.recordNewOrderNotification(orderObj, { playSound: false });
+                        }
                     }
                 });
                 if (hayNuevos) {
-                    window.sonarCampanaNuevoPedido();
+                    if (typeof window.playOrderAlert === 'function') {
+                        window.playOrderAlert();
+                    } else if (typeof window.sonarCampanaNuevoPedido === 'function') {
+                        window.sonarCampanaNuevoPedido();
+                    }
                     if (typeof showToast === 'function') {
                         showToast('🔔 ¡Nuevo pedido recibido en la plataforma!');
                     }

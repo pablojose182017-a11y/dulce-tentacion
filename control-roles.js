@@ -762,7 +762,12 @@ window.sendOrder = function() {
     const addr = addrElement ? addrElement.value.trim() : '';
     const notes = notesElement ? notesElement.value.trim() : '';
 
-    if (!name || !addr) return alert("Por favor, llena tu nombre y dirección.");
+    const curDeliveryType = (typeof window.deliveryType !== 'undefined') ? window.deliveryType : 'delivery';
+
+    if (!name) return alert("Por favor, llena tu nombre.");
+    if (curDeliveryType === 'delivery' && !addr) {
+        return alert("Por favor, ingresa tu barrio y dirección para el domicilio en Cúcuta.");
+    }
     if (typeof selectedPay === 'undefined' || !selectedPay) return alert("Por favor, selecciona un método de pago.");
 
     if (cart.some(i => i.type === 'evento' || i.id.toString().startsWith('custom'))) {
@@ -780,7 +785,7 @@ window.sendOrder = function() {
     const tp = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
     
     let discount = 0;
-    let finalTotal = tp;
+    let costoDomicilio = 0;
 
     if (typeof currentUser !== 'undefined' && currentUser && typeof adminConfig !== 'undefined' && adminConfig.vipEnabled && tp >= adminConfig.minPurchase) {
         let isCumple = false;
@@ -803,7 +808,6 @@ window.sendOrder = function() {
         }
 
         if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
-        finalTotal = tp - discount;
 
         let ptsEarned = Math.floor(tp / 1000);
 
@@ -816,6 +820,13 @@ window.sendOrder = function() {
         }
     }
 
+    const baseProductos = Math.max(0, tp - discount);
+    if (curDeliveryType === 'delivery') {
+        costoDomicilio = (baseProductos >= 10000) ? 0 : 5000;
+    }
+
+    const finalTotal = (tp - discount) + costoDomicilio;
+
     // Generar Orden y Guardar en Historial
     const orderId = 'DT-' + Date.now().toString().slice(-4);
     const dateStr = new Date().toLocaleString('es-CO');
@@ -823,9 +834,13 @@ window.sendOrder = function() {
         id: orderId,
         date: dateStr,
         customer: name,
+        customerName: name,
+        totalFormatted: finalTotal.toLocaleString('es-CO'),
         email: typeof currentUser !== 'undefined' && currentUser?.email ? currentUser.email : 'N/A',
         phone: typeof currentUser !== 'undefined' && currentUser?.phone ? currentUser.phone : 'N/A',
-        address: addr,
+        address: (curDeliveryType === 'delivery' ? addr : '🏪 Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta'),
+        deliveryType: curDeliveryType,
+        deliveryCost: costoDomicilio,
         products: cart.map(i => `${i.quantity}x ${i.name}`).join(', '),
         subtotal: tp,
         discount: discount,
@@ -840,6 +855,11 @@ window.sendOrder = function() {
         pedidosHistorial.push(newOrder);
         if (typeof lastOrderCount !== 'undefined') { lastOrderCount = pedidosHistorial.length; }
         if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
+    }
+    
+    // REGISTRAR NOTIFICACIÓN AUTOMÁTICA EN LA CAMPANA Y EMITIR ALERTA SONORA
+    if (typeof window.recordNewOrderNotification === 'function') {
+        window.recordNewOrderNotification(newOrder, { playSound: true });
     }
     
     if (typeof currentUser !== 'undefined' && currentUser) {
@@ -882,7 +902,13 @@ window.sendOrder = function() {
     }
     msg += `—————————————————————\n`;
     msg += `👤 *Cliente:* ${name}\n`;
-    msg += `🏠 *Dirección / Barrio:* ${addr}\n`;
+    msg += `📦 *Modalidad:* ${curDeliveryType === 'delivery' ? '🛵 Domicilio en Cúcuta' : '🏪 Recoger en Punto Físico'}\n`;
+    if (curDeliveryType === 'delivery') {
+        msg += `🏠 *Dirección / Barrio:* ${addr}\n`;
+    } else {
+        msg += `📍 *Punto de Entrega:* Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia\n`;
+        msg += `🗺️ *Ubicación Maps:* https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6\n`;
+    }
     msg += `💵 *Pago:* ${typeof selectedPay !== 'undefined' ? selectedPay : ''}\n`;
     if (notes) msg += `📝 *Notas:* ${notes}\n`;
     msg += `—————————————————————\n`;
@@ -890,28 +916,29 @@ window.sendOrder = function() {
     cart.forEach(i => {
         if (i.id.toString().startsWith('custom')) {
             msg += `  • 🎂 ${i.name}\n`;
-            msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString()} COP\n`;
+            msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
             if(i.customData) {
                 msg += `    *Detalles:* Sabor: ${i.customData.sabor} | Tamaño: ${i.customData.tamano} | Diseño: ${i.customData.diseno}\n`;
                 if (i.customData.message) msg += `    *Mensaje:* "${i.customData.message}"\n`;
                 msg += `    🎁 *Kit de Fiesta GRATIS Incluido*\n`;
             }
         } else {
-            msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString()} COP\n`;
+            msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
         }
     });
     msg += `—————————————————————\n`;
     msg += `*Total unidades:* ${tq}\n`;
+    msg += `💰 *Subtotal:* $${tp.toLocaleString('es-CO')} COP\n`;
     if (discount > 0) {
-        msg += `💰 *Subtotal:* $${tp.toLocaleString()} COP\n`;
-        msg += `*Descuento ${typeof currentUser !== 'undefined' && currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString()} COP\n`;
+        msg += `*Descuento ${typeof currentUser !== 'undefined' && currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString('es-CO')} COP\n`;
     }
-    msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString()} COP\n`;
+    msg += `🛵 *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
+    msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString('es-CO')} COP\n`;
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         const dep = Math.ceil(finalTotal / 2);
         msg += `\n⚠️ *Pedido de Evento (Anticipo requerido)*\n`;
-        msg += `*Abonar 50% para reservar:* $${dep.toLocaleString()} COP\n`;
-        msg += `*Saldo pendiente contra entrega:* $${(finalTotal - dep).toLocaleString()} COP\n`;
+        msg += `*Abonar 50% para reservar:* $${dep.toLocaleString('es-CO')} COP\n`;
+        msg += `*Saldo pendiente contra entrega:* $${(finalTotal - dep).toLocaleString('es-CO')} COP\n`;
     }
     msg += `—————————————————————\n`;
     msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! 🙏`;

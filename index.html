@@ -260,9 +260,9 @@
                 <h4 style="margin:0; color:var(--brand-pink); font-size:1.1rem;">📦 Monitor de Pedidos en Vivo</h4>
                 <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 12px; border-radius:20px; box-shadow:var(--shadow-s); border:1px solid #f1e8e4;">
                     <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark);">🔔 Sonido Notificaciones:</span>
-                    <label class="switch-sound" style="position:relative; display:inline-block; width:40px; height:22px;">
-                        <input type="checkbox" id="soundToggle" onchange="toggleOrderSound()" style="opacity:0; width:0; height:0;">
-                        <span class="slider-sound" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:34px;"></span>
+                    <label class="switch-sound">
+                        <input type="checkbox" id="soundToggle" checked onchange="toggleOrderSound()">
+                        <span class="slider-sound"></span>
                     </label>
                 </div>
             </div>
@@ -874,6 +874,14 @@
             <div id="cart-user-greeting"></div>
 
             <div id="cart-step-1" style="display:flex; flex-direction:column; flex-grow:1;">
+                <!-- Barra de progreso de domicilio gratis -->
+                <div id="freeShippingBanner" class="free-shipping-container" style="display: none;">
+                    <div class="shipping-text" id="shippingProgressText">🛵 Te faltan $1.500 COP para Domicilio GRATIS</div>
+                    <div class="shipping-progress-bar-bg">
+                        <div class="shipping-progress-bar-fill" id="shippingProgressFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
                 <div class="cart-list" id="cartItems" style="flex-grow:1; overflow-y:auto;"></div>
                 <div class="cart-login-incentive" id="cartLoginIncentive" onclick="openAuthModal()">
                     <span style="font-size:1.4rem;">🌟</span>
@@ -883,8 +891,12 @@
                 <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
                     <div class="cart-summary" id="cartSummary">
                         <div class="sum-row"><span>Total Unidades:</span><span id="sumQty">0</span></div>
+                        <div class="sum-row" id="subtotalRow"><span>Subtotal:</span><span id="sumSubtotal">$0 COP</span></div>
                         <div class="sum-row" id="discountRow" style="display:none; color:var(--brand-pink); font-weight:700;">
                             <span id="discountLabel">Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
+                        </div>
+                        <div class="sum-row" id="deliveryRow" style="color:#059669; font-weight:700;">
+                            <span>Domicilio:</span><span id="sumDelivery">¡GRATIS!</span>
                         </div>
                         <div class="sum-row total"><span>Total a Pagar:</span><span>$<span id="sumTotal">0</span> COP</span>
                         </div>
@@ -906,8 +918,43 @@
                         <small style="color:var(--brand-pink);font-weight:700;">→ WhatsApp</small>
                     </div>
                     <input type="text" id="orderName" class="checkout-input" placeholder="👤 Nombre de quien recibe">
-                    <input type="text" id="orderAddress" class="checkout-input"
-                        placeholder="📍 Barrio y Dirección en Cúcuta">
+
+                    <!-- Selector de Método de Entrega -->
+                    <div class="delivery-method-section" style="margin-bottom: 8px;">
+                        <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:6px;">Método de Entrega:</label>
+                        <div class="delivery-toggle-grid">
+                            <button type="button" class="delivery-toggle-btn active" id="btn-delivery-home" onclick="setDeliveryType('delivery')">
+                                <span class="delivery-icon">🛵</span>
+                                <span class="delivery-label">Domicilio en Cúcuta</span>
+                            </button>
+                            <button type="button" class="delivery-toggle-btn" id="btn-delivery-pickup" onclick="setDeliveryType('pickup')">
+                                <span class="delivery-icon">🏪</span>
+                                <span class="delivery-label">Recoger en Tienda <small class="free-badge">Gratis</small></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor condicional para Domicilio -->
+                    <div id="deliveryAddressContainer" class="delivery-conditional-block">
+                        <input type="text" id="orderAddress" class="checkout-input"
+                            placeholder="📍 Barrio y Dirección en Cúcuta">
+                        <div id="deliveryFeeBadge" class="delivery-fee-badge"></div>
+                    </div>
+
+                    <!-- Contenedor condicional para Recoger en Tienda -->
+                    <div id="pickupStoreContainer" class="delivery-conditional-block" style="display: none;">
+                        <div class="pickup-store-card" id="cartPickupDetails">
+                            <div class="pickup-store-header">
+                                <span class="pickup-store-icon">🏪</span>
+                                <div>
+                                    <strong class="pickup-store-name">Panadería & Pastelería Punto Dulce</strong>
+                                    <p class="pickup-address">📍 Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta</p>
+                                </div>
+                            </div>
+                            <p class="pickup-store-note">🕒 Pasa por tu pedido fresco y sin filas una vez confirmemos la preparación.</p>
+                            <a id="btnStoreMapsLink" href="https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6" target="_blank" rel="noopener noreferrer" class="btn-maps-link" onclick="window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');">📍 ¿Cómo llegar? (Ver en Google Maps)</a>
+                        </div>
+                    </div>
 
                     <div style="margin-bottom: 15px;">
                         <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Tipo de Pedido:</label>
@@ -944,6 +991,20 @@
                     </div>
                     <input type="text" id="orderNotes" class="checkout-input"
                         placeholder="📝 Notas (Ej: bien tostado, cambio para $50k)">
+
+                    <!-- Resumen rápido en el Paso 2 -->
+                    <div class="checkout-quick-summary" id="checkoutQuickSummary" style="margin-top: 6px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 10px 12px;">
+                        <div class="sum-row" style="font-size:0.83rem; margin-bottom:2px; color:#64748b;"><span>Subtotal:</span><span id="cqsSubtotal">$0 COP</span></div>
+                        <div class="sum-row" id="cqsDiscountRow" style="display:none; font-size:0.83rem; margin-bottom:2px; color:var(--brand-pink); font-weight:700;">
+                            <span>Descuento:</span><span id="cqsDiscount">- $0 COP</span>
+                        </div>
+                        <div class="sum-row" style="font-size:0.83rem; margin-bottom:3px; font-weight:700;">
+                            <span>Envío / Domicilio:</span><span id="cqsDelivery" style="color:#059669;">¡GRATIS!</span>
+                        </div>
+                        <div class="sum-row total" style="margin-top:3px; padding-top:5px; font-size:1rem; border-top: 1px dashed #e2e8f0;">
+                            <span>Total a Pagar:</span><span id="cqsTotal">$0 COP</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
                     <button class="btn-whatsapp" onclick="sendOrder()">📲 Confirmar y Enviar Pedido</button>
