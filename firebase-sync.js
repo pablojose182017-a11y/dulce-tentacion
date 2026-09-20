@@ -21,45 +21,209 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
-console.log("Firebase Firestore inicializado.");
+const auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
+console.log("Firebase Firestore y Auth inicializados.");
+
+// Función global para sincronizar el usuario activo de forma atómica en Cloud Firestore
+window.syncCurrentUserToCloud = async function(extraData = {}) {
+    if (!window.currentUser || !window.currentUser.email) return;
+    const email = (window.currentUser.email || '').toLowerCase().trim();
+    const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(email) : false;
+
+    const payload = {
+        nombre: window.currentUser.name || window.currentUser.nombre || email.split('@')[0],
+        email: email,
+        foto: window.currentUser.picture || window.currentUser.foto || "",
+        rol: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
+        role: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
+        isAdmin: isSuper || (window.currentUser.role === 'admin'),
+        vip: !!(window.currentUser.vip || window.currentUser.isVip),
+        isVip: !!(window.currentUser.vip || window.currentUser.isVip),
+        points: (window.currentUser.points !== undefined && window.currentUser.points !== null) ? Number(window.currentUser.points) : 0,
+        telefono: window.currentUser.phone || window.currentUser.telefono || "",
+        direccion: window.currentUser.address || window.currentUser.direccion || "",
+        estado: 'activo',
+        blocked: false,
+        ultimaSincronizacion: new Date().toISOString(),
+        ...extraData
+    };
+
+    try {
+        await db.collection("usuarios").doc(email).set(payload, { merge: true });
+        console.log("✓ Usuario y puntos sincronizados permanentemente en Cloud Firestore:", email, payload.points, "pts");
+    } catch (err) {
+        console.error("Error al persistir usuario en Firestore:", err);
+    }
+};
+
+// Login alternativo directo con Popup de Google vía Firebase Auth
+window.loginWithGooglePopup = async function() {
+    if (!auth) {
+        alert("Firebase Auth no está listo. Por favor recarga la página.");
+        return;
+    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    try {
+        const result = await auth.signInWithPopup(provider);
+        const fbUser = result.user;
+        if (fbUser && fbUser.email) {
+            const email = fbUser.email.toLowerCase().trim();
+            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(email) : false;
+            
+            // Consultar datos previos en Firestore
+            let pts = 15;
+            let isVip = false;
+            let role = isSuper ? 'admin' : 'cliente';
+            try {
+                const doc = await db.collection("usuarios").doc(email).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    pts = (data.points !== undefined && data.points !== null) ? Number(data.points) : 15;
+                    isVip = !!data.vip;
+                    role = isSuper ? 'admin' : (data.role || data.rol || 'cliente');
+                }
+            } catch (e) {
+                console.warn("Error leyendo Firestore en popup login:", e);
+            }
+
+            const userObj = {
+                name: fbUser.displayName || email.split('@')[0],
+                email: email,
+                picture: fbUser.photoURL || '',
+                points: pts,
+                vip: isVip,
+                isVip: isVip,
+                role: role,
+                isAdmin: isSuper || (role === 'admin'),
+                blocked: false
+            };
+
+            window.currentUser = userObj;
+            localStorage.setItem('dt_user', JSON.stringify(userObj));
+            localStorage.setItem('dt_logged_user', JSON.stringify(userObj));
+            
+            if (typeof window.saveUsersDB === 'function') window.saveUsersDB();
+            if (typeof window.syncUserUI === 'function') window.syncUserUI();
+            await window.syncCurrentUserToCloud();
+            
+            if (typeof window.showToast === 'function') {
+                window.showToast(`¡Bienvenido, ${userObj.name}!`, '✨');
+            }
+            if (typeof closeAuthModal === 'function') closeAuthModal();
+            return userObj;
+        }
+    } catch (err) {
+        console.error("Error en loginWithGooglePopup:", err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+            alert("Error al iniciar sesión con Google: " + (err.message || err.code));
+        }
+    }
+};
 
 window.addEventListener('DOMContentLoaded', () => {
-    // 2. Sincronización de Usuarios en la Nube
+    // 2. Sincronización de Usuarios en la Nube con Credenciales GIS + Firebase Auth
     if (typeof handleCredentialResponse !== 'undefined') {
         const originalHandleCredentialResponse = window.handleCredentialResponse;
         window.handleCredentialResponse = async function(response) {
             // Llama a la lógica original (decodificación, guardado en db_users/localStorage, render)
             originalHandleCredentialResponse.apply(this, arguments);
 
-            // Obtener al usuario recién logueado
-            if (window.currentUser) {
-                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(window.currentUser.email?.toLowerCase().trim()) : false;
-                if (isSuper) {
-                    window.currentUser.role = 'admin';
-                    window.currentUser.rol = 'admin';
-                    window.currentUser.isAdmin = true;
-                    window.currentUser.blocked = false;
-                }
+            // Autenticar la sesión en Firebase Authentication con el ID Token de Google
+            if (auth && response && response.credential) {
                 try {
-                    await db.collection("usuarios").doc(window.currentUser.email).set({
-                        nombre: window.currentUser.name || window.currentUser.nombre || window.currentUser.email.split('@')[0],
-                        email: window.currentUser.email,
-                        foto: window.currentUser.picture || window.currentUser.foto || "",
-                        rol: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
-                        role: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
-                        isAdmin: isSuper || (window.currentUser.role === 'admin'),
-                        estado: 'activo',
-                        blocked: false,
-                        vip: window.currentUser.vip || false,
-                        points: window.currentUser.points || 0,
-                        ultimoIngreso: new Date().toISOString()
-                    }, { merge: true });
-                    console.log("Usuario sincronizado con Firestore:", window.currentUser.email);
-                } catch (e) {
-                    console.error("Error sincronizando usuario con Firestore:", e);
+                    const googleCred = firebase.auth.GoogleAuthProvider.credential(response.credential);
+                    await auth.signInWithCredential(googleCred);
+                    console.log("✓ Firebase Auth autenticado con ID Token de Google.");
+                } catch (authErr) {
+                    console.warn("Aviso Firebase Auth (signInWithCredential):", authErr.message || authErr);
                 }
             }
+
+            // Sincronizar de inmediato el usuario activo con Firestore
+            if (window.currentUser) {
+                const email = (window.currentUser.email || '').toLowerCase().trim();
+                // Si el usuario ya tenía puntos en Firestore, mantenerlos intactos
+                try {
+                    const doc = await db.collection("usuarios").doc(email).get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data.points !== undefined && data.points !== null) {
+                            window.currentUser.points = Number(data.points);
+                        }
+                        if (data.vip !== undefined) {
+                            window.currentUser.vip = !!data.vip;
+                            window.currentUser.isVip = !!data.vip;
+                        }
+                        if (data.role && !window.currentUser.isAdmin) {
+                            window.currentUser.role = data.role;
+                        }
+                        localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
+                        if (typeof window.syncUserUI === 'function') window.syncUserUI();
+                    }
+                } catch(e) {
+                    console.warn("Error leyendo perfil previo:", e);
+                }
+
+                await window.syncCurrentUserToCloud({ ultimoIngreso: new Date().toISOString() });
+            }
         };
+    }
+
+    // Enganche para sincronización automática de puntos en saveUser
+    if (typeof window.saveUser === 'function') {
+        const originalSaveUser = window.saveUser;
+        window.saveUser = function() {
+            originalSaveUser.apply(this, arguments);
+            if (window.currentUser && window.currentUser.email && typeof window.syncCurrentUserToCloud === 'function') {
+                window.syncCurrentUserToCloud();
+            }
+        };
+    }
+
+    // Enganche para cierre de sesión real en Firebase Auth
+    if (typeof window.logoutUser === 'function') {
+        const originalLogoutUser = window.logoutUser;
+        window.logoutUser = function(e) {
+            if (auth) {
+                auth.signOut().catch(err => console.warn("Error en Firebase Auth signOut:", err));
+            }
+            originalLogoutUser.apply(this, arguments);
+        };
+    }
+
+    // Observador permanente del estado de autenticación (Firebase Auth onAuthStateChanged)
+    if (auth) {
+        auth.onAuthStateChanged(async (fbUser) => {
+            if (fbUser && fbUser.email) {
+                const email = fbUser.email.toLowerCase().trim();
+                try {
+                    const doc = await db.collection("usuarios").doc(email).get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (window.currentUser && (window.currentUser.email || '').toLowerCase().trim() === email) {
+                            let changed = false;
+                            if (data.points !== undefined && data.points !== window.currentUser.points) {
+                                window.currentUser.points = Number(data.points);
+                                changed = true;
+                            }
+                            if (data.vip !== undefined && data.vip !== window.currentUser.vip) {
+                                window.currentUser.vip = !!data.vip;
+                                window.currentUser.isVip = !!data.vip;
+                                changed = true;
+                            }
+                            if (changed) {
+                                localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
+                                if (typeof window.syncUserUI === 'function') window.syncUserUI();
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Error en onAuthStateChanged:", err);
+                }
+            }
+        });
     }
 
     // Oyente para "Usuarios y Personal" (Tiempo Real)
