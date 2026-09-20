@@ -1638,7 +1638,11 @@ window.addToCart = function(productId, arg2) {
 
     if (typeof updateCart === 'function') updateCart();
     if (typeof saveCart === 'function') saveCart();
-    if (typeof showToast === 'function') showToast(`¡${qty}x ${p.name} al carrito!`, '🥐');
+    if (typeof window.showAddToCartToast === 'function') {
+        window.showAddToCartToast(p.name, qty);
+    } else if (typeof showToast === 'function') {
+        showToast(`¡${qty}x ${p.name} al carrito!`, '🥐');
+    }
 };
 
 // --- 5. AUTOMATIZACIÓN DE RENDERIZADO INICIAL Y LIMPIEZA DE DOM ---
@@ -2754,4 +2758,12 @@ window.guardarPromoRegalo = function() {
     
     // Forzar re-evaluacion del carrito por si cambia el estado activo
     if (typeof updateCart === 'function') updateCart();
+};
+
+window.closeCartModal = function() {
+    const m = document.getElementById('cartModal');
+    if (m) {
+        m.style.display = 'none';
+        document.body.style.overflow = '';
+    }
 };

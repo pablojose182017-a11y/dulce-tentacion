@@ -724,9 +724,6 @@
         </div>
     </div>
 
-    <!-- ===== TOAST ===== -->
-    <div id="toast" class="toast"></div>
-
     <!-- ===== AUTH MODAL ===== -->
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
         <div class="auth-card" style="padding:24px; text-align:center;">
@@ -907,7 +904,10 @@
                             <span>Saldo contra entrega (50%):</span><span id="sumBalance">$0 COP</span>
                         </div>
                     </div>
-                    <button class="btn-gold" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega →</button>
+                    <button class="btn-gold" id="btnContinueCheckout" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega →</button>
+                    <button type="button" id="btnContinueShopping" class="btn-continue-shopping" onclick="closeCartModal()">
+                        ← Seguir comprando / Agregar más productos
+                    </button>
                 </div>
             </div>
 

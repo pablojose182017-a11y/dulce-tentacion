@@ -3270,7 +3270,11 @@ function addToCart(id, e) {
     });
     if (inp) inp.value = 1;
     updateCart(); saveCart();
-    showToast(`¡${qty}x ${p.name} al carrito!`, '🥐');
+    if (typeof window.showAddToCartToast === 'function') {
+        window.showAddToCartToast(finalName || p.name, qty);
+    } else {
+        showToast(`¡${qty}x ${finalName || p.name} al carrito!`, '🥐');
+    }
 }
 
 function updateQty(cartId, delta) {
@@ -3612,11 +3616,20 @@ function updateCart() {
     }
 }
 
-function toggleCart() {
+function closeCartModal() {
     const m = document.getElementById('cartModal');
-    if (m.style.display === 'flex') {
+    if (m) {
         m.style.display = 'none';
         document.body.style.overflow = '';
+    }
+}
+window.closeCartModal = closeCartModal;
+
+function toggleCart() {
+    const m = document.getElementById('cartModal');
+    if (!m) return;
+    if (m.style.display === 'flex') {
+        closeCartModal();
     } else {
         m.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -3648,7 +3661,7 @@ function goToCartStep2() {
     }
     updateCart();
 }
-function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) toggleCart(); }
+function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) closeCartModal(); }
 
 function selectPay(el, method) {
     document.querySelectorAll('.payment-chip').forEach(c => c.classList.remove('active'));
@@ -3875,12 +3888,61 @@ function openWhatsAppChat() {
     window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(g)}`, '_blank');
 }
 
+let cartToastTimer = null;
+let cartBumpTimer = null;
+
+window.showAddToCartToast = function(productName, qty = 1) {
+    let toast = document.getElementById('cartToastNotification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'cartToastNotification';
+        toast.className = 'cart-toast-notification';
+        document.body.appendChild(toast);
+    }
+
+    // Contenido explícito, elegante y claro
+    toast.innerHTML = `<span>✨ ¡Agregado! <strong>${productName}</strong> x${qty}</span>`;
+
+    // Activar visibilidad con animación suave
+    toast.classList.add('toast-show');
+    toast.classList.add('show');
+
+    // Ocultar automáticamente tras 2.2 segundos
+    if (cartToastTimer) clearTimeout(cartToastTimer);
+    cartToastTimer = setTimeout(() => {
+        toast.classList.remove('toast-show');
+        toast.classList.remove('show');
+    }, 2200);
+
+    // Microanimación de rebote (cart-bump) para los botones del carrito
+    const cartBtns = document.querySelectorAll('#headerCartBtn, #cartBtn, #btnCart, .cart-btn, .cart-nav-btn, .nav-cart');
+    cartBtns.forEach(btn => {
+        btn.classList.remove('cart-bump');
+        void btn.offsetWidth; // Forzar reflow para reiniciar la animación
+        btn.classList.add('cart-bump');
+    });
+    if (cartBumpTimer) clearTimeout(cartBumpTimer);
+    cartBumpTimer = setTimeout(() => {
+        cartBtns.forEach(btn => btn.classList.remove('cart-bump'));
+    }, 400);
+};
+
+let globalToastTimer = null;
 function showToast(msg, icon = '🥐', duration = 2600) {
     const t = document.getElementById('toast');
-    document.getElementById('toastMsg').innerText = msg;
-    document.getElementById('toastIcon').innerText = icon;
+    if (!t) return;
+    const msgEl = document.getElementById('toastMsg');
+    const iconEl = document.getElementById('toastIcon');
+    if (msgEl) msgEl.innerText = msg;
+    if (iconEl) iconEl.innerText = icon;
+    if (!msgEl && !iconEl) t.innerText = msg;
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), duration);
+    t.classList.add('toast-show');
+    if (globalToastTimer) clearTimeout(globalToastTimer);
+    globalToastTimer = setTimeout(() => {
+        t.classList.remove('show');
+        t.classList.remove('toast-show');
+    }, duration);
 }
 
 // ===== VIP FUNCTIONS =====
@@ -4561,7 +4623,11 @@ function addCustomCakeToCartNew() {
     saveCart();
     updateCart();
     closeWizard();
-    if (typeof showToast === 'function') showToast("¡Torta de celebración agregada a tu carrito!", "🎂");
+    if (typeof window.showAddToCartToast === 'function') {
+        window.showAddToCartToast("Torta Personalizada", 1);
+    } else if (typeof showToast === 'function') {
+        showToast("¡Torta de celebración agregada a tu carrito!", "🎂");
+    }
 
     const cartBtn = document.querySelector('.cart-btn');
     if (cartBtn) {
