@@ -2541,7 +2541,9 @@ function logoutUser(e) {
     const deskBtn = document.getElementById('desk-admin-btn');
     const mobBtn = document.getElementById('mob-admin-btn');
     if (deskBtn) deskBtn.style.display = 'none';
-    if (mobBtn) mobBtn.style.display = 'none';
+    // Ocultar explícitamente el badge / botón VIP
+    const vipBadge = document.getElementById('navVipBadge') || document.getElementById('vip-header-badge') || document.querySelector('.btn-vip-badge');
+    if (vipBadge) vipBadge.style.display = 'none';
 
     // Redirigir a la vista de catálogo/inicio (#inicio o #productos)
     if (typeof showSection === 'function') {
@@ -2623,6 +2625,23 @@ function syncUserUI() {
         const vipLabel = isVip ? ' (VIP)' : '';
         const vipColor = isVip ? '#d97706' : '';
 
+        // Control de visibilidad y acción del botón / badge VIP en la barra
+        const vipBadge = document.getElementById('navVipBadge') || document.getElementById('vip-header-badge') || document.querySelector('.btn-vip-badge');
+        if (vipBadge) {
+            if (isVip) {
+                vipBadge.style.display = 'inline-flex';
+                vipBadge.onclick = (e) => {
+                    if (e && e.preventDefault) e.preventDefault();
+                    if (typeof window.openVipModal === 'function') window.openVipModal(e);
+                    else if (typeof window.openVipTermsModal === 'function') window.openVipTermsModal(e);
+                    else if (typeof window.openPointsModal === 'function') window.openPointsModal();
+                    else if (typeof showSection === 'function') showSection('vip');
+                };
+            } else {
+                vipBadge.style.display = 'none';
+            }
+        }
+
         if (pill) {
             pill.style.display = 'flex';
             document.getElementById('user-avatar').src = currentUser.picture;
@@ -2681,10 +2700,6 @@ function syncUserUI() {
                 mpNm.style.color = vipColor;
             }
 
-            const vipHeaderBadge = document.getElementById('vip-header-badge');
-            if (vipHeaderBadge) {
-                vipHeaderBadge.style.display = isVip ? 'inline-flex' : 'none';
-            }
             const mpEm = document.getElementById('mp-email'); if (mpEm) mpEm.innerText = currentUser.email || currentUser.phone || '';
             const mpPt = document.getElementById('mp-points-val'); if (mpPt) mpPt.innerText = currentUser.points || 0;
 
@@ -2784,6 +2799,10 @@ function syncUserUI() {
         if (kitchenModal) kitchenModal.style.display = 'none';
         const adminNotifDropdown = document.getElementById('adminNotifDropdown');
         if (adminNotifDropdown) adminNotifDropdown.style.display = 'none';
+
+        // Ocultar explícitamente el badge / botón VIP si no hay sesión
+        const vipBadge = document.getElementById('navVipBadge') || document.getElementById('vip-header-badge') || document.querySelector('.btn-vip-badge');
+        if (vipBadge) vipBadge.style.display = 'none';
     }
     if (typeof renderRewards === 'function') renderRewards();
     if (window.renderAdminNotifList) window.renderAdminNotifList();
