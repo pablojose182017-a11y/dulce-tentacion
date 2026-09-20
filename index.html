@@ -697,6 +697,33 @@
         </div>
     </div>
 
+    <!-- ===== EDIT USER DATA MODAL (ADMIN) ===== -->
+    <div class="modal-overlay" id="adminEditUserModal" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;" onclick="if(event.target===this) window.cerrarModalEdicionUsuarioAdmin && window.cerrarModalEdicionUsuarioAdmin()">
+        <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:420px; text-align:center; box-shadow:0 12px 36px rgba(0,0,0,0.22); border:1px solid #fed7aa; position:relative;">
+            <h3 style="color:#b45309; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <span>✏️</span> Editar Datos de Usuario
+            </h3>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:18px;">Actualiza el nombre completo o corrige errores en el correo del cliente.</p>
+            <input type="hidden" id="adminEditUserOriginalEmail">
+            <div class="custom-form-group" style="text-align:left; margin-bottom:14px;">
+                <label style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px; display:block;">Nombre Completo</label>
+                <div class="input-wrap" style="position:relative;">
+                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">👤</span>
+                    <input type="text" id="adminEditUserName" placeholder="Nombre completo del cliente..." style="width:100%; padding:10px 12px 10px 38px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; font-size:0.95rem; box-sizing:border-box;">
+                </div>
+            </div>
+            <div class="custom-form-group" style="text-align:left; margin-bottom:20px;">
+                <label style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px; display:block;">Correo Electrónico</label>
+                <div class="input-wrap" style="position:relative;">
+                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">✉️</span>
+                    <input type="email" id="adminEditUserEmail" placeholder="correo@ejemplo.com..." style="width:100%; padding:10px 12px 10px 38px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; font-size:0.95rem; box-sizing:border-box;">
+                </div>
+            </div>
+            <button onclick="window.guardarEdicionUsuarioAdmin && window.guardarEdicionUsuarioAdmin()" class="btn-primary" style="width:100%; border-radius:30px; padding:12px; font-weight:700; font-size:0.95rem; background:linear-gradient(135deg, #e11d48, #db2777); border:none; color:#fff; cursor:pointer; box-shadow:0 4px 12px rgba(225,29,72,0.25);">Guardar Cambios</button>
+            <button onclick="window.cerrarModalEdicionUsuarioAdmin && window.cerrarModalEdicionUsuarioAdmin()" style="width:100%; background:transparent; border:none; color:#64748b; margin-top:10px; padding:10px; cursor:pointer; font-weight:600;">Cancelar</button>
+        </div>
+    </div>
+
     <!-- ===== TOAST ===== -->
     <div id="toast" class="toast"></div>
 

@@ -174,12 +174,36 @@ function savePedidosHistorial() { try { localStorage.setItem('dt_pedidos_histori
 
 // ===== SECTION NAVIGATION =====
 function showSection(id, element) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    if (id === 'admin-dashboard') {
+        const normEmail = (currentUser?.email || '').toLowerCase().trim();
+        const isSuper = currentUser ? (
+            (typeof window.SUPER_ADMINS !== 'undefined')
+                ? window.SUPER_ADMINS.includes(normEmail)
+                : (normEmail === 'pablojose182017@gmail.com' || normEmail === 'dulcestentaciones2004@gmail.com')
+        ) : false;
+        const isAdmin = isSuper || (currentUser?.role === 'admin') || (currentUser?.rol === 'admin') || (currentUser?.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser?.email));
+        const isWorker = !isSuper && !isAdmin && ((currentUser?.role === 'trabajador') || (currentUser?.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser?.email)));
+        if (!currentUser || (!isAdmin && !isWorker)) {
+            id = 'inicio';
+        }
+    }
+
+    document.querySelectorAll('.section').forEach(s => {
+        s.classList.remove('active');
+        if (s.id === 'admin-dashboard' && id !== 'admin-dashboard') {
+            s.style.display = 'none';
+        }
+    });
     document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
 
     const el = document.getElementById(id);
-    if (el) el.classList.add('active');
+    if (el) {
+        if (id === 'admin-dashboard') {
+            el.style.display = 'block';
+        }
+        el.classList.add('active');
+    }
     if (element && element.classList && element.classList.contains('nav-link')) element.classList.add('active');
 
     // Sync bottom nav
@@ -299,9 +323,9 @@ function showAuthMessage(msg, type) {
 }
 
 function loginCustomUser(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const pass = document.getElementById('loginPassword').value.trim();
+    if (e && e.preventDefault) e.preventDefault();
+    const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
+    const pass = (document.getElementById('loginPassword')?.value || '').trim();
 
     if (!email || !pass) {
         return showAuthMessage('Por favor, completa todos los campos.', 'error');
@@ -311,12 +335,17 @@ function loginCustomUser(e) {
         const adminName = (email === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
         const superAdminObj = {
             name: adminName,
+            nombre: adminName,
             email: email,
             password: 'Admin123*',
             role: 'admin',
+            rol: 'admin',
             isAdmin: true,
             blocked: false,
             points: 500,
+            vip: true,
+            isVip: true,
+            vipStatus: 'activo',
             picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
         };
         const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
@@ -326,19 +355,94 @@ function loginCustomUser(e) {
             db_users.push({ ...superAdminObj });
         }
         saveUsersDB();
+
+        let regUsers = [];
+        try {
+            regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            if (!Array.isArray(regUsers)) regUsers = [];
+        } catch(err) { regUsers = []; }
+        const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+        if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...superAdminObj };
+        else regUsers.push({ ...superAdminObj });
+        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
         return loginUserObj(superAdminObj);
     }
 
-    const localUsers = JSON.parse(localStorage.getItem('dt_users_db')) || db_users;
-    const user = localUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && u.password === pass));
-    if (!user) {
-        return showAuthMessage('Usuario o contraseña incorrectos.', 'error');
+    // Buscar en dt_users_db y dt_registered_users
+    let dbUsers = [];
+    try {
+        dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+        if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
+            dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
+        }
+    } catch(err) { dbUsers = db_users || []; }
+
+    let regUsers = [];
+    try {
+        regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+        if (!Array.isArray(regUsers)) regUsers = [];
+    } catch(err) { regUsers = []; }
+
+    // Buscar coincidencia en dt_registered_users y luego en dbUsers
+    let foundUser = regUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && (u.password === pass)));
+    if (!foundUser) {
+        foundUser = dbUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && (u.password === pass)));
     }
-    if (user.blocked) {
+
+    // Si aún no se encontró con contraseña exacta, comprobar si el usuario existe para mensaje claro
+    if (!foundUser) {
+        const userExists = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email))) ||
+                           dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)));
+        if (userExists) {
+            return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
+        }
+        return showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');
+    }
+
+    if (foundUser.blocked || foundUser.estado === 'bloqueado') {
         return showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
     }
 
-    loginUserObj(user);
+    // Normalizar objeto de usuario con rol y estado VIP correctos
+    const resolvedRole = foundUser.role || foundUser.rol || 'cliente';
+    const isVip = !!(foundUser.isVip || foundUser.vip || resolvedRole === 'vip');
+    const userToLogin = {
+        name: foundUser.name || foundUser.nombre || (email.split('@')[0]),
+        nombre: foundUser.name || foundUser.nombre || (email.split('@')[0]),
+        email: (foundUser.email || email).toLowerCase().trim(),
+        phone: foundUser.phone || foundUser.telefono || '',
+        password: foundUser.password || pass,
+        role: resolvedRole,
+        rol: resolvedRole,
+        isAdmin: (resolvedRole === 'admin'),
+        isVip: isVip,
+        vip: isVip,
+        vipStatus: foundUser.vipStatus || (isVip ? 'activo' : 'inactivo'),
+        points: (foundUser.points !== undefined && foundUser.points !== null) ? foundUser.points : (foundUser.puntos || 15),
+        picture: foundUser.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(foundUser.name || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+        blocked: false
+    };
+
+    // Sincronizar en db_users / dt_users_db
+    const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === userToLogin.email);
+    if (dbIdx !== -1) {
+        db_users[dbIdx] = { ...db_users[dbIdx], ...userToLogin };
+    } else {
+        db_users.push({ ...userToLogin });
+    }
+    saveUsersDB();
+
+    // Sincronizar en dt_registered_users
+    const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === userToLogin.email);
+    if (rIdx !== -1) {
+        regUsers[rIdx] = { ...regUsers[rIdx], ...userToLogin };
+    } else {
+        regUsers.push({ ...userToLogin });
+    }
+    localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
+    loginUserObj(userToLogin);
 }
 
 function registerCustomUser(e) {
@@ -2039,7 +2143,10 @@ function renderAdminUsers() {
                             </select>
                             <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
                         </div>
-                        ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">🔑 Cambiar Clave</button>` : ''}
+                        <div style="display:flex; gap:4px; width:100%;">
+                            <button onclick="window.abrirModalEditarUsuarioAdmin('${u.email}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1; font-weight:600;">✏️ Editar</button>
+                            ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1;">🔑 Cambiar Clave</button>` : ''}
+                        </div>
                         <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
                         <button onclick="adminDeleteUser('${u.email}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">Eliminar</button>
                     </div>`}
@@ -2171,21 +2278,52 @@ function adminRegisterUser() {
         return showToast('El correo ya está registrado.', '❌');
     }
 
+    const isVip = (role === 'vip');
     const newUser = {
         name: name,
+        nombre: name,
         email: email,
         password: pass,
         phone: '',
         address: '',
+        role: role || 'cliente',
+        rol: role || 'cliente',
+        isAdmin: (role === 'admin'),
+        isVip: isVip,
+        vip: isVip,
+        vipStatus: isVip ? 'activo' : 'inactivo',
         points: 15,
         history: [],
         picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-        vip: false,
         blocked: false
     };
 
     db_users.push(newUser);
     saveUsersDB();
+
+    try {
+        let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+        if (!Array.isArray(regUsers)) regUsers = [];
+        const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+        if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...newUser };
+        else regUsers.push({ ...newUser });
+        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+    } catch(e) {}
+
+    if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
+        db.collection('usuarios').doc(email).set({
+            nombre: name,
+            name: name,
+            email: email,
+            password: pass,
+            rol: role || 'cliente',
+            role: role || 'cliente',
+            estado: 'activo',
+            blocked: false,
+            points: 15,
+            puntos: 15
+        }, { merge: true }).catch(() => {});
+    }
 
     if (role === 'trabajador' && !workerEmails.includes(email)) {
         workerEmails.push(email);
@@ -2204,6 +2342,167 @@ function adminRegisterUser() {
     if (document.getElementById('adminNewRole')) document.getElementById('adminNewRole').value = 'cliente';
 }
 
+// ===== FUNCIONES PARA EDITAR NOMBRE Y CORREO DESDE EL PANEL =====
+window.abrirModalEditarUsuarioAdmin = function(email) {
+    const targetEmail = (email || '').toLowerCase().trim();
+    if (typeof window.SUPER_ADMINS !== 'undefined' && window.SUPER_ADMINS.includes(targetEmail)) {
+        alert("Acción denegada: No se puede modificar a un Dueño / Super Administrador.");
+        return;
+    }
+
+    let user = null;
+    if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+        user = db_users.find(u => u && u.email && u.email.toLowerCase().trim() === targetEmail);
+    }
+    if (!user) {
+        try {
+            const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            user = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === targetEmail);
+        } catch(e) {}
+    }
+
+    if (!user) {
+        if (typeof showToast === 'function') showToast("No se encontró el usuario.", '❌');
+        else alert("No se encontró el usuario.");
+        return;
+    }
+
+    const origInput = document.getElementById('adminEditUserOriginalEmail');
+    const nameInput = document.getElementById('adminEditUserName');
+    const emailInput = document.getElementById('adminEditUserEmail');
+
+    if (origInput) origInput.value = targetEmail;
+    if (nameInput) nameInput.value = user.name || user.nombre || '';
+    if (emailInput) emailInput.value = user.email || targetEmail;
+
+    const modal = document.getElementById('adminEditUserModal');
+    if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+    }
+};
+
+window.cerrarModalEdicionUsuarioAdmin = function() {
+    const modal = document.getElementById('adminEditUserModal');
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+    }
+};
+
+window.guardarEdicionUsuarioAdmin = function() {
+    const origEmail = (document.getElementById('adminEditUserOriginalEmail')?.value || '').toLowerCase().trim();
+    const newName = (document.getElementById('adminEditUserName')?.value || '').trim();
+    const newEmail = (document.getElementById('adminEditUserEmail')?.value || '').toLowerCase().trim();
+
+    if (!newName) {
+        if (typeof showToast === 'function') showToast("El nombre no puede estar vacío.", '❌');
+        else alert("El nombre no puede estar vacío.");
+        return;
+    }
+
+    if (!newEmail || !newEmail.includes('@') || !newEmail.includes('.')) {
+        if (typeof showToast === 'function') showToast("Por favor ingresa un correo electrónico válido.", '❌');
+        else alert("Por favor ingresa un correo electrónico válido.");
+        return;
+    }
+
+    if (typeof window.SUPER_ADMINS !== 'undefined' && window.SUPER_ADMINS.includes(origEmail)) {
+        alert("Acción denegada: No se puede modificar el correo del Dueño/Super Administrador.");
+        return;
+    }
+
+    // Validar si el nuevo correo ya pertenece a otro usuario
+    if (newEmail !== origEmail) {
+        let occupied = false;
+        if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+            occupied = db_users.some(u => u && u.email && u.email.toLowerCase().trim() === newEmail && u.email.toLowerCase().trim() !== origEmail);
+        }
+        if (!occupied) {
+            try {
+                const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                occupied = regUsers.some(u => u && u.email && u.email.toLowerCase().trim() === newEmail && u.email.toLowerCase().trim() !== origEmail);
+            } catch(e) {}
+        }
+        if (occupied) {
+            if (typeof showToast === 'function') showToast("El nuevo correo ya está registrado por otro usuario.", '❌');
+            else alert("El nuevo correo ya está registrado por otro usuario.");
+            return;
+        }
+    }
+
+    // 1. Actualizar db_users y dt_users_db
+    if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+        const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === origEmail);
+        if (uidx !== -1) {
+            db_users[uidx].name = newName;
+            db_users[uidx].nombre = newName;
+            db_users[uidx].email = newEmail;
+        }
+        if (typeof saveUsersDB === 'function') saveUsersDB();
+    }
+
+    // 2. Actualizar dt_registered_users
+    try {
+        let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+        if (Array.isArray(regUsers)) {
+            const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === origEmail);
+            if (rIdx !== -1) {
+                regUsers[rIdx].name = newName;
+                regUsers[rIdx].nombre = newName;
+                regUsers[rIdx].email = newEmail;
+            } else if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+                const matched = db_users.find(u => u && u.email && u.email.toLowerCase().trim() === newEmail);
+                if (matched) regUsers.push({ ...matched });
+            }
+            localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+        }
+    } catch(e) {}
+
+    // 3. Actualizar listas de roles si el correo cambió
+    if (newEmail !== origEmail) {
+        if (typeof adminEmails !== 'undefined' && Array.isArray(adminEmails)) {
+            const aIdx = adminEmails.findIndex(e => (e || '').toLowerCase().trim() === origEmail);
+            if (aIdx !== -1) adminEmails[aIdx] = newEmail;
+            if (typeof saveAdminEmails === 'function') saveAdminEmails();
+        }
+        if (typeof workerEmails !== 'undefined' && Array.isArray(workerEmails)) {
+            const wIdx = workerEmails.findIndex(e => (e || '').toLowerCase().trim() === origEmail);
+            if (wIdx !== -1) {
+                workerEmails[wIdx] = newEmail;
+                try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+            }
+        }
+    }
+
+    // 4. Si el usuario editado es la sesión activa
+    if (typeof currentUser !== 'undefined' && currentUser && (currentUser.email || '').toLowerCase().trim() === origEmail) {
+        currentUser.name = newName;
+        currentUser.nombre = newName;
+        currentUser.email = newEmail;
+        if (typeof saveUser === 'function') saveUser();
+        try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e){}
+        if (typeof syncUserUI === 'function') syncUserUI();
+    }
+
+    // 5. Sincronizar en Firestore
+    if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
+        db.collection('usuarios').doc(newEmail).set({
+            nombre: newName,
+            name: newName,
+            email: newEmail
+        }, { merge: true }).catch(err => console.warn("Aviso Firestore al guardar edición:", err));
+
+        if (newEmail !== origEmail) {
+            db.collection('usuarios').doc(origEmail).delete().catch(() => {});
+        }
+    }
+
+    // 6. Cerrar modal y renderizar vistas
+    window.cerrarModalEdicionUsuarioAdmin();
+    if (typeof renderAdminUsers === 'function') renderAdminUsers();
+    if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
+    if (typeof showToast === 'function') showToast(`Datos de ${newName} actualizados exitosamente`, '✅');
+};
+
 function confirmAdminPasswordChange() {
     if (!userToChangePassword) return;
     const newPassword = document.getElementById('adminNewPasswordInput').value.trim();
@@ -2221,9 +2520,39 @@ function confirmAdminPasswordChange() {
 }
 
 function logoutUser(e) {
-    e.stopPropagation();
-    currentUser = null; saveUser(); syncUserUI();
+    if (e && e.stopPropagation) e.stopPropagation();
+    try {
+        localStorage.removeItem('dt_user');
+        localStorage.removeItem('dt_logged_user');
+    } catch(err) {}
+    currentUser = null; 
+    saveUser(); 
+
+    // Ocultar inmediatamente el panel administrativo y todas las secciones administrativas
+    const adminDash = document.getElementById('admin-dashboard');
+    if (adminDash) { 
+        adminDash.style.display = 'none'; 
+        adminDash.classList.remove('active'); 
+    }
+    const kitchenModal = document.getElementById('kitchenModal');
+    if (kitchenModal) kitchenModal.style.display = 'none';
+    const adminNotifDropdown = document.getElementById('adminNotifDropdown');
+    if (adminNotifDropdown) adminNotifDropdown.style.display = 'none';
+    const deskBtn = document.getElementById('desk-admin-btn');
+    const mobBtn = document.getElementById('mob-admin-btn');
+    if (deskBtn) deskBtn.style.display = 'none';
+    if (mobBtn) mobBtn.style.display = 'none';
+
+    // Redirigir a la vista de catálogo/inicio (#inicio o #productos)
+    if (typeof showSection === 'function') {
+        showSection('inicio', document.querySelector('.nav-link'));
+    }
+
+    // Cerrar menús de perfil
     document.getElementById('user-dropdown-menu')?.classList.remove('active');
+    document.getElementById('mobileProfileModal')?.style.setProperty('display', 'none');
+
+    syncUserUI();
     showToast("Sesión cerrada.", 'ℹ️');
 }
 
@@ -2399,6 +2728,19 @@ function syncUserUI() {
             mobBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin();");
         }
 
+        const adminDash = document.getElementById('admin-dashboard');
+        if (!isAdmin && !isWorker) {
+            if (adminDash) {
+                adminDash.style.display = 'none';
+                adminDash.classList.remove('active');
+            }
+            if (deskBtn) deskBtn.style.display = 'none';
+            if (mobBtn) mobBtn.style.display = 'none';
+            if (adminDash && adminDash.classList.contains('active')) {
+                if (typeof showSection === 'function') showSection('inicio');
+            }
+        }
+
         const adminOnlyDiv = document.getElementById('admin-only-sections');
         const adminTitle = document.getElementById('admin-title-panel');
         if (adminOnlyDiv) adminOnlyDiv.style.display = isAdmin ? 'block' : 'none';
@@ -2427,6 +2769,21 @@ function syncUserUI() {
         if (mobilePill) mobilePill.style.display = 'none';
         if (hIncentive) hIncentive.style.display = 'flex';
         if (cIncentive) cIncentive.style.display = 'flex';
+
+        const deskBtn = document.getElementById('desk-admin-btn');
+        const mobBtn = document.getElementById('mob-admin-btn');
+        if (deskBtn) deskBtn.style.display = 'none';
+        if (mobBtn) mobBtn.style.display = 'none';
+
+        const adminDash = document.getElementById('admin-dashboard');
+        if (adminDash) {
+            adminDash.style.display = 'none';
+            adminDash.classList.remove('active');
+        }
+        const kitchenModal = document.getElementById('kitchenModal');
+        if (kitchenModal) kitchenModal.style.display = 'none';
+        const adminNotifDropdown = document.getElementById('adminNotifDropdown');
+        if (adminNotifDropdown) adminNotifDropdown.style.display = 'none';
     }
     if (typeof renderRewards === 'function') renderRewards();
     if (window.renderAdminNotifList) window.renderAdminNotifList();

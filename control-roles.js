@@ -392,8 +392,10 @@ window.addEventListener('DOMContentLoaded', () => {
                             <option value="Admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
                         </select>
                         <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
+                    <div style="display:flex; gap:4px; width:100%;">
+                        <button onclick="window.abrirModalEditarUsuarioAdmin('${u.email}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1; font-weight:600;">✏️ Editar</button>
+                        ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1;">🔑 Cambiar Clave</button>` : ''}
                     </div>
-                    ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">🔑 Cambiar Clave</button>` : ''}
                     <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
                 </div>`}
             </td>
@@ -670,6 +672,13 @@ window.renderKitchenUsers = function() {
                     <button class="k-btn-point" onclick="updateUserPoints('${u.email}', 50)">+50</button>
                 </div>
             </div>
+
+            ${!isSuper ? `
+            <div style="margin-top:10px; display:flex; gap:6px;">
+                <button type="button" onclick="window.abrirModalEditarUsuarioAdmin('${u.email}')" style="flex:1; padding:6px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:6px; font-weight:600; font-size:0.8rem; cursor:pointer;">✏️ Editar</button>
+                <button type="button" onclick="adminChangePassword('${u.email}')" style="flex:1; padding:6px; background:#f8fafc; color:#475569; border:1px solid #cbd5e1; border-radius:6px; font-size:0.8rem; cursor:pointer;">🔑 Clave</button>
+            </div>
+            ` : ''}
         </div>`;
     }).join('');
 };
@@ -980,12 +989,13 @@ window.registerCustomUser = function(e) {
 };
 
 window.loginCustomUser = function(e) {
-    e.preventDefault();
-    const correoInput = document.getElementById('loginEmail')?.value.trim().toLowerCase();
-    const passInput = document.getElementById('loginPassword')?.value.trim();
+    if (e && e.preventDefault) e.preventDefault();
+    const correoInput = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
+    const passInput = (document.getElementById('loginPassword')?.value || '').trim();
     
     if (!correoInput || !passInput) {
         if (typeof showAuthMessage === 'function') showAuthMessage('Por favor ingresa correo y contraseña', 'error');
+        else if (typeof showToast === 'function') showToast('Por favor ingresa correo y contraseña', '❌');
         return;
     }
 
@@ -1004,6 +1014,9 @@ window.loginCustomUser = function(e) {
             isAdmin: true,
             blocked: false,
             estado: 'activo',
+            vip: true,
+            isVip: true,
+            vipStatus: 'activo',
             points: 500,
             picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
         };
@@ -1017,6 +1030,15 @@ window.loginCustomUser = function(e) {
             }
             if (typeof saveUsersDB === 'function') saveUsersDB();
         }
+
+        try {
+            let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            if (!Array.isArray(regUsers)) regUsers = [];
+            const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
+            if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...superAdminObj };
+            else regUsers.push({ ...superAdminObj });
+            localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+        } catch(e) {}
 
         if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
             adminEmails.push(correoInput);
@@ -1034,6 +1056,7 @@ window.loginCustomUser = function(e) {
         if (typeof db !== 'undefined' && db && db.collection) {
             db.collection('usuarios').doc(correoInput).set({
                 nombre: adminName,
+                name: adminName,
                 email: correoInput,
                 rol: 'admin',
                 role: 'admin',
@@ -1058,56 +1081,174 @@ window.loginCustomUser = function(e) {
         return;
     }
 
+    // 1. Verificar primero en almacenamiento local: dt_registered_users y dt_users_db
+    let regUsers = [];
+    try { regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]'); } catch(e) {}
+    if (!Array.isArray(regUsers)) regUsers = [];
+
+    let dbUsers = [];
+    try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch(e) {}
+    if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
+        dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
+    }
+
+    let foundUser = regUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)) && u.password === passInput));
+    if (!foundUser) {
+        foundUser = dbUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)) && u.password === passInput));
+    }
+
+    if (foundUser) {
+        if (!isSuper && (foundUser.estado === 'bloqueado' || foundUser.blocked)) {
+            if (typeof showAuthMessage === 'function') return showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
+            return alert('Tu cuenta está suspendida.');
+        }
+
+        const resolvedRole = foundUser.role || foundUser.rol || 'cliente';
+        const isVip = !!(foundUser.isVip || foundUser.vip || resolvedRole === 'vip');
+        const userToLogin = {
+            name: foundUser.name || foundUser.nombre || (correoInput.split('@')[0]),
+            nombre: foundUser.name || foundUser.nombre || (correoInput.split('@')[0]),
+            email: (foundUser.email || correoInput).toLowerCase().trim(),
+            phone: foundUser.phone || foundUser.telefono || '',
+            password: foundUser.password || passInput,
+            role: resolvedRole,
+            rol: resolvedRole,
+            isAdmin: (resolvedRole === 'admin'),
+            isVip: isVip,
+            vip: isVip,
+            vipStatus: foundUser.vipStatus || (isVip ? 'activo' : 'inactivo'),
+            points: (foundUser.points !== undefined && foundUser.points !== null) ? foundUser.points : (foundUser.puntos || 15),
+            picture: foundUser.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(foundUser.name || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+            blocked: false
+        };
+
+        // Sincronizar en db_users / dt_users_db
+        if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+            const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === userToLogin.email);
+            if (dbIdx !== -1) db_users[dbIdx] = { ...db_users[dbIdx], ...userToLogin };
+            else db_users.push({ ...userToLogin });
+            if (typeof saveUsersDB === 'function') saveUsersDB();
+        }
+
+        // Sincronizar en dt_registered_users
+        const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === userToLogin.email);
+        if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...userToLogin };
+        else regUsers.push({ ...userToLogin });
+        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
+        // Sincronizar Firestore asíncronamente
+        if (typeof db !== 'undefined' && db && db.collection) {
+            db.collection('usuarios').doc(correoInput).set({
+                nombre: userToLogin.name,
+                name: userToLogin.name,
+                email: userToLogin.email,
+                rol: userToLogin.role,
+                role: userToLogin.role,
+                estado: 'activo',
+                blocked: false,
+                isVip: userToLogin.isVip,
+                vip: userToLogin.vip,
+                points: userToLogin.points
+            }, { merge: true }).catch(() => {});
+        }
+
+        if (typeof loginUserObj === 'function') {
+            return loginUserObj(userToLogin);
+        } else {
+            currentUser = userToLogin;
+            localStorage.setItem('dt_user', JSON.stringify(userToLogin));
+            localStorage.setItem('dt_logged_user', JSON.stringify(userToLogin));
+            if (typeof syncUserUI === 'function') syncUserUI();
+            if (typeof closeAuthModal === 'function') closeAuthModal();
+            if (typeof closeMobileProfile === 'function') closeMobileProfile();
+            if (typeof showToast === 'function') showToast(`¡Bienvenido, ${userToLogin.name}!`, '🎉');
+            return;
+        }
+    }
+
+    // 2. Si no se encontró localmente pero Firestore está disponible, consultar en la nube
     if (typeof db !== 'undefined' && db && db.collection) {
         db.collection('usuarios').doc(correoInput).get().then((doc) => {
             if (!doc.exists) {
-                if (typeof originalLoginCustomUser === 'function') return originalLoginCustomUser(e);
+                const userExistsWrongPass = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
+                                            dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
+                if (userExistsWrongPass) {
+                    if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
+                    return alert('Contraseña incorrecta.');
+                }
+                if (typeof showAuthMessage === 'function') return showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');
                 return alert('El usuario no existe.');
             }
             const data = doc.data();
-            if (!isSuper && (data.estado === 'bloqueado' || data.blocked)) return alert('Tu cuenta está suspendida.');
-            if (data.password !== passInput) return alert('Contraseña incorrecta.');
+            if (!isSuper && (data.estado === 'bloqueado' || data.blocked)) {
+                if (typeof showAuthMessage === 'function') return showAuthMessage('⛔ Tu cuenta está suspendida.', 'error');
+                return alert('Tu cuenta está suspendida.');
+            }
+            if (data.password !== passInput) {
+                if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Verifica e intenta nuevamente.', 'error');
+                return alert('Contraseña incorrecta.');
+            }
             
-            if (isSuper) {
-                data.rol = 'admin';
-                data.role = 'admin';
-                data.isAdmin = true;
-                data.blocked = false;
-                data.estado = 'activo';
-                if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
-                    adminEmails.push(correoInput);
-                    if (typeof saveAdminEmails === 'function') saveAdminEmails();
-                }
-                if (typeof workerEmails !== 'undefined') {
-                    workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
-                }
-                db.collection('usuarios').doc(correoInput).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => {});
+            const resolvedRole = data.role || data.rol || (isSuper ? 'admin' : 'cliente');
+            const isVip = !!(data.isVip || data.vip || resolvedRole === 'vip');
+            const remoteUser = {
+                name: data.nombre || data.name || (correoInput.split('@')[0]),
+                nombre: data.nombre || data.name || (correoInput.split('@')[0]),
+                email: correoInput,
+                password: passInput,
+                role: resolvedRole,
+                rol: resolvedRole,
+                isAdmin: (resolvedRole === 'admin'),
+                isVip: isVip,
+                vip: isVip,
+                vipStatus: data.vipStatus || (isVip ? 'activo' : 'inactivo'),
+                points: (data.points !== undefined && data.points !== null) ? data.points : (data.puntos || 15),
+                picture: data.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.nombre || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+                blocked: false
+            };
+
+            // Guardar localmente para futuras sesiones
+            try {
+                let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                if (!Array.isArray(regUsers)) regUsers = [];
+                const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
+                if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...remoteUser };
+                else regUsers.push({ ...remoteUser });
+                localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+            } catch(e) {}
+
+            if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+                const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
+                if (dbIdx !== -1) db_users[dbIdx] = { ...db_users[dbIdx], ...remoteUser };
+                else db_users.push({ ...remoteUser });
+                if (typeof saveUsersDB === 'function') saveUsersDB();
             }
 
-            localStorage.setItem('dt_logged_user', JSON.stringify(data));
-            localStorage.setItem('dt_user', JSON.stringify(data));
-            
-            if (typeof currentUser !== 'undefined') {
-                currentUser = data;
-            }
-            
-            if (typeof actualizarInterfazSesion === 'function') {
-                actualizarInterfazSesion(data);
-            } else if (typeof syncUserUI === 'function') {
-                syncUserUI();
+            if (typeof loginUserObj === 'function') {
+                loginUserObj(remoteUser);
+            } else {
+                currentUser = remoteUser;
+                localStorage.setItem('dt_logged_user', JSON.stringify(remoteUser));
+                localStorage.setItem('dt_user', JSON.stringify(remoteUser));
+                if (typeof syncUserUI === 'function') syncUserUI();
+                if (typeof closeAuthModal === 'function') closeAuthModal();
                 if (typeof closeMobileProfile === 'function') closeMobileProfile();
-                if (typeof showToast === 'function') showToast('¡Bienvenido, ' + (data.nombre || data.name) + '!', '🎉');
+                if (typeof showToast === 'function') showToast('¡Bienvenido, ' + remoteUser.name + '!', '🎉');
             }
         }).catch(err => {
-            console.warn("Firestore offline, intentando login local:", err);
-            if (typeof originalLoginCustomUser === 'function') {
-                originalLoginCustomUser(e);
-            }
+            console.warn("Firestore error consultando usuario:", err);
+            if (typeof showAuthMessage === 'function') showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');
+            else alert('El usuario no existe o la contraseña es incorrecta.');
         });
     } else {
-        if (typeof originalLoginCustomUser === 'function') {
-            originalLoginCustomUser(e);
+        const userExistsWrongPass = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
+                                    dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
+        if (userExistsWrongPass) {
+            if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
+            return alert('Contraseña incorrecta.');
         }
+        if (typeof showAuthMessage === 'function') return showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');
+        return alert('El usuario no existe o la contraseña es incorrecta.');
     }
 };
 
