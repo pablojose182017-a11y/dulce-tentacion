@@ -1824,7 +1824,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.18);
         }
 
-        #adminPointsModal, #modal-admin-points {
+        #adminPointsModal, #modal-admin-points, #modalVipTerms {
             display: none;
             position: fixed;
             inset: 0;
@@ -1836,7 +1836,7 @@
             padding: 16px;
         }
 
-        #adminPointsModal.active, #modal-admin-points.active {
+        #adminPointsModal.active, #modal-admin-points.active, #modalVipTerms.active {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
@@ -4808,3 +4808,26 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.1);
 }
+
+/* =========================================
+   CENTRO DE NOTIFICACIONES ADMIN / OPERATIVO
+========================================= */
+.btn-notif-bell {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.btn-notif-bell:hover {
+    background: #fff5f7 !important;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.2) !important;
+}
+.btn-notif-bell:active {
+    transform: scale(0.95);
+}
+@media (max-width: 480px) {
+    #adminNotifDropdown {
+        width: calc(100vw - 40px) !important;
+        max-width: 320px !important;
+        right: 0 !important;
+    }
+}
+

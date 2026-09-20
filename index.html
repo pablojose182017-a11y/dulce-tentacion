@@ -182,7 +182,26 @@
     </div>
 
     <section id="admin-dashboard" class="section">
-        <div class="section-title" id="admin-title-panel">📊 Panel Administrativo & Financiero</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div class="section-title" id="admin-title-panel" style="margin-bottom: 0;">📊 Panel Administrativo & Financiero</div>
+            
+            <div class="admin-notif-wrapper" style="position: relative; display: inline-block;">
+                <button type="button" id="btnAdminNotifBell" onclick="window.toggleAdminNotifDropdown && window.toggleAdminNotifDropdown()" class="btn-notif-bell" style="background: #fff; border: 1px solid #ffccd5; border-radius: 50%; width: 42px; height: 42px; cursor: pointer; font-size: 1.2rem; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center;">
+                    🔔
+                    <span id="adminNotifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #e91e63; color: #fff; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">0</span>
+                </button>
+                <!-- Bandeja flotante de notificaciones -->
+                <div id="adminNotifDropdown" style="display: none; position: absolute; right: 0; top: 50px; width: 340px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #ffe0e6; z-index: 999999; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 10px;">
+                        <strong style="color: #b71c1c; font-size: 0.95rem;">🔔 Centro de Notificaciones</strong>
+                        <button type="button" onclick="window.clearAdminNotifs && window.clearAdminNotifs()" style="background: none; border: none; font-size: 0.75rem; color: #888; cursor: pointer;">Limpiar</button>
+                    </div>
+                    <div id="adminNotifList" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Se renderizan las alertas aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- PESTAÑAS (TABS) ADMIN -->
         <div class="admin-tabs-nav">
@@ -511,12 +530,17 @@
                 <!-- Recompensas inyectadas vía JS con fotos grandes y botones de canje -->
             </div>
 
-            <div class="vip-perks-banner">
-                <div class="vip-perks-icon">👑</div>
-                <div class="vip-perks-info">
-                    <strong>Beneficios Club VIP:</strong>
-                    <p>Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.</p>
+            <div class="vip-perks-banner" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+                <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:250px;">
+                    <div class="vip-perks-icon">👑</div>
+                    <div class="vip-perks-info">
+                        <strong>Beneficios Club VIP:</strong>
+                        <p>Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.</p>
+                    </div>
                 </div>
+                <button type="button" id="btnVipBannerAction" class="btn-vip-action btn-vip-banner-action" onclick="window.openVipTermsModal && window.openVipTermsModal(event)" style="background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+                    👑 Activar Membresía VIP
+                </button>
             </div>
         </section>
     </section>
@@ -1131,6 +1155,36 @@
     <!-- ===== MODAL GESTIÓN DE PUNTOS Y RECOMPENSAS CLUB VIP ===== -->
     <div class="auth-modal" id="adminPointsModal" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeAdminPointsModal()">
         <!-- Se llena dinámicamente con renderAdminPointsModalContent() -->
+    </div>
+
+    <!-- ===== MODAL TÉRMINOS Y BENEFICIOS VIP ===== -->
+    <div class="auth-modal" id="modalVipTerms" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeVipTermsModal && window.closeVipTermsModal()">
+       <div class="auth-modal-content" style="max-width: 520px; width: 92%; padding: 25px; text-align: center; border-radius: 20px; background: #fff; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+         <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">×</button>
+         <span style="font-size: 2.2rem;">👑</span>
+         <h3 style="color: #b71c1c; margin: 10px 0; font-size: 1.3rem; font-weight: 800;">Membresía Club VIP Oro</h3>
+         <p style="font-size: 0.9rem; color: #555; margin: 0 0 10px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes más dulces.</p>
+         
+         <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 15px; text-align: left; font-size: 0.88rem; margin: 15px 0; color: #5d4037;">
+           <strong>✨ Beneficios Exclusivos:</strong>
+           <ul style="margin: 8px 0 0 18px; padding: 0;">
+             <li>Acumulación de 10 Pts por cada $1.000 COP en compras.</li>
+             <li>Bono y detalle sorpresa en el mes de tu cumpleaños.</li>
+             <li>Acceso a promociones flash, canjes especiales y lanzamientos anticipados.</li>
+           </ul>
+         </div>
+
+         <div style="text-align: left; font-size: 0.85rem; margin: 15px 0; color: #666;">
+           <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+             <input type="checkbox" id="checkAcceptVipTerms" style="margin-top: 3px;">
+             <span>He leído y acepto los Términos y Condiciones y la política de beneficios del Club VIP de P&S Punto Dulce.</span>
+           </label>
+         </div>
+
+         <button type="button" id="btnConfirmVipMembership" onclick="window.confirmVipMembership && window.confirmVipMembership()" class="btn-vip-action" style="width: 100%; padding: 12px; font-weight: bold; background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: all 0.2s;">
+           👑 Aceptar y Solicitar Activación VIP
+         </button>
+       </div>
     </div>
 
     <!-- ===== JAVASCRIPT ===== -->

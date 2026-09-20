@@ -120,6 +120,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderProducts(products);
     updateCart();
     syncUserUI();
+    if (window.renderAdminNotifList) window.renderAdminNotifList();
 
     // Configurar scroll de categorías con el ratón en PC
     const sliders = document.querySelectorAll('.cat-chip-scroll');
@@ -1243,6 +1244,7 @@ function checkNewOrders() {
                     renderLiveOrders();
                     renderAdminDashboard();
                 }
+                if (window.renderAdminNotifList) window.renderAdminNotifList();
             } else if (parsed.length !== pedidosHistorial.length) {
                 // Resincronizar en caso de borrado desde otro tab
                 pedidosHistorial = parsed;
@@ -2240,7 +2242,7 @@ function syncUserUI() {
 
         const vipHtml = currentUser.vip
             ? `<div class="vip-card-golden"><strong>👑 Membresía VIP Mensual Activa</strong> • 5% Dcto Preferencial</div>`
-            : `<button class="vip-upgrade-btn" onclick="openVipModal()">✨ Pasar a VIP Oro</button>`;
+            : `<button class="vip-upgrade-btn" onclick="window.openVipTermsModal && window.openVipTermsModal(event)">✨ Pasar a VIP Oro</button>`;
 
         const dArea = document.getElementById('vip-dropdown-area-desk');
         if (dArea) dArea.innerHTML = vipHtml;
@@ -2296,6 +2298,7 @@ function syncUserUI() {
         if (cIncentive) cIncentive.style.display = 'flex';
     }
     if (typeof renderRewards === 'function') renderRewards();
+    if (window.renderAdminNotifList) window.renderAdminNotifList();
 }
 
 function toggleUserDropdown(e) {
@@ -2887,6 +2890,20 @@ function sendOrder() {
         pedidosHistorial.push(newOrder);
         lastOrderCount = pedidosHistorial.length;
         if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
+
+        try {
+            const ordNotif = {
+                type: 'nuevo_pedido',
+                title: `🛍️ Nuevo Pedido #${orderId}`,
+                user: name,
+                email: (currentUser?.email ? currentUser.email : 'Cliente') + ` ($${finalTotal.toLocaleString()} COP)`,
+                date: dateStr
+            };
+            let al = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
+            al.unshift(ordNotif);
+            localStorage.setItem('dt_live_alerts', JSON.stringify(al));
+            if (window.renderAdminNotifList) window.renderAdminNotifList();
+        } catch (e) { }
     }
 
     if (currentUser) {
@@ -2997,15 +3014,155 @@ function toggleVIP() {
     showToast(currentUser.vip ? '¡Membresía VIP Oro activada!' : 'Membresía VIP desactivada.', '👑', 3000);
 }
 
-function openVipModal() {
-    document.getElementById('vipPromoModal').style.display = 'flex';
-    const m = document.getElementById('user-dropdown-menu');
-    if (m) m.classList.remove('active');
-    closeMobileProfile();
+// ===== MODAL DE TÉRMINOS Y BENEFICIOS VIP =====
+window.openVipTermsModal = function(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || 'null');
+    if (!user) {
+        alert("Por favor inicia sesión o regístrate para conocer y solicitar tu membresía VIP.");
+        if (typeof openAuthModal === 'function') openAuthModal();
+        else if (typeof window.openLoginModal === 'function') window.openLoginModal();
+        return;
+    }
+    const m = document.getElementById('modalVipTerms');
+    if (m) {
+        m.style.display = 'flex';
+        m.classList.add('active');
+        m.style.zIndex = '999999';
+        m.style.visibility = 'visible';
+        m.style.opacity = '1';
+    }
+    const dMenu = document.getElementById('user-dropdown-menu');
+    if (dMenu) dMenu.classList.remove('active');
+    if (typeof closeMobileProfile === 'function') closeMobileProfile();
+};
+
+window.closeVipTermsModal = function() {
+    const m = document.getElementById('modalVipTerms');
+    if (m) {
+        m.style.display = 'none';
+        m.classList.remove('active');
+        m.style.visibility = 'hidden';
+    }
+};
+
+window.confirmVipMembership = function() {
+    const check = document.getElementById('checkAcceptVipTerms');
+    if (!check || !check.checked) {
+        alert("Debes marcar la casilla para aceptar los Términos y Condiciones.");
+        return;
+    }
+
+    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || '{}');
+    user.isVip = true;
+    user.vipStatus = 'solicitado';
+    user.vip = true;
+    localStorage.setItem('dt_user', JSON.stringify(user));
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        currentUser.isVip = true;
+        currentUser.vipStatus = 'solicitado';
+        currentUser.vip = true;
+        if (typeof syncUserUI === 'function') syncUserUI();
+    }
+
+    // Notificación para panel de administración y trabajador (dt_live_alerts y Firestore)
+    const notif = {
+        type: 'solicitud_vip',
+        title: '👑 Nueva Solicitud VIP',
+        user: user.name || 'Cliente',
+        email: user.email || '',
+        date: new Date().toLocaleString()
+    };
+    let alerts = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
+    alerts.unshift(notif);
+    localStorage.setItem('dt_live_alerts', JSON.stringify(alerts));
+    if (window.renderAdminNotifList) window.renderAdminNotifList();
+
+    if (window.db && typeof window.db.collection === 'function') {
+        window.db.collection('solicitudes_vip').add(notif).catch(err => console.warn(err));
+    }
+
+    window.closeVipTermsModal();
+    alert("¡Excelente! Solicitud registrada. Te contactaremos por WhatsApp para confirmar tu activación.");
+
+    // Redirección a WhatsApp del negocio
+    const phoneAdmin = "573227349286";
+    const text = `¡Hola P&S Punto Dulce! 👋 Acabo de aceptar los Términos y Condiciones del Club VIP y deseo activar mi Membresía VIP Oro 👑✨%0A%0A👤 *Nombre:* ${encodeURIComponent(user.name || 'Cliente')}%0A📧 *Correo:* ${encodeURIComponent(user.email || 'N/A')}`;
+    window.open(`https://wa.me/${phoneAdmin}?text=${text}`, '_blank');
+};
+
+// ===== CENTRO DE NOTIFICACIONES (ADMIN / TRABAJADOR) =====
+window.toggleAdminNotifDropdown = function() {
+    const dd = document.getElementById('adminNotifDropdown');
+    if (!dd) return;
+    const isOpen = dd.style.display === 'block';
+    dd.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+        window.renderAdminNotifList && window.renderAdminNotifList();
+    }
+};
+
+window.renderAdminNotifList = function() {
+    const listEl = document.getElementById('adminNotifList');
+    const badgeEl = document.getElementById('adminNotifBadge');
+    const alerts = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
+    
+    if (badgeEl) {
+        if (alerts.length > 0) {
+            badgeEl.textContent = alerts.length;
+            badgeEl.style.display = 'inline-block';
+        } else {
+            badgeEl.style.display = 'none';
+        }
+    }
+
+    if (!listEl) return;
+    if (alerts.length === 0) {
+        listEl.innerHTML = '<p style="font-size: 0.82rem; color: #999; text-align: center; margin: 15px 0;">No hay notificaciones nuevas</p>';
+        return;
+    }
+
+    listEl.innerHTML = alerts.map(item => `
+        <div style="background: #fff9fa; border-left: 3px solid #e91e63; border-radius: 8px; padding: 8px 10px; font-size: 0.82rem;">
+            <div style="font-weight: bold; color: #333;">${item.title || 'Notificación'}</div>
+            <div style="color: #666; font-size: 0.78rem;">${item.user || ''} - ${item.email || ''}</div>
+            <div style="color: #aaa; font-size: 0.7rem; margin-top: 2px;">${item.date || ''}</div>
+        </div>
+    `).join('');
+};
+
+window.clearAdminNotifs = function() {
+    localStorage.setItem('dt_live_alerts', '[]');
+    window.renderAdminNotifList && window.renderAdminNotifList();
+};
+
+document.addEventListener('click', function(e) {
+    const wrapper = document.querySelector('.admin-notif-wrapper');
+    const dd = document.getElementById('adminNotifDropdown');
+    if (dd && dd.style.display === 'block' && wrapper && !wrapper.contains(e.target)) {
+        dd.style.display = 'none';
+    }
+});
+
+function openVipModal(e) {
+    if (window.openVipTermsModal) {
+        window.openVipTermsModal(e);
+    } else {
+        const m = document.getElementById('vipPromoModal');
+        if (m) m.style.display = 'flex';
+        const dMenu = document.getElementById('user-dropdown-menu');
+        if (dMenu) dMenu.classList.remove('active');
+        if (typeof closeMobileProfile === 'function') closeMobileProfile();
+    }
 }
 
 function closeVipModal() {
-    document.getElementById('vipPromoModal').style.display = 'none';
+    const m = document.getElementById('vipPromoModal');
+    if (m) m.style.display = 'none';
+    if (window.closeVipTermsModal) window.closeVipTermsModal();
 }
 
 function requestVipWhatsApp() {
