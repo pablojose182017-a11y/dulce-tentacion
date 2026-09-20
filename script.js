@@ -360,13 +360,25 @@ function registerCustomUser(e) {
     showToast("¡Registro exitoso! Bienvenido al Club P&S Punto Dulce 🍰", "🎉");
 }
 
-const pointRewards = [
+const defaultPointRewards = [
     { id: 'r1', name: 'Hojaldre de Bocadillo y Queso', cost: 1000, img: 'WhatsApp Image 2026-08-19 at 19.32.35.jpeg' },
     { id: 'r2', name: 'Hojaldre de Pollo', cost: 2000, img: 'WhatsApp Image 2026-08-19 at 19.32.59.jpeg' },
     { id: 'r3', name: 'Hojaldre de Pollo, Jamón y Queso', cost: 3000, img: 'WhatsApp Image 2026-08-25 at 20.32.38.jpeg' }
 ];
 
+let pointRewards = defaultPointRewards;
+try {
+    const savedPointRewards = JSON.parse(localStorage.getItem('dt_point_rewards'));
+    if (savedPointRewards && Array.isArray(savedPointRewards) && savedPointRewards.length > 0) {
+        pointRewards = savedPointRewards;
+    }
+} catch(e) {
+    console.warn("Aviso cargando pointRewards de localStorage:", e);
+}
+window.pointRewards = pointRewards;
+
 function renderRewards() {
+    const currentList = window.pointRewards || pointRewards;
     const pts = currentUser ? (currentUser.points || 0) : 0;
     const ticketValEl = document.getElementById('modal-ticket-val');
     if (ticketValEl) ticketValEl.innerText = pts;
@@ -374,7 +386,7 @@ function renderRewards() {
     const container = document.getElementById('rewards-container');
     if (!container) return;
 
-    container.innerHTML = pointRewards.map(r => {
+    container.innerHTML = currentList.map(r => {
         const canRedeem = currentUser && pts >= r.cost;
         const missing = r.cost - pts;
         let btnText = 'Canjear premio';
@@ -424,7 +436,8 @@ function openPointsModal() {
 }
 
 function redeemReward(rewardId) {
-    const reward = pointRewards.find(x => x.id === rewardId);
+    const currentList = window.pointRewards || pointRewards;
+    const reward = currentList.find(x => x.id === rewardId);
     if (!reward || !currentUser || (currentUser.points || 0) < reward.cost) return;
 
     currentUser.points -= reward.cost;
@@ -441,7 +454,7 @@ function redeemReward(rewardId) {
         quantity: 1,
         cat: 'cortesia',
         tag: '¡Canjeado!',
-        img: reward.img
+        img: reward.img || 'logo-pys.png'
     });
     saveCart();
     updateCart();
@@ -1450,12 +1463,20 @@ function renderStockAdmin() {
 
     grid.innerHTML = filteredProducts.map(p => {
         const isOut = stockConfig[p.id] === true;
+        const currentPoints = p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : 0);
         return `
-                <div style="flex: 1 1 calc(33% - 10px); min-width: 140px; background:#fff; border:1px solid ${isOut ? '#fecdd3' : '#bbf7d0'}; border-radius:10px; padding:10px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
+                <div class="admin-stock-card" data-id="${p.id}" style="flex: 1 1 calc(33% - 10px); min-width: 140px; background:#fff; border:1px solid ${isOut ? '#fecdd3' : '#bbf7d0'}; border-radius:10px; padding:10px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
                     <img src="${safeImg(p.img)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:50px; height:50px; object-fit:cover; border-radius:8px; opacity:${isOut ? '0.5' : '1'}; filter:${isOut ? 'grayscale(100%)' : 'none'};">
                     <strong style="font-size:0.85rem; line-height:1.2;">${p.name}</strong>
                     <button onclick="toggleStock(${p.id})" style="width:100%; padding:8px; border-radius:6px; font-weight:bold; font-size:0.8rem; cursor:pointer; border:none; color:#fff; background:${isOut ? '#e11d48' : '#10b981'}; transition:all 0.2s;">
                         ${isOut ? '❌ Agotado' : '✅ Disponible'}
+                    </button>
+                    <div class="prod-stock-points-container" style="width:100%; display:flex; align-items:center; justify-content:space-between; background:#fff7ed; padding:4px 8px; border-radius:6px; border:1px solid #ffedd5; box-sizing:border-box;">
+                        <span style="font-size:0.75rem; font-weight:700; color:#c2410c;">⭐ Puntos:</span>
+                        <input type="number" min="0" value="${currentPoints}" onchange="updateProductPoints(${p.id}, this.value)" style="width:55px; padding:3px 6px; border:1px solid #fed7aa; border-radius:4px; text-align:center; font-size:0.8rem; font-weight:700; color:#ea580c; background:#fff; outline:none;" title="Puntos que otorga al comprar">
+                    </div>
+                    <button type="button" class="btn-delete-stock-prod" onclick="deleteProduct(${p.id})" style="width:100%; padding:6px 8px; border-radius:6px; font-weight:600; font-size:0.75rem; cursor:pointer; border:1px solid #fecaca; color:#ef4444; background:#fef2f2; transition:all 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+                        🗑️ Eliminar
                     </button>
                 </div>`;
     }).join('');
@@ -1470,6 +1491,330 @@ function toggleStock(id) {
     renderFeatured();
     showToast(stockConfig[id] ? 'Producto marcado como Agotado' : 'Producto disponible nuevamente', '✅');
 }
+
+function deleteProduct(pId) {
+    if (typeof window.eliminarProducto === 'function') {
+        window.eliminarProducto(pId);
+        return;
+    }
+    if (!confirm("¿Seguro que deseas eliminar este producto del catálogo?")) return;
+
+    let localCatalog = {};
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    localCatalog[pId] = localCatalog[pId] || {};
+    localCatalog[pId].eliminado = true;
+    localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+
+    const idx = products.findIndex(x => x.id === pId);
+    if (idx > -1) products.splice(idx, 1);
+
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('catalogo_personalizado').set({
+            [pId]: { eliminado: true }
+        }, { merge: true }).catch(e => console.error("Error eliminando producto:", e));
+    }
+
+    const modalEditar = document.getElementById('modal-editar-producto');
+    if (modalEditar) modalEditar.style.display = 'none';
+
+    if (typeof showToast === 'function') showToast('Producto eliminado', '✅');
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderFeatured === 'function') renderFeatured();
+}
+window.deleteProduct = deleteProduct;
+
+function updateProductPoints(pId, pointsVal) {
+    const pts = Math.max(0, parseInt(pointsVal) || 0);
+    const p = products.find(x => x.id === pId);
+    if (p) {
+        p.points = pts;
+        p.puntos = pts;
+    }
+    let localCatalog = {};
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    localCatalog[pId] = localCatalog[pId] || {};
+    localCatalog[pId].points = pts;
+    localCatalog[pId].puntos = pts;
+    localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('catalogo_personalizado').set({
+            [pId]: { points: pts, puntos: pts }
+        }, { merge: true }).catch(e => console.error("Error actualizando puntos de producto:", e));
+    }
+
+    if (typeof showToast === 'function') showToast(`Puntos asignados: ${pts} ⭐`, '✅');
+}
+window.updateProductPoints = updateProductPoints;
+
+// --- GESTIÓN DE RECOMPENSAS CLUB VIP & PUNTOS ---
+window.tempAdminRewards = null;
+
+function getAdminPointsModal() {
+    let modal = document.getElementById('adminPointsModal');
+    if (!modal) modal = document.getElementById('modal-admin-points');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'adminPointsModal';
+        modal.className = 'auth-modal';
+        modal.style.display = 'none';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '999999';
+        modal.onclick = function(e) {
+            if (e.target === modal) window.closeAdminPointsModal();
+        };
+        document.body.appendChild(modal);
+    }
+    return modal;
+}
+
+window.openAdminPointsModal = function(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    console.log("-> Abriendo modal de puntos y club VIP...");
+
+    const modal = document.getElementById('adminPointsModal') || document.getElementById('modal-admin-points');
+    if (!modal) {
+        console.error("No se encontró el elemento #adminPointsModal en el DOM");
+        alert("Error: El modal de configuración de puntos no existe en la página.");
+        return;
+    }
+
+    const currentList = (window.pointRewards && Array.isArray(window.pointRewards) && window.pointRewards.length > 0)
+        ? window.pointRewards
+        : ((typeof pointRewards !== 'undefined' && Array.isArray(pointRewards) && pointRewards.length > 0) ? pointRewards : defaultPointRewards);
+
+    window.tempAdminRewards = JSON.parse(JSON.stringify(currentList));
+
+    if (typeof renderAdminRewardsTable === 'function') {
+        renderAdminRewardsTable();
+    } else if (typeof renderAdminPointsRewards === 'function') {
+        renderAdminPointsRewards();
+    } else if (typeof renderAdminPointsModalContent === 'function') {
+        renderAdminPointsModalContent();
+    }
+
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    modal.style.zIndex = '999999';
+    modal.style.visibility = 'visible';
+    modal.style.opacity = '1';
+};
+const openAdminPointsModal = window.openAdminPointsModal;
+
+window.closeAdminPointsModal = function(e) {
+    if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    const m1 = document.getElementById('adminPointsModal');
+    if (m1) {
+        m1.style.display = 'none';
+        m1.classList.remove('active');
+        m1.style.visibility = 'hidden';
+    }
+    const m2 = document.getElementById('modal-admin-points');
+    if (m2) {
+        m2.style.display = 'none';
+        m2.classList.remove('active');
+        m2.style.visibility = 'hidden';
+    }
+};
+const closeAdminPointsModal = window.closeAdminPointsModal;
+
+window.syncAdminRewardsFromDOM = function() {
+    if (!window.tempAdminRewards || !Array.isArray(window.tempAdminRewards)) return;
+    const items = document.querySelectorAll('.admin-reward-item');
+    items.forEach(item => {
+        const idxStr = item.getAttribute('data-reward-index');
+        if (idxStr === null) return;
+        const idx = parseInt(idxStr, 10);
+        if (isNaN(idx) || !window.tempAdminRewards[idx]) return;
+
+        const nameInp = item.querySelector('.admin-reward-name-input');
+        const costInp = item.querySelector('.admin-reward-cost-input');
+        const imgInp = item.querySelector('.admin-reward-img-input');
+
+        if (nameInp) window.tempAdminRewards[idx].name = nameInp.value;
+        if (costInp) window.tempAdminRewards[idx].cost = Math.max(1, parseInt(costInp.value) || 0);
+        if (imgInp && imgInp.value.trim() !== '') window.tempAdminRewards[idx].img = imgInp.value.trim();
+    });
+};
+
+window.handleRewardFileUpload = function(idx, fileInput) {
+    if (!fileInput.files || !fileInput.files[0]) return;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Data = e.target.result;
+        if (window.tempAdminRewards && window.tempAdminRewards[idx]) {
+            window.tempAdminRewards[idx].img = base64Data;
+        }
+        const imgEl = document.getElementById(`admin-reward-prev-${idx}`);
+        if (imgEl) imgEl.src = base64Data;
+        const textInp = document.getElementById(`admin-reward-img-${idx}`);
+        if (textInp) textInp.value = file.name;
+    };
+    reader.readAsDataURL(file);
+};
+
+function renderAdminPointsModalContent() {
+    const modal = getAdminPointsModal();
+    if (!modal) return;
+
+    const rewards = window.tempAdminRewards || [];
+
+    const rewardsRows = rewards.length === 0 
+        ? `<div style="text-align:center; padding:28px 16px; color:#64748b; font-size:0.95rem; background:#f8fafc; border-radius:14px; border:2px dashed #cbd5e1;">No hay recompensas configuradas aún. Pulsa el botón verde abajo para agregar la primera.</div>`
+        : rewards.map((r, idx) => {
+            const safeName = (r.name || '').replace(/"/g, '&quot;');
+            const safeImgVal = (r.img || '').replace(/"/g, '&quot;');
+            const previewSrc = safeImg(r.img);
+            return `
+            <div class="admin-reward-item" data-reward-index="${idx}" style="display:flex; flex-direction:column; gap:10px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:border-color 0.2s;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="position:relative; width:56px; height:56px; flex:0 0 56px;">
+                        <img id="admin-reward-prev-${idx}" src="${previewSrc}" alt="Foto premio" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:56px; height:56px; object-fit:cover; border-radius:10px; border:1px solid #cbd5e1; background:#fff; display:block;">
+                    </div>
+                    <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+                        <div>
+                            <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:2px;">Nombre de la Recompensa</label>
+                            <input type="text" class="admin-reward-name-input" value="${safeName}" placeholder="Ej: Hojaldre de Bocadillo y Queso" oninput="updateAdminRewardField(${idx}, 'name', this.value)" style="width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; font-weight:600; color:#1e293b; background:#fff; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='#e91e63'" onblur="this.style.borderColor='#cbd5e1'">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <label style="font-size:11px; font-weight:700; color:#e11d48; white-space:nowrap;">🎟️ Puntos Requeridos:</label>
+                            <input type="number" min="1" step="50" class="admin-reward-cost-input" value="${r.cost || 1000}" placeholder="Puntos" oninput="updateAdminRewardField(${idx}, 'cost', this.value)" style="width:110px; padding:6px 10px; border:1px solid #fecdd3; border-radius:8px; font-size:13px; font-weight:700; color:#e11d48; background:#fff1f2; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='#e11d48'" onblur="this.style.borderColor='#fecdd3'">
+                        </div>
+                    </div>
+                    <button type="button" onclick="removeAdminRewardItem(${idx})" title="Eliminar Recompensa" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:700; font-size:13px; flex:0 0 auto; display:flex; align-items:center; gap:4px; transition:all 0.2s;" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'">
+                        🗑️ <span style="font-size:11px;">Eliminar</span>
+                    </button>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <span style="font-size:11px; font-weight:600; color:#64748b; white-space:nowrap;">🖼️ Foto / URL:</span>
+                    <input type="text" id="admin-reward-img-${idx}" class="admin-reward-img-input" value="${safeImgVal}" placeholder="URL o nombre de archivo" oninput="updateAdminRewardField(${idx}, 'img', this.value); const imgEl = document.getElementById('admin-reward-prev-${idx}'); if(imgEl) imgEl.src = safeImg(this.value);" style="flex:1; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:11px; color:#475569; background:#fff; outline:none; box-sizing:border-box;">
+                    <label style="background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 4px rgba(37,99,235,0.2);" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        📁 Subir Foto
+                        <input type="file" accept="image/*" style="display:none;" onchange="handleRewardFileUpload(${idx}, this)">
+                    </label>
+                </div>
+            </div>`;
+        }).join('');
+
+    modal.innerHTML = `
+        <div class="auth-content" style="max-width:560px; width:94%; max-height:88vh; display:flex; flex-direction:column; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.25); overflow:hidden;">
+            <button type="button" class="auth-close-btn" onclick="window.closeAdminPointsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;" onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b';">✕</button>
+
+            <div style="text-align:center; margin-bottom:14px; flex:0 0 auto;">
+                <h3 style="margin:0; font-size:20px; font-weight:800; background:linear-gradient(135deg, #e91e63, #ff5722); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⭐ Configurar Puntos & Club VIP</h3>
+                <p style="margin:4px 0 0 0; color:#64748b; font-size:12px;">Edita, agrega o elimina las recompensas que los clientes canjean con sus puntos acumulados.</p>
+            </div>
+
+            <div style="background:#fff1f2; border:1px solid #ffe4e6; border-radius:10px; padding:10px 12px; margin-bottom:14px; font-size:12px; color:#9f1239; flex:0 0 auto; display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">💡</span>
+                <span>Los cambios guardados aquí se reflejarán de inmediato en la sección pública del Club Puntos.</span>
+            </div>
+
+            <div id="admin-rewards-list-container" style="flex:1; overflow-y:auto; padding-right:4px; margin-bottom:14px;">
+                ${rewardsRows}
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; flex:0 0 auto; border-top:1px solid #f1f5f9; padding-top:14px;">
+                <button type="button" onclick="addAdminRewardItem()" style="width:100%; padding:11px; background:#f0fdf4; color:#16a34a; border:1.5px dashed #86efac; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                    ➕ Agregar Nueva Recompensa
+                </button>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="window.closeAdminPointsModal()" style="flex:1; padding:11px; background:#f1f5f9; color:#475569; border:none; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Cancelar</button>
+                    <button type="button" onclick="saveAdminPointsConfig()" style="flex:2; padding:11px; background:linear-gradient(135deg, #e91e63, #ff5722); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; box-shadow:0 4px 12px rgba(233,30,99,0.3); transition:all 0.2s;" onmouseover="this.style.opacity='0.95'" onmouseout="this.style.opacity='1'">💾 Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+window.renderAdminPointsModalContent = renderAdminPointsModalContent;
+window.renderAdminRewardsTable = renderAdminPointsModalContent;
+window.renderAdminPointsRewards = renderAdminPointsModalContent;
+
+window.addAdminRewardItem = function() {
+    window.syncAdminRewardsFromDOM();
+    if (!window.tempAdminRewards) window.tempAdminRewards = [];
+    window.tempAdminRewards.push({
+        id: 'r_' + Date.now(),
+        name: '',
+        cost: 1000,
+        img: 'logo-pys.png'
+    });
+    renderAdminPointsModalContent();
+    const cont = document.getElementById('admin-rewards-list-container');
+    if (cont) cont.scrollTop = cont.scrollHeight;
+};
+const addAdminRewardItem = window.addAdminRewardItem;
+
+window.removeAdminRewardItem = function(idx) {
+    window.syncAdminRewardsFromDOM();
+    if (!window.tempAdminRewards || !window.tempAdminRewards[idx]) return;
+    const item = window.tempAdminRewards[idx];
+    const name = item.name ? `"${item.name}"` : 'esta recompensa';
+    if (confirm(`¿Estás seguro de eliminar ${name}?`)) {
+        window.tempAdminRewards.splice(idx, 1);
+        renderAdminPointsModalContent();
+    }
+};
+const removeAdminRewardItem = window.removeAdminRewardItem;
+
+window.updateAdminRewardField = function(idx, field, value) {
+    if (!window.tempAdminRewards || !window.tempAdminRewards[idx]) return;
+    if (field === 'cost') {
+        window.tempAdminRewards[idx][field] = Math.max(1, parseInt(value) || 0);
+    } else {
+        window.tempAdminRewards[idx][field] = value;
+    }
+};
+const updateAdminRewardField = window.updateAdminRewardField;
+
+window.saveAdminPointsConfig = function() {
+    window.syncAdminRewardsFromDOM();
+    if (!window.tempAdminRewards) return;
+
+    const cleaned = window.tempAdminRewards
+        .map(r => ({
+            id: r.id || ('r_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
+            name: (r.name || '').trim(),
+            cost: Math.max(1, parseInt(r.cost) || 1000),
+            img: (r.img || '').trim() || 'logo-pys.png'
+        }))
+        .filter(r => r.name !== '');
+
+    if (cleaned.length === 0 && window.tempAdminRewards.length > 0) {
+        if (typeof showToast === 'function') showToast('Debes asignar un nombre a cada recompensa', '⚠️');
+        return;
+    }
+
+    const finalList = cleaned.length > 0 ? cleaned : defaultPointRewards;
+    pointRewards = finalList;
+    window.pointRewards = finalList;
+    localStorage.setItem('dt_point_rewards', JSON.stringify(finalList));
+
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('point_rewards').set({
+            rewards: finalList,
+            updatedAt: new Date().toISOString()
+        }, { merge: true }).then(() => {
+            console.log("Recompensas sincronizadas en Firestore");
+        }).catch(e => console.error("Error guardando point_rewards:", e));
+    }
+
+    if (typeof renderRewards === 'function') renderRewards();
+
+    window.closeAdminPointsModal();
+
+    if (typeof showToast === 'function') showToast("¡Configuración de Club Puntos guardada con éxito!", "🎉");
+};
+const saveAdminPointsConfig = window.saveAdminPointsConfig;
 
 function markOrderState(id, state) {
     const p = pedidosHistorial.find(x => x.id === id);

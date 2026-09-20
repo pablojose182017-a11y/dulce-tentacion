@@ -1694,6 +1694,7 @@ window.abrirModalEdicionProducto = function(pId = null) {
     let actualImg = '';
     let catSelect = 'panaderia';
     
+    let actualPoints = '';
     if (pId) {
         p = products.find(x => x.id === pId);
         if (!p) return;
@@ -1702,6 +1703,7 @@ window.abrirModalEdicionProducto = function(pId = null) {
         actualName = p.originalName || p.name;
         actualImg = p.originalImg || p.img;
         catSelect = p.cat;
+        actualPoints = p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : '');
     }
 
     if (!document.getElementById('modal-editar-producto')) {
@@ -1762,6 +1764,11 @@ window.abrirModalEdicionProducto = function(pId = null) {
                     </div>
                 </div>
             </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">⭐ Puntos que otorga (Club VIP)</label>
+                <input type="number" id="newProductPoints" value="${actualPoints !== undefined && actualPoints !== '' ? actualPoints : ''}" min="0" placeholder="Puntos que otorga (ej: 10)" style="width:100%; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:14px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+            </div>
             
             <div style="margin-bottom:24px;">
                 <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Fotografía del Producto</label>
@@ -1800,6 +1807,8 @@ window.guardarEdicionProducto = function(pId) {
     const nuevoPrecioStr = document.getElementById('edit-prod-price').value;
     const nuevaImg = document.getElementById('edit-prod-img').value.trim() || 'logo-pys.png';
     const nuevaCategoria = document.getElementById('edit-prod-category').value;
+    const puntosInput = document.getElementById('newProductPoints');
+    const nuevosPuntos = puntosInput && puntosInput.value.trim() !== '' ? Math.max(0, parseInt(puntosInput.value) || 0) : 0;
     
     const nuevoPrecio = parseInt(nuevoPrecioStr.replace(/\D/g, ''));
     if (!nuevoNombre || isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
@@ -1818,7 +1827,9 @@ window.guardarEdicionProducto = function(pId) {
         name: nuevoNombre,
         price: nuevoPrecio,
         img: nuevaImg,
-        category: nuevaCategoria
+        category: nuevaCategoria,
+        points: nuevosPuntos,
+        puntos: nuevosPuntos
     };
     
     if (isNew) {
@@ -1835,6 +1846,8 @@ window.guardarEdicionProducto = function(pId) {
             price: nuevoPrecio,
             cat: nuevaCategoria,
             img: nuevaImg,
+            points: nuevosPuntos,
+            puntos: nuevosPuntos,
             desc: 'Producto fresco del día',
             isCustom: true
         });
@@ -1852,6 +1865,8 @@ window.guardarEdicionProducto = function(pId) {
             
             p.img = nuevaImg;
             p.cat = nuevaCategoria;
+            p.points = nuevosPuntos;
+            p.puntos = nuevosPuntos;
             
             const isOferta = window.dtOfertasActivas[pId];
             if (isOferta) {
@@ -1921,13 +1936,15 @@ window.eliminarProducto = function(pId) {
         }, { merge: true }).catch(e => console.error("Error eliminando", e));
     }
     
-    document.getElementById('modal-editar-producto').style.display = 'none';
+    const modalEditar = document.getElementById('modal-editar-producto');
+    if (modalEditar) modalEditar.style.display = 'none';
     if(typeof showToast === 'function') showToast('Producto eliminado', '✅');
     
     if (typeof renderStockAdmin === 'function') renderStockAdmin();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderFeatured === 'function') renderFeatured();
 };
+window.deleteProduct = window.eliminarProducto;
 
 // 3. ACCIONES DIRECTAS EN CADA TARJETA DE PRODUCTO y BOTÓN GLOBAL
 const originalRenderStockAdminOfertas = window.renderStockAdmin;
@@ -1960,6 +1977,18 @@ if (originalRenderStockAdminOfertas) {
                 regaloBtn.onclick = () => window.abrirModalPromoRegalo();
                 controlsDiv.appendChild(regaloBtn);
             }
+            if (!document.getElementById('btnAdminClubPuntos')) {
+                const clubBtn = document.createElement('button');
+                clubBtn.type = 'button';
+                clubBtn.className = 'btn-admin-action';
+                clubBtn.id = 'btnAdminClubPuntos';
+                clubBtn.style.background = 'linear-gradient(135deg, #e91e63, #ff5722)';
+                clubBtn.style.color = 'white';
+                clubBtn.innerHTML = '⭐ Configurar Puntos & Club VIP';
+                clubBtn.setAttribute('onclick', 'window.openAdminPointsModal && window.openAdminPointsModal(event)');
+                clubBtn.onclick = (e) => window.openAdminPointsModal && window.openAdminPointsModal(e);
+                controlsDiv.appendChild(clubBtn);
+            }
         }
         
         // Modificar cada tarjeta de la grilla de stock
@@ -1974,34 +2003,61 @@ if (originalRenderStockAdminOfertas) {
                     const pId = parseInt(match[0]);
                     const isOferta = window.dtOfertasActivas[pId];
                     
+                    // Asegurar presencia del selector de Puntos
+                    let pointsBox = child.querySelector('.prod-stock-points-container');
+                    if (!pointsBox && typeof products !== 'undefined') {
+                        const p = products.find(x => x.id === pId);
+                        const currentPoints = p ? (p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : 0)) : 0;
+                        pointsBox = document.createElement('div');
+                        pointsBox.className = 'prod-stock-points-container';
+                        pointsBox.style.cssText = 'width:100%; display:flex; align-items:center; justify-content:space-between; background:#fff7ed; padding:4px 8px; border-radius:6px; border:1px solid #ffedd5; box-sizing:border-box; margin-top:4px;';
+                        pointsBox.innerHTML = `
+                            <span style="font-size:0.75rem; font-weight:700; color:#c2410c;">⭐ Puntos:</span>
+                            <input type="number" min="0" value="${currentPoints}" onchange="updateProductPoints(${pId}, this.value)" style="width:55px; padding:3px 6px; border:1px solid #fed7aa; border-radius:4px; text-align:center; font-size:0.8rem; font-weight:700; color:#ea580c; background:#fff; outline:none;" title="Puntos que otorga al comprar">
+                        `;
+                        if (btn.nextSibling) {
+                            child.insertBefore(pointsBox, btn.nextSibling);
+                        } else {
+                            child.appendChild(pointsBox);
+                        }
+                    }
+                    
                     // Botón Editar Producto
-                    const btnEditPrice = document.createElement('button');
-                    btnEditPrice.className = 'btn-edit-price';
-                    btnEditPrice.setAttribute('data-id', pId);
-                    btnEditPrice.style.width = '100%';
-                    btnEditPrice.style.padding = '6px';
-                    btnEditPrice.style.borderRadius = '6px';
-                    btnEditPrice.style.marginTop = '8px';
-                    btnEditPrice.style.cursor = 'pointer';
-                    btnEditPrice.style.border = '1px solid #cbd5e1';
-                    btnEditPrice.style.background = '#f8fafc';
-                    btnEditPrice.style.color = '#334155';
-                    btnEditPrice.style.fontWeight = 'bold';
-                    btnEditPrice.style.fontSize = '0.75rem';
-                    btnEditPrice.innerHTML = '✏️ Editar Producto';
-                    btnEditPrice.onclick = () => window.abrirModalEdicionProducto(pId);
-                    child.appendChild(btnEditPrice);
+                    let btnEditPrice = child.querySelector('.btn-edit-price');
+                    if (!btnEditPrice) {
+                        btnEditPrice = document.createElement('button');
+                        btnEditPrice.className = 'btn-edit-price';
+                        btnEditPrice.setAttribute('data-id', pId);
+                        btnEditPrice.style.width = '100%';
+                        btnEditPrice.style.padding = '6px';
+                        btnEditPrice.style.borderRadius = '6px';
+                        btnEditPrice.style.marginTop = '8px';
+                        btnEditPrice.style.cursor = 'pointer';
+                        btnEditPrice.style.border = '1px solid #cbd5e1';
+                        btnEditPrice.style.background = '#f8fafc';
+                        btnEditPrice.style.color = '#334155';
+                        btnEditPrice.style.fontWeight = 'bold';
+                        btnEditPrice.style.fontSize = '0.75rem';
+                        btnEditPrice.innerHTML = '✏️ Editar Producto';
+                        btnEditPrice.onclick = () => window.abrirModalEdicionProducto(pId);
+                        child.appendChild(btnEditPrice);
+                    }
                     
                     // Botón Oferta
-                    const btnOferta = document.createElement('button');
-                    btnOferta.style.width = '100%';
-                    btnOferta.style.padding = '8px';
-                    btnOferta.style.borderRadius = '6px';
-                    btnOferta.style.marginTop = '4px';
-                    btnOferta.style.cursor = 'pointer';
-                    btnOferta.style.border = 'none';
-                    btnOferta.style.fontWeight = 'bold';
-                    btnOferta.style.fontSize = '0.8rem';
+                    let btnOferta = child.querySelector('.btn-oferta-action');
+                    if (!btnOferta) {
+                        btnOferta = document.createElement('button');
+                        btnOferta.className = 'btn-oferta-action';
+                        btnOferta.style.width = '100%';
+                        btnOferta.style.padding = '8px';
+                        btnOferta.style.borderRadius = '6px';
+                        btnOferta.style.marginTop = '4px';
+                        btnOferta.style.cursor = 'pointer';
+                        btnOferta.style.border = 'none';
+                        btnOferta.style.fontWeight = 'bold';
+                        btnOferta.style.fontSize = '0.8rem';
+                        child.appendChild(btnOferta);
+                    }
                     
                     if (isOferta) {
                         btnOferta.innerHTML = '❌ Quitar de Oferta';
@@ -2042,7 +2098,29 @@ if (originalRenderStockAdminOfertas) {
                             }
                         }
                     }
-                    child.appendChild(btnOferta);
+
+                    // Botón Eliminar Producto (siempre al fondo)
+                    let btnDelete = child.querySelector('.btn-delete-stock-prod');
+                    if (!btnDelete) {
+                        btnDelete = document.createElement('button');
+                        btnDelete.type = 'button';
+                        btnDelete.className = 'btn-delete-stock-prod';
+                        btnDelete.style.width = '100%';
+                        btnDelete.style.padding = '6px';
+                        btnDelete.style.borderRadius = '6px';
+                        btnDelete.style.marginTop = '4px';
+                        btnDelete.style.cursor = 'pointer';
+                        btnDelete.style.border = '1px solid #fecaca';
+                        btnDelete.style.background = '#fef2f2';
+                        btnDelete.style.color = '#ef4444';
+                        btnDelete.style.fontWeight = 'bold';
+                        btnDelete.style.fontSize = '0.75rem';
+                        btnDelete.innerHTML = '🗑️ Eliminar';
+                        btnDelete.onclick = () => window.deleteProduct(pId);
+                        child.appendChild(btnDelete);
+                    } else {
+                        child.appendChild(btnDelete);
+                    }
                 }
             }
         });

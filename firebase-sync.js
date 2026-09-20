@@ -402,12 +402,15 @@ window.addEventListener('DOMContentLoaded', () => {
                 const data = customCatalog[k];
                 if (data.isCustom && !data.eliminado) {
                     if (!products.find(x => String(x.id) === String(k))) {
+                        const pPts = data.points !== undefined ? Number(data.points) : (data.puntos !== undefined ? Number(data.puntos) : 0);
                         products.push({
                             id: data.id || k,
                             name: data.name,
                             price: data.price,
                             cat: data.category,
                             img: data.img,
+                            points: pPts,
+                            puntos: pPts,
                             desc: data.desc || 'Producto fresco del día',
                             isCustom: true
                         });
@@ -453,6 +456,12 @@ window.addEventListener('DOMContentLoaded', () => {
                             p.price = newPrice;
                         }
                     }
+
+                    if (customData.points !== undefined || customData.puntos !== undefined) {
+                        const pts = Number(customData.points !== undefined ? customData.points : customData.puntos);
+                        p.points = pts;
+                        p.puntos = pts;
+                    }
                 }
             }
             if (typeof renderProducts === 'function') renderProducts();
@@ -475,6 +484,28 @@ window.addEventListener('DOMContentLoaded', () => {
             applyCustomCatalog(remoteCatalog);
         }
     }).catch(err => console.warn("No se pudo cargar el catálogo personalizado de Firestore", err));
+
+    // --- SINCRONIZACIÓN DE RECOMPENSAS CLUB VIP & PUNTOS ---
+    try {
+        const localRewards = JSON.parse(localStorage.getItem('dt_point_rewards'));
+        if (localRewards && Array.isArray(localRewards) && localRewards.length > 0) {
+            window.pointRewards = localRewards;
+            if (typeof pointRewards !== 'undefined') pointRewards = localRewards;
+            if (typeof renderRewards === 'function') renderRewards();
+        }
+    } catch(e) {}
+
+    db.collection('config').doc('point_rewards').onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data && Array.isArray(data.rewards)) {
+                window.pointRewards = data.rewards;
+                if (typeof pointRewards !== 'undefined') pointRewards = data.rewards;
+                localStorage.setItem('dt_point_rewards', JSON.stringify(data.rewards));
+                if (typeof renderRewards === 'function') renderRewards();
+            }
+        }
+    }, err => console.warn("Aviso Firestore point_rewards:", err));
 
     // --- SINCRONIZACIÓN DE TORTAS PERSONALIZADAS ---
     db.collection('config').doc('tortas_config').onSnapshot(doc => {

@@ -218,6 +218,12 @@
                 <button id="btn-config-tortas" type="button" onclick="if(window.abrirModalConfigTortas) window.abrirModalConfigTortas()" style="background:#db2777; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
                     🎂 Diseños y Precios de Tortas
                 </button>
+                <button type="button" class="btn-admin-action" id="btn-promo-regalo" onclick="if(window.abrirModalPromoRegalo) window.abrirModalPromoRegalo()" style="background:#8b5cf6; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
+                    🎁 Configurar Regalo por Monto
+                </button>
+                <button type="button" class="btn-admin-action" id="btnAdminClubPuntos" onclick="window.openAdminPointsModal && window.openAdminPointsModal(event)" style="background: linear-gradient(135deg, #e91e63, #ff5722); color: white;">
+                    ⭐ Configurar Puntos & Club VIP
+                </button>
             </div>
 
             <div id="admin-stock-grid" style="display:flex; flex-wrap:wrap; gap:10px;">
@@ -1120,6 +1126,11 @@
             <div id="w-error" style="display:none; color:#ef4444; background:#fef2f2; border:1px solid #f87171; padding:10px; border-radius:8px; margin-bottom:15px; text-align:center; font-weight:bold; font-size:0.9rem;"></div>
             <button class="btn-gold" style="width:100%; background: linear-gradient(135deg, #f43f5e, #e11d48); color: white; font-weight: 800; font-size:1.2rem; padding:16px; border: none; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(225, 29, 72, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 10px 25px rgba(225, 29, 72, 0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 20px rgba(225, 29, 72, 0.3)';" onclick="addCustomCakeToCartNew()">Agregar al Carrito 🛒</button>
         </div>
+    </div>
+
+    <!-- ===== MODAL GESTIÓN DE PUNTOS Y RECOMPENSAS CLUB VIP ===== -->
+    <div class="auth-modal" id="adminPointsModal" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeAdminPointsModal()">
+        <!-- Se llena dinámicamente con renderAdminPointsModalContent() -->
     </div>
 
     <!-- ===== JAVASCRIPT ===== -->
