@@ -4340,6 +4340,46 @@ window.confirmVipMembership = function() {
 };
 
 // ===== CENTRO DE NOTIFICACIONES (ADMIN / TRABAJADOR) =====
+window.adjustNotifDropdownPosition = function() {
+    const dd = document.getElementById('adminNotifDropdown');
+    const wrapper = document.querySelector('.admin-notif-wrapper');
+    const bell = document.getElementById('btnAdminNotifBell');
+    if (!dd || dd.style.display !== 'block') return;
+
+    if (window.innerWidth <= 600) {
+        // En móviles/pantallas estrechas, fijar posición respetando límites seguros de pantalla
+        const anchor = bell || wrapper;
+        const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 60, top: 20 };
+        
+        let targetTop = rect.bottom + 8;
+        // Si el botón está muy abajo en la pantalla, abrir hacia arriba
+        if (targetTop + 280 > window.innerHeight) {
+            targetTop = Math.max(10, rect.top - 290);
+        }
+        targetTop = Math.max(10, Math.min(targetTop, window.innerHeight - 100));
+
+        dd.style.position = 'fixed';
+        dd.style.top = `${targetTop}px`;
+        dd.style.left = '12px';
+        dd.style.right = '12px';
+        dd.style.width = 'calc(100vw - 24px)';
+        dd.style.maxWidth = 'calc(100vw - 24px)';
+        dd.style.maxHeight = '75vh';
+        dd.style.overflowX = 'hidden';
+        dd.style.zIndex = '9999999';
+    } else {
+        dd.style.position = 'absolute';
+        dd.style.top = '50px';
+        dd.style.right = '0';
+        dd.style.left = 'auto';
+        dd.style.width = '340px';
+        dd.style.maxWidth = 'calc(100vw - 24px)';
+        dd.style.maxHeight = 'none';
+        dd.style.overflowX = 'hidden';
+        dd.style.zIndex = '999999';
+    }
+};
+
 window.toggleAdminNotifDropdown = function() {
     const dd = document.getElementById('adminNotifDropdown');
     if (!dd) return;
@@ -4348,6 +4388,9 @@ window.toggleAdminNotifDropdown = function() {
         dd.style.display = 'none';
     } else {
         dd.style.display = 'block';
+        if (typeof window.adjustNotifDropdownPosition === 'function') {
+            window.adjustNotifDropdownPosition();
+        }
         // Marcar todas las notificaciones como leídas al abrir la bandeja
         try {
             let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
@@ -4445,10 +4488,145 @@ window.clearAdminNotifs = function() {
 document.addEventListener('click', function(e) {
     const wrapper = document.querySelector('.admin-notif-wrapper');
     const dd = document.getElementById('adminNotifDropdown');
-    if (dd && dd.style.display === 'block' && wrapper && !wrapper.contains(e.target)) {
-        dd.style.display = 'none';
+    const bell = document.getElementById('btnAdminNotifBell');
+    if (dd && dd.style.display === 'block') {
+        const isClickInside = (wrapper && wrapper.contains(e.target)) || (bell && bell.contains(e.target)) || (dd.contains(e.target));
+        if (!isClickInside) {
+            dd.style.display = 'none';
+        }
     }
 });
+
+window.addEventListener('resize', function() {
+    const dd = document.getElementById('adminNotifDropdown');
+    if (dd && dd.style.display === 'block' && typeof window.adjustNotifDropdownPosition === 'function') {
+        window.adjustNotifDropdownPosition();
+    }
+});
+
+// ===== ARRASTRE MULTI-DISPOSITIVO (MOUSE Y TOUCH) PARA LA CAMPANA DE NOTIFICACIONES =====
+(function initDraggableNotifBell() {
+    function setup() {
+        const bell = document.getElementById('btnAdminNotifBell');
+        const wrapper = document.querySelector('.admin-notif-wrapper');
+        if (!bell || !wrapper || bell.dataset.dragInitialized) return;
+        bell.dataset.dragInitialized = 'true';
+
+        bell.style.touchAction = 'none';
+        bell.style.userSelect = 'none';
+        bell.style.webkitUserSelect = 'none';
+
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let initialLeft = 0, initialTop = 0;
+        let hasMoved = false;
+        const dragThreshold = 6;
+
+        function getCoords(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function onStart(e) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            const coords = getCoords(e);
+            startX = coords.x;
+            startY = coords.y;
+            hasMoved = false;
+            isDragging = true;
+
+            const rect = wrapper.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            document.addEventListener('mousemove', onMove, { passive: false });
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd);
+            document.addEventListener('touchcancel', onEnd);
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            const coords = getCoords(e);
+            const dx = coords.x - startX;
+            const dy = coords.y - startY;
+
+            if (!hasMoved && Math.hypot(dx, dy) > dragThreshold) {
+                hasMoved = true;
+                wrapper.style.position = 'fixed';
+                wrapper.style.zIndex = '9999998';
+                wrapper.style.margin = '0';
+                bell.style.cursor = 'grabbing';
+            }
+
+            if (hasMoved) {
+                if (e.cancelable) e.preventDefault();
+
+                const bellWidth = wrapper.offsetWidth || 42;
+                const bellHeight = wrapper.offsetHeight || 42;
+                const margin = 10;
+
+                let newLeft = initialLeft + dx;
+                let newTop = initialTop + dy;
+
+                const minX = margin;
+                const maxX = window.innerWidth - bellWidth - margin;
+                const minY = margin;
+                const maxY = window.innerHeight - bellHeight - margin;
+
+                newLeft = Math.max(minX, Math.min(newLeft, maxX));
+                newTop = Math.max(minY, Math.min(newTop, maxY));
+
+                wrapper.style.left = `${newLeft}px`;
+                wrapper.style.top = `${newTop}px`;
+                wrapper.style.right = 'auto';
+                wrapper.style.bottom = 'auto';
+
+                if (window.adjustNotifDropdownPosition) {
+                    window.adjustNotifDropdownPosition();
+                }
+            }
+        }
+
+        function onEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            bell.style.cursor = 'pointer';
+
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            document.removeEventListener('touchcancel', onEnd);
+
+            if (hasMoved) {
+                const clickBlocker = function(ev) {
+                    ev.stopPropagation();
+                    ev.preventDefault();
+                    bell.removeEventListener('click', clickBlocker, true);
+                };
+                bell.addEventListener('click', clickBlocker, true);
+                setTimeout(() => bell.removeEventListener('click', clickBlocker, true), 120);
+            }
+        }
+
+        bell.addEventListener('mousedown', onStart);
+        bell.addEventListener('touchstart', onStart, { passive: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
 
 function openVipModal(e) {
     if (window.openVipTermsModal) {

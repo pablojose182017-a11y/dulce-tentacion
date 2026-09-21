@@ -5511,6 +5511,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    CENTRO DE NOTIFICACIONES ADMIN / OPERATIVO
 ========================================= */
 .btn-notif-bell {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .btn-notif-bell:hover {
@@ -5521,11 +5525,21 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .btn-notif-bell:active {
     transform: scale(0.95);
 }
-@media (max-width: 480px) {
+
+#adminNotifDropdown {
+    box-sizing: border-box !important;
+    max-width: calc(100vw - 24px) !important;
+    overflow-x: hidden !important;
+}
+
+@media (max-width: 600px) {
     #adminNotifDropdown {
-        width: calc(100vw - 40px) !important;
-        max-width: 320px !important;
-        right: 0 !important;
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        left: 12px !important;
+        right: 12px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 }
 
