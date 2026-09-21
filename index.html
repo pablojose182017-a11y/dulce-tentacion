@@ -293,6 +293,9 @@
                 <button type="button" class="btn-admin-action" id="btnAdminClubPuntos" onclick="window.openAdminPointsModal && window.openAdminPointsModal(event)" style="background: linear-gradient(135deg, #e91e63, #ff5722); color: white;">
                     ⭐ Configurar Puntos & Club VIP
                 </button>
+                <button type="button" class="btn-admin-action" id="btn-config-delivery" onclick="if(window.abrirModalConfigDelivery) window.abrirModalConfigDelivery()" style="background:#f59e0b; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
+                    🛵 Configurar Domicilio Gratis
+                </button>
             </div>
 
             <div id="admin-stock-grid" style="display:flex; flex-wrap:wrap; gap:10px;">
@@ -1577,7 +1580,19 @@
            <button type="button" class="btn-primary-custom" onclick="closeDeliveryCoverageModal()" style="background:#d81b60; color:#fff; border:none; padding:8px 20px; border-radius:10px; font-weight:700; cursor:pointer;">Entendido</button>
          </div>
        </div>
-     </div>
+      </div>
+
+    <!-- ===== MODAL VISOR DE IMAGEN AMPLIADA (PRODUCT LIGHTBOX) ===== -->
+    <div id="productImageModal" class="product-lightbox-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="Visor de imagen de producto" onclick="if(event.target === this || event.target.classList.contains('product-lightbox-backdrop')) window.closeProductImageModal();">
+        <div class="product-lightbox-backdrop"></div>
+        <div class="product-lightbox-dialog" onclick="event.stopPropagation()">
+            <button type="button" class="product-lightbox-close" onclick="window.closeProductImageModal()" aria-label="Cerrar visor" title="Cerrar visor (Esc)">&times;</button>
+            <div class="product-lightbox-body">
+                <img id="productLightboxImg" src="" alt="Producto" class="product-lightbox-image">
+                <div id="productLightboxCaption" class="product-lightbox-caption"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== JAVASCRIPT ===== -->
     

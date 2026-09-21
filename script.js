@@ -3141,8 +3141,8 @@ function createCardHTML(p) {
 
     return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${btnAction} }" style="position:relative;">
             ${badgesHTML}
-            <div class="card-img-wrap" style="opacity:${opac}; filter:${filt};">
-                <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';">
+            <div class="card-img-wrap" style="opacity:${opac}; filter:${filt}; cursor:pointer;" onclick="event.stopPropagation(); const img = this.querySelector('img'); if(img) window.openProductImageModal(img.src, img.alt);" title="Ver foto ampliada">
+                <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); window.openProductImageModal(this.src, this.alt);">
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
@@ -3412,7 +3412,7 @@ function updateCart() {
     }
 
     const curDelivery = (typeof window.deliveryType !== 'undefined') ? window.deliveryType : 'delivery';
-    const threshold = 10000;
+    const threshold = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
     const baseProductos = Math.max(0, totalPrice - discount);
 
     let costoDomicilio = 0;
@@ -3462,7 +3462,7 @@ function updateCart() {
                 sumDeliveryEl.innerHTML = '<span style="color:#059669; font-weight:800;">¡GRATIS!</span>';
             }
         } else {
-            sumDeliveryEl.innerHTML = '<span style="color:#e11d48; font-weight:800;">$5.000 COP</span> <small style="display:block; font-size:0.72rem; color:#64748b; font-weight:normal; margin-top:2px;">(Gratis a partir de $10.000 en productos)</small>';
+            sumDeliveryEl.innerHTML = '<span style="color:#e11d48; font-weight:800;">$5.000 COP</span> <small style="display:block; font-size:0.72rem; color:#64748b; font-weight:normal; margin-top:2px;">(Gratis a partir de $' + threshold.toLocaleString('es-CO') + ' en productos)</small>';
         }
     }
 
@@ -3471,7 +3471,7 @@ function updateCart() {
     if (feeBadge) {
         if (baseProductos >= threshold) {
             feeBadge.className = 'delivery-fee-badge free';
-            feeBadge.innerHTML = '🎉 <strong>¡Domicilio GRATIS!</strong> Aplica por compras mayores a $10.000 COP.';
+            feeBadge.innerHTML = '🎉 <strong>¡Domicilio GRATIS!</strong> Aplica por compras mayores a $' + threshold.toLocaleString('es-CO') + ' COP.';
         } else {
             const falta = Math.max(0, threshold - baseProductos);
             feeBadge.className = 'delivery-fee-badge paid';
@@ -3670,6 +3670,45 @@ window.closeMobileMenu = function() {
         document.body.style.overflow = '';
     }
 };
+
+// ===== PRODUCT IMAGE LIGHTBOX =====
+window.openProductImageModal = function(src, title) {
+    const modal = document.getElementById('productImageModal');
+    if (!modal) return;
+    const imgEl = document.getElementById('productLightboxImg');
+    const captionEl = document.getElementById('productLightboxCaption');
+    if (imgEl) {
+        imgEl.src = src || 'logo-pys.png';
+        imgEl.alt = title || 'Producto';
+    }
+    if (captionEl) {
+        captionEl.textContent = title || '';
+        captionEl.style.display = title ? 'block' : 'none';
+    }
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeProductImageModal = function() {
+    const modal = document.getElementById('productImageModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
+
+if (!window._productLightboxKeydownAttached) {
+    window._productLightboxKeydownAttached = true;
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            const modal = document.getElementById('productImageModal');
+            if (modal && modal.style.display === 'flex') {
+                window.closeProductImageModal();
+            }
+        }
+    });
+}
+
 
 function toggleCart() {
     const m = document.getElementById('cartModal');

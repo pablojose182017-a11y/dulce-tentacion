@@ -812,6 +812,16 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }, err => console.warn("Error escuchando promocion_regalo:", err));
 
+    db.collection('config').doc('tienda').onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.minFreeDelivery !== undefined) {
+                window.dt_min_free_delivery = data.minFreeDelivery;
+                if (typeof updateCart === 'function') updateCart();
+            }
+        }
+    }, err => console.warn("Error escuchando config tienda:", err));
+
     // INTERCEPCIÓN DEL CARRITO PARA INYECTAR REGALO (Sin tocar script.js)
     if (typeof window.updateCart === 'function') {
         const originalUpdateCart = window.updateCart;

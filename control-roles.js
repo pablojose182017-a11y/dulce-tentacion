@@ -821,8 +821,9 @@ window.sendOrder = function() {
     }
 
     const baseProductos = Math.max(0, tp - discount);
+    const freeDeliveryThreshold = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
     if (curDeliveryType === 'delivery') {
-        costoDomicilio = (baseProductos >= 10000) ? 0 : 5000;
+        costoDomicilio = (baseProductos >= freeDeliveryThreshold) ? 0 : 5000;
     }
 
     const finalTotal = (tp - discount) + costoDomicilio;
@@ -2813,3 +2814,100 @@ window.closeMobileMenu = function() {
         document.body.style.overflow = '';
     }
 };
+
+// ===== PRODUCT IMAGE LIGHTBOX =====
+window.openProductImageModal = function(src, title) {
+    const modal = document.getElementById('productImageModal');
+    if (!modal) return;
+    const imgEl = document.getElementById('productLightboxImg');
+    const captionEl = document.getElementById('productLightboxCaption');
+    if (imgEl) {
+        imgEl.src = src || 'logo-pys.png';
+        imgEl.alt = title || 'Producto';
+    }
+    if (captionEl) {
+        captionEl.textContent = title || '';
+        captionEl.style.display = title ? 'block' : 'none';
+    }
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+};
+
+window.closeProductImageModal = function() {
+    const modal = document.getElementById('productImageModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
+
+if (!window._productLightboxKeydownAttached) {
+    window._productLightboxKeydownAttached = true;
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            const modal = document.getElementById('productImageModal');
+            if (modal && modal.style.display === 'flex') {
+                window.closeProductImageModal();
+            }
+        }
+    });
+}
+
+// --- SISTEMA DE CONFIGURACIÓN DE DOMICILIO GRATIS ---
+window.dt_min_free_delivery = window.dt_min_free_delivery || 10000;
+
+window.abrirModalConfigDelivery = function() {
+    if (!document.getElementById('modal-config-delivery')) {
+        const modal = document.createElement('div');
+        modal.className = 'auth-modal';
+        modal.id = 'modal-config-delivery';
+        modal.style.display = 'none';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '999999';
+        document.body.appendChild(modal);
+    }
+    
+    const m = document.getElementById('modal-config-delivery');
+    
+    m.innerHTML = `
+        <div class="auth-content" style="max-width:350px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-config-delivery').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
+            <h3 style="margin-top:0; color:#f59e0b; text-align:center;">🛵 Domicilio Gratis</h3>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Monto mínimo de compra (COP)</label>
+                <input type="number" id="config-delivery-min" value="${window.dt_min_free_delivery}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 10000">
+                <small style="color:#64748b; font-size:0.8rem; display:block; margin-top:5px;">Los clientes que superen este monto no pagarán domicilio ($5.000).</small>
+            </div>
+            
+            <button onclick="window.guardarConfigDelivery()" style="width:100%; padding:12px; background:#f59e0b; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">💾 Guardar Configuración</button>
+        </div>
+    `;
+    m.style.display = 'flex';
+};
+
+window.guardarConfigDelivery = function() {
+    const val = parseInt(document.getElementById('config-delivery-min').value);
+    if (isNaN(val) || val < 0) {
+        if(typeof showToast === 'function') showToast('Ingresa un monto válido', '⚠️');
+        return;
+    }
+
+    window.dt_min_free_delivery = val;
+    
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('tienda').set({ minFreeDelivery: val }, { merge: true })
+            .then(() => {
+                if(typeof showToast === 'function') showToast("Monto guardado con éxito", "🛵");
+                document.getElementById('modal-config-delivery').style.display = 'none';
+                if (typeof updateCart === 'function') updateCart();
+            })
+            .catch(err => {
+                console.error("Error guardando config:", err);
+                if(typeof showToast === 'function') showToast("Error al guardar", "❌");
+            });
+    } else {
+        if(typeof showToast === 'function') showToast("No hay conexión a BD", "⚠️");
+    }
+};
