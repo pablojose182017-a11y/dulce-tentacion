@@ -5213,7 +5213,7 @@
   border: 1px solid #fbcfe8 !important; /* Borde rosa sutil */
   outline: none !important;
   border-radius: 12px !important;
-  padding: 8px 35px 8px 14px !important; /* Padding cómodo y espacio para la flecha */
+  padding: 8px 40px 8px 14px !important; /* Padding cómodo y espacio extra para la flecha */
   font-size: 0.85rem !important;
   font-weight: 500 !important;
   color: #4a2e35 !important;

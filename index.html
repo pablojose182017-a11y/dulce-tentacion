@@ -14,7 +14,9 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
-    <link rel="stylesheet" href="styles.css?v=13">
+    <!-- Archivo CSS Principal -->
+    <link rel="stylesheet" href="styles.css?v=14">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -1607,26 +1609,6 @@
     
     <!-- Firebase Sync Module -->
     <script src="firebase-sync.js"></script>
-    <script>
-        window.updateProductPrice = function(productId, val) {
-            const unidadesMap = { 101: 25, 102: 50, 103: 100 };
-            const preciosMap = { queso: 2000, bocadillo_queso: 2000, pollo: 3000, jamon_queso: 3000, especial: 3500 };
-
-            const unidades = unidadesMap[productId] || 25;
-            const precioUnit = preciosMap[val] || 2000;
-            const total = unidades * precioUnit;
-
-            const priceEl = document.getElementById(`price-${productId}`);
-            if (!priceEl) return;
-
-            if (val === 'especial') {
-                const tachado = unidades * 3700;
-                priceEl.innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.8rem; margin-right:5px;">$${tachado.toLocaleString('es-CO')}</span> <span class="current-price" style="color:#e11d48;">$${total.toLocaleString('es-CO')}</span> <span class="badge-promo-filling">🔥 5% DTO</span>`;
-            } else {
-                priceEl.innerHTML = `<span class="current-price">$${total.toLocaleString('es-CO')}</span>`;
-            }
-        };
-    </script>
     <script>
     window.addEventListener('load', () => {
         if (typeof window.initGoogleSignIn === 'function') {

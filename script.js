@@ -3031,6 +3031,10 @@ function openCartFromDropdown(e) { e.stopPropagation(); document.getElementById(
 
 
 window.updateProductPrice = function (productId, selectEl) {
+    console.log("=== updateProductPrice TRIGGERED ===");
+    console.log("productId:", productId);
+    console.log("selectEl passed:", selectEl);
+
     let fillingKey = '';
     if (selectEl && selectEl.value) {
         fillingKey = selectEl.value;
@@ -3039,6 +3043,7 @@ window.updateProductPrice = function (productId, selectEl) {
     } else {
         fillingKey = 'queso';
     }
+    console.log("fillingKey identified:", fillingKey);
 
     const precios = {
         'queso': 2000,
@@ -3062,16 +3067,25 @@ window.updateProductPrice = function (productId, selectEl) {
     let priceEl = null;
     if (selectEl && typeof selectEl.closest === 'function') {
         const card = selectEl.closest('.card');
-        if (card) priceEl = card.querySelector('.price-row');
+        console.log("card found via closest('.card'):", card);
+        if (card) {
+            priceEl = card.querySelector('.price-row');
+            console.log("priceEl found inside card:", priceEl);
+        }
     }
 
     if (!priceEl) {
         priceEl = document.getElementById(`price-${productId}`) ||
             document.querySelector(`#price-box-${productId}`) ||
             document.querySelector(`[data-product-id="${productId}"] .product-price`);
+        console.log("priceEl fallback found:", priceEl);
     }
 
-    if (!priceEl) return;
+    if (!priceEl) {
+        console.warn("No se encontró el elemento de precio en el DOM.");
+        return;
+    }
+    console.log("Updating priceEl.innerHTML to total:", total);
 
     if (isPromo) {
         const tachado = unidades * 3700;
