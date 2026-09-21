@@ -1773,23 +1773,36 @@ window.abrirModalEdicionProducto = function(pId = null) {
 window.handleProductPhotoUpload = function(input) {
     if (input && input.files && input.files[0]) {
         const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const dataUrl = reader.result;
-            const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
-            if (previewImg) {
-                previewImg.src = dataUrl;
-                previewImg.style.display = 'block';
-            }
-            const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
-            if (imgInput) {
-                imgInput.value = dataUrl;
-                imgInput.setAttribute('data-file-name', file.name);
-            }
-            window.tempProductImg = dataUrl;
-            if (typeof showToast === 'function') showToast("Foto cargada con éxito", "📸");
-        };
-        reader.readAsDataURL(file);
+        const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
+        if (previewImg) previewImg.style.opacity = '0.4';
+        if (typeof showToast === 'function') showToast("Optimizando foto...", "⏳");
+
+        const compressor = typeof window.comprimirImagen === 'function' ? window.comprimirImagen : (f) => new Promise(res => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.readAsDataURL(f);
+        });
+
+        compressor(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
+            .then(dataUrl => {
+                if (previewImg) {
+                    previewImg.src = dataUrl;
+                    previewImg.style.display = 'block';
+                    previewImg.style.opacity = '1';
+                }
+                const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
+                if (imgInput) {
+                    imgInput.value = dataUrl;
+                    imgInput.setAttribute('data-file-name', file.name);
+                }
+                window.tempProductImg = dataUrl;
+                if (typeof showToast === 'function') showToast("Foto optimizada con éxito", "📸");
+            })
+            .catch(err => {
+                console.error("Error procesando foto de producto:", err);
+                if (previewImg) previewImg.style.opacity = '1';
+                if (typeof showToast === 'function') showToast("Error al cargar la foto", "⚠️");
+            });
     }
 };
 
@@ -2145,6 +2158,61 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 500); // Pequeño retraso para asegurar que los productos estén cargados
 });
 
+// --- HELPER GLOBAL DE COMPRESIÓN DE IMÁGENES (CANVAS / BASE64 OPTIMIZADO) ---
+window.comprimirImagen = function(file, options = {}) {
+    const maxWidth = options.maxWidth || 600;
+    const maxHeight = options.maxHeight || 600;
+    const quality = options.quality !== undefined ? options.quality : 0.75;
+    const mimeType = options.mimeType || 'image/jpeg';
+
+    return new Promise((resolve, reject) => {
+        if (!file) return reject(new Error("No se proporcionó ningún archivo"));
+        if (typeof file === 'string') return resolve(file);
+
+        const reader = new FileReader();
+        reader.onerror = (err) => reject(err);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onerror = (err) => reject(err);
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    if (width / height > maxWidth / maxHeight) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    } else {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, width);
+                canvas.height = Math.max(1, height);
+                const ctx = canvas.getContext('2d');
+                
+                if (mimeType === 'image/jpeg') {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                try {
+                    const dataUrl = canvas.toDataURL(mimeType, quality);
+                    resolve(dataUrl);
+                } catch (err) {
+                    resolve(e.target.result);
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
 // --- MÓDULO DE GESTIÓN DINÁMICA DE TORTAS ---
 window.asegurarEstructuraTortasConfig = function(cfg) {
     if (!cfg || typeof cfg !== 'object') cfg = {};
@@ -2317,20 +2385,14 @@ window.renderModalConfigTortasInterno = function() {
                 <div style="position:absolute; top:8px; left:8px; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); color:#fff; padding:2px 8px; border-radius:12px; font-size:0.75rem; font-weight:bold; z-index:2;">
                     ${d.name}
                 </div>
-                <img id="preview-torta-img-${index}" src="${d.img || 'logo-pys.png'}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:100%; height:140px; object-fit:cover; display:block;">
+                <img id="preview-torta-img-${index}" src="${d.img || 'logo-pys.png'}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:100%; height:140px; object-fit:cover; display:block; transition:opacity 0.2s;">
                 
                 <div style="padding:10px; display:flex; flex-direction:column; gap:8px;">
                     <input type="text" id="torta-name-${index}" value="${d.name}" style="width:100%; padding:6px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafc; font-size:0.8rem; text-align:center; outline:none;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
                     <input type="hidden" id="torta-img-${index}" value="${d.img}">
                     
                     <div style="display:flex; width:100%; gap:6px;">
-                        <input type="file" id="torta-file-${index}" accept="image/*" style="display:none;" onchange="
-                            if(this.files && this.files[0]) {
-                                const file = this.files[0];
-                                document.getElementById('torta-img-${index}').value = file.name;
-                                document.getElementById('preview-torta-img-${index}').src = URL.createObjectURL(file);
-                            }
-                        ">
+                        <input type="file" id="torta-file-${index}" accept="image/*" style="display:none;" onchange="window.handleTortaDesignUpload(${index}, this)">
                         <button type="button" onclick="document.getElementById('torta-file-${index}').click()" style="flex:1; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; padding:6px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; transition:all 0.2s;">✏️ Cambiar</button>
                         <button type="button" onclick="window.eliminarDisenoTorta(${index})" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 10px; border-radius:6px; font-size:0.8rem; cursor:pointer; transition:all 0.2s;">🗑️</button>
                     </div>
@@ -2397,6 +2459,34 @@ window.renderModalConfigTortasInterno = function() {
         </div>
     `;
     modal.style.display = 'flex';
+};
+
+window.handleTortaDesignUpload = function(index, input) {
+    if (!input || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const previewImg = document.getElementById(`preview-torta-img-${index}`);
+    const hiddenInput = document.getElementById(`torta-img-${index}`);
+    
+    if (previewImg) previewImg.style.opacity = '0.4';
+    if (typeof showToast === 'function') showToast("Optimizando diseño...", "⏳");
+    
+    window.comprimirImagen(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
+        .then(dataUrl => {
+            if (hiddenInput) hiddenInput.value = dataUrl;
+            if (previewImg) {
+                previewImg.src = dataUrl;
+                previewImg.style.opacity = '1';
+            }
+            if (window.dt_tortas_config && window.dt_tortas_config.disenos && window.dt_tortas_config.disenos[index]) {
+                window.dt_tortas_config.disenos[index].img = dataUrl;
+            }
+            if (typeof showToast === 'function') showToast("Diseño optimizado y cargado", "📸");
+        })
+        .catch(err => {
+            console.error("Error comprimiendo imagen de torta:", err);
+            if (previewImg) previewImg.style.opacity = '1';
+            if (typeof showToast === 'function') showToast("Error procesando imagen", "⚠️");
+        });
 };
 
 window.agregarSaborTorta = function() {

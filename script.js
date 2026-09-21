@@ -1867,27 +1867,90 @@ function updateProductPoints(pId, pointsVal) {
 }
 window.updateProductPoints = updateProductPoints;
 
-// ===== CARGA Y EDICIÓN DE FOTOS DE PRODUCTOS (FILEREADER / BASE64) =====
+// ===== CARGA Y EDICIÓN DE FOTOS DE PRODUCTOS (CANVAS / BASE64 OPTIMIZADO) =====
+if (typeof window.comprimirImagen !== 'function') {
+    window.comprimirImagen = function(file, options = {}) {
+        const maxWidth = options.maxWidth || 600;
+        const maxHeight = options.maxHeight || 600;
+        const quality = options.quality !== undefined ? options.quality : 0.75;
+        const mimeType = options.mimeType || 'image/jpeg';
+
+        return new Promise((resolve, reject) => {
+            if (!file) return reject(new Error("No se proporcionó ningún archivo"));
+            if (typeof file === 'string') return resolve(file);
+
+            const reader = new FileReader();
+            reader.onerror = (err) => reject(err);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onerror = (err) => reject(err);
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth || height > maxHeight) {
+                        if (width / height > maxWidth / maxHeight) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        } else {
+                            width = Math.round((width * maxHeight) / height);
+                            height = maxHeight;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, width);
+                    canvas.height = Math.max(1, height);
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (mimeType === 'image/jpeg') {
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    try {
+                        const dataUrl = canvas.toDataURL(mimeType, quality);
+                        resolve(dataUrl);
+                    } catch (err) {
+                        resolve(e.target.result);
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+}
+
 function handleProductPhotoUpload(input) {
     if (input && input.files && input.files[0]) {
         const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const dataUrl = reader.result;
-            const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
-            if (previewImg) {
-                previewImg.src = dataUrl;
-                previewImg.style.display = 'block';
-            }
-            const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
-            if (imgInput) {
-                imgInput.value = dataUrl;
-                imgInput.setAttribute('data-file-name', file.name);
-            }
-            window.tempProductImg = dataUrl;
-            if (typeof showToast === 'function') showToast("Foto cargada con éxito", "📸");
-        };
-        reader.readAsDataURL(file);
+        const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
+        if (previewImg) previewImg.style.opacity = '0.4';
+        if (typeof showToast === 'function') showToast("Optimizando foto...", "⏳");
+
+        window.comprimirImagen(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
+            .then(dataUrl => {
+                if (previewImg) {
+                    previewImg.src = dataUrl;
+                    previewImg.style.display = 'block';
+                    previewImg.style.opacity = '1';
+                }
+                const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
+                if (imgInput) {
+                    imgInput.value = dataUrl;
+                    imgInput.setAttribute('data-file-name', file.name);
+                }
+                window.tempProductImg = dataUrl;
+                if (typeof showToast === 'function') showToast("Foto optimizada con éxito", "📸");
+            })
+            .catch(err => {
+                console.error("Error procesando foto:", err);
+                if (previewImg) previewImg.style.opacity = '1';
+                if (typeof showToast === 'function') showToast("Error cargando la foto", "⚠️");
+            });
     }
 }
 window.handleProductPhotoUpload = handleProductPhotoUpload;
@@ -2019,19 +2082,28 @@ function createRewardCardHtml(r = {}) {
 window.handleRewardFileUpload = function(fileInput) {
     if (!fileInput.files || !fileInput.files[0]) return;
     const file = fileInput.files[0];
-    const reader = new FileReader();
     const itemCard = fileInput.closest('.admin-reward-item');
-    reader.onload = function(e) {
-        const base64Data = e.target.result;
-        if (itemCard) {
-            const preview = itemCard.querySelector('.reward-preview-img');
-            if (preview) preview.src = base64Data;
-            const textInp = itemCard.querySelector('.reward-img-input, .admin-reward-img-input');
-            if (textInp) textInp.value = file.name;
-            itemCard.setAttribute('data-uploaded-img', base64Data);
-        }
-    };
-    reader.readAsDataURL(file);
+    const preview = itemCard ? itemCard.querySelector('.reward-preview-img') : null;
+    if (preview) preview.style.opacity = '0.4';
+
+    window.comprimirImagen(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
+        .then(base64Data => {
+            if (itemCard) {
+                if (preview) {
+                    preview.src = base64Data;
+                    preview.style.opacity = '1';
+                }
+                const textInp = itemCard.querySelector('.reward-img-input, .admin-reward-img-input');
+                if (textInp) textInp.value = file.name;
+                itemCard.setAttribute('data-uploaded-img', base64Data);
+            }
+            if (typeof showToast === 'function') showToast("Foto de recompensa optimizada", "📸");
+        })
+        .catch(err => {
+            console.error("Error optimizando foto de recompensa:", err);
+            if (preview) preview.style.opacity = '1';
+            if (typeof showToast === 'function') showToast("Error al cargar la foto", "⚠️");
+        });
 };
 
 function renderAdminPointsModalContent() {
@@ -4638,33 +4710,43 @@ function selectDiseno(diseno, element) {
 function handleWizardCustomPhoto(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            wizardData.diseno = 'Diseño Propio (Foto Cliente)';
-            wizardData.disenoImg = e.target.result;
+        const previewImg = document.getElementById('upload-preview-img');
+        if (previewImg) previewImg.style.opacity = '0.4';
+        if (typeof showToast === 'function') showToast("Optimizando foto...", "⏳");
 
-            const uploadCard = document.getElementById('cardUploadCustomDesign');
-            if (uploadCard) uploadCard.classList.add('selected');
+        window.comprimirImagen(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
+            .then(dataUrl => {
+                wizardData.diseno = 'Diseño Propio (Foto Cliente)';
+                wizardData.disenoImg = dataUrl;
 
-            const placeholder = document.getElementById('upload-placeholder');
-            if (placeholder) placeholder.style.display = 'none';
+                const uploadCard = document.getElementById('cardUploadCustomDesign');
+                if (uploadCard) uploadCard.classList.add('selected');
 
-            const preview = document.getElementById('upload-preview-block');
-            if (preview) preview.style.display = 'flex';
+                const placeholder = document.getElementById('upload-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
 
-            const previewImg = document.getElementById('upload-preview-img');
-            if (previewImg) previewImg.src = e.target.result;
+                const preview = document.getElementById('upload-preview-block');
+                if (preview) preview.style.display = 'flex';
 
-            const nameEl = document.getElementById('upload-file-name');
-            if (nameEl) nameEl.innerText = file.name;
+                if (previewImg) {
+                    previewImg.src = dataUrl;
+                    previewImg.style.opacity = '1';
+                }
 
-            // Desmarcar miniaturas del catálogo
-            document.querySelectorAll('.wizard-design-grid .design-thumb').forEach(el => el.classList.remove('selected'));
+                const nameEl = document.getElementById('upload-file-name');
+                if (nameEl) nameEl.innerText = file.name;
 
-            if (typeof showToast === 'function') showToast("Foto de diseño cargada correctamente", "📸");
-            updateWizardSummary();
-        };
-        reader.readAsDataURL(file);
+                // Desmarcar miniaturas del catálogo
+                document.querySelectorAll('.wizard-design-grid .design-thumb').forEach(el => el.classList.remove('selected'));
+
+                if (typeof showToast === 'function') showToast("Foto de diseño optimizada correctamente", "📸");
+                updateWizardSummary();
+            })
+            .catch(err => {
+                console.error("Error optimizando foto propia:", err);
+                if (previewImg) previewImg.style.opacity = '1';
+                if (typeof showToast === 'function') showToast("Error al procesar la foto", "⚠️");
+            });
     }
 }
 
