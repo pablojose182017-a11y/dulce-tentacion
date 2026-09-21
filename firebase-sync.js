@@ -619,7 +619,7 @@ window.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- 5. INTERCEPTOR DUAL DE CHECKOUT (WHATSAPP + FIRESTORE) ---
+    // --- 5. INTERCEPTOR DUAL DE CHECKOUT (WHATSAPP + FIRESTORE + PUNTOS) ---
     const originalSendOrder = window.sendOrder;
     if (originalSendOrder) {
         window.sendOrder = function() {
@@ -645,6 +645,27 @@ window.addEventListener('DOMContentLoaded', () => {
                 db.collection('pedidos').doc(nuevoPedido.id).set(nuevoPedido)
                   .then(() => console.log("Pedido guardado exitosamente en Firestore:", nuevoPedido.id))
                   .catch((err) => console.error("Error al guardar pedido en Firestore:", err));
+                  
+                // SEGUNDO (INDEPENDIENTE): Registrar puntos ganados en Firestore
+                // ⚠️ Encapsulado en try/catch: cualquier fallo aquí NO bloquea WhatsApp
+                try {
+                    const userEmail = (typeof currentUser !== 'undefined' && currentUser && currentUser.email)
+                        ? currentUser.email : null;
+                    const totalPedido = nuevoPedido.total || nuevoPedido.subtotal || 0;
+                    // Regla: 1 punto por cada $1.000 COP (igual que en script.js línea 3985)
+                    const ptsGanados = Math.floor(totalPedido / 1000);
+                    
+                    if (userEmail && ptsGanados > 0 && typeof window.registrarMovimientoPuntos === 'function') {
+                        window.registrarMovimientoPuntos(userEmail, {
+                            tipo: 'ganancia',
+                            cantidad: ptsGanados,
+                            motivo: `Compra completada (${nuevoPedido.id})`,
+                            orderId: nuevoPedido.id
+                        });
+                    }
+                } catch (pErr) {
+                    console.warn('[Puntos] Error no crítico al registrar puntos:', pErr);
+                }
                   
                 // Refrescar monitor si está visible
                 if (typeof renderLiveOrders === 'function') {
@@ -1007,3 +1028,155 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
+// =============================================================
+// MOTOR CONTABLE DE PUNTOS - FASE 1
+// Definido FUERA del DOMContentLoaded para estar disponible
+// en cuanto firebase-sync.js se ejecuta, sin depender del DOM.
+// =============================================================
+
+/**
+ * Registra un movimiento de puntos de forma atómica en Firestore.
+ * Usa FieldValue.increment para el saldo y FieldValue.arrayUnion para el historial.
+ * Actualiza también localStorage (currentUser + dt_user) para que la UI sea instantánea.
+ * SIEMPRE debe llamarse dentro de un try/catch para no interrumpir flujos críticos.
+ *
+ * @param {string} userEmail  - Email del usuario (clave del doc en colección 'usuarios')
+ * @param {object} movimiento - { tipo: 'ganancia'|'canje', cantidad: number, motivo: string, orderId?: string }
+ */
+window.registrarMovimientoPuntos = async function(userEmail, { tipo, cantidad, motivo, orderId }) {
+    if (!userEmail || !tipo || typeof cantidad !== 'number' || cantidad === 0) {
+        console.warn('[Puntos] Parámetros inválidos para registrarMovimientoPuntos:', { userEmail, tipo, cantidad });
+        return;
+    }
+
+    // Determinar el delta real (+cantidad para ganancia, -cantidad para canje)
+    const delta = (tipo === 'canje') ? -Math.abs(cantidad) : Math.abs(cantidad);
+
+    const movEntry = {
+        id: 'mov_' + Date.now(),
+        tipo,
+        cantidad,
+        motivo: motivo || '',
+        fechaISO: new Date().toISOString(),
+        orderId: orderId || null
+    };
+
+    // 1. Persistir atómicamente en Firestore
+    try {
+        const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
+        if (!db) throw new Error('Firestore no disponible');
+
+        const FieldValue = window.firebase.firestore.FieldValue;
+        await db.collection('usuarios').doc(userEmail).update({
+            points:          FieldValue.increment(delta),
+            puntosActuales:  FieldValue.increment(delta),
+            historialPuntos: FieldValue.arrayUnion(movEntry)
+        });
+        console.log(`[Puntos] ✅ ${tipo} de ${cantidad} pts registrado para ${userEmail}. Motivo: ${motivo}`);
+    } catch (fsErr) {
+        // Si el documento no existe aún, usar set con merge
+        try {
+            const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
+            if (db) {
+                await db.collection('usuarios').doc(userEmail).set({
+                    email: userEmail,
+                    points: Math.max(0, delta),
+                    puntosActuales: Math.max(0, delta),
+                    historialPuntos: [movEntry]
+                }, { merge: true });
+                console.log('[Puntos] ✅ Documento creado con puntos iniciales para:', userEmail);
+            }
+        } catch (setErr) {
+            console.warn('[Puntos] ⚠️ No se pudo persistir en Firestore:', setErr);
+        }
+    }
+
+    // 2. Actualizar localStorage de forma optimista (UI instantánea sin esperar red)
+    try {
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.email === userEmail) {
+            currentUser.points = Math.max(0, (currentUser.points || 0) + delta);
+            currentUser.puntosActuales = currentUser.points;
+            if (!Array.isArray(currentUser.historialPuntos)) currentUser.historialPuntos = [];
+            currentUser.historialPuntos.push(movEntry);
+            localStorage.setItem('dt_user', JSON.stringify(currentUser));
+        }
+
+        // Sincronizar también en dt_registered_users
+        const regStr = localStorage.getItem('dt_registered_users');
+        if (regStr) {
+            const regArr = JSON.parse(regStr);
+            if (Array.isArray(regArr)) {
+                const idx = regArr.findIndex(u => u && u.email && u.email.toLowerCase() === userEmail.toLowerCase());
+                if (idx !== -1) {
+                    regArr[idx].points = Math.max(0, (regArr[idx].points || 0) + delta);
+                    regArr[idx].puntosActuales = regArr[idx].points;
+                    if (!Array.isArray(regArr[idx].historialPuntos)) regArr[idx].historialPuntos = [];
+                    regArr[idx].historialPuntos.push(movEntry);
+                    localStorage.setItem('dt_registered_users', JSON.stringify(regArr));
+                }
+            }
+        }
+
+        // Refrescar la UI de puntos si está disponible
+        if (typeof syncUserUI === 'function') syncUserUI();
+        if (typeof window.renderHistorialPuntos === 'function') window.renderHistorialPuntos();
+    } catch (lsErr) {
+        console.warn('[Puntos] ⚠️ No se pudo actualizar localStorage:', lsErr);
+    }
+};
+
+/**
+ * Renderiza la tabla del historial de puntos del usuario en el contenedor
+ * #historial-puntos-tabla (si existe en el DOM - modal VIP del cliente).
+ * Debe llamarse desde syncUserUI o al abrir el perfil del usuario.
+ */
+window.renderHistorialPuntos = function() {
+    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
+    const historial = (user && Array.isArray(user.historialPuntos)) ? user.historialPuntos : [];
+
+    // Genera el HTML de la tabla para inyectar en cualquier contenedor
+    function buildTablaHTML() {
+        if (!user) {
+            return '<p style="color:#999;text-align:center;padding:12px 16px;font-size:13px">Inicia sesión para ver tu historial.</p>';
+        }
+        if (historial.length === 0) {
+            return '<p style="color:#999;text-align:center;padding:12px 16px;font-size:13px">Aún no tienes movimientos de puntos.</p>';
+        }
+        const sorted = [...historial].reverse();
+        return `
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead>
+                    <tr style="background:rgba(255,255,255,0.08);color:#f9a8d4">
+                        <th style="padding:7px 10px;text-align:left">Fecha</th>
+                        <th style="padding:7px 10px;text-align:left">Motivo</th>
+                        <th style="padding:7px 10px;text-align:center">Pts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sorted.map(m => {
+                        const fecha = m.fechaISO
+                            ? new Date(m.fechaISO).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'2-digit' })
+                            : '–';
+                        const signo = m.tipo === 'canje' ? '-' : '+';
+                        const color = m.tipo === 'canje' ? '#f87171' : '#4ade80';
+                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
+                            <td style="padding:6px 10px;color:#cbd5e1">${fecha}</td>
+                            <td style="padding:6px 10px;color:#e2e8f0">${m.motivo || m.tipo}</td>
+                            <td style="padding:6px 10px;text-align:center;font-weight:700;color:${color}">${signo}${m.cantidad}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    // Renderizar en el perfil móvil
+    const mobileContainer = document.getElementById('historial-puntos-tabla');
+    if (mobileContainer) mobileContainer.innerHTML = buildTablaHTML();
+
+    // Renderizar en el dropdown desktop
+    const deskContainer = document.getElementById('historial-puntos-tabla-desk');
+    if (deskContainer) deskContainer.innerHTML = buildTablaHTML();
+};
+

@@ -434,6 +434,70 @@
             display: block;
         }
 
+        /* ── Historial de movimientos de puntos ──────────────────────────── */
+        #historial-puntos-tabla-wrap,
+        #historial-puntos-tabla-desk-wrap {
+            background: #ffffff !important;
+            border: 1px solid #f1f1f1;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            overflow: hidden;
+            margin: 10px 0 6px 0;
+        }
+
+        #historial-puntos-tabla table,
+        #historial-puntos-tabla-desk table {
+            background: #ffffff;
+        }
+
+        #historial-puntos-tabla thead tr,
+        #historial-puntos-tabla-desk thead tr {
+            background: #f8f9fb !important;
+        }
+
+        #historial-puntos-tabla th,
+        #historial-puntos-tabla-desk th {
+            color: #4a5568 !important;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 0.02em;
+            border-bottom: 1px solid #e8ecf0;
+        }
+
+        /* Filas: fecha y descripción en gris oscuro legible */
+        #historial-puntos-tabla td:nth-child(1),
+        #historial-puntos-tabla td:nth-child(2),
+        #historial-puntos-tabla-desk td:nth-child(1),
+        #historial-puntos-tabla-desk td:nth-child(2) {
+            color: #2d3748 !important;
+        }
+
+        /* Columna de puntos: color inyectado inline por JS; sólo aseguramos el peso */
+        #historial-puntos-tabla td:nth-child(3),
+        #historial-puntos-tabla-desk td:nth-child(3) {
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        /* Filas zebra suave para legibilidad */
+        #historial-puntos-tabla tbody tr:nth-child(even),
+        #historial-puntos-tabla-desk tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        #historial-puntos-tabla tbody tr,
+        #historial-puntos-tabla-desk tbody tr {
+            border-bottom: 1px solid #f0f0f0 !important;
+        }
+
+        /* Texto vacío / sin historial */
+        #historial-puntos-tabla p,
+        #historial-puntos-tabla-desk p {
+            color: #94a3b8 !important;
+            font-size: 12px;
+        }
+        /* ───────────────────────────────────────────────────────────────── */
+
         .dropdown-profile-info small {
             color: var(--text-soft);
             font-size: 0.73rem;

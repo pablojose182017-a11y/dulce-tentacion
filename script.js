@@ -3009,8 +3009,9 @@ function syncUserUI() {
         const goal = 500;
         const pct = Math.min((pts / goal) * 100, 100);
         const faltan = goal - pts;
-        let msg = `Te faltan ${faltan} pts para un premio`;
-        if (faltan <= 0) msg = `¡Felicidades! Tienes puntos para un premio 🎁`;
+        let msg = faltan > 0
+            ? `Te faltan ${faltan} pts para tu próximo beneficio 🎁`
+            : `¡Tienes ${pts} pts! Canjea un premio en el Club Dulce 🎉`;
 
         const dBar = document.querySelector('#user-dropdown-menu .points-bar');
         const dMsg = document.querySelector('#user-dropdown-menu .dropdown-points-box small');
@@ -3050,6 +3051,8 @@ function syncUserUI() {
     }
     if (typeof renderRewards === 'function') renderRewards();
     if (window.renderAdminNotifList) window.renderAdminNotifList();
+    // Refrescar historial de puntos del Club VIP si el contenedor está en el DOM
+    if (typeof window.renderHistorialPuntos === 'function') window.renderHistorialPuntos();
 }
 
 window.checkRemoteUserSession = function() {
@@ -3065,6 +3068,9 @@ window.checkRemoteUserSession = function() {
                     const newVip = !!(data.isVip || data.vip || (newRole === 'vip'));
                     const newVipStatus = data.vipStatus || (newVip ? 'activo' : 'inactivo');
                     const newPoints = (data.points !== undefined && data.points !== null) ? data.points : currentUser.points;
+                    // Sincronizar historialPuntos y puntosActuales desde Firestore
+                    const newHistorial = Array.isArray(data.historialPuntos) ? data.historialPuntos : (currentUser.historialPuntos || []);
+                    const newPuntosActuales = (data.puntosActuales !== undefined && data.puntosActuales !== null) ? data.puntosActuales : newPoints;
 
                     if (currentUser.role !== newRole || currentUser.isVip !== newVip || currentUser.points !== newPoints || currentUser.vipStatus !== newVipStatus) {
                         currentUser.role = newRole;
@@ -3074,23 +3080,29 @@ window.checkRemoteUserSession = function() {
                         currentUser.vip = newVip;
                         currentUser.vipStatus = newVipStatus;
                         currentUser.points = newPoints;
-                        localStorage.setItem('dt_user', JSON.stringify(currentUser));
                         changed = true;
                     }
+                    // Siempre sincronizar historial (puede haber cambiado desde otro dispositivo)
+                    currentUser.historialPuntos = newHistorial;
+                    currentUser.puntosActuales = newPuntosActuales;
+                    localStorage.setItem('dt_user', JSON.stringify(currentUser));
 
                     // Sincronizar también dt_registered_users
                     let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
                     if (!Array.isArray(regUsers)) regUsers = [];
                     let rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
                     if (rIdx !== -1) {
-                        regUsers[rIdx] = { ...regUsers[rIdx], ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints };
+                        regUsers[rIdx] = { ...regUsers[rIdx], ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints, historialPuntos: newHistorial, puntosActuales: newPuntosActuales };
                     } else {
-                        regUsers.push({ email: currentUser.email, ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints });
+                        regUsers.push({ email: currentUser.email, ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints, historialPuntos: newHistorial, puntosActuales: newPuntosActuales });
                     }
                     localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
 
                     if (changed && typeof syncUserUI === 'function') {
                         syncUserUI();
+                    } else if (typeof window.renderHistorialPuntos === 'function') {
+                        // Refrescar historial aunque no cambie el rol/puntos (puede haber movimientos nuevos)
+                        window.renderHistorialPuntos();
                     }
                 }
             }

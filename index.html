@@ -101,6 +101,11 @@
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
+                        <!-- Historial de movimientos de puntos (desktop) -->
+                        <div id="historial-puntos-tabla-desk-wrap" style="margin:8px 0 4px 0; max-height:160px; overflow-y:auto; border-radius:10px; background:rgba(0,0,0,0.12);">
+                            <div id="historial-puntos-tabla-desk"></div>
+                        </div>
+
                         <div class="dropdown-link-item" onclick="openOrderHistory()">
                             📦 Mis Pedidos
                         </div>
@@ -714,6 +719,11 @@
             <div class="dropdown-points-simulator">
                 <strong>✨ Gana Puntos Hoy:</strong>
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
+            </div>
+
+            <!-- Historial de movimientos de puntos (renderizado dinámicamente) -->
+            <div id="historial-puntos-tabla-wrap" style="margin:12px 0 4px 0; max-height:180px; overflow-y:auto; border-radius:10px; background:rgba(0,0,0,0.18);">
+                <div id="historial-puntos-tabla"></div>
             </div>
 
             <div class="dropdown-link-item" onclick="openOrderHistory()" style="margin-top: 12px; margin-bottom: -4px;">
