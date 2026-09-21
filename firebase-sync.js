@@ -126,7 +126,6 @@ window.loginWithGooglePopup = async function() {
 
             window.currentUser = userObj;
             localStorage.setItem('dt_user', JSON.stringify(userObj));
-            localStorage.setItem('dt_user', JSON.stringify(userObj));
             
             if (typeof window.saveUsersDB === 'function') window.saveUsersDB();
             if (typeof window.syncUserUI === 'function') window.syncUserUI();
