@@ -535,7 +535,7 @@ function renderRewards() {
 
         return `
             <div class="ticket-card">
-                <img src="${safeImg(r.img)}" alt="${r.name}" onerror="this.onerror=null; this.src='logo-pys.png';">
+                <img src="${safeImg(r.img)}" alt="${r.name}" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, this.alt);" style="cursor:pointer;" title="Ver foto ampliada">
                 <div class="ticket-card-info">
                     <h4>${r.name}</h4>
                     <p>🎟️ ${r.cost} Pts</p>
