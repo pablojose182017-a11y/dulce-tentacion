@@ -3914,53 +3914,53 @@ function sendOrder() {
 
     let msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
     if (currentUser && currentUser.vip) {
-        msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
+        msg += `\u2b50 *PEDIDO PRIORITARIO VIP* \u2b50\n\n`;
     }
-    msg += `📲 *NUEVO PEDIDO ${orderId}*\n`;
+    msg += `\uD83D\uDCF2 *NUEVO PEDIDO ${orderId}*\n`;
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
         if (currentUser && currentUser.vip) {
-            msg += `⭐ *PEDIDO PRIORITARIO VIP* ⭐\n\n`;
+            msg += `\u2b50 *PEDIDO PRIORITARIO VIP* \u2b50\n\n`;
         }
-        msg += `🎂 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*\n`;
+        msg += `\uD83C\uDF82 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*\n`;
         const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
         if (evtItem && evtItem.customData) {
-            msg += `📅 *Fecha de entrega:* ${evtItem.customData.date}\n`;
-            msg += `⏰ *Hora:* ${evtItem.customData.time}\n`;
+            msg += `\uD83D\uDCC5 *Fecha de entrega:* ${evtItem.customData.date}\n`;
+            msg += `\u23F0 *Hora:* ${evtItem.customData.time}\n`;
         } else {
-            msg += `📅 *Fecha:* ${document.getElementById('eventDate')?.value || 'N/A'}\n`;
-            msg += `⏰ *Hora:* ${document.getElementById('eventTime')?.value || 'N/A'}\n`;
+            msg += `\uD83D\uDCC5 *Fecha:* ${document.getElementById('eventDate')?.value || 'N/A'}\n`;
+            msg += `\u23F0 *Hora:* ${document.getElementById('eventTime')?.value || 'N/A'}\n`;
         }
     }
-    msg += `📍 *Ciudad:* Cúcuta, Norte de Santander\n`;
+    msg += `\uD83D\uDCCD *Ciudad:* Cúcuta, Norte de Santander\n`;
     if (currentUser && discount > 0) {
         if (currentUser.vip) {
-            msg += `👑 *[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]*\n`;
+            msg += `\uD83D\uDC51 *[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]*\n`;
         } else {
-            msg += `🎁 *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
+            msg += `\uD83C\uDF81 *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
         }
     }
     msg += `—————————————————————\n`;
-    msg += `👤 *Cliente:* ${name}\n`;
-    msg += `📦 *Modalidad:* ${curDelivery === 'delivery' ? '🛵 Domicilio en Cúcuta' : '🏪 Recoger en Punto Físico'}\n`;
+    msg += `\uD83D\uDC64 *Cliente:* ${name}\n`;
+    msg += `\uD83D\uDCE6 *Modalidad:* ${curDelivery === 'delivery' ? '\uD83D\uDEF5 Domicilio en Cúcuta' : '\uD83C\uDFEA Recoger en Punto Físico'}\n`;
     if (curDelivery === 'delivery') {
-        msg += `📍 *Dirección:* ${addr}\n`;
+        msg += `\uD83D\uDCCD *Dirección:* ${addr}\n`;
     } else {
-        msg += `📍 *Punto de Entrega:* Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia\n`;
-        msg += `🗺️ *Ubicación Maps:* https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6\n`;
+        msg += `\uD83D\uDCCD *Punto de Entrega:* Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia\n`;
+        msg += `\uD83D\uDDFA\uFE0F *Ubicación Maps:* https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6\n`;
     }
-    msg += `💳 *Pago:* ${selectedPay}\n`;
-    if (notes) msg += `📝 *Notas:* ${notes}\n`;
+    msg += `\uD83D\uDCB3 *Pago:* ${selectedPay}\n`;
+    if (notes) msg += `\uD83D\uDCDD *Notas:* ${notes}\n`;
     msg += `—————————————————————\n`;
     msg += `*PRODUCTOS PEDIDOS:*\n`;
     cart.forEach(i => {
         if (i.id.toString().startsWith('custom')) {
-            msg += `  • 🎂 ${i.name}\n`;
+            msg += `  • \uD83C\uDF82 ${i.name}\n`;
             msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
             if (i.customData) {
                 msg += `    *Detalles:* Sabor: ${i.customData.sabor} | Tamaño: ${i.customData.tamano} | Diseño: ${i.customData.diseno}\n`;
                 if (i.customData.message) msg += `    *Mensaje:* "${i.customData.message}"\n`;
-                msg += `    🎁 *Kit de Fiesta GRATIS Incluido*\n`;
+                msg += `    \uD83C\uDF81 *Kit de Fiesta GRATIS Incluido*\n`;
             }
         } else {
             msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
@@ -3968,26 +3968,26 @@ function sendOrder() {
     });
     msg += `—————————————————————\n`;
     msg += `*Total unidades:* ${tq}\n`;
-    msg += `💰 *Subtotal:* $${tp.toLocaleString('es-CO')} COP\n`;
+    msg += `\uD83D\uDCB0 *Subtotal:* $${tp.toLocaleString('es-CO')} COP\n`;
     if (discount > 0) {
-        msg += `🎁 *Descuento ${currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString('es-CO')} COP\n`;
+        msg += `\uD83C\uDF81 *Descuento ${currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString('es-CO')} COP\n`;
     }
-    msg += `🛵 *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
+    msg += `\uD83D\uDEF5 *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
     msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString('es-CO')} COP\n`;
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         const dep = Math.ceil(finalTotal / 2);
-        msg += `\n⚠️ *Pedido de Evento (Anticipo requerido)*\n`;
+        msg += `\n\u26A0\uFE0F *Pedido de Evento (Anticipo requerido)*\n`;
         msg += `*Abonar 50% para reservar:* $${dep.toLocaleString('es-CO')} COP\n`;
         msg += `*Saldo pendiente contra entrega:* $${(finalTotal - dep).toLocaleString('es-CO')} COP\n`;
     }
     msg += `—————————————————————\n`;
-    msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! 🙏`;
+    msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! \uD83D\uDE4F`;
 
     // Vaciar carrito
     cart = [];
     if (typeof saveCart === 'function') saveCart();
     if (typeof updateCart === 'function') updateCart();
-    if (typeof showToast === 'function') showToast("Procesando pedido...", "⏳", 1500);
+    if (typeof showToast === 'function') showToast("Procesando pedido...", "\u23F3", 1500);
 
     setTimeout(() => {
         window.open(`https://wa.me/${typeof PHONE !== 'undefined' ? PHONE : '573123456789'}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -3995,7 +3995,7 @@ function sendOrder() {
 }
 
 function openWhatsAppChat() {
-    const g = "¡Hola! Vengo desde la página web de Dulce Tentación P y S 🥖. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!";
+    const g = "¡Hola! Vengo desde la página web de Dulce Tentación P y S \uD83E\uDD56. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!";
     window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(g)}`, '_blank');
 }
 
