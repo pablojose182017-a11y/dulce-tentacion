@@ -6297,10 +6297,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 /* ===== MODAL PERFIL MOVIL: scroll interno para que la barra inferior no tape los botones ===== */
+#mobileProfileModal {
+    z-index: 10000 !important;
+}
+
 #mobileProfileModal .auth-card {
     max-height: 85vh !important;
     overflow-y: auto !important;
-    padding-bottom: 24px !important;
+    padding-bottom: 90px !important;
     -webkit-overflow-scrolling: touch;
 }
 
