@@ -3030,15 +3030,14 @@ function openCartFromDropdown(e) { e.stopPropagation(); document.getElementById(
 // ===== PRODUCTS =====
 
 
-window.updateProductPrice = function (productId, param) {
+window.updateProductPrice = function (productId, selectEl) {
     let fillingKey = '';
-    if (param && param.value) {
-        fillingKey = param.value;
-    } else if (typeof param === 'string') {
-        fillingKey = param;
+    if (selectEl && selectEl.value) {
+        fillingKey = selectEl.value;
+    } else if (typeof selectEl === 'string') {
+        fillingKey = selectEl;
     } else {
-        const sel = document.getElementById(`filling-sel-${productId}`);
-        fillingKey = sel ? sel.value : 'queso';
+        fillingKey = 'queso';
     }
 
     const precios = {
@@ -3055,9 +3054,22 @@ window.updateProductPrice = function (productId, param) {
     const total = unidades * unitPrice;
     const isPromo = (fillingKey === 'especial');
 
-    const priceEl = document.getElementById(`price-${productId}`) ||
-        document.querySelector(`#price-box-${productId}`) ||
-        document.querySelector(`[data-product-id="${productId}"] .product-price`);
+    if (typeof products !== 'undefined') {
+        const prod = products.find(p => p.id == productId);
+        if (prod) prod.price = total;
+    }
+
+    let priceEl = null;
+    if (selectEl && typeof selectEl.closest === 'function') {
+        const card = selectEl.closest('.card');
+        if (card) priceEl = card.querySelector('.price-row');
+    }
+
+    if (!priceEl) {
+        priceEl = document.getElementById(`price-${productId}`) ||
+            document.querySelector(`#price-box-${productId}`) ||
+            document.querySelector(`[data-product-id="${productId}"] .product-price`);
+    }
 
     if (!priceEl) return;
 
@@ -3125,7 +3137,7 @@ function createCardHTML(p) {
                     <div class="product-filling-wrapper">
                         <label class="filling-label">Elige tu sabor/relleno:</label>
                         <div class="custom-select-box">
-                            <select id="filling-sel-${p.id}" class="filling-select" style="outline: none !important;" onchange="window.updateProductPrice(${p.id}, this.value)">
+                            <select id="filling-sel-${p.id}" class="filling-select" style="outline: none !important;" onchange="window.updateProductPrice(${p.id}, this)">
                                 ${Object.entries(OPCIONES_RELLENO).map(([id, r]) => `<option value="${id}" data-unit-price="${r.precioUnitario}" data-promo="${r.promo}">${r.nombre}</option>`).join('')}
                             </select>
                         </div>

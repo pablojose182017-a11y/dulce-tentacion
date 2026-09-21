@@ -1459,15 +1459,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (text.includes('bocadillo')) {
                     opt.text = "🍯 Bocadillo con Queso ($2.000)";
                     opt.value = "bocadillo_queso";
+                } else if (text.includes('especial')) {
+                    opt.text = "🔥 Especial Trío ($3.500)";
+                    opt.value = "especial";
                 } else if (text.includes('pollo')) {
                     opt.text = "🍗 Pollo Desmechado ($3.000)";
                     opt.value = "pollo";
                 } else if (text.includes('jamon') || text.includes('jamón')) {
                     opt.text = "🥓 Jamón y Queso ($3.000)";
                     opt.value = "jamon_queso";
-                } else if (text.includes('especial')) {
-                    opt.text = "🔥 Especial Trío ($3.500)";
-                    opt.value = "especial";
                 }
                 opt.dataset.cleaned = 'true'; // Marcado como procesado
             });
@@ -1475,6 +1475,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 1. RECÁLCULO DINÁMICO DE PRECIO SEGÚN RELLENO
+    // [DESACTIVADO] Este listener global fallaba por la clase .product-card y ha sido reemplazado 
+    // por la solución nativa usando event.target.closest('.card') dentro de script.js
+    /*
     document.body.addEventListener('change', (e) => {
         if (e.target.matches('select.filling-select, .filling-selector select')) {
             const selectEl = e.target;

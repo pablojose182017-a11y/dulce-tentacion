@@ -5206,28 +5206,29 @@
 .filling-label { font-size: 0.8rem; font-weight: 700; color: #7a4f5d; display: block; margin-bottom: 4px; }
 .custom-select-box { position: relative; width: 100%; }
 .filling-select {
-  width: 100%;
+  width: 100% !important;
   appearance: none;
   -webkit-appearance: none;
-  background: #fff9fa !important;
-  border: 1.5px solid #f2cad5 !important;
+  background: #ffffff !important;
+  border: 1px solid #fbcfe8 !important; /* Borde rosa sutil */
   outline: none !important;
-  border-radius: 10px !important;
-  padding: 8px 32px 8px 10px !important;
-  font-size: 0.82rem !important;
-  font-weight: 600 !important;
+  border-radius: 12px !important;
+  padding: 8px 35px 8px 14px !important; /* Padding cómodo y espacio para la flecha */
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
   color: #4a2e35 !important;
   cursor: pointer;
 }
-.filling-select:focus { border-color: #9C1D54 !important; background: #fff !important; }
+.filling-select:focus { border-color: #f472b6 !important; }
 .custom-select-box::after {
   content: "▼";
   font-size: 0.65rem;
-  color: #9C1D54;
+  color: #f472b6;
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
+  pointer-events: none;
   pointer-events: none;
 }
 /* =========================================
