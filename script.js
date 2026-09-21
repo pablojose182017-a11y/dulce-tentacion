@@ -145,35 +145,62 @@ window.addEventListener('DOMContentLoaded', () => {
     if (window.renderAdminNotifList) window.renderAdminNotifList();
     if (typeof window.checkRemoteUserSession === 'function') window.checkRemoteUserSession();
 
-    // Configurar scroll de categorías con el ratón en PC
-    const sliders = document.querySelectorAll('.cat-chip-scroll');
-    sliders.forEach(slider => {
-        let isDown = false;
-        let startX;
-        let scrollLeft;
+    // ===== UTILITARIO: DRAG TO SCROLL (Clic sostenido para desplazamiento horizontal en PC) =====
+    window.enableDragToScroll = function(element) {
+        if (!element || element.dataset.dragScrollInit) return;
+        element.dataset.dragScrollInit = 'true';
 
-        slider.addEventListener('mousedown', (e) => {
+        let isDown = false;
+        let startX = 0;
+        let scrollStart = 0;
+        let hasDragged = false;
+        const DRAG_THRESHOLD = 6;
+
+        element.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Solo clic principal
             isDown = true;
-            slider.style.cursor = 'grabbing';
-            startX = e.pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
+            hasDragged = false;
+            startX = e.pageX;
+            scrollStart = element.scrollLeft;
+            element.style.cursor = 'grabbing';
+            element.style.userSelect = 'none';
         });
-        slider.addEventListener('mouseleave', () => {
-            isDown = false;
-            slider.style.cursor = 'grab';
-        });
-        slider.addEventListener('mouseup', () => {
-            isDown = false;
-            slider.style.cursor = 'grab';
-        });
-        slider.addEventListener('mousemove', (e) => {
+
+        window.addEventListener('mousemove', (e) => {
             if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - slider.offsetLeft;
-            const walk = (x - startX) * 1.5; // Velocidad del arrastre
-            slider.scrollLeft = scrollLeft - walk;
+            const diffX = e.pageX - startX;
+            if (Math.abs(diffX) > DRAG_THRESHOLD) {
+                hasDragged = true;
+            }
+            element.scrollLeft = scrollStart - diffX;
         });
-    });
+
+        window.addEventListener('mouseup', () => {
+            if (!isDown) return;
+            isDown = false;
+            element.style.cursor = '';
+            element.style.userSelect = '';
+            setTimeout(() => {
+                hasDragged = false;
+            }, 50);
+        });
+
+        // Prevenir clics involuntarios en botones hijos tras un arrastre
+        element.addEventListener('click', (e) => {
+            if (hasDragged) {
+                e.preventDefault();
+                e.stopPropagation();
+                hasDragged = false;
+            }
+        }, true);
+    };
+
+    window.initDragToScroll = function(selector) {
+        const sel = selector || '.cat-chip-scroll, .admin-tabs-nav, #admin-stock-filters-container, .orders-tabs';
+        document.querySelectorAll(sel).forEach(window.enableDragToScroll);
+    };
+
+    window.initDragToScroll();
 });
 
 function saveCart() { try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch (e) { } }
@@ -212,6 +239,7 @@ function showSection(id, element) {
             el.style.display = 'block';
             const soundTog = document.getElementById('soundToggle');
             if (soundTog) soundTog.checked = orderSoundEnabled;
+            if (typeof window.initDragToScroll === 'function') window.initDragToScroll();
         }
         el.classList.add('active');
     }
