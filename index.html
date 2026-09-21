@@ -164,6 +164,13 @@
                     </div>
                 </div>
             </div>
+            <button class="mobile-menu-btn" id="btnMobileMenu" onclick="toggleMobileMenu(event)" title="Menú de navegación" aria-label="Abrir menú de opciones">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -178,6 +185,49 @@
             </span>
             <input type="text" id="searchInputMobile" placeholder="Buscar pan, torta, croissant..."
                 oninput="filterProductsBySearch('searchInputMobile')">
+        </div>
+    </div>
+
+    <!-- Mobile Dropdown Menu (Opciones Secundarias) -->
+    <div id="mobileDropdownMenu" class="mobile-dropdown-menu" style="display:none;">
+        <div class="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
+        <div class="mobile-menu-sheet">
+            <div class="mobile-menu-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <img src="logo-pys.png" style="width:34px; height:34px; border-radius:50%; border:2px solid var(--brand-pink);" alt="Logo">
+                    <div style="text-align:left;">
+                        <strong style="color:var(--brand-pink); font-size:0.95rem; display:block;">P&amp;S Punto Dulce</strong>
+                        <small style="color:#64748b; font-size:0.75rem;">Pastelería Artesanal</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" onclick="closeMobileMenu()" aria-label="Cerrar menú">&times;</button>
+            </div>
+            <div class="mobile-menu-links">
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('inicio', document.getElementById('bnInicio'))">
+                    <span class="mmi-icon">🏠</span> <span>Inicio</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('productos', document.getElementById('bnProductos'))">
+                    <span class="mmi-icon">🥐</span> <span>Catálogo de Productos</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); openPointsModal()">
+                    <span class="mmi-icon">🎟️</span> <span>Club Puntos &amp; Recompensas</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); if(typeof openVipTermsModal==='function') openVipTermsModal();">
+                    <span class="mmi-icon">👑</span> <span>Membresía VIP Oro</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('nosotros', document.getElementById('bnNosotros'))">
+                    <span class="mmi-icon">❤️</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); openDeliveryCoverageModal()">
+                    <span class="mmi-icon">🛵</span> <span>Políticas y Zonas de Entrega</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); openOrderHistory()">
+                    <span class="mmi-icon">📦</span> <span>Mis Pedidos</span>
+                </button>
+                <button class="mobile-menu-item" onclick="closeMobileMenu(); openWhatsAppChat()">
+                    <span class="mmi-icon">💬</span> <span>Escríbenos a WhatsApp</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1088,12 +1138,17 @@
             <button class="bottom-nav-btn" id="bnProductos" onclick="showSection('productos', this)"
                 data-section="productos">
                 <span class="bn-icon">🥖</span>
-                <span class="bn-label">Productos</span>
+                <span class="bn-label">Catálogo</span>
             </button>
-            <button class="bottom-nav-btn cart-nav-btn" onclick="toggleCart()">
+            <button class="bottom-nav-btn cart-nav-btn" id="bnCarrito" onclick="toggleCart()">
                 <span class="bn-icon">🛒</span>
                 <span class="bn-label">Carrito</span>
                 <span class="cart-mobile-badge" id="cartCountMobile">0</span>
+            </button>
+            <button class="bottom-nav-btn" id="bnClubPuntos" onclick="if(typeof openPointsModal === 'function') openPointsModal(); else showSection('club-puntos', this);"
+                data-section="club-puntos">
+                <span class="bn-icon">🎟️</span>
+                <span class="bn-label">Club VIP</span>
             </button>
             <button class="bottom-nav-btn" id="bnNosotros" onclick="showSection('nosotros', this)"
                 data-section="nosotros">

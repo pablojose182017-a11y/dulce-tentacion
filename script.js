@@ -3644,6 +3644,33 @@ window.closeDeliveryCoverageModal = function(e) {
     }
 };
 
+window.toggleMobileMenu = function(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const m = document.getElementById('mobileDropdownMenu');
+    if (!m) return;
+    if (m.style.display === 'block') {
+        window.closeMobileMenu();
+    } else {
+        window.openMobileMenu();
+    }
+};
+
+window.openMobileMenu = function() {
+    const m = document.getElementById('mobileDropdownMenu');
+    if (m) {
+        m.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeMobileMenu = function() {
+    const m = document.getElementById('mobileDropdownMenu');
+    if (m) {
+        m.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
+
 function toggleCart() {
     const m = document.getElementById('cartModal');
     if (!m) return;
