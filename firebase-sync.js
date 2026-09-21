@@ -1135,49 +1135,102 @@ window.renderHistorialPuntos = function() {
     const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
     const historial = (user && Array.isArray(user.historialPuntos)) ? user.historialPuntos : [];
 
-    // Genera el HTML de la tabla para inyectar en cualquier contenedor
-    function buildTablaHTML() {
-        if (!user) {
-            return '<p style="color:#94a3b8;text-align:center;padding:12px 16px;font-size:12px">Inicia sesión para ver tu historial.</p>';
-        }
-        if (historial.length === 0) {
-            return '<p style="color:#94a3b8;text-align:center;padding:12px 16px;font-size:12px">Aún no tienes movimientos de puntos.</p>';
-        }
-        const sorted = [...historial].reverse();
-        return `
-            <table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#ffffff">
-                <thead>
-                    <tr style="background:#f8f9fb;color:#4a5568;border-bottom:1px solid #e8ecf0">
-                        <th style="padding:7px 10px;text-align:left;font-weight:700">Fecha</th>
-                        <th style="padding:7px 10px;text-align:left;font-weight:700">Motivo</th>
-                        <th style="padding:7px 10px;text-align:center;font-weight:700">Pts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${sorted.map((m, idx) => {
-                        const fecha = m.fechaISO
-                            ? new Date(m.fechaISO).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'2-digit' })
-                            : '–';
-                        const signo = m.tipo === 'canje' ? '-' : '+';
-                        const color = m.tipo === 'canje' ? '#dc2626' : '#16a34a';
-                        const bg = idx % 2 === 1 ? '#fafafa' : '#ffffff';
-                        return `<tr style="border-bottom:1px solid #f0f0f0;background:${bg}">
-                            <td style="padding:6px 10px;color:#2d3748">${fecha}</td>
-                            <td style="padding:6px 10px;color:#2d3748">${m.motivo || m.tipo}</td>
-                            <td style="padding:6px 10px;text-align:center;font-weight:800;color:${color}">${signo}${m.cantidad}</td>
-                        </tr>`;
-                    }).join('')}
-                </tbody>
-            </table>
-        `;
+    // Actualizar saldo visible en el modal
+    const balEl = document.getElementById('modal-points-balance');
+    if (balEl && user) {
+        balEl.innerText = `${user.points || 0} Pts`;
     }
 
-    // Renderizar en el perfil móvil
-    const mobileContainer = document.getElementById('historial-puntos-tabla');
-    if (mobileContainer) mobileContainer.innerHTML = buildTablaHTML();
+    // Genera el HTML de las tarjetas para inyectar en el modal
+    function buildMovimientosCardsHTML() {
+        if (!user) {
+            return `
+                <div style="text-align:center; padding:30px 10px; color:#6b7280;">
+                    <div style="font-size:3rem; margin-bottom:12px;">🔒</div>
+                    <strong style="display:block; font-size:1.05rem; color:#374151; margin-bottom:4px;">Inicia sesión para ver tu historial.</strong>
+                    <p style="font-size:0.85rem; margin:0;">Tus puntos y beneficios se sincronizan con tu cuenta.</p>
+                </div>`;
+        }
+        if (historial.length === 0) {
+            return `
+                <div style="text-align:center; padding:30px 10px; color:#6b7280;">
+                    <div style="font-size:3rem; margin-bottom:12px;">🌟</div>
+                    <strong style="display:block; font-size:1.05rem; color:#374151; margin-bottom:4px;">Aún no tienes movimientos de puntos.</strong>
+                    <p style="font-size:0.85rem; margin:0;">¡Realiza compras o canjea premios para ver tu historial aquí!</p>
+                </div>`;
+        }
+        const sorted = [...historial].reverse();
+        return sorted.map(m => {
+            const isCanje = m.tipo === 'canje';
+            let fechaFormatted = 'Fecha reciente';
+            if (m.fechaISO) {
+                try {
+                    const d = new Date(m.fechaISO);
+                    fechaFormatted = d.toLocaleString('es-CO', {
+                        day: 'numeric',
+                        month: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true
+                    });
+                } catch(e) {
+                    fechaFormatted = m.fechaISO;
+                }
+            }
 
-    // Renderizar en el dropdown desktop
+            // Título y Motivo
+            let iconTitle = '';
+            let motivoText = '';
+            if (isCanje) {
+                iconTitle = '🎁 Canje de Recompensa:';
+                motivoText = m.motivo ? m.motivo.replace(/^Canje:\s*/i, '') : 'Premio VIP';
+            } else {
+                iconTitle = '🛍️ Compra completada';
+                if (m.orderId) {
+                    const cleanId = String(m.orderId).startsWith('#') ? m.orderId : '#' + m.orderId;
+                    motivoText = `(${cleanId})`;
+                } else if (m.motivo) {
+                    motivoText = m.motivo.replace(/^Compra\s*/i, '');
+                }
+            }
+
+            const badgeColor = isCanje ? '#dc2626' : '#16a34a';
+            const badgeBg = isCanje ? '#fef2f2' : '#ecfdf5';
+            const badgeBorder = isCanje ? '#fecaca' : '#bbf7d0';
+            const sign = isCanje ? '-' : '+';
+            const ptsQty = Math.abs(m.cantidad || 0);
+
+            return `
+                <div class="history-order-card" style="background:#ffffff; border:1px solid #f1f1f1; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                        <div style="display:flex; flex-direction:column;">
+                            <strong style="color:#1e293b; font-size:0.95rem; line-height:1.3;">
+                                ${iconTitle} <span style="color:var(--brand-pink); font-weight:700;">${motivoText}</span>
+                            </strong>
+                            <span style="font-size:0.78rem; color:#64748b; margin-top:3px;">
+                                📅 ${fechaFormatted}
+                            </span>
+                        </div>
+                        <span style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; font-weight:800; font-size:0.82rem; padding:4px 10px; border-radius:20px; white-space:nowrap; flex-shrink:0;">
+                            ${sign}${ptsQty} Puntos Dulce
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Inyectar en el nuevo modal dedicado
+    const modalContent = document.getElementById('points-history-content');
+    if (modalContent) modalContent.innerHTML = buildMovimientosCardsHTML();
+
+    // Compatibilidad retroactiva si existen contenedores previos
+    const mobileContainer = document.getElementById('historial-puntos-tabla');
+    if (mobileContainer) mobileContainer.innerHTML = buildMovimientosCardsHTML();
+
     const deskContainer = document.getElementById('historial-puntos-tabla-desk');
-    if (deskContainer) deskContainer.innerHTML = buildTablaHTML();
+    if (deskContainer) deskContainer.innerHTML = buildMovimientosCardsHTML();
 };
 

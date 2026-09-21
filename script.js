@@ -641,26 +641,62 @@ function redeemReward(rewardId) {
 
 window._openedOrdersFromProfile = false;
 
-function togglePointsHistory(type) {
-    const wrapId = type === 'desk' ? 'historial-puntos-tabla-desk-wrap' : 'historial-puntos-tabla-wrap';
-    const iconId = type === 'desk' ? 'historial-toggle-icon-desk' : 'historial-toggle-icon-mob';
-    const wrap = document.getElementById(wrapId);
-    const icon = document.getElementById(iconId);
-    if (!wrap) return;
+window._openedPointsFromProfile = false;
 
-    const isHidden = wrap.style.display === 'none' || getComputedStyle(wrap).display === 'none';
-    if (isHidden) {
-        wrap.style.display = 'block';
-        if (icon) icon.innerText = '▲';
-        if (typeof window.renderHistorialPuntos === 'function') {
-            window.renderHistorialPuntos();
+function openPointsHistoryModal(fromProfile = false) {
+    const modal = document.getElementById('modal-points-history');
+    if (!modal) return;
+
+    if (!currentUser) {
+        openAuthModal();
+        return;
+    }
+
+    const mobModal = document.getElementById('mobileProfileModal');
+    if (fromProfile || (mobModal && (mobModal.style.display === 'flex' || mobModal.style.display === 'block'))) {
+        window._openedPointsFromProfile = true;
+    }
+
+    // Cerrar suavemente el modal de perfil o dropdown para dejar la pantalla limpia
+    if (typeof closeMobileProfile === 'function') closeMobileProfile();
+    document.getElementById('user-dropdown-menu')?.classList.remove('active');
+
+    // Controlar visibilidad del botón Volver según el origen
+    const backBtn = document.getElementById('btn-back-points-history');
+    if (backBtn) {
+        backBtn.style.display = window._openedPointsFromProfile ? 'inline-flex' : 'none';
+    }
+
+    const balEl = document.getElementById('modal-points-balance');
+    if (balEl) balEl.innerText = `${currentUser.points || 0} Pts`;
+
+    if (typeof window.renderHistorialPuntos === 'function') {
+        window.renderHistorialPuntos();
+    }
+
+    modal.style.display = 'flex';
+}
+window.openPointsHistoryModal = openPointsHistoryModal;
+
+function closePointsHistoryModal() {
+    const modal = document.getElementById('modal-points-history');
+    if (modal) modal.style.display = 'none';
+    window._openedPointsFromProfile = false;
+}
+window.closePointsHistoryModal = closePointsHistoryModal;
+
+function returnFromPointsHistory() {
+    closePointsHistoryModal();
+    if (window.innerWidth <= 768) {
+        if (typeof openMobileProfile === 'function') {
+            openMobileProfile();
+        } else {
+            const mobModal = document.getElementById('mobileProfileModal');
+            if (mobModal) mobModal.style.display = 'flex';
         }
-    } else {
-        wrap.style.display = 'none';
-        if (icon) icon.innerText = '▼';
     }
 }
-window.togglePointsHistory = togglePointsHistory;
+window.returnFromPointsHistory = returnFromPointsHistory;
 
 function openOrderHistory(fromProfile = false) {
     const modal = document.getElementById('modal-order-history');
