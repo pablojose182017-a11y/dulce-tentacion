@@ -1475,64 +1475,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 1. RECÁLCULO DINÁMICO DE PRECIO SEGÚN RELLENO
-    // [DESACTIVADO] Este listener global fallaba por la clase .product-card y ha sido reemplazado 
-    // por la solución nativa usando event.target.closest('.card') dentro de script.js
-    /*
-    document.body.addEventListener('change', (e) => {
-        if (e.target.matches('select.filling-select, .filling-selector select')) {
-            const selectEl = e.target;
-            const card = selectEl.closest('.product-card');
-            if (!card) return;
-
-            let productId = null;
-            const btn = card.querySelector('button[onclick^="addToCart"]');
-            if (btn) {
-                const match = btn.getAttribute('onclick').match(/addToCart\((\d+)/);
-                if (match) productId = match[1];
-            }
-            if (!productId) {
-                const priceContainerId = card.querySelector('[id^="price-"]')?.id;
-                if(priceContainerId) productId = priceContainerId.replace('price-', '');
-            }
-
-            if (!productId) return;
-
-            let unidades = 25; // Default fallback
-            if (productId == '101') unidades = 25;
-            else if (productId == '102') unidades = 50;
-            else if (productId == '103') unidades = 100;
-
-            const val = selectEl.value;
-            const preciosMap = { queso: 2000, bocadillo_queso: 2000, pollo: 3000, jamon_queso: 3000, especial: 3500 };
-            const precioUnit = preciosMap[val] || 2000;
-            const total = unidades * precioUnit;
-
-            // Actualizar interfaz visual
-            const priceContainer = document.getElementById(`price-${productId}`) || card.querySelector('.current-price')?.parentElement;
-            if (priceContainer) {
-                if (typeof window.updateProductPrice === 'function') {
-                    window.updateProductPrice(productId, val);
-                } else {
-                    if (val === 'especial') {
-                        const tachado = unidades * 3700;
-                        priceContainer.innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.8rem; margin-right:5px;">$${tachado.toLocaleString('es-CO')}</span> <span class="current-price" style="color:#e11d48;">$${total.toLocaleString('es-CO')}</span> <span class="badge-promo-filling">🔥 5% DTO</span>`;
-                    } else {
-                        priceContainer.innerHTML = `<span class="current-price">$${total.toLocaleString('es-CO')}</span>`;
-                    }
-                }
-            }
-
-            // Actualizar datos en memoria para el botón (interceptando db_products)
-            if (typeof db_products !== 'undefined') {
-                const prod = db_products.find(p => p.id == productId);
-                if (prod) {
-                    prod.price = total;
-                    // Actualizar temporalmente el nombre o el relleno (dependiendo de la implementación del cart)
-                    prod.selectedFilling = val;
-                }
-            }
-        }
-    });
+    // [ELIMINADO] El listener global redundante fue removido. La funcionalidad nativa está en script.js.
 
     // Limpiar al inicio y observar cambios en el DOM para inyectar dinámicamente
     limpiarOpcionesCombos();
