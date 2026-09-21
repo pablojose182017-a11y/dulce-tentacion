@@ -1138,32 +1138,33 @@ window.renderHistorialPuntos = function() {
     // Genera el HTML de la tabla para inyectar en cualquier contenedor
     function buildTablaHTML() {
         if (!user) {
-            return '<p style="color:#999;text-align:center;padding:12px 16px;font-size:13px">Inicia sesión para ver tu historial.</p>';
+            return '<p style="color:#94a3b8;text-align:center;padding:12px 16px;font-size:12px">Inicia sesión para ver tu historial.</p>';
         }
         if (historial.length === 0) {
-            return '<p style="color:#999;text-align:center;padding:12px 16px;font-size:13px">Aún no tienes movimientos de puntos.</p>';
+            return '<p style="color:#94a3b8;text-align:center;padding:12px 16px;font-size:12px">Aún no tienes movimientos de puntos.</p>';
         }
         const sorted = [...historial].reverse();
         return `
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px;background:#ffffff">
                 <thead>
-                    <tr style="background:rgba(255,255,255,0.08);color:#f9a8d4">
-                        <th style="padding:7px 10px;text-align:left">Fecha</th>
-                        <th style="padding:7px 10px;text-align:left">Motivo</th>
-                        <th style="padding:7px 10px;text-align:center">Pts</th>
+                    <tr style="background:#f8f9fb;color:#4a5568;border-bottom:1px solid #e8ecf0">
+                        <th style="padding:7px 10px;text-align:left;font-weight:700">Fecha</th>
+                        <th style="padding:7px 10px;text-align:left;font-weight:700">Motivo</th>
+                        <th style="padding:7px 10px;text-align:center;font-weight:700">Pts</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${sorted.map(m => {
+                    ${sorted.map((m, idx) => {
                         const fecha = m.fechaISO
                             ? new Date(m.fechaISO).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'2-digit' })
                             : '–';
                         const signo = m.tipo === 'canje' ? '-' : '+';
-                        const color = m.tipo === 'canje' ? '#f87171' : '#4ade80';
-                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
-                            <td style="padding:6px 10px;color:#cbd5e1">${fecha}</td>
-                            <td style="padding:6px 10px;color:#e2e8f0">${m.motivo || m.tipo}</td>
-                            <td style="padding:6px 10px;text-align:center;font-weight:700;color:${color}">${signo}${m.cantidad}</td>
+                        const color = m.tipo === 'canje' ? '#dc2626' : '#16a34a';
+                        const bg = idx % 2 === 1 ? '#fafafa' : '#ffffff';
+                        return `<tr style="border-bottom:1px solid #f0f0f0;background:${bg}">
+                            <td style="padding:6px 10px;color:#2d3748">${fecha}</td>
+                            <td style="padding:6px 10px;color:#2d3748">${m.motivo || m.tipo}</td>
+                            <td style="padding:6px 10px;text-align:center;font-weight:800;color:${color}">${signo}${m.cantidad}</td>
                         </tr>`;
                     }).join('')}
                 </tbody>

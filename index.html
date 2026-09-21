@@ -101,12 +101,16 @@
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
-                        <!-- Historial de movimientos de puntos (desktop) -->
-                        <div id="historial-puntos-tabla-desk-wrap" style="margin:8px 0 4px 0; max-height:160px; overflow-y:auto; border-radius:10px; background:rgba(0,0,0,0.12);">
+                        <!-- Botón Desplegable: Historial de Puntos & Movimientos (desktop) -->
+                        <div class="dropdown-link-item points-history-toggle" onclick="togglePointsHistory('desk')" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; margin-bottom:6px;">
+                            <span>📊 Historial de Puntos</span>
+                            <span id="historial-toggle-icon-desk" style="font-size:0.75rem; color:var(--brand-pink); transition:transform 0.2s;">▼</span>
+                        </div>
+                        <div id="historial-puntos-tabla-desk-wrap" style="display:none; margin:0 0 8px 0; max-height:160px; overflow-y:auto; border-radius:10px;">
                             <div id="historial-puntos-tabla-desk"></div>
                         </div>
 
-                        <div class="dropdown-link-item" onclick="openOrderHistory()">
+                        <div class="dropdown-link-item" onclick="openOrderHistory(true)">
                             📦 Mis Pedidos
                         </div>
 
@@ -721,12 +725,16 @@
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
             </div>
 
-            <!-- Historial de movimientos de puntos (renderizado dinámicamente) -->
-            <div id="historial-puntos-tabla-wrap" style="margin:12px 0 4px 0; max-height:180px; overflow-y:auto; border-radius:10px; background:rgba(0,0,0,0.18);">
+            <!-- Botón Desplegable: Historial de Puntos & Movimientos (móvil) -->
+            <div class="dropdown-link-item points-history-toggle" onclick="togglePointsHistory('mob')" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; margin-top:10px; margin-bottom:6px;">
+                <span>📊 Historial de Puntos &amp; Movimientos</span>
+                <span id="historial-toggle-icon-mob" style="font-size:0.8rem; color:var(--brand-pink); transition:transform 0.2s;">▼</span>
+            </div>
+            <div id="historial-puntos-tabla-wrap" style="display:none; margin:0 0 10px 0; max-height:180px; overflow-y:auto; border-radius:10px;">
                 <div id="historial-puntos-tabla"></div>
             </div>
 
-            <div class="dropdown-link-item" onclick="openOrderHistory()" style="margin-top: 12px; margin-bottom: -4px;">
+            <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom: 6px;">
                 📦 Mis Pedidos
             </div>
 
@@ -1102,11 +1110,14 @@
     </div>
 
     <!-- ===== MODAL ORDER HISTORY ===== -->
-    <div class="auth-modal" id="modal-order-history" style="display:none; z-index:1100;">
-        <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px;">
+    <div class="auth-modal" id="modal-order-history" style="display:none; z-index:1100;" onclick="if(event.target===this) closeOrderHistory()">
+        <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px; width:100%; max-width:480px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f0e2e5; padding-bottom: 10px; margin-bottom: 15px;">
-                <h3 style="color:var(--brand-pink); margin:0;">📦 Mis Pedidos</h3>
-                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()">✕</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button id="btn-back-order-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromOrderHistory()" title="Volver al Perfil">←</button>
+                    <h3 style="color:var(--brand-pink); margin:0;">📦 Mis Pedidos</h3>
+                </div>
+                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()" title="Cerrar">✕</button>
             </div>
             <div id="order-history-content" style="display:flex; flex-direction:column; gap:12px;"></div>
         </div>

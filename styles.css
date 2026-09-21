@@ -3193,6 +3193,13 @@
         .dropdown-link-item:hover {
             background: #ffe3ec;
         }
+
+        .points-history-toggle {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            text-align: left !important;
+        }
         
         .orders-modal-content {
             max-width: 600px;

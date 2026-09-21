@@ -598,11 +598,26 @@ function redeemReward(rewardId) {
     const reward = currentList.find(x => x.id === rewardId);
     if (!reward || !currentUser || (currentUser.points || 0) < reward.cost) return;
 
-    currentUser.points -= reward.cost;
-    const uidx = db_users.findIndex(u => u.email === currentUser.email);
-    if (uidx !== -1) { db_users[uidx].points = currentUser.points; saveUsersDB(); }
-    saveUser();
-    syncUserUI();
+    const puntosPremio = reward.cost;
+    const nombrePremio = reward.name || 'Premio';
+
+    // 1. Registro contable atómico en Firestore y Kardex de puntos
+    if (typeof window.registrarMovimientoPuntos === 'function' && currentUser.email) {
+        window.registrarMovimientoPuntos(currentUser.email, {
+            tipo: 'canje',
+            cantidad: -puntosPremio,
+            motivo: 'Canje: ' + nombrePremio,
+            orderId: null
+        }).catch(err => console.warn("[Puntos] Error registrando movimiento de canje:", err));
+    } else {
+        currentUser.points = Math.max(0, (currentUser.points || 0) - puntosPremio);
+        currentUser.puntosActuales = currentUser.points;
+        const uidx = db_users.findIndex(u => u.email === currentUser.email);
+        if (uidx !== -1) { db_users[uidx].points = currentUser.points; saveUsersDB(); }
+        saveUser();
+        syncUserUI();
+    }
+
     renderRewards();
 
     cart.push({
@@ -624,7 +639,30 @@ function redeemReward(rewardId) {
     toggleCart();
 }
 
-function openOrderHistory() {
+window._openedOrdersFromProfile = false;
+
+function togglePointsHistory(type) {
+    const wrapId = type === 'desk' ? 'historial-puntos-tabla-desk-wrap' : 'historial-puntos-tabla-wrap';
+    const iconId = type === 'desk' ? 'historial-toggle-icon-desk' : 'historial-toggle-icon-mob';
+    const wrap = document.getElementById(wrapId);
+    const icon = document.getElementById(iconId);
+    if (!wrap) return;
+
+    const isHidden = wrap.style.display === 'none' || getComputedStyle(wrap).display === 'none';
+    if (isHidden) {
+        wrap.style.display = 'block';
+        if (icon) icon.innerText = '▲';
+        if (typeof window.renderHistorialPuntos === 'function') {
+            window.renderHistorialPuntos();
+        }
+    } else {
+        wrap.style.display = 'none';
+        if (icon) icon.innerText = '▼';
+    }
+}
+window.togglePointsHistory = togglePointsHistory;
+
+function openOrderHistory(fromProfile = false) {
     const modal = document.getElementById('modal-order-history');
     const container = document.getElementById('order-history-content');
     if (!modal || !container) return;
@@ -634,8 +672,33 @@ function openOrderHistory() {
         return;
     }
 
-    const todosLosPedidos = pedidosHistorial || [];
-    const misPedidos = todosLosPedidos.filter(p => p.clienteEmail === currentUser.email || p.email === currentUser.email);
+    const mobModal = document.getElementById('mobileProfileModal');
+    if (fromProfile || (mobModal && (mobModal.style.display === 'flex' || mobModal.style.display === 'block'))) {
+        window._openedOrdersFromProfile = true;
+    }
+
+    // Cerrar suavemente el modal de perfil o dropdown para no bloquear la pantalla
+    if (typeof closeMobileProfile === 'function') closeMobileProfile();
+    document.getElementById('user-dropdown-menu')?.classList.remove('active');
+
+    // Controlar visibilidad del botón Volver según si venía de perfil
+    const backBtn = document.getElementById('btn-back-order-history');
+    if (backBtn) {
+        backBtn.style.display = window._openedOrdersFromProfile ? 'inline-flex' : 'none';
+    }
+
+    // Combinar pedidos locales y remotos
+    let todosLosPedidos = pedidosHistorial ? [...pedidosHistorial] : [];
+    if (currentUser.history && Array.isArray(currentUser.history)) {
+        const ids = new Set(todosLosPedidos.map(p => p.id));
+        currentUser.history.forEach(h => {
+            if (h && h.id && !ids.has(h.id)) todosLosPedidos.push(h);
+        });
+    }
+
+    const misPedidos = todosLosPedidos.filter(p => 
+        p && (p.clienteEmail === currentUser.email || p.email === currentUser.email || (currentUser.history && currentUser.history.some(h => h.id === p.id)))
+    );
 
     if (misPedidos.length === 0) {
         container.innerHTML = `
@@ -645,25 +708,39 @@ function openOrderHistory() {
                     <p style="font-size:0.9rem;">¡Haz tu primer antojito y aparecerá aquí en tiempo real!</p>
                 </div>`;
     } else {
-        misPedidos.reverse();
+        misPedidos.sort((a, b) => {
+            const timeA = a.timestamp || (a.fechaISO ? new Date(a.fechaISO).getTime() : 0);
+            const timeB = b.timestamp || (b.fechaISO ? new Date(b.fechaISO).getTime() : 0);
+            return timeB - timeA;
+        });
+
         container.innerHTML = misPedidos.map(pedido => {
             const statusColor = pedido.estado === 'Entregado' ? '#10b981' : (pedido.estado === 'En preparación' ? '#3b82f6' : '#f59e0b');
+            const totalVal = Number(pedido.total || pedido.subtotal || 0);
+            const ptsGanados = (pedido.puntosGanados !== undefined && pedido.puntosGanados !== null)
+                ? Number(pedido.puntosGanados)
+                : Math.floor(totalVal / 1000);
+            const orderNum = pedido.id ? (String(pedido.id).startsWith('#') ? pedido.id : `#${pedido.id}`) : '#DT-' + Math.floor(Math.random() * 9000 + 1000);
+
             return `
-                    <div class="history-order-card">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            <strong>Pedido #${pedido.id || Math.floor(Math.random() * 9000 + 1000)}</strong>
-                            <span class="badge-status" style="background:${statusColor}20; color:${statusColor};">${pedido.estado || 'Pendiente'}</span>
+                    <div class="history-order-card" style="background:#fff; border:1px solid #f1f1f1; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <strong style="color:var(--brand-pink); font-size:0.95rem;">Pedido ${orderNum}</strong>
+                            <span class="badge-status" style="background:${statusColor}18; color:${statusColor}; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">${pedido.estado || pedido.status || 'Pendiente'}</span>
                         </div>
-                        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:10px;">${pedido.fecha || 'Fecha reciente'}</div>
-                        <div style="font-size:0.85rem; color:#4b5563; margin-bottom:10px;">
+                        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:8px;">📅 ${pedido.fecha || pedido.date || 'Fecha reciente'}</div>
+                        <div style="font-size:0.85rem; color:#4b5563; margin-bottom:10px; background:#f9fafb; padding:8px 10px; border-radius:8px;">
                             ${(pedido.items || []).map(item => `
-                            <div style="display:flex; justify-content:space-between;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
                                 <span>${item.cantidad || 1}x ${item.nombre || item.title}</span>
                             </div>
-                            `).join('')}
+                            `).join('') || (pedido.products ? `<div>${pedido.products}</div>` : '<div>Productos del pedido</div>')}
                         </div>
-                        <div style="display:flex; justify-content:flex-end; border-top:1px solid #f3f4f6; padding-top:10px;">
-                            <strong>Total: $${(pedido.total || 0).toLocaleString('es-CO')}</strong>
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f3f4f6; padding-top:10px; flex-wrap:wrap; gap:6px;">
+                            <span style="font-size:0.82rem; font-weight:700; color:#16a34a; display:inline-flex; align-items:center; gap:4px;">
+                                🌟 Puntos acumulados en esta compra: +${ptsGanados} pts
+                            </span>
+                            <strong style="color:#1e293b; font-size:0.95rem;">Total: $${totalVal.toLocaleString('es-CO')}</strong>
                         </div>
                     </div>`;
         }).join('');
@@ -674,6 +751,19 @@ function openOrderHistory() {
 function closeOrderHistory() {
     const modal = document.getElementById('modal-order-history');
     if (modal) modal.style.display = 'none';
+    window._openedOrdersFromProfile = false;
+}
+
+function returnFromOrderHistory() {
+    closeOrderHistory();
+    if (window.innerWidth <= 768) {
+        if (typeof openMobileProfile === 'function') {
+            openMobileProfile();
+        } else {
+            const mobModal = document.getElementById('mobileProfileModal');
+            if (mobModal) mobModal.style.display = 'flex';
+        }
+    }
 }
 
 function openOrdersModal() {
@@ -767,6 +857,10 @@ function renderOrders(tabId) {
                     </div>`;
         }
 
+        const ptsGanados = (order.puntosGanados !== undefined && order.puntosGanados !== null)
+            ? Number(order.puntosGanados)
+            : Math.floor((order.total || 0) / 1000);
+
         return `
                 <div class="order-card">
                     <div class="order-card-header">
@@ -777,6 +871,11 @@ function renderOrders(tabId) {
                         <strong style="color: var(--brand-pink); font-size: 1.1rem;">$${order.total.toLocaleString()}</strong>
                     </div>
                     <p style="margin:0; font-size: 0.9rem; color: #475569;">${order.products}</p>
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #f0ece6; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.82rem; font-weight:700; color:#16a34a;">
+                            🌟 Puntos acumulados en esta compra: +${ptsGanados} pts
+                        </span>
+                    </div>
                     ${extraHtml}
                 </div>`;
     }).reverse().join('');
@@ -1159,9 +1258,16 @@ window.initGoogleSignIn = function() {
     }
 };
 
+function openMobileProfile() {
+    if (currentUser) {
+        document.getElementById('mobileProfileModal').style.display = 'flex';
+        if (typeof syncUserUI === 'function') syncUserUI();
+    } else {
+        openAuthModal();
+    }
+}
 function handleMobilePillClick() {
-    if (currentUser) document.getElementById('mobileProfileModal').style.display = 'flex';
-    else openAuthModal();
+    openMobileProfile();
 }
 function closeMobileProfile() { document.getElementById('mobileProfileModal').style.display = 'none'; }
 function handleMobileProfileBdrop(e) { if (e.target === document.getElementById('mobileProfileModal')) closeMobileProfile(); }
