@@ -126,7 +126,7 @@ window.loginWithGooglePopup = async function() {
 
             window.currentUser = userObj;
             localStorage.setItem('dt_user', JSON.stringify(userObj));
-            localStorage.setItem('dt_logged_user', JSON.stringify(userObj));
+            localStorage.setItem('dt_user', JSON.stringify(userObj));
             
             if (typeof window.saveUsersDB === 'function') window.saveUsersDB();
             if (typeof window.syncUserUI === 'function') window.syncUserUI();
@@ -268,7 +268,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
                             if (changed) {
                                 localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
-                                localStorage.setItem('dt_logged_user', JSON.stringify(window.currentUser));
                                 if (typeof window.syncUserUI === 'function') window.syncUserUI();
                             }
                         }
@@ -411,7 +410,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
             if (currentUserUpdated) {
                 localStorage.setItem('dt_user', JSON.stringify(currentUser));
-                localStorage.setItem('dt_logged_user', JSON.stringify(currentUser));
                 if (typeof window.syncUserUI === 'function') window.syncUserUI();
             }
             
@@ -491,7 +489,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 2. LISTENER EN TIEMPO REAL (onSnapshot) PARA PEDIDOS ---
     let isPrivileged = false;
     try {
-        const uStr = localStorage.getItem('dt_logged_user');
+        const uStr = localStorage.getItem('dt_user');
         if (uStr) {
             const uObj = JSON.parse(uStr);
             const uEmail = (uObj.email || '').toLowerCase().trim();

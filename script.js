@@ -51,11 +51,11 @@ const products = [
     { id: 106, name: "Rosca Navideña Trenzada", price: 48000, cat: "eventos", img: "logo-pys.png", desc: "Tradicional trenza navideña con frutas y glaseado", unidades: 1, permiteRelleno: false }
 ];
 const OPCIONES_RELLENO = {
-    'queso': { nombre: '🧀 Queso Campesino — $2.000 c/u', precioUnitario: 2000, promo: false },
-    'bocadillo_queso': { nombre: '🍯 Bocadillo con Queso — $2.000 c/u', precioUnitario: 2000, promo: false },
-    'pollo': { nombre: '🍗 Pechuga de Pollo — $3.000 c/u', precioUnitario: 3000, promo: false },
-    'jamon_queso': { nombre: '🥓 Jamón y Queso — $3.000 c/u', precioUnitario: 3000, promo: false },
-    'especial': { nombre: '🔥 Especial Trío (Pollo+Jamón+Queso) — $3.500 c/u', precioUnitario: 3500, promo: true, tachadoUnitario: 3700 }
+    'queso': { nombre: '\u{1F9C0} Queso Campesino — $2.000 c/u', precioUnitario: 2000, promo: false },
+    'bocadillo_queso': { nombre: '\u{1F36F} Bocadillo con Queso — $2.000 c/u', precioUnitario: 2000, promo: false },
+    'pollo': { nombre: '\u{1F357} Pechuga de Pollo — $3.000 c/u', precioUnitario: 3000, promo: false },
+    'jamon_queso': { nombre: '\u{1F953} Jamón y Queso — $3.000 c/u', precioUnitario: 3000, promo: false },
+    'especial': { nombre: '\u{1F525} Especial Trío (Pollo+Jamón+Queso) — $3.500 c/u', precioUnitario: 3500, promo: true, tachadoUnitario: 3700 }
 };
 
 let cart = [];
@@ -90,7 +90,6 @@ window.addEventListener('DOMContentLoaded', () => {
             const parsed = JSON.parse(u);
             if (parsed && (parsed.email || '').toLowerCase().trim() === 'correo@google.com') {
                 localStorage.removeItem('dt_user');
-                localStorage.removeItem('dt_logged_user');
                 currentUser = null;
             } else {
                 currentUser = parsed;
@@ -884,34 +883,34 @@ function renderKitchenUsers() {
     }).join('');
 }
 
-function updateUserRole(email, role) {
+async function updateUserRole(email, role) {
     const targetEmail = (email || '').toLowerCase().trim();
     if (typeof SUPER_ADMINS !== 'undefined' && SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
         return;
     }
-    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
-    if (!u) return;
 
-    u.vip = false;
-    workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail);
-    adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail);
-
-    if (role === 'vip') u.vip = true;
-    if (role === 'cocina') workerEmails.push(email);
-    if (role === 'admin') adminEmails.push(email);
-
-    saveUsersDB();
-    saveAdminEmails(); // Guarda workerEmails y adminEmails
-
-    if (currentUser && (currentUser.email || '').toLowerCase().trim() === targetEmail) {
-        currentUser.vip = u.vip;
-        saveUser();
-        updateUserUI();
+    if (typeof db === 'undefined') {
+        alert("Error de conexión con la base de datos.");
+        return;
     }
 
-    renderKitchenUsers();
-    showToast(`Rol de ${u.name} actualizado a ${role}`, "✅");
+    try {
+        if (typeof showToast === 'function') showToast("Guardando cambios en la nube...", "⏳", 1500);
+        
+        // Dispara la orden directamente a Firestore como única fuente de verdad
+        await db.collection("usuarios").doc(targetEmail).set({
+            role: role,
+            rol: role,
+            vip: (role === 'vip'),
+            isAdmin: (role === 'admin')
+        }, { merge: true });
+        
+        if (typeof showToast === 'function') showToast("Rol actualizado exitosamente", "✅", 2000);
+    } catch (e) {
+        console.error("Error al actualizar rol en Firebase", e);
+        alert("Hubo un error al actualizar el rol en la base de datos. Verifica tu conexión.");
+    }
 }
 
 function updateUserPoints(email, change) {
@@ -1270,7 +1269,7 @@ function loginUserObj(userObj) {
     }
     currentUser = userObj;
     saveUser(); syncUserUI(); closeAuthModal();
-    try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch (e) { }
+    try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch (e) { }
     if (typeof window.checkRemoteUserSession === 'function') {
         window.checkRemoteUserSession();
     }
@@ -2624,7 +2623,7 @@ window.guardarEdicionUsuarioAdmin = function() {
         currentUser.nombre = newName;
         currentUser.email = newEmail;
         if (typeof saveUser === 'function') saveUser();
-        try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e){}
+        try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e){}
         if (typeof syncUserUI === 'function') syncUserUI();
     }
 
@@ -3912,91 +3911,131 @@ function sendOrder() {
         saveUser();
     }
 
+    const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+    
+    // Símbolos dinámicos
+    const symVIP = isMobile ? '\u{2B50}' : '★';
+    const symOrder = isMobile ? '\u{1F4F2}' : '[NUEVO PEDIDO]';
+    const symCake = isMobile ? '\u{1F382}' : '•';
+    const symDate = isMobile ? '\u{1F4C5}' : '•';
+    const symTime = isMobile ? '\u{23F0}' : '•';
+    const symCity = isMobile ? '\u{1F4CD}' : '[Ciudad]';
+    const symCrown = isMobile ? '\u{1F451}' : '★';
+    const symGift = isMobile ? '\u{1F381}' : '•';
+    const symUser = isMobile ? '\u{1F464}' : '[Cliente]';
+    const symDeliveryType = isMobile ? '\u{1F4E6}' : '[Entrega]';
+    const symMoto = isMobile ? '\u{1F6F5}' : '';
+    const symShop = isMobile ? '\u{1F3EA}' : '';
+    const symAddress = isMobile ? '\u{1F4CD}' : '[Dirección]';
+    const symPoint = isMobile ? '\u{1F4CD}' : '[Punto de Entrega]';
+    const symMap = isMobile ? '\u{1F5FA}' : '[Ubicación Maps]';
+    const symPay = isMobile ? '\u{1F4B3}' : '[Pago]';
+    const symNotes = isMobile ? '\u{1F4DD}' : '[Notas]';
+    const symMoney = isMobile ? '\u{1F4B0}' : '•';
+    const symWarn = isMobile ? '\u{26A0}' : '[ATENCIÓN]';
+    const symPray = isMobile ? '\u{1F64F}' : '';
+
     let msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
     if (currentUser && currentUser.vip) {
-        msg += `\u2b50 *PEDIDO PRIORITARIO VIP* \u2b50\n\n`;
+        msg += `${symVIP} *PEDIDO PRIORITARIO VIP* ${symVIP}\n\n`;
     }
-    msg += `\uD83D\uDCF2 *NUEVO PEDIDO ${orderId}*\n`;
+    msg += `${symOrder} *${isMobile ? 'NUEVO PEDIDO ' : 'ID: '}${orderId}*\n`;
+    
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
         if (currentUser && currentUser.vip) {
-            msg += `\u2b50 *PEDIDO PRIORITARIO VIP* \u2b50\n\n`;
+            msg += `${symVIP} *PEDIDO PRIORITARIO VIP* ${symVIP}\n\n`;
         }
-        msg += `\uD83C\uDF82 *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*\n`;
+        msg += `${isMobile ? '\u{1F382} *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*' : '[ENCARGO ESPECIAL DE TORTA PERSONALIZADA]'}\n`;
         const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
         if (evtItem && evtItem.customData) {
-            msg += `\uD83D\uDCC5 *Fecha de entrega:* ${evtItem.customData.date}\n`;
-            msg += `\u23F0 *Hora:* ${evtItem.customData.time}\n`;
+            msg += `${symDate} *Fecha de entrega:* ${evtItem.customData.date}\n`;
+            msg += `${symTime} *Hora:* ${evtItem.customData.time}\n`;
         } else {
-            msg += `\uD83D\uDCC5 *Fecha:* ${document.getElementById('eventDate')?.value || 'N/A'}\n`;
-            msg += `\u23F0 *Hora:* ${document.getElementById('eventTime')?.value || 'N/A'}\n`;
+            msg += `${symDate} *Fecha:* ${document.getElementById('eventDate')?.value || 'N/A'}\n`;
+            msg += `${symTime} *Hora:* ${document.getElementById('eventTime')?.value || 'N/A'}\n`;
         }
     }
-    msg += `\uD83D\uDCCD *Ciudad:* Cúcuta, Norte de Santander\n`;
+    msg += `${symCity} *Cúcuta, Norte de Santander*\n`;
     if (currentUser && discount > 0) {
         if (currentUser.vip) {
-            msg += `\uD83D\uDC51 *[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]*\n`;
+            msg += `${symCrown} *[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]*\n`;
         } else {
-            msg += `\uD83C\uDF81 *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
+            msg += `${symGift} *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
         }
     }
     msg += `—————————————————————\n`;
-    msg += `\uD83D\uDC64 *Cliente:* ${name}\n`;
-    msg += `\uD83D\uDCE6 *Modalidad:* ${curDelivery === 'delivery' ? '\uD83D\uDEF5 Domicilio en Cúcuta' : '\uD83C\uDFEA Recoger en Punto Físico'}\n`;
+    msg += `${symUser} *${name}*\n`;
+    msg += `${symDeliveryType} *${curDelivery === 'delivery' ? `${symMoto} Domicilio en Cúcuta`.trim() : `${symShop} Recoger en Punto Físico`.trim()}*\n`;
     if (curDelivery === 'delivery') {
-        msg += `\uD83D\uDCCD *Dirección:* ${addr}\n`;
+        msg += `${symAddress} *${addr}*\n`;
     } else {
-        msg += `\uD83D\uDCCD *Punto de Entrega:* Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia\n`;
-        msg += `\uD83D\uDDFA\uFE0F *Ubicación Maps:* https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6\n`;
+        msg += `${symPoint} *Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia*\n`;
+        msg += `${symMap} *https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6*\n`;
     }
-    msg += `\uD83D\uDCB3 *Pago:* ${selectedPay}\n`;
-    if (notes) msg += `\uD83D\uDCDD *Notas:* ${notes}\n`;
+    msg += `${symPay} *${selectedPay}*\n`;
+    if (notes) msg += `${symNotes} *${notes}*\n`;
     msg += `—————————————————————\n`;
     msg += `*PRODUCTOS PEDIDOS:*\n`;
     cart.forEach(i => {
+        // Limpiamos los emojis de los nombres (como el queso 🧀) si estamos en PC
+        let cleanName = isMobile ? i.name : i.name.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '').trim();
+        // Quita también guiones sobrantes si el emoji estaba al principio
+        if (!isMobile && cleanName.startsWith('-')) cleanName = cleanName.substring(1).trim();
+
         if (i.id.toString().startsWith('custom')) {
-            msg += `  • \uD83C\uDF82 ${i.name}\n`;
+            msg += `  ${symCake} ${cleanName}\n`;
             msg += `    *Precio:* $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
             if (i.customData) {
                 msg += `    *Detalles:* Sabor: ${i.customData.sabor} | Tamaño: ${i.customData.tamano} | Diseño: ${i.customData.diseno}\n`;
                 if (i.customData.message) msg += `    *Mensaje:* "${i.customData.message}"\n`;
-                msg += `    \uD83C\uDF81 *Kit de Fiesta GRATIS Incluido*\n`;
+                msg += `    ${symGift} *Kit de Fiesta GRATIS Incluido*\n`;
             }
         } else {
-            msg += `  • ${i.quantity}x ${i.name} → $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
+            msg += `  • ${i.quantity}x ${cleanName} → $${(i.price * i.quantity).toLocaleString('es-CO')} COP\n`;
         }
     });
     msg += `—————————————————————\n`;
     msg += `*Total unidades:* ${tq}\n`;
-    msg += `\uD83D\uDCB0 *Subtotal:* $${tp.toLocaleString('es-CO')} COP\n`;
+    msg += `${symMoney} *Subtotal:* $${tp.toLocaleString('es-CO')} COP\n`;
     if (discount > 0) {
-        msg += `\uD83C\uDF81 *Descuento ${currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString('es-CO')} COP\n`;
+        msg += `${symGift} *Descuento ${currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString('es-CO')} COP\n`;
     }
-    msg += `\uD83D\uDEF5 *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
+    msg += `${isMobile ? '\u{1F6F5}' : '•'} *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
     msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString('es-CO')} COP\n`;
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         const dep = Math.ceil(finalTotal / 2);
-        msg += `\n\u26A0\uFE0F *Pedido de Evento (Anticipo requerido)*\n`;
-        msg += `*Abonar 50% para reservar:* $${dep.toLocaleString('es-CO')} COP\n`;
-        msg += `*Saldo pendiente contra entrega:* $${(finalTotal - dep).toLocaleString('es-CO')} COP\n`;
+        msg += `\n${symWarn} *Pedido de Evento (Anticipo requerido)*\n`;
+        msg += `• *Abonar 50% para reservar:* $${dep.toLocaleString('es-CO')} COP\n`;
+        msg += `• *Saldo pendiente contra entrega:* $${(finalTotal - dep).toLocaleString('es-CO')} COP\n`;
     }
     msg += `—————————————————————\n`;
-    msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! \uD83D\uDE4F`;
+    msg += `¿Me confirman el tiempo estimado de entrega? ¡Muchas gracias! ${symPray}`.trim();
 
     // Vaciar carrito
     cart = [];
     if (typeof saveCart === 'function') saveCart();
     if (typeof updateCart === 'function') updateCart();
-    if (typeof showToast === 'function') showToast("Procesando pedido...", "\u23F3", 1500);
+    if (typeof showToast === 'function') showToast("Procesando pedido...", "", 1500);
 
     setTimeout(() => {
-        window.open(`https://wa.me/${typeof PHONE !== 'undefined' ? PHONE : '573123456789'}?text=${encodeURIComponent(msg)}`, '_blank');
+        let cleanPhone = typeof PHONE !== 'undefined' ? PHONE : '573123456789';
+        const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+        console.log("TEXTO PURO:", msg);
+        console.log("URL CODIFICADA:", url);
+        window.open(url, '_blank');
     }, 1000);
 }
 
 function openWhatsAppChat() {
-    const g = "¡Hola! Vengo desde la página web de Dulce Tentación P y S \uD83E\uDD56. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!";
-    window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(g)}`, '_blank');
+    const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+    const bread = isMobile ? ' \u{1F956}' : '';
+    const g = `¡Hola! Vengo desde la página web de Dulce Tentación P y S${bread}. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!`;
+    let cleanPhone = typeof PHONE !== 'undefined' ? PHONE : '573123456789';
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(g)}`;
+    console.log("TEXTO PURO (CHAT GENERAL):", g);
+    console.log("URL CODIFICADA (CHAT GENERAL):", url);
+    window.open(url, '_blank');
 }
 
 let cartToastTimer = null;
