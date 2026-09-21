@@ -3214,12 +3214,43 @@ function filterCategory(cat, el) {
     renderFeatured(cat);
 }
 function filterProductsBySearch(inputId) {
-    const q = document.getElementById(inputId)?.value.trim().toLowerCase() || '';
-    const filtered = products.filter(p =>
-        p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.tag.toLowerCase().includes(q)
-    );
+    const inputEl = document.getElementById(inputId);
+    const rawVal = inputEl ? inputEl.value : '';
+    const normalizeText = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const q = normalizeText(rawVal);
+
+    // Sincronizar inputs móvil y desktop
+    const deskInp = document.getElementById('searchInputDesktop');
+    const mobInp = document.getElementById('searchInputMobile');
+    if (deskInp && deskInp !== inputEl) deskInp.value = rawVal;
+    if (mobInp && mobInp !== inputEl) mobInp.value = rawVal;
+
+    // Si el campo queda vacío, restaurar catálogo completo y chip 'todos'
+    if (!q) {
+        document.querySelectorAll('.cat-chip').forEach(c => {
+            c.classList.toggle('active', c.getAttribute('onclick')?.includes("'todos'"));
+        });
+        renderProducts(products);
+        renderFeatured('todos');
+        return;
+    }
+
+    // Filtrar de forma segura por nombre, descripción y categoría
+    const filtered = products.filter(p => {
+        const name = normalizeText(p.name);
+        const desc = normalizeText(p.desc);
+        const cat = normalizeText(p.cat);
+        return name.includes(q) || desc.includes(q) || cat.includes(q);
+    });
+
     renderProducts(filtered);
-    showSection('productos', document.querySelectorAll('.nav-link')[1]);
+
+    // Navegar a productos si no está activo, manteniendo el foco en el buscador
+    const prodSec = document.getElementById('productos');
+    if (!prodSec || !prodSec.classList.contains('active')) {
+        showSection('productos', document.querySelectorAll('.nav-link')[1]);
+        if (inputEl) inputEl.focus();
+    }
 }
 
 // ===== QTY =====
