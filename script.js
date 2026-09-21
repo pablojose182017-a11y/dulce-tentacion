@@ -4132,10 +4132,15 @@ window.confirmVipMembership = function() {
     window.closeVipTermsModal();
     alert("¡Excelente! Solicitud registrada. Te contactaremos por WhatsApp para confirmar tu activación.");
 
-    // Redirección a WhatsApp del negocio
-    const phoneAdmin = "573227349286";
-    const text = `¡Hola P&S Punto Dulce! 👋 Acabo de aceptar los Términos y Condiciones del Club VIP y deseo activar mi Membresía VIP Oro 👑✨%0A%0A👤 *Nombre:* ${encodeURIComponent(user.name || 'Cliente')}%0A📧 *Correo:* ${encodeURIComponent(user.email || 'N/A')}`;
-    window.open(`https://wa.me/${phoneAdmin}?text=${text}`, '_blank');
+    // Redirección a WhatsApp del negocio usando el número global del negocio
+    const vipPhone = (typeof PHONE !== 'undefined' && PHONE) ? PHONE : '573229512693';
+    const vipMsg = encodeURIComponent(
+        `¡Hola Punto Dulce! 👋 Quiero solicitar mi Membresía VIP para mi cuenta ${user.email || 'N/A'}. ` +
+        `\n\n👤 *Nombre:* ${user.name || 'Cliente'}` +
+        `\n📧 *Correo:* ${user.email || 'N/A'}` +
+        `\n\n👑 Acabo de aceptar los Términos y Condiciones del Club VIP y deseo activar mi Membresía VIP Oro ✨`
+    );
+    window.open(`https://wa.me/${vipPhone}?text=${vipMsg}`, '_blank');
 };
 
 // ===== CENTRO DE NOTIFICACIONES (ADMIN / TRABAJADOR) =====
@@ -4268,8 +4273,13 @@ function closeVipModal() {
 }
 
 function requestVipWhatsApp() {
-    const msg = "¡Hola! Quiero activar mi Membresía VIP Oro en Dulce Tentación para acceder al 5% de descuento y los beneficios exclusivos. 👑";
-    window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
+    const vipPhone = (typeof PHONE !== 'undefined' && PHONE) ? PHONE : '573229512693';
+    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : {};
+    const msg = encodeURIComponent(
+        `¡Hola Punto Dulce! Quiero solicitar mi Membresía VIP para mi cuenta ${user.email || ''}.` +
+        ` 👑 Activar VIP Oro en Dulce Tentación para acceder al 5% de descuento y los beneficios exclusivos.`
+    );
+    window.open(`https://wa.me/${vipPhone}?text=${msg}`, '_blank');
 }
 
 // ===== ASISTENTE DE TORTAS PERSONALIZADAS (WIZARD POR PASOS) =====

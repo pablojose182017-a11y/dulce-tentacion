@@ -38,6 +38,8 @@
 
         html {
             scroll-behavior: smooth;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
         body {
@@ -50,6 +52,7 @@
             margin: 0;
             padding: 0;
             overflow-x: hidden;
+            max-width: 100%;
             min-height: 100vh;
             padding-bottom: calc(var(--bottom-nav-h) + 12px);
         }
@@ -6246,5 +6249,64 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     }
 }
 
+/* ===== LANDSCAPE MOBILE: compactar header para no encimar elementos ===== */
+@media (orientation: landscape) and (max-height: 550px) {
+    .mobile-header {
+        padding: 4px 10px !important;
+        min-height: 44px !important;
+    }
+    .mobile-header .logo-img,
+    .mobile-header img {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .mobile-header .brand-name,
+    .mobile-header .header-brand {
+        font-size: 0.85rem !important;
+    }
+    .mobile-header .mobile-header-actions {
+        gap: 4px !important;
+    }
+    .mobile-header .icon-btn,
+    .mobile-header button {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 0.9rem !important;
+    }
+    .mobile-bottom-nav {
+        height: 50px !important;
+    }
+    .bottom-nav-btn .bn-label {
+        display: none !important;
+    }
+    .bottom-nav-btn .bn-icon {
+        font-size: 1.3rem !important;
+    }
+    body {
+        padding-bottom: 54px !important;
+    }
+}
 
+/* ===== TABLA ADMIN: scroll horizontal interno sin romper el centrado ===== */
+#admin-tab-usuarios .admin-table-scroll,
+.admin-users-table-wrap {
+    overflow-x: auto;
+    width: 100%;
+    display: block;
+    -webkit-overflow-scrolling: touch;
+}
 
+/* ===== MODAL PERFIL MOVIL: scroll interno para que la barra inferior no tape los botones ===== */
+#mobileProfileModal .auth-card {
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    padding-bottom: 24px !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ===== BARRA INFERIOR MOVIL: forzar visibilidad de #bnNosotros ===== */
+@media (max-width: 768px) {
+    #bnNosotros {
+        display: flex !important;
+    }
+}

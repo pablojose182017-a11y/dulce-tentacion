@@ -280,6 +280,53 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- LISTENER EN TIEMPO REAL: Solicitudes VIP ---
+    // Escucha la colección 'solicitudes_vip' y notifica al panel admin en cualquier dispositivo.
+    let solicitudesVipPrimeraCarga = true;
+    db.collection('solicitudes_vip')
+        .orderBy('timestamp', 'desc')
+        .limit(20)
+        .onSnapshot((snapshot) => {
+            if (!solicitudesVipPrimeraCarga) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        // Inyectar en el array de notificaciones local
+                        const newNotif = {
+                            id: data.id || ('notif_vip_' + Date.now()),
+                            type: 'solicitud_vip',
+                            title: '👑 Nueva Solicitud VIP',
+                            message: `${data.message || (data.email || 'Cliente')}`,
+                            time: 'Hace un momento',
+                            read: false,
+                            timestamp: data.timestamp || Date.now()
+                        };
+                        try {
+                            let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
+                            notifs.unshift(newNotif);
+                            if (notifs.length > 50) notifs = notifs.slice(0, 50);
+                            localStorage.setItem('dt_notifications', JSON.stringify(notifs));
+                        } catch(e) {}
+                        // Actualizar UI del panel de notificaciones
+                        if (typeof window.renderAdminNotifList === 'function') {
+                            window.renderAdminNotifList();
+                        }
+                        // Sonar campana y mostrar toast
+                        if (typeof window.sonarCampanaNuevoPedido === 'function') {
+                            window.sonarCampanaNuevoPedido();
+                        }
+                        if (typeof showToast === 'function') {
+                            showToast('👑 ¡Nueva Solicitud de Membresía VIP!');
+                        }
+                        console.log('✓ Solicitud VIP recibida en tiempo real:', data);
+                    }
+                });
+            }
+            solicitudesVipPrimeraCarga = false;
+        }, (err) => {
+            console.warn('Error escuchando solicitudes_vip:', err);
+        });
+
     // Oyente para "Usuarios y Personal" (Tiempo Real)
     db.collection("usuarios").onSnapshot((snapshot) => {
         let firebaseUsers = [];
