@@ -4425,9 +4425,18 @@ function openWizard() {
     if (modal) modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
+    // Asegurar estructura
+    if (typeof window.asegurarEstructuraTortasConfig === 'function') {
+        window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
+    }
+
+    const firstActiveSabor = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.sabores)) 
+        ? (window.dt_tortas_config.sabores.find(s => s.activo !== false)?.name || 'Clásica Tres Leches')
+        : 'Clásica Tres Leches';
+
     // Inicializar datos por defecto
     wizardData = {
-        sabor: 'Clásica Tres Leches',
+        sabor: firstActiveSabor,
         tamano: '1/4 (10 porciones)',
         precio: 45000,
         diseno: 'Diseño Tradicional',
@@ -4437,6 +4446,11 @@ function openWizard() {
         time: '',
         extras: {}
     };
+
+    // Renderizar sabores y diseños públicos
+    if (typeof window.renderConfigTortasPublica === 'function') {
+        window.renderConfigTortasPublica();
+    }
 
     // Calcular precios según sabor predeterminado
     const prices = getCakePrices(wizardData.sabor);
@@ -4500,10 +4514,6 @@ function openWizard() {
 
     goToWizardStep(1);
     updateWizardSummary();
-
-    if (typeof window.renderConfigTortasPublica === 'function') {
-        window.renderConfigTortasPublica();
-    }
 }
 
 function closeWizard() {
@@ -4515,11 +4525,28 @@ function closeWizard() {
 function getCakePrices(sabor) {
     let prices = { '1/4 (10 porciones)': 45000, '1/2 (20 porciones)': 75000, '1 Libra (30 porciones)': 130000 };
 
+    if (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.sabores) && window.dt_tortas_config.sabores.length > 0) {
+        const found = window.dt_tortas_config.sabores.find(s => 
+            s.name === sabor || 
+            (sabor && s.name && s.name.toLowerCase() === sabor.toLowerCase()) ||
+            (sabor && s.id && s.id.toLowerCase() === sabor.toLowerCase()) ||
+            (sabor && s.name && sabor.toLowerCase().includes(s.name.toLowerCase())) ||
+            (sabor && s.name && s.name.toLowerCase().includes(sabor.toLowerCase()))
+        );
+        if (found) {
+            prices['1/4 (10 porciones)'] = Number(found.q) || 0;
+            prices['1/2 (20 porciones)'] = Number(found.m) || 0;
+            prices['1 Libra (30 porciones)'] = Number(found.l) || 0;
+            return prices;
+        }
+    }
+
     if (window.dt_tortas_config && window.dt_tortas_config.preciosPorSabor) {
         const config = window.dt_tortas_config.preciosPorSabor;
         let s = 'tresleches';
-        if (sabor && sabor.includes('Ponqué')) s = 'ponque';
-        if (sabor && sabor.includes('Chocoarequipe')) s = 'chocoarequipe';
+        if (sabor && (sabor.toLowerCase().includes('ponqu') || sabor.toLowerCase().includes('ponque'))) s = 'ponque';
+        if (sabor && sabor.toLowerCase().includes('choco')) s = 'chocoarequipe';
+        if (sabor && (sabor.toLowerCase().includes('frutos') || sabor.toLowerCase().includes('fruto'))) s = 'frutosrojos';
 
         if (config[s]) {
             prices['1/4 (10 porciones)'] = config[s].q;

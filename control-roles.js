@@ -2146,32 +2146,100 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- MÓDULO DE GESTIÓN DINÁMICA DE TORTAS ---
-window.dt_tortas_config = {
-    preciosPorSabor: {
-        ponque: { q: 38000, m: 65000, l: 110000 },
-        tresleches: { q: 45000, m: 75000, l: 130000 },
-        chocoarequipe: { q: 45000, m: 75000, l: 130000 }
-    },
-    precios: {
-        '1/4': 45000,
-        '1/2': 75000,
-        '1': 130000
-    },
-    disenos: [
-        { id: 1, name: '#1', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150' },
-        { id: 2, name: '#2', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150' },
-        { id: 3, name: '#3', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=150' },
-        { id: 4, name: '#4', img: 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=150' },
-        { id: 5, name: '#5', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=400&auto=format&fit=crop&q=80' },
-        { id: 6, name: '#6', img: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=150' }
-    ]
+window.asegurarEstructuraTortasConfig = function(cfg) {
+    if (!cfg || typeof cfg !== 'object') cfg = {};
+    
+    if (!Array.isArray(cfg.sabores) || cfg.sabores.length === 0) {
+        cfg.sabores = [
+            {
+                id: 'tresleches',
+                name: 'Clásica Tres Leches',
+                icon: '🥛',
+                desc: 'Bizcocho suave bañado en infusión de tres leches y cubierta en chantilly artesanal.',
+                tag: 'La Favorita ⭐',
+                q: (cfg.preciosPorSabor && cfg.preciosPorSabor.tresleches ? cfg.preciosPorSabor.tresleches.q : 45000),
+                m: (cfg.preciosPorSabor && cfg.preciosPorSabor.tresleches ? cfg.preciosPorSabor.tresleches.m : 75000),
+                l: (cfg.preciosPorSabor && cfg.preciosPorSabor.tresleches ? cfg.preciosPorSabor.tresleches.l : 130000),
+                activo: true
+            },
+            {
+                id: 'chocoarequipe',
+                name: 'Chocoarequipe',
+                icon: '🍫',
+                desc: 'Capas de bizcocho de chocolate oscuro rellenas de arequipe suave y ganache.',
+                tag: 'Más Pedida 🔥',
+                q: (cfg.preciosPorSabor && cfg.preciosPorSabor.chocoarequipe ? cfg.preciosPorSabor.chocoarequipe.q : 45000),
+                m: (cfg.preciosPorSabor && cfg.preciosPorSabor.chocoarequipe ? cfg.preciosPorSabor.chocoarequipe.m : 75000),
+                l: (cfg.preciosPorSabor && cfg.preciosPorSabor.chocoarequipe ? cfg.preciosPorSabor.chocoarequipe.l : 130000),
+                activo: true
+            },
+            {
+                id: 'ponque',
+                name: 'Ponqué Clásico',
+                icon: '🍰',
+                desc: 'Masa tradicional esponjosa con notas cítricas y vainilla de primera calidad.',
+                tag: 'Clásico 🎂',
+                q: (cfg.preciosPorSabor && cfg.preciosPorSabor.ponque ? cfg.preciosPorSabor.ponque.q : 38000),
+                m: (cfg.preciosPorSabor && cfg.preciosPorSabor.ponque ? cfg.preciosPorSabor.ponque.m : 65000),
+                l: (cfg.preciosPorSabor && cfg.preciosPorSabor.ponque ? cfg.preciosPorSabor.ponque.l : 110000),
+                activo: true
+            },
+            {
+                id: 'frutosrojos',
+                name: 'Frutos Rojos',
+                icon: '🍓',
+                desc: 'Bizcocho con reducción artesanal de moras, fresas y arándanos silvestres.',
+                tag: 'Fresco & Frutal 🍒',
+                q: (cfg.preciosPorSabor && cfg.preciosPorSabor.frutosrojos ? cfg.preciosPorSabor.frutosrojos.q : 45000),
+                m: (cfg.preciosPorSabor && cfg.preciosPorSabor.frutosrojos ? cfg.preciosPorSabor.frutosrojos.m : 75000),
+                l: (cfg.preciosPorSabor && cfg.preciosPorSabor.frutosrojos ? cfg.preciosPorSabor.frutosrojos.l : 130000),
+                activo: true
+            }
+        ];
+    } else {
+        cfg.sabores.forEach((s, idx) => {
+            if (!s.id) s.id = 'sabor_' + idx;
+            if (s.activo === undefined) s.activo = true;
+            s.q = Number(s.q) || 0;
+            s.m = Number(s.m) || 0;
+            s.l = Number(s.l) || 0;
+        });
+    }
+
+    if (!cfg.preciosPorSabor) {
+        cfg.preciosPorSabor = {};
+    }
+    cfg.sabores.forEach(s => {
+        const key = s.id || s.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        cfg.preciosPorSabor[key] = { q: Number(s.q) || 0, m: Number(s.m) || 0, l: Number(s.l) || 0 };
+    });
+    const pq = cfg.sabores.find(s => s.id === 'ponque' || s.name.toLowerCase().includes('ponqu'));
+    if (pq) cfg.preciosPorSabor.ponque = { q: Number(pq.q) || 0, m: Number(pq.m) || 0, l: Number(pq.l) || 0 };
+    const tl = cfg.sabores.find(s => s.id === 'tresleches' || s.name.toLowerCase().includes('tres'));
+    if (tl) cfg.preciosPorSabor.tresleches = { q: Number(tl.q) || 0, m: Number(tl.m) || 0, l: Number(tl.l) || 0 };
+    const ch = cfg.sabores.find(s => s.id === 'chocoarequipe' || s.name.toLowerCase().includes('choco'));
+    if (ch) cfg.preciosPorSabor.chocoarequipe = { q: Number(ch.q) || 0, m: Number(ch.m) || 0, l: Number(ch.l) || 0 };
+
+    if (!Array.isArray(cfg.disenos)) {
+        cfg.disenos = [
+            { id: 1, name: '#1', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150' },
+            { id: 2, name: '#2', img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=150' },
+            { id: 3, name: '#3', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=150' },
+            { id: 4, name: '#4', img: 'https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=150' },
+            { id: 5, name: '#5', img: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=400&auto=format&fit=crop&q=80' },
+            { id: 6, name: '#6', img: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=150' }
+        ];
+    }
+    return cfg;
 };
+
+window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config || {});
 
 // Cargar desde localStorage inicialmente
 try {
     const cached = localStorage.getItem('dt_tortas_config');
     if (cached) {
-        window.dt_tortas_config = JSON.parse(cached);
+        window.dt_tortas_config = window.asegurarEstructuraTortasConfig(JSON.parse(cached));
     }
 } catch(e){}
 
@@ -2190,9 +2258,58 @@ window.abrirModalConfigTortas = function() {
 };
 
 window.renderModalConfigTortasInterno = function() {
+    if (typeof window.asegurarEstructuraTortasConfig === 'function') {
+        window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
+    }
     const config = window.dt_tortas_config;
     const modal = document.getElementById('modal-config-tortas');
-    
+    if (!modal) return;
+
+    let saboresHtml = '';
+    (config.sabores || []).forEach((sabor, index) => {
+        const isAgotado = sabor.activo === false;
+        saboresHtml += `
+            <tr style="border-bottom:1px solid #f1f5f9; ${isAgotado ? 'opacity:0.65; background:#f8fafc;' : ''}">
+                <td style="padding:10px 8px;">
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                        <input type="text" id="sabor-icon-${index}" value="${sabor.icon || '🍰'}" title="Icono / Emoji" style="width:34px; text-align:center; padding:5px 2px; border-radius:6px; border:1px solid #e2e8f0; font-size:1rem; background:#fff;">
+                        <input type="text" id="sabor-name-${index}" value="${sabor.name || ''}" placeholder="Nombre del Sabor" style="flex:1; padding:6px 8px; border-radius:6px; border:1px solid #e2e8f0; font-weight:700; color:#1e293b; font-size:0.85rem; background:#fff; outline:none;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <input type="text" id="sabor-tag-${index}" value="${sabor.tag || ''}" placeholder="Etiqueta (ej. Más Pedida 🔥)" style="width:40%; padding:4px 6px; border-radius:6px; border:1px solid #e2e8f0; font-size:0.75rem; color:#be123c; font-weight:600; background:#fff; outline:none;">
+                        <input type="text" id="sabor-desc-${index}" value="${sabor.desc || ''}" placeholder="Descripción breve" style="flex:1; padding:4px 6px; border-radius:6px; border:1px solid #e2e8f0; font-size:0.75rem; color:#64748b; background:#fff; outline:none;">
+                    </div>
+                </td>
+                <td style="padding:10px 6px; vertical-align:middle; width:105px;">
+                    <div style="position:relative;">
+                        <span style="position:absolute; left:6px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.8rem;">$</span>
+                        <input type="number" id="sabor-q-${index}" value="${sabor.q || ''}" style="width:100%; padding:6px 4px 6px 16px; border-radius:6px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; font-size:0.85rem; outline:none; text-align:right;" placeholder="0" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
+                </td>
+                <td style="padding:10px 6px; vertical-align:middle; width:105px;">
+                    <div style="position:relative;">
+                        <span style="position:absolute; left:6px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.8rem;">$</span>
+                        <input type="number" id="sabor-m-${index}" value="${sabor.m || ''}" style="width:100%; padding:6px 4px 6px 16px; border-radius:6px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; font-size:0.85rem; outline:none; text-align:right;" placeholder="0" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
+                </td>
+                <td style="padding:10px 6px; vertical-align:middle; width:105px;">
+                    <div style="position:relative;">
+                        <span style="position:absolute; left:6px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.8rem;">$</span>
+                        <input type="number" id="sabor-l-${index}" value="${sabor.l || ''}" style="width:100%; padding:6px 4px 6px 16px; border-radius:6px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; font-size:0.85rem; outline:none; text-align:right;" placeholder="0" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'">
+                    </div>
+                </td>
+                <td style="padding:10px 6px; vertical-align:middle; text-align:center; width:110px;">
+                    <button type="button" onclick="window.toggleDisponibilidadSabor(${index})" style="background:${!isAgotado ? '#ecfdf5' : '#fff1f2'}; color:${!isAgotado ? '#059669' : '#e11d48'}; border:1px solid ${!isAgotado ? '#a7f3d0' : '#fecdd3'}; padding:6px 8px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer; width:100%; transition:all 0.2s;" title="Clic para alternar disponibilidad">
+                        ${!isAgotado ? '🟢 Disponible' : '⏸️ Agotado'}
+                    </button>
+                </td>
+                <td style="padding:10px 6px; vertical-align:middle; text-align:center; width:40px;">
+                    <button type="button" onclick="window.eliminarSaborTorta(${index})" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 8px; border-radius:6px; font-size:0.85rem; cursor:pointer; transition:all 0.2s;" title="Eliminar sabor">🗑️</button>
+                </td>
+            </tr>
+        `;
+    });
+
     let disenosHtml = '';
     config.disenos.forEach((d, index) => {
         disenosHtml += `
@@ -2223,53 +2340,43 @@ window.renderModalConfigTortasInterno = function() {
     });
 
     modal.innerHTML = `
-        <div class="auth-content" style="max-width:800px; width:95%; max-height:90vh; overflow-y:auto; padding:30px; background:#f8fafc; border-radius:24px; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
+        <div class="auth-content" style="max-width:850px; width:95%; max-height:90vh; overflow-y:auto; padding:30px; background:#f8fafc; border-radius:24px; position:relative; box-shadow:0 20px 40px rgba(0,0,0,0.15);">
             <button class="auth-close-btn" onclick="document.getElementById('modal-config-tortas').style.display='none'" style="position:absolute; top:15px; right:15px; background:#fff; border:1px solid #e2e8f0; border-radius:50%; width:36px; height:36px; font-size:1.2rem; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:#64748b; box-shadow:0 2px 5px rgba(0,0,0,0.05);">✕</button>
             <div style="text-align:center; margin-bottom:24px;">
                 <h2 style="margin:0; color:#1e293b; font-size:1.6rem; font-weight:800;">🎂 Configuración de Tortas</h2>
-                <p style="margin:6px 0 0 0; color:#64748b; font-size:0.95rem;">Gestiona los precios base por tamaño y la galería de diseños públicos.</p>
+                <p style="margin:6px 0 0 0; color:#64748b; font-size:0.95rem;">Gestiona los sabores, precios por tamaño y catálogo de diseños.</p>
             </div>
             
-            <!-- BLOQUE A: PRECIOS -->
+            <!-- BLOQUE A: SABORES Y PRECIOS -->
             <div style="background:#fff; border:1px solid #f1f5f9; padding:20px; border-radius:16px; margin-bottom:24px; box-shadow:0 4px 12px rgba(0,0,0,0.04);">
-                <h4 style="margin-top:0; margin-bottom:16px; color:#1e293b; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-                    <span>💰</span> Precios por Tamaño Base
-                </h4>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+                    <h4 style="margin:0; color:#1e293b; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                        <span>🍰</span> Gestión de Sabores y Precios
+                    </h4>
+                </div>
                 
                 <div style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; min-width:500px;">
+                    <table style="width:100%; border-collapse:collapse; min-width:620px;">
                         <thead>
-                            <tr style="border-bottom:2px solid #f1f5f9;">
-                                <th style="text-align:left; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">Línea / Sabor</th>
-                                <th style="text-align:center; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">1/4 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(10 porc.)</span></th>
-                                <th style="text-align:center; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">1/2 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(20 porc.)</span></th>
-                                <th style="text-align:center; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:600;">1 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(30 porc.)</span></th>
+                            <tr style="border-bottom:2px solid #f1f5f9; background:#f8fafc;">
+                                <th style="text-align:left; padding:10px 8px; color:#64748b; font-size:0.85rem; font-weight:700;">Sabor y Detalles</th>
+                                <th style="text-align:right; padding:10px 6px; color:#64748b; font-size:0.85rem; font-weight:700;">1/4 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(10 porc.)</span></th>
+                                <th style="text-align:right; padding:10px 6px; color:#64748b; font-size:0.85rem; font-weight:700;">1/2 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(20 porc.)</span></th>
+                                <th style="text-align:right; padding:10px 6px; color:#64748b; font-size:0.85rem; font-weight:700;">1 Lb <span style="display:block; font-size:0.7rem; font-weight:normal;">(30 porc.)</span></th>
+                                <th style="text-align:center; padding:10px 6px; color:#64748b; font-size:0.85rem; font-weight:700;">Estado</th>
+                                <th style="text-align:center; padding:10px 6px; color:#64748b; font-size:0.85rem; font-weight:700;"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Ponqué -->
-                            <tr style="border-bottom:1px solid #f1f5f9;">
-                                <td style="padding:12px 8px; font-weight:600; color:#334155; font-size:0.95rem;">🍰 Ponqué Clásico</td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-ponque-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.q : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-ponque-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.m : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-ponque-1" value="${config.preciosPorSabor ? config.preciosPorSabor.ponque.l : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                            </tr>
-                            <!-- Tres Leches -->
-                            <tr style="border-bottom:1px solid #f1f5f9;">
-                                <td style="padding:12px 8px; font-weight:600; color:#334155; font-size:0.95rem;">🥛 Clásica Tres Leches</td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-tresleches-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.q : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-tresleches-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.m : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-tresleches-1" value="${config.preciosPorSabor ? config.preciosPorSabor.tresleches.l : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                            </tr>
-                            <!-- Chocoarequipe -->
-                            <tr>
-                                <td style="padding:12px 8px; font-weight:600; color:#334155; font-size:0.95rem;">🍫 Chocoarequipe</td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-choco-1-4" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.q : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-choco-1-2" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.m : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                                <td style="padding:12px 8px;"><div style="position:relative;"><span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.85rem;">$</span><input type="number" id="precio-choco-1" value="${config.preciosPorSabor ? config.preciosPorSabor.chocoarequipe.l : ''}" style="width:100%; padding:8px 8px 8px 22px; border-radius:8px; border:1px solid #e2e8f0; font-weight:600; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#db2777'" onblur="this.style.borderColor='#e2e8f0'"></div></td>
-                            </tr>
+                            ${saboresHtml}
                         </tbody>
                     </table>
+                </div>
+
+                <div style="margin-top:14px;">
+                    <button type="button" onclick="window.agregarSaborTorta()" style="width:100%; padding:10px; background:#fdf2f8; color:#db2777; border:2px dashed #fbcfe8; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.9rem; transition:all 0.2s;" onmouseover="this.style.borderColor='#db2777'; this.style.background='#fce7f3';" onmouseout="this.style.borderColor='#fbcfe8'; this.style.background='#fdf2f8';">
+                        ➕ Agregar Sabor
+                    </button>
                 </div>
             </div>
 
@@ -2292,6 +2399,39 @@ window.renderModalConfigTortasInterno = function() {
     modal.style.display = 'flex';
 };
 
+window.agregarSaborTorta = function() {
+    window.guardarEstadoTemporalTortas();
+    if (!window.dt_tortas_config.sabores) window.dt_tortas_config.sabores = [];
+    window.dt_tortas_config.sabores.push({
+        id: 'sabor_' + Date.now(),
+        name: 'Nuevo Sabor',
+        icon: '🍰',
+        desc: 'Descripción del sabor',
+        tag: '',
+        q: 45000,
+        m: 75000,
+        l: 130000,
+        activo: true
+    });
+    window.renderModalConfigTortasInterno();
+};
+
+window.eliminarSaborTorta = function(index) {
+    if (!confirm("¿Eliminar este sabor?")) return;
+    window.guardarEstadoTemporalTortas();
+    window.dt_tortas_config.sabores.splice(index, 1);
+    window.renderModalConfigTortasInterno();
+};
+
+window.toggleDisponibilidadSabor = function(index) {
+    window.guardarEstadoTemporalTortas();
+    if (window.dt_tortas_config.sabores && window.dt_tortas_config.sabores[index]) {
+        const s = window.dt_tortas_config.sabores[index];
+        s.activo = (s.activo === false ? true : false);
+    }
+    window.renderModalConfigTortasInterno();
+};
+
 window.agregarDisenoTorta = function() {
     window.guardarEstadoTemporalTortas();
     
@@ -2312,45 +2452,61 @@ window.eliminarDisenoTorta = function(index) {
 
 window.guardarEstadoTemporalTortas = function() {
     const config = window.dt_tortas_config;
-    if (!config.preciosPorSabor) config.preciosPorSabor = { ponque: {}, tresleches: {}, chocoarequipe: {} };
+    if (!config.sabores) config.sabores = [];
     
-    // Ponque
-    const pq = document.getElementById('precio-ponque-1-4');
-    const pm = document.getElementById('precio-ponque-1-2');
-    const pl = document.getElementById('precio-ponque-1');
-    if (pq) config.preciosPorSabor.ponque.q = parseInt(pq.value) || 0;
-    if (pm) config.preciosPorSabor.ponque.m = parseInt(pm.value) || 0;
-    if (pl) config.preciosPorSabor.ponque.l = parseInt(pl.value) || 0;
+    config.sabores.forEach((s, i) => {
+        const nIcon = document.getElementById(`sabor-icon-${i}`);
+        const nName = document.getElementById(`sabor-name-${i}`);
+        const nTag = document.getElementById(`sabor-tag-${i}`);
+        const nDesc = document.getElementById(`sabor-desc-${i}`);
+        const nQ = document.getElementById(`sabor-q-${i}`);
+        const nM = document.getElementById(`sabor-m-${i}`);
+        const nL = document.getElementById(`sabor-l-${i}`);
 
-    // Tres Leches
-    const tq = document.getElementById('precio-tresleches-1-4');
-    const tm = document.getElementById('precio-tresleches-1-2');
-    const tl = document.getElementById('precio-tresleches-1');
-    if (tq) config.preciosPorSabor.tresleches.q = parseInt(tq.value) || 0;
-    if (tm) config.preciosPorSabor.tresleches.m = parseInt(tm.value) || 0;
-    if (tl) config.preciosPorSabor.tresleches.l = parseInt(tl.value) || 0;
-
-    // Chocoarequipe
-    const cq = document.getElementById('precio-choco-1-4');
-    const cm = document.getElementById('precio-choco-1-2');
-    const cl = document.getElementById('precio-choco-1');
-    if (cq) config.preciosPorSabor.chocoarequipe.q = parseInt(cq.value) || 0;
-    if (cm) config.preciosPorSabor.chocoarequipe.m = parseInt(cm.value) || 0;
-    if (cl) config.preciosPorSabor.chocoarequipe.l = parseInt(cl.value) || 0;
-    
-    config.disenos.forEach((d, i) => {
-        const nName = document.getElementById(`torta-name-${i}`);
-        const nImg = document.getElementById(`torta-img-${i}`);
-        if(nName) d.name = nName.value;
-        if(nImg) d.img = nImg.value;
+        if (nIcon) s.icon = nIcon.value.trim();
+        if (nName) s.name = nName.value.trim();
+        if (nTag) s.tag = nTag.value.trim();
+        if (nDesc) s.desc = nDesc.value.trim();
+        if (nQ) s.q = parseInt(nQ.value) || 0;
+        if (nM) s.m = parseInt(nM.value) || 0;
+        if (nL) s.l = parseInt(nL.value) || 0;
+        if (!s.id) s.id = 'sabor_' + i;
     });
+
+    if (!config.preciosPorSabor) config.preciosPorSabor = {};
+    config.sabores.forEach(s => {
+        const key = s.id || s.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        config.preciosPorSabor[key] = {
+            q: Number(s.q) || 0,
+            m: Number(s.m) || 0,
+            l: Number(s.l) || 0
+        };
+        if (s.name.toLowerCase().includes('ponqu') || s.id === 'ponque') {
+            config.preciosPorSabor.ponque = { q: Number(s.q) || 0, m: Number(s.m) || 0, l: Number(s.l) || 0 };
+        }
+        if (s.name.toLowerCase().includes('tres') || s.id === 'tresleches') {
+            config.preciosPorSabor.tresleches = { q: Number(s.q) || 0, m: Number(s.m) || 0, l: Number(s.l) || 0 };
+        }
+        if (s.name.toLowerCase().includes('choco') || s.id === 'chocoarequipe') {
+            config.preciosPorSabor.chocoarequipe = { q: Number(s.q) || 0, m: Number(s.m) || 0, l: Number(s.l) || 0 };
+        }
+    });
+
+    if (config.disenos) {
+        config.disenos.forEach((d, i) => {
+            const nName = document.getElementById(`torta-name-${i}`);
+            const nImg = document.getElementById(`torta-img-${i}`);
+            if(nName) d.name = nName.value;
+            if(nImg) d.img = nImg.value;
+        });
+    }
 };
 
 window.guardarConfigTortas = function() {
     window.guardarEstadoTemporalTortas();
     
-    if (window.dt_tortas_config.preciosPorSabor && window.dt_tortas_config.preciosPorSabor.ponque.q <= 0) {
-        if(typeof showToast === 'function') showToast("Revisa los precios", "⚠️");
+    if (!window.dt_tortas_config.sabores || window.dt_tortas_config.sabores.length === 0) {
+        if(typeof showToast === 'function') showToast("Debe haber al menos un sabor configurado", "⚠️");
         return;
     }
 
@@ -2361,33 +2517,80 @@ window.guardarConfigTortas = function() {
             .then(() => {
                 if(typeof showToast === 'function') showToast("Configuración de tortas guardada", "✅");
             })
-            .catch(e => console.error("Error guardando config tortas:", e));
+            .catch(e => {
+                console.error("Error guardando config tortas:", e);
+                if(typeof showToast === 'function') showToast("Error guardando en la nube", "⚠️");
+            });
     } else {
         if(typeof showToast === 'function') showToast("Guardado localmente", "✅");
     }
     
-    document.getElementById('modal-config-tortas').style.display = 'none';
+    const modal = document.getElementById('modal-config-tortas');
+    if (modal) modal.style.display = 'none';
     window.renderConfigTortasPublica();
 };
 
 window.renderConfigTortasPublica = function() {
+    if (typeof window.asegurarEstructuraTortasConfig === 'function') {
+        window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
+    }
     const config = window.dt_tortas_config;
     
+    // Renderizar grilla de sabores en el modal del cliente
+    const flavorGrid = document.querySelector('.wizard-flavor-grid');
+    if (flavorGrid && Array.isArray(config.sabores)) {
+        const saboresActivos = config.sabores.filter(s => s.activo !== false);
+        const listaSabores = saboresActivos.length > 0 ? saboresActivos : config.sabores;
+
+        if (typeof wizardData !== 'undefined') {
+            const saborExiste = listaSabores.some(s => s.name === wizardData.sabor);
+            if (!saborExiste && listaSabores.length > 0) {
+                wizardData.sabor = listaSabores[0].name;
+            }
+        }
+
+        let flavorsHtml = '';
+        listaSabores.forEach(s => {
+            const isSelected = typeof wizardData !== 'undefined' && wizardData.sabor === s.name;
+            const safeName = (s.name || '').replace(/'/g, "\\'");
+            flavorsHtml += `
+                <div class="flavor-card ${isSelected ? 'selected' : ''}" onclick="selectSaborCard('${safeName}', this)" data-flavor="${s.name || ''}">
+                    <div class="card-check-icon">✓</div>
+                    <span class="flavor-icon">${s.icon || '🍰'}</span>
+                    <div class="flavor-info">
+                        <strong>${s.name || 'Sabor'}</strong>
+                        ${s.tag ? `<span class="flavor-badge-tag">${s.tag}</span>` : ''}
+                        ${s.desc ? `<p>${s.desc}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        flavorGrid.innerHTML = flavorsHtml;
+    }
+
     // Forzar actualización de los precios según el sabor seleccionado actualmente
-    if (typeof wizardData !== 'undefined' && typeof selectSabor === 'function') {
-        const selectedEl = document.querySelector('.wizard-flavor-grid .flavor-card.selected') || document.querySelector('.wizard-flavor-grid .flavor-card') || document.querySelector('.wizard-options-grid .step-option-card.selected') || document.querySelector('.wizard-options-grid .step-option-card');
-        const saborAUsar = wizardData.sabor || 'Clásica Tres Leches';
-        if (selectedEl) {
-            selectSabor(saborAUsar, selectedEl);
+    if (typeof wizardData !== 'undefined' && typeof getCakePrices === 'function') {
+        const saborAUsar = wizardData.sabor || (config.sabores && config.sabores.length > 0 ? config.sabores[0].name : 'Clásica Tres Leches');
+        const prices = getCakePrices(saborAUsar);
+        if (typeof updateSizePrices === 'function') {
+            updateSizePrices(prices);
+        }
+        if (wizardData.tamano && prices[wizardData.tamano]) {
+            wizardData.precio = prices[wizardData.tamano];
+        }
+        if (typeof updateWizardSummary === 'function') {
+            updateWizardSummary();
         }
     }
     
+    // Renderizar diseños disponibles
     const grid = document.getElementById('cake-design-grid');
-    if (grid) {
+    if (grid && Array.isArray(config.disenos)) {
         let html = '';
         config.disenos.forEach(d => {
+            const isSelected = typeof wizardData !== 'undefined' && wizardData.diseno === d.name;
             html += `
-                <div class="design-thumb" onclick="selectDiseno('${d.name}', this)">
+                <div class="design-thumb ${isSelected ? 'selected' : ''}" onclick="selectDiseno('${(d.name || '').replace(/'/g, "\\'")}', this)">
                     <img src="${d.img || 'logo-pys.png'}" alt="Diseño ${d.name}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;" onerror="this.onerror=null; this.src='logo-pys.png';">
                     <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">${d.name}</div>
                 </div>

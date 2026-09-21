@@ -843,8 +843,8 @@ window.addEventListener('DOMContentLoaded', () => {
     db.collection('config').doc('tortas_config').onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
-            window.dt_tortas_config = data;
-            localStorage.setItem('dt_tortas_config', JSON.stringify(data));
+            window.dt_tortas_config = typeof window.asegurarEstructuraTortasConfig === 'function' ? window.asegurarEstructuraTortasConfig(data) : data;
+            localStorage.setItem('dt_tortas_config', JSON.stringify(window.dt_tortas_config));
             if (typeof window.renderConfigTortasPublica === 'function') {
                 window.renderConfigTortasPublica();
             }
