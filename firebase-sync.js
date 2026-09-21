@@ -25,18 +25,42 @@ const auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
 console.log("Firebase Firestore y Auth inicializados.");
 
 // Función global para sincronizar el usuario activo de forma atómica en Cloud Firestore
+// FIX: Lee Firestore primero para preservar el rol asignado por el admin.
+// Solo asigna 'cliente' si el documento no existe aún (primera vez).
 window.syncCurrentUserToCloud = async function(extraData = {}) {
     if (!window.currentUser || !window.currentUser.email) return;
     const email = (window.currentUser.email || '').toLowerCase().trim();
     const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(email) : false;
 
+    // Determinar el rol correcto: Super Admin siempre 'admin'.
+    // Para el resto: consultar Firestore primero para respetar el rol asignado por el admin.
+    // Solo si el documento no existe se usa el rol en memoria o 'cliente' por defecto.
+    let rolFinal = isSuper ? 'admin' : (window.currentUser.role || window.currentUser.rol || 'cliente');
+    try {
+        const existingDoc = await db.collection("usuarios").doc(email).get();
+        if (!isSuper && existingDoc.exists) {
+            const existingData = existingDoc.data();
+            const rolEnFirestore = existingData.rol || existingData.role;
+            // Preservar el rol guardado en Firestore si es más privilegiado que 'cliente'
+            if (rolEnFirestore && rolEnFirestore !== 'cliente') {
+                rolFinal = rolEnFirestore;
+                // Actualizar también el objeto en memoria para mantener coherencia
+                window.currentUser.role = rolFinal;
+                window.currentUser.rol = rolFinal;
+                window.currentUser.isAdmin = (rolFinal === 'admin');
+            }
+        }
+    } catch (readErr) {
+        console.warn("syncCurrentUserToCloud: no se pudo leer el doc previo, se usará el rol en memoria.", readErr);
+    }
+
     const payload = {
         nombre: window.currentUser.name || window.currentUser.nombre || email.split('@')[0],
         email: email,
         foto: window.currentUser.picture || window.currentUser.foto || "",
-        rol: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
-        role: isSuper ? 'admin' : (window.currentUser.role || "cliente"),
-        isAdmin: isSuper || (window.currentUser.role === 'admin'),
+        rol: rolFinal,
+        role: rolFinal,
+        isAdmin: isSuper || (rolFinal === 'admin'),
         vip: !!(window.currentUser.vip || window.currentUser.isVip),
         isVip: !!(window.currentUser.vip || window.currentUser.isVip),
         points: (window.currentUser.points !== undefined && window.currentUser.points !== null) ? Number(window.currentUser.points) : 0,
@@ -50,7 +74,7 @@ window.syncCurrentUserToCloud = async function(extraData = {}) {
 
     try {
         await db.collection("usuarios").doc(email).set(payload, { merge: true });
-        console.log("✓ Usuario y puntos sincronizados permanentemente en Cloud Firestore:", email, payload.points, "pts");
+        console.log("✓ Usuario y puntos sincronizados permanentemente en Cloud Firestore:", email, payload.points, "pts | rol:", rolFinal);
     } catch (err) {
         console.error("Error al persistir usuario en Firestore:", err);
     }
@@ -156,8 +180,15 @@ window.addEventListener('DOMContentLoaded', () => {
                             window.currentUser.vip = !!data.vip;
                             window.currentUser.isVip = !!data.vip;
                         }
-                        if (data.role && !window.currentUser.isAdmin) {
-                            window.currentUser.role = data.role;
+                        // FIX: Aplicar el rol guardado en Firestore para todos los usuarios
+                        // (no solo para los que no son admin), respetando a los Super Admins.
+                        if (!isSuper) {
+                            const savedRole = data.rol || data.role;
+                            if (savedRole) {
+                                window.currentUser.role = savedRole;
+                                window.currentUser.rol = savedRole;
+                                window.currentUser.isAdmin = (savedRole === 'admin');
+                            }
                         }
                         localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
                         if (typeof window.syncUserUI === 'function') window.syncUserUI();
@@ -194,27 +225,50 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Observador permanente del estado de autenticación (Firebase Auth onAuthStateChanged)
+    // FIX: Restaura el rol completo (rol/role) desde Firestore al detectar sesión activa.
+    // Esto evita que syncCurrentUserToCloud sobreescriba con el rol en caché local.
     if (auth) {
         auth.onAuthStateChanged(async (fbUser) => {
             if (fbUser && fbUser.email) {
                 const email = fbUser.email.toLowerCase().trim();
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
+                    ? window.SUPER_ADMINS.includes(email)
+                    : (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com');
                 try {
                     const doc = await db.collection("usuarios").doc(email).get();
                     if (doc.exists) {
                         const data = doc.data();
                         if (window.currentUser && (window.currentUser.email || '').toLowerCase().trim() === email) {
                             let changed = false;
+
+                            // Restaurar puntos
                             if (data.points !== undefined && data.points !== window.currentUser.points) {
                                 window.currentUser.points = Number(data.points);
                                 changed = true;
                             }
+
+                            // Restaurar vip
                             if (data.vip !== undefined && data.vip !== window.currentUser.vip) {
                                 window.currentUser.vip = !!data.vip;
                                 window.currentUser.isVip = !!data.vip;
                                 changed = true;
                             }
+
+                            // FIX: Restaurar rol/role desde Firestore (nunca sobrescribir con 'cliente' si Firestore dice otra cosa)
+                            if (!isSuper) {
+                                const rolEnFirestore = data.rol || data.role;
+                                if (rolEnFirestore && rolEnFirestore !== (window.currentUser.role || window.currentUser.rol)) {
+                                    window.currentUser.role = rolEnFirestore;
+                                    window.currentUser.rol = rolEnFirestore;
+                                    window.currentUser.isAdmin = (rolEnFirestore === 'admin');
+                                    changed = true;
+                                    console.log("✓ onAuthStateChanged: rol restaurado desde Firestore:", email, rolEnFirestore);
+                                }
+                            }
+
                             if (changed) {
                                 localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
+                                localStorage.setItem('dt_logged_user', JSON.stringify(window.currentUser));
                                 if (typeof window.syncUserUI === 'function') window.syncUserUI();
                             }
                         }
