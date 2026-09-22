@@ -4537,6 +4537,9 @@ function sendOrder() {
         deliveryType: curDelivery,
         deliveryCost: costoDomicilio,
         products: cart.map(i => `${i.quantity}x ${i.name}`).join(', '),
+        // Ficha técnica completa — preserva customData de tortas (sabor, tamaño, diseño, fecha, extras, mensaje)
+        cartItems: JSON.parse(JSON.stringify(cart)),
+        metodoPago: selectedPay,
         subtotal: tp,
         discount: discount,
         total: finalTotal,

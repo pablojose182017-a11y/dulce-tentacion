@@ -485,11 +485,16 @@ window.registrarAbono = function(orderId, monto) {
     if (typeof pedidosHistorial !== 'undefined') {
         const idx = pedidosHistorial.findIndex(o => o.id === orderId);
         if (idx !== -1) {
-            pedidosHistorial[idx].abono = parseFloat(monto) || 0;
+            const nuevoAbono = parseFloat(monto) || 0;
+            pedidosHistorial[idx].abono = nuevoAbono;
             if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
             localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosHistorial));
-            
-            // Re-render live orders so the UI updates
+
+            // Sincronizar en Firestore en tiempo real (multi-dispositivo)
+            if (typeof window.updateOrderAbono === 'function') {
+                window.updateOrderAbono(orderId, nuevoAbono);
+            }
+
             if (typeof renderLiveOrders === 'function') renderLiveOrders();
         }
     }
@@ -527,77 +532,135 @@ window.renderLiveOrders = function() {
         const isEvent = p.type === 'evento';
         const tagColor = isEvent ? '#fef3c7' : '#e0f2fe';
         const tagTextColor = isEvent ? '#d97706' : '#0369a1';
-        const tagIcon = isEvent ? '🎉 Evento Programado' : '⚡ Entrega Inmediata';
-        
+        const tagIcon = isEvent ? '\uD83C\uDF89 Evento Programado' : '\u26A1 Entrega Inmediata';
+
+        // ---- COMANDA DE PRODUCCIÓN ----
+        let detalleHtml = '';
+        if (p.cartItems && Array.isArray(p.cartItems) && p.cartItems.length > 0) {
+            const tortas = p.cartItems.filter(i => i.type === 'evento' && i.customData);
+            const normales = p.cartItems.filter(i => !(i.type === 'evento' && i.customData));
+
+            if (tortas.length > 0) {
+                tortas.forEach(t => {
+                    const cd = t.customData || {};
+                    const extrasStr = (cd.extras && Object.keys(cd.extras).length > 0)
+                        ? Object.keys(cd.extras).map(k => `\u2022 ${k}`).join('<br>')
+                        : '(Ninguno)';
+                    const dedicatoria = cd.message ? `\u201C${cd.message}\u201D` : '(Sin dedicatoria)';
+                    const fechaEntrega = cd.date || '(No especificada)';
+                    const horario = cd.time || '(No especificado)';
+
+                    detalleHtml += `
+                    <div style="background:#fff8f0; border:1.5px solid #f97316; border-radius:10px; padding:11px; margin-bottom:8px;">
+                        <div style="font-weight:700; font-size:0.95rem; color:#c2410c; margin-bottom:8px;">
+                            \uD83C\uDF82 ${t.name || 'Torta Personalizada'}
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:0.83rem; color:#334155;">
+                            <div><span style="color:#64748b;">Sabor:</span> <strong>${cd.sabor || cd.flavor || '—'}</strong></div>
+                            <div><span style="color:#64748b;">Tama\u00f1o:</span> <strong>${cd.tamano || cd.size || '—'}</strong></div>
+                            <div><span style="color:#64748b;">Dise\u00f1o:</span> <strong>${cd.diseno || cd.design || '—'}</strong></div>
+                            <div><span style="color:#64748b;">Porciones:</span> <strong>${t.quantity || 1}</strong></div>
+                        </div>
+                        <div style="margin-top:8px; font-size:0.83rem; color:#334155; border-top:1px dashed #fed7aa; padding-top:8px;">
+                            <div>\uD83D\uDCC5 <strong>Entrega:</strong> ${fechaEntrega} &nbsp;&#x23F0; ${horario}</div>
+                            <div style="margin-top:4px;">\u270D\uFE0F <strong>Dedicatoria:</strong> <em>${dedicatoria}</em></div>
+                            <div style="margin-top:4px;">\u2728 <strong>Extras:</strong><br>${extrasStr}</div>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            if (normales.length > 0) {
+                const listaNormal = normales.map(i =>
+                    `\u2022 <strong>${i.quantity}x</strong> ${i.name} &mdash; $${((i.price||0)*(i.quantity||1)).toLocaleString('es-CO')} COP`
+                ).join('<br>');
+                detalleHtml += `
+                    <div style="background:#f8fafc; padding:9px 12px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1; margin-top:${tortas.length > 0 ? '0' : '0'}px;">
+                        <strong>\uD83E\uDD50 Productos Adicionales:</strong><br>${listaNormal}
+                    </div>`;
+            }
+        } else {
+            // Retrocompatibilidad: pedido sin cartItems
+            detalleHtml = `<div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1;">
+                <strong>\uD83D\uDCDD Detalle:</strong><br>${p.products || '—'}
+            </div>`;
+        }
+
+        // ---- PANEL DE COBRO ----
         const abonoVal = p.abono || 0;
         const total = p.total || 0;
         const saldo = Math.max(0, total - abonoVal);
         const anticipoSugerido = Math.ceil(total / 2);
-        
-        let abonoHtml = `
-        <div class="caja-finanzas" style="background: #fdf2f4; border: 1px solid #f8c8d4; border-radius: 10px; padding: 10px; margin-top: 10px;">
-          <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px;">
-            <span>Total Pedido:</span> <strong>$${total.toLocaleString('es-CO')} COP</strong>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 8px; color: #666;">
-            <span>Anticipo (50%):</span> <span>$${anticipoSugerido.toLocaleString('es-CO')} COP</span>
-          </div>
+        const pagadoPct = total > 0 ? Math.round((abonoVal / total) * 100) : 0;
 
-          <label style="display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px;">💵 Dinero Abonado:</label>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <input type="number" id="input-abono-${p.id}"
-                   placeholder="Monto..." 
-                   value="${abonoVal || ''}" 
-                   style="flex: 1; padding: 6px 10px; border: 1.5px solid #e6396b; border-radius: 6px; font-size: 0.95rem; font-weight: bold; min-width: 0;"
-                   onchange="registrarAbono('${p.id}', this.value)">
-            <button type="button" onclick="registrarAbono('${p.id}', ${anticipoSugerido})" style="padding: 6px 8px; font-size: 0.75rem; background: #fff; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; color:#333;">50%</button>
-            <button type="button" onclick="registrarAbono('${p.id}', ${total})" style="padding: 6px 8px; font-size: 0.75rem; background: #fff; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; color:#333;">100%</button>
-          </div>
+        let estadoPagoHtml;
+        if (abonoVal <= 0) {
+            estadoPagoHtml = `<span style="color:#c0392b; font-weight:700;">\uD83D\uDD34 Sin pago registrado</span>`;
+        } else if (abonoVal >= total) {
+            estadoPagoHtml = `<span style="color:#27ae60; font-weight:700;">\uD83D\uDFE2 \u00A1PAGADO AL 100%!</span>`;
+        } else {
+            estadoPagoHtml = `<span style="color:#d35400; font-weight:700;">\uD83D\uDFE1 ${pagadoPct}% pagado &mdash; <span style="color:#c0392b;">Pendiente: $${saldo.toLocaleString('es-CO')} COP</span></span>`;
+        }
 
-          <div style="margin-top: 8px; font-size: 0.85rem;">`;
-
-          if (abonoVal === 0) {
-              abonoHtml += `<span style="color: #c0392b; font-weight: bold;">🔴 Sin pago (Falta $${total.toLocaleString('es-CO')})</span>`;
-          } else if (abonoVal >= total) {
-              abonoHtml += `<span style="color: #27ae60; font-weight: bold;">🟢 ¡PAGADO TOTAL 100%!</span>`;
-          } else {
-              const pct = Math.round((abonoVal / total) * 100);
-              abonoHtml += `<div style="color: #d35400; font-weight: bold;">
-                              🟡 Abonó: $${abonoVal.toLocaleString('es-CO')} COP (${pct}%)<br>
-                              <span style="color: #c0392b;">⚠️ Saldo pendiente: $${saldo.toLocaleString('es-CO')} COP</span>
-                          </div>`;
-          }
-
-        abonoHtml += `</div></div>`;
+        const abonoHtml = `
+        <div style="background:#fdf2f4; border:1px solid #f8c8d4; border-radius:10px; padding:12px; margin-top:6px;">
+            <div style="font-size:0.82rem; font-weight:700; color:#be185d; margin-bottom:8px; letter-spacing:0.03em;">\uD83D\uDCB3 CONTROL DE PAGO</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:10px; text-align:center;">
+                <div style="background:#fff; border-radius:8px; padding:7px 4px; border:1px solid #f1e8e4;">
+                    <div style="font-size:0.7rem; color:#64748b; margin-bottom:2px;">Total</div>
+                    <div style="font-size:0.92rem; font-weight:700; color:#1e293b;">$${total.toLocaleString('es-CO')}</div>
+                </div>
+                <div style="background:#fff; border-radius:8px; padding:7px 4px; border:1px solid #bbf7d0;">
+                    <div style="font-size:0.7rem; color:#64748b; margin-bottom:2px;">Abonado</div>
+                    <div style="font-size:0.92rem; font-weight:700; color:#15803d;">$${abonoVal.toLocaleString('es-CO')}</div>
+                </div>
+                <div style="background:#fff; border-radius:8px; padding:7px 4px; border:1px solid ${saldo > 0 ? '#fecaca' : '#bbf7d0'};">
+                    <div style="font-size:0.7rem; color:#64748b; margin-bottom:2px;">Por Cobrar</div>
+                    <div style="font-size:0.92rem; font-weight:700; color:${saldo > 0 ? '#c0392b' : '#15803d'};">$${saldo.toLocaleString('es-CO')}</div>
+                </div>
+            </div>
+            <div style="margin-bottom:8px; font-size:0.83rem;">${estadoPagoHtml}</div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:6px;">\uD83D\uDCB0 Pago: <strong>${p.metodoPago || p.payStatus || 'No especificado'}</strong></div>
+            <label style="display:block; font-size:0.82rem; font-weight:700; color:#be185d; margin-bottom:5px;">Registrar Abono / Pago:</label>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input type="number" id="input-abono-${p.id}"
+                       placeholder="Monto..." value="${abonoVal || ''}"
+                       style="flex:1; padding:7px 10px; border:1.5px solid #e6396b; border-radius:7px; font-size:0.95rem; font-weight:700; min-width:0;">
+                <button type="button"
+                        onclick="registrarAbono('${p.id}', ${anticipoSugerido})"
+                        style="padding:7px 9px; font-size:0.75rem; background:#fff; border:1px solid #ccc; border-radius:7px; cursor:pointer; white-space:nowrap;">50%</button>
+                <button type="button"
+                        onclick="registrarAbono('${p.id}', ${total})"
+                        style="padding:7px 9px; font-size:0.75rem; background:#fff; border:1px solid #ccc; border-radius:7px; cursor:pointer; white-space:nowrap;">100%</button>
+                <button type="button"
+                        onclick="registrarAbono('${p.id}', document.getElementById('input-abono-${p.id}').value)"
+                        style="padding:7px 11px; font-size:0.8rem; font-weight:700; background:#e6396b; color:#fff; border:none; border-radius:7px; cursor:pointer; white-space:nowrap;">\uD83D\uDCBE Guardar</button>
+            </div>
+        </div>`;
 
         return `
-        <div style="background:#fff; border-radius:12px; padding:15px; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:10px;">
+        <div style="background:#fff; border-radius:14px; padding:16px; border:1px solid #eee; box-shadow:0 2px 10px rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
-                    <span style="background:${tagColor}; color:${tagTextColor}; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${tagIcon}</span>
-                    <div style="margin-top:8px; font-size:0.8rem; color:#666;">ID: ${p.id} • ${p.date}</div>
+                    <span style="background:${tagColor}; color:${tagTextColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700;">${tagIcon}</span>
+                    <div style="margin-top:8px; font-size:0.8rem; color:#666;">ID: ${p.id} &bull; ${p.date}</div>
                 </div>
-                <div style="font-size:1.1rem; font-weight:bold; color:var(--brand-pink);">$${p.total.toLocaleString()}</div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--brand-pink);">$${p.total.toLocaleString()}</div>
             </div>
-            
-            <div style="font-size:0.95rem; line-height:1.4;">
-                <strong>👤 ${p.customer}</strong><br>
-                📞 <a href="https://wa.me/57${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366; text-decoration:none;">${p.phone}</a><br>
-                📍 ${p.address}
+
+            <div style="font-size:0.95rem; line-height:1.5;">
+                <strong>\uD83D\uDC64 ${p.customer}</strong><br>
+                \uD83D\uDCDE <a href="https://wa.me/57${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366; text-decoration:none;">${p.phone}</a><br>
+                \uD83D\uDCCD ${p.address}
             </div>
-            
-            <div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1;">
-                <strong>📝 Detalle:</strong><br>${p.products}
-            </div>
-            
+
+            ${detalleHtml}
             ${abonoHtml}
 
             <div style="display:flex; gap:8px; margin-top:auto; padding-top:10px; border-top:1px solid #eee;">
-                <button onclick="markOrderState('${p.id}', 'Pendiente')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Pendiente' ? '#eab308' : '#fef08a'}; background:${p.status === 'Pendiente' ? '#fef08a' : '#fff'}; color:#a16207; transition:all 0.2s;">🟡 Pendiente</button>
-                
-                <button onclick="markOrderState('${p.id}', 'En preparación')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En preparación' ? '#3b82f6' : '#bfdbfe'}; background:${p.status === 'En preparación' ? '#bfdbfe' : '#fff'}; color:#1d4ed8; transition:all 0.2s;">🔵 Preparando</button>
-                
-                <button onclick="markOrderState('${p.id}', 'Entregado')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Entregado' ? '#22c55e' : '#bbf7d0'}; background:${p.status === 'Entregado' ? '#bbf7d0' : '#fff'}; color:#15803d; transition:all 0.2s;">🟢 Entregado</button>
+                <button onclick="markOrderState('${p.id}', 'Pendiente')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Pendiente' ? '#eab308' : '#fef08a'}; background:${p.status === 'Pendiente' ? '#fef08a' : '#fff'}; color:#a16207; transition:all 0.2s;">🟡 Pendiente</button>
+                <button onclick="markOrderState('${p.id}', 'En preparación')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En preparación' ? '#3b82f6' : '#bfdbfe'}; background:${p.status === 'En preparación' ? '#bfdbfe' : '#fff'}; color:#1d4ed8; transition:all 0.2s;">🔵 Preparando</button>
+                <button onclick="markOrderState('${p.id}', 'Entregado')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Entregado' ? '#22c55e' : '#bbf7d0'}; background:${p.status === 'Entregado' ? '#bbf7d0' : '#fff'}; color:#15803d; transition:all 0.2s;">🟢 Entregado</button>
             </div>
         </div>`;
     }).join('');
