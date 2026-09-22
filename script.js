@@ -2021,7 +2021,7 @@ window.guardarExtrasPersonalizadosFirestore = function(nuevaLista, successMsg) {
         alert('Sin conexión a la base de datos. Recarga la página.');
         return;
     }
-    window.db.collection('configuracion').doc('tortas_config').set(
+    window.db.collection('config').doc('tortas_config').set(
         { extrasPersonalizados: nuevaLista },
         { merge: true }
     ).then(() => {
@@ -5601,17 +5601,22 @@ function validateWizardDateNew(val) {
 
 function addCustomCakeToCartNew() {
     const errDiv = document.getElementById('w-error');
-    if (errDiv) errDiv.style.display = 'none';
 
     // Forzar lectura directa del DOM (Mitiga race condition del onchange/blur)
     const dInput = document.getElementById('w-date');
     const tInput = document.getElementById('w-time');
-    if (dInput && dInput.value) validateWizardDateNew(dInput.value);
-    if (tInput && tInput.value) wizardData.time = tInput.value;
+    const dateVal = dInput ? dInput.value.trim() : '';
+    const timeVal = tInput ? tInput.value.trim() : '';
 
-    // Limpiar alertas visuales de campos en caso de reintento exitoso
-    if (dInput) dInput.style.border = '1px solid #cbd5e1';
-    if (tInput) tInput.style.border = '1px solid #cbd5e1';
+    if (dateVal) {
+        wizardData.date = dateVal;
+        validateWizardDateNew(dateVal); // Si es muy pronto, esta función limpiará wizardData.date y dInput.value
+    }
+    if (timeVal) {
+        wizardData.time = timeVal;
+    }
+
+    console.log('DEBUG FECHA/HORA:', { dateVal, timeVal, wizardDate: wizardData.date, wizardTime: wizardData.time });
 
     if (!wizardData.sabor) return showToast("Por favor selecciona un sabor.", "⚠️");
     if (!wizardData.tamano) return showToast("Por favor selecciona un tamaño.", "⚠️");
@@ -5622,18 +5627,20 @@ function addCustomCakeToCartNew() {
             errDiv.innerText = "⚠️ Por favor completa la fecha de entrega y el horario preferido.";
             errDiv.style.display = 'block';
         }
-        const dateInput = document.getElementById('w-date');
-        if (dateInput && !wizardData.date) {
-            dateInput.style.border = '2px solid #ef4444';
-            setTimeout(() => dateInput.style.border = '1px solid #cbd5e1', 3000);
-            dateInput.focus();
+        if (dInput && !wizardData.date) {
+            dInput.style.border = '2px solid #ef4444';
+            setTimeout(() => dInput.style.border = '1px solid #cbd5e1', 3000);
+            dInput.focus();
         }
-        const timeInput = document.getElementById('w-time');
-        if (timeInput && !wizardData.time) {
-            timeInput.style.border = '2px solid #ef4444';
-            setTimeout(() => timeInput.style.border = '1px solid #cbd5e1', 3000);
+        if (tInput && !wizardData.time) {
+            tInput.style.border = '2px solid #ef4444';
+            setTimeout(() => tInput.style.border = '1px solid #cbd5e1', 3000);
         }
         return;
+    } else {
+        if (errDiv) errDiv.style.display = 'none';
+        if (dInput) dInput.style.border = '1px solid #cbd5e1';
+        if (tInput) tInput.style.border = '1px solid #cbd5e1';
     }
 
     let extrasTotal = 0;
@@ -5830,7 +5837,20 @@ function editarTortaDesdeCarrito(cartId) {
         const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
         const dd = String(tomorrow.getDate()).padStart(2, '0');
         dateInput.min = `${yyyy}-${mm}-${dd}`;
-        dateInput.value = wizardData.date || '';
+        
+        if (wizardData.date) {
+            const parsed = new Date(wizardData.date + 'T00:00:00');
+            if (!isNaN(parsed.getTime())) {
+                const y = parsed.getFullYear();
+                const m = String(parsed.getMonth() + 1).padStart(2, '0');
+                const d = String(parsed.getDate()).padStart(2, '0');
+                dateInput.value = `${y}-${m}-${d}`;
+            } else {
+                dateInput.value = '';
+            }
+        } else {
+            dateInput.value = '';
+        }
     }
 
     // Restaurar hora
