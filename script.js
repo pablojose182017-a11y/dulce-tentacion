@@ -3125,15 +3125,21 @@ function syncUserUI() {
         const deskBtn = document.getElementById('desk-admin-btn');
         const mobBtn = document.getElementById('mob-admin-btn');
 
+        // Onclicks diferenciados: Admin accede al dashboard completo; Trabajador solo a funciones operativas
+        const adminOnclick = "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+        const workerOnclick = "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+        const adminOnclickMob = "closeMobileProfile(); " + adminOnclick;
+        const workerOnclickMob = "closeMobileProfile(); " + workerOnclick;
+
         if (deskBtn) {
             deskBtn.style.display = (isAdmin || isWorker) ? 'flex' : 'none';
-            deskBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '⚙️ Panel Operativo';
-            deskBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin();");
+            deskBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
+            deskBtn.setAttribute('onclick', isAdmin ? adminOnclick : workerOnclick);
         }
         if (mobBtn) {
             mobBtn.style.display = (isAdmin || isWorker) ? 'flex' : 'none';
-            mobBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '⚙️ Panel Operativo';
-            mobBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin();");
+            mobBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
+            mobBtn.setAttribute('onclick', isAdmin ? adminOnclickMob : workerOnclickMob);
         }
 
         const adminDash = document.getElementById('admin-dashboard');

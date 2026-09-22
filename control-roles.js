@@ -150,96 +150,151 @@ window.addEventListener('DOMContentLoaded', () => {
         if (typeof updateCart === 'function') updateCart();
     }
 
-    // --- 3. SOBRESCRIBIR SYNCUSERUI ---
-    const originalSyncUserUI = window.syncUserUI;
-    if (originalSyncUserUI) {
+    // --- 3. SOBRESCRIBIR SYNCUSERUI (robusto ante cualquier orden de carga) ---
+    //
+    // Patrón: se define primero la lógica pura de UI en una función auxiliar (_crRolesApplyUI),
+    // luego se intercepta window.syncUserUI si ya existe, o se registra un listener de
+    // DOMContentLoaded para interceptarlo una vez que script.js haya terminado de ejecutarse.
+    //
+    // Los onclicks están separados limpiamente:
+    //   Admin/SuperAdmin → acceso completo (métricas, usuarios, contabilidad)
+    //   Trabajador       → solo funciones operativas (pedidos, stock, cocina)
+
+    const _ADMIN_ONCLICK      = "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+    const _WORKER_ONCLICK     = "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+    const _ADMIN_ONCLICK_MOB  = "closeMobileProfile(); " + _ADMIN_ONCLICK;
+    const _WORKER_ONCLICK_MOB = "closeMobileProfile(); " + _WORKER_ONCLICK;
+
+    /**
+     * Aplica la UI de rol (botones, labels, pestañas) al usuario actualmente logueado.
+     * Se llama al finalizar syncUserUI() base para aplicar los ajustes correctos de roles.
+     * No toca precios, VIP ni Super Admins (los preserva y los fuerza a admin).
+     */
+    window._crRolesApplyUI = function() {
+        if (typeof currentUser === 'undefined' || !currentUser) return;
+
+        const normEmail = (currentUser.email || '').toLowerCase().trim();
+        const isSuper   = isSuperAdmin(normEmail);
+
+        // Proteger Super Admins: siempre admin, nunca modificable
+        if (isSuper) {
+            currentUser.role = 'admin';
+            currentUser.rol  = 'admin';
+            currentUser.isAdmin = true;
+            currentUser.blocked = false;
+            currentUser.estado  = 'activo';
+            if (typeof adminEmails !== 'undefined' && !adminEmails.map(e => (e||'').toLowerCase()).includes(normEmail)) {
+                adminEmails.push(currentUser.email);
+            }
+            if (typeof workerEmails !== 'undefined') {
+                workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== normEmail);
+            }
+            try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e) {}
+            try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e) {}
+        }
+
+        const isAdmin  = isSuper
+            || currentUser.role === 'admin'
+            || currentUser.rol  === 'admin'
+            || currentUser.isAdmin === true
+            || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
+
+        const isWorker = !isAdmin && (
+            currentUser.role === 'trabajador'
+            || currentUser.rol  === 'trabajador'
+            || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email))
+        );
+
+        // ── Botón escritorio
+        const deskBtn = document.getElementById('desk-admin-btn');
+        if (deskBtn) {
+            if (isAdmin || isWorker) {
+                deskBtn.style.display = 'flex';
+                deskBtn.innerText     = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
+                deskBtn.setAttribute('onclick', isAdmin ? _ADMIN_ONCLICK : _WORKER_ONCLICK);
+            } else {
+                deskBtn.style.display = 'none';
+            }
+        }
+
+        // ── Botón móvil
+        const mobBtn = document.getElementById('mob-admin-btn');
+        if (mobBtn) {
+            if (isAdmin || isWorker) {
+                mobBtn.style.display = 'flex';
+                mobBtn.innerText     = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
+                mobBtn.setAttribute('onclick', isAdmin ? _ADMIN_ONCLICK_MOB : _WORKER_ONCLICK_MOB);
+            } else {
+                mobBtn.style.display = 'none';
+            }
+        }
+
+        // ── Secciones y título del panel
+        const adminOnlyDiv = document.getElementById('admin-only-sections');
+        const adminTitle   = document.getElementById('admin-title-panel');
+        if (adminOnlyDiv) adminOnlyDiv.style.display = (isAdmin || isWorker) ? 'block' : 'none';
+        if (adminTitle) {
+            adminTitle.innerText = isAdmin
+                ? '📊 Panel Administrativo & Financiero'
+                : (isWorker ? '👨‍🍳 Panel Operativo Diario' : '');
+        }
+
+        // ── Pestañas: Contabilidad y Usuarios solo visibles para Admin
+        const tabContabilidad = document.getElementById('admin-tab-btn-contabilidad');
+        const tabUsuarios     = document.getElementById('admin-tab-btn-usuarios');
+        if (tabContabilidad) tabContabilidad.style.display = isAdmin ? '' : 'none';
+        if (tabUsuarios)     tabUsuarios.style.display     = isAdmin ? '' : 'none';
+
+        // ── Botones de cocina auxiliares (si existen en el DOM)
+        const deskKitchenBtn = document.getElementById('desk-kitchen-btn');
+        const mobKitchenBtn  = document.getElementById('mob-kitchen-btn');
+        if (deskKitchenBtn) deskKitchenBtn.style.display = 'none'; // gestionados por el panel
+        if (mobKitchenBtn)  mobKitchenBtn.style.display  = 'none';
+    };
+
+    /**
+     * Registra el override sobre window.syncUserUI de forma segura.
+     * Se llama inmediatamente y también diferido para cubrir el caso de que
+     * script.js termine su evaluación después de control-roles.js.
+     */
+    function _crRegistrarOverrideSyncUI() {
+        const base = window.syncUserUI;
+        if (typeof base !== 'function') return false; // todavía no disponible
+
+        // Evitar doble-envoltura si ya aplicamos el override
+        if (base._crWrapped) return true;
+
         window.syncUserUI = function() {
-            if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
-                const normEmail = currentUser.email.toLowerCase().trim();
-                if (isSuperAdmin(normEmail)) {
-                    currentUser.role = 'admin';
-                    currentUser.isAdmin = true;
-                    currentUser.blocked = false;
-                    currentUser.estado = 'activo';
-                    if (typeof adminEmails !== 'undefined' && !adminEmails.includes(normEmail)) {
-                        adminEmails.push(normEmail);
-                    }
-                    if (typeof workerEmails !== 'undefined') {
-                        workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== normEmail);
-                    }
-                    try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e){}
-                    try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e){}
-                }
-            }
-
-            originalSyncUserUI();
-
-            if (typeof currentUser !== 'undefined' && currentUser) {
-                const normEmail = (currentUser.email || '').toLowerCase().trim();
-                const isSuper = isSuperAdmin(normEmail);
-                const isAdmin = isSuper || (currentUser.role === 'admin') || (currentUser.rol === 'admin') || (currentUser.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
-                const isWorker = !isSuper && !isAdmin && ((currentUser.role === 'trabajador') || (currentUser.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email)));
-                
-                const deskAdminBtn = document.getElementById('desk-admin-btn');
-                const mobAdminBtn = document.getElementById('mob-admin-btn');
-                const deskKitchenBtn = document.getElementById('desk-kitchen-btn');
-                const mobKitchenBtn = document.getElementById('mob-kitchen-btn');
-                
-                const adminOnlyDiv = document.getElementById('admin-only-sections');
-                const adminTitle = document.getElementById('admin-title-panel');
-
-                if (deskAdminBtn) deskAdminBtn.style.display = 'none';
-                if (mobAdminBtn) mobAdminBtn.style.display = 'none';
-                if (deskKitchenBtn) deskKitchenBtn.style.display = 'none';
-                if (mobKitchenBtn) mobKitchenBtn.style.display = 'none';
-                if (adminOnlyDiv) adminOnlyDiv.style.display = 'none';
-
-                if (isAdmin) {
-                    if (deskAdminBtn) {
-                        deskAdminBtn.style.display = 'flex';
-                        deskAdminBtn.innerText = '⚙️ Panel Administrador';
-                    }
-                    if (mobAdminBtn) {
-                        mobAdminBtn.style.display = 'flex';
-                        mobAdminBtn.innerText = '⚙️ Panel Administrador';
-                        mobAdminBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
-                    }
-                    if (adminOnlyDiv) adminOnlyDiv.style.display = 'block';
-                    if (adminTitle) adminTitle.innerText = '📊 Panel Administrativo & Financiero';
-                    
-                    if (deskAdminBtn) {
-                         deskAdminBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
-                    }
-                    
-                    const tabContabilidad = document.getElementById('admin-tab-btn-contabilidad');
-                    const tabUsuarios = document.getElementById('admin-tab-btn-usuarios');
-                    if(tabContabilidad) tabContabilidad.style.display = '';
-                    if(tabUsuarios) tabUsuarios.style.display = '';
-                } else if (isWorker) {
-                    if (deskAdminBtn) {
-                        deskAdminBtn.style.display = 'flex';
-                        deskAdminBtn.innerText = '⚙️ Panel Operativo';
-                        deskAdminBtn.setAttribute('onclick', "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
-                    }
-                    if (mobAdminBtn) {
-                        mobAdminBtn.style.display = 'flex';
-                        mobAdminBtn.innerText = '⚙️ Panel Operativo';
-                        mobAdminBtn.setAttribute('onclick', "closeMobileProfile(); showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');");
-                    }
-                    if (adminOnlyDiv) adminOnlyDiv.style.display = 'block';
-                    if (adminTitle) adminTitle.innerText = '👨‍🍳 Panel Operativo Diario';
-                    
-                    const tabContabilidad = document.getElementById('admin-tab-btn-contabilidad');
-                    const tabUsuarios = document.getElementById('admin-tab-btn-usuarios');
-                    if(tabContabilidad) tabContabilidad.style.display = 'none';
-                    if(tabUsuarios) tabUsuarios.style.display = 'none';
-                }
-            }
+            base(); // Ejecutar la función base (script.js) que ya maneja VIP y puntos
+            window._crRolesApplyUI(); // Post-procesar con la lógica de roles
         };
+        window.syncUserUI._crWrapped = true;
+
+        // Ejecutar de inmediato si hay sesión activa
         if (typeof currentUser !== 'undefined' && currentUser) {
             window.syncUserUI();
         }
+
+        return true;
     }
+
+    // Intento inmediato (script.js ya cargó antes que control-roles.js → el caso normal)
+    const _aplicadoInmediato = _crRegistrarOverrideSyncUI();
+
+    // Fallback: si por alguna razón script.js no estaba listo, reintentamos al finalizar el DOM
+    if (!_aplicadoInmediato) {
+        document.addEventListener('DOMContentLoaded', function _crDOMReady() {
+            _crRegistrarOverrideSyncUI();
+            document.removeEventListener('DOMContentLoaded', _crDOMReady);
+        });
+        // Segundo fallback con setTimeout para entornos donde DOMContentLoaded ya disparó
+        setTimeout(function() {
+            if (typeof window.syncUserUI !== 'function' || !window.syncUserUI._crWrapped) {
+                _crRegistrarOverrideSyncUI();
+            }
+        }, 100);
+    }
+
 
     // --- 4. SOBRESCRIBIR INTERCEPTOR DE LOGIN PARA CUENTAS BLOQUEADAS ---
     const originalLoginCustomUser = window.loginCustomUser;
