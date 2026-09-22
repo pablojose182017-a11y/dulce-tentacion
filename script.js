@@ -2014,15 +2014,117 @@ function setStockFilter(cat, el) {
     renderStockAdmin();
 }
 
+// ---- FUNCIONES CRUD EXTRAS PERSONALIZADOS ----
+
+window.guardarExtrasPersonalizadosFirestore = function(nuevaLista, successMsg) {
+    if (!window.db || typeof window.db.collection !== 'function') {
+        alert('Sin conexión a la base de datos. Recarga la página.');
+        return;
+    }
+    window.db.collection('configuracion').doc('tortas_config').set(
+        { extrasPersonalizados: nuevaLista },
+        { merge: true }
+    ).then(() => {
+        if (typeof showToast === 'function') showToast(successMsg || 'Extras actualizados', '✅');
+    }).catch(err => {
+        console.error('Error guardando extras:', err);
+        alert(`Error al guardar (${err.code || err.message}). Intenta nuevamente.`);
+    });
+};
+
+window.toggleExtraStockAdmin = function(extraId) {
+    const cfg = window.dt_tortas_config || {};
+    const lista = Array.isArray(cfg.extrasPersonalizados) ? cfg.extrasPersonalizados : [];
+    const idx = lista.findIndex(e => e.id === extraId);
+    if (idx === -1) return;
+    lista[idx].disponible = !lista[idx].disponible;
+    window.guardarExtrasPersonalizadosFirestore(lista, lista[idx].disponible ? '✅ Extra disponible nuevamente' : '❌ Extra marcado como Agotado');
+};
+
+window.eliminarExtraPersonalizado = function(extraId) {
+    const cfg = window.dt_tortas_config || {};
+    const lista = Array.isArray(cfg.extrasPersonalizados) ? cfg.extrasPersonalizados : [];
+    const extra = lista.find(e => e.id === extraId);
+    if (!extra) return;
+    if (!confirm(`¿Eliminar el extra "${extra.nombre}"? Esta acción no se puede deshacer.`)) return;
+    const nuevaLista = lista.filter(e => e.id !== extraId);
+    window.guardarExtrasPersonalizadosFirestore(nuevaLista, `🗑️ Extra "${extra.nombre}" eliminado`);
+};
+
+window.agregarExtraPersonalizado = function() {
+    const nombreInput = document.getElementById('nuevo-extra-nombre');
+    const precioInput = document.getElementById('nuevo-extra-precio');
+    if (!nombreInput || !precioInput) return;
+    const nombre = (nombreInput.value || '').trim();
+    const precio = parseInt(precioInput.value) || 0;
+    if (!nombre) { alert('Por favor ingresa un nombre para el extra.'); nombreInput.focus(); return; }
+    if (precio <= 0) { alert('Por favor ingresa un precio válido (mayor a 0).'); precioInput.focus(); return; }
+    const cfg = window.dt_tortas_config || {};
+    const lista = Array.isArray(cfg.extrasPersonalizados) ? [...cfg.extrasPersonalizados] : [];
+    const id = nombre.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+    lista.push({ id, nombre, precio, disponible: true });
+    window.guardarExtrasPersonalizadosFirestore(lista, `➕ Extra "${nombre}" agregado`);
+    nombreInput.value = '';
+    precioInput.value = '';
+};
+
+// -----------------------------------------------
+
 function renderStockAdmin() {
     const grid = document.getElementById('admin-stock-grid');
     if (!grid) return;
+
+    // --- BLOQUE DINÁMICO DE EXTRAS DE TORTAS ---
+    let extrasHtml = '';
+    const cfg = window.dt_tortas_config || {};
+    const listaExtras = Array.isArray(cfg.extrasPersonalizados) ? cfg.extrasPersonalizados : [];
+
+    const extrasFilas = listaExtras.map(e => {
+        const out = !e.disponible;
+        return `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid ${ out ? '#fecdd3' : '#bbf7d0'}; background:${out ? '#fff1f2' : '#f0fdf4'}; border-radius:8px; gap:8px; flex-wrap:wrap;">
+                <span style="flex:1; font-weight:600; font-size:0.9rem; color:#334155;">${e.nombre}</span>
+                <span style="font-size:0.82rem; color:#64748b;">+$${Number(e.precio).toLocaleString('es-CO')}</span>
+                <button onclick="window.toggleExtraStockAdmin('${e.id}')" style="padding:5px 10px; border-radius:6px; font-weight:bold; font-size:0.78rem; cursor:pointer; border:none; color:#fff; background:${out ? '#e11d48' : '#10b981'}; white-space:nowrap;">
+                    ${out ? '❌ Agotado' : '✅ Disponible'}
+                </button>
+                <button onclick="window.eliminarExtraPersonalizado('${e.id}')" style="padding:5px 10px; border-radius:6px; font-weight:bold; font-size:0.78rem; cursor:pointer; border:1px solid #fecaca; color:#ef4444; background:#fef2f2; white-space:nowrap;">
+                    🗑️ Eliminar
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    extrasHtml = `
+        <div style="width:100%; margin-bottom:20px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+            <h4 style="margin:0 0 12px 0; color:#475569; font-size:1rem; display:flex; align-items:center; gap:8px;">🎂 Disponibilidad de Extras en Tortas</h4>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                ${extrasFilas || '<p style="color:#94a3b8; font-size:0.85rem; margin:0;">Sin extras configurados.</p>'}
+            </div>
+            <div style="margin-top:14px; padding-top:12px; border-top:1px solid #f1f5f9;">
+                <p style="font-weight:600; font-size:0.88rem; color:#475569; margin:0 0 8px 0;">➕ Nuevo Extra:</p>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+                    <input type="text" id="nuevo-extra-nombre" placeholder="Ej: Glaseado Especial" maxlength="60"
+                        style="flex:2; min-width:140px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; outline:none;"
+                        onfocus="this.style.borderColor='#d81b60'" onblur="this.style.borderColor='#cbd5e1'">
+                    <input type="number" id="nuevo-extra-precio" placeholder="Precio" min="1000"
+                        style="width:110px; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; outline:none;"
+                        onfocus="this.style.borderColor='#d81b60'" onblur="this.style.borderColor='#cbd5e1'">
+                    <button onclick="window.agregarExtraPersonalizado()"
+                        style="padding:8px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; cursor:pointer; border:none; color:#fff; background:#d81b60; white-space:nowrap;">
+                        ➕ Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    // ----------------------------------------
 
     const filteredProducts = currentStockFilter === 'todos'
         ? products
         : products.filter(p => p.cat === currentStockFilter);
 
-    grid.innerHTML = filteredProducts.map(p => {
+    grid.innerHTML = extrasHtml + filteredProducts.map(p => {
         const isOut = stockConfig[p.id] === true;
         const currentPoints = p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : 0);
         return `
@@ -5484,6 +5586,16 @@ function addCustomCakeToCartNew() {
     const errDiv = document.getElementById('w-error');
     if (errDiv) errDiv.style.display = 'none';
 
+    // Forzar lectura directa del DOM (Mitiga race condition del onchange/blur)
+    const dInput = document.getElementById('w-date');
+    const tInput = document.getElementById('w-time');
+    if (dInput && dInput.value) validateWizardDateNew(dInput.value);
+    if (tInput && tInput.value) wizardData.time = tInput.value;
+
+    // Limpiar alertas visuales de campos en caso de reintento exitoso
+    if (dInput) dInput.style.border = '1px solid #cbd5e1';
+    if (tInput) tInput.style.border = '1px solid #cbd5e1';
+
     if (!wizardData.sabor) return showToast("Por favor selecciona un sabor.", "⚠️");
     if (!wizardData.tamano) return showToast("Por favor selecciona un tamaño.", "⚠️");
     if (!wizardData.diseno) return showToast("Por favor selecciona un diseño o sube una foto.", "⚠️");
@@ -5510,10 +5622,16 @@ function addCustomCakeToCartNew() {
     let extrasTotal = 0;
     const extrasList = [];
     if (wizardData.extras) {
+        // Leer nombres dinámicos desde Firestore (extrasPersonalizados) para el resumen del pedido
+        const _listaExtras = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.extrasPersonalizados))
+            ? window.dt_tortas_config.extrasPersonalizados
+            : [];
         for (const [k, v] of Object.entries(wizardData.extras)) {
             if (v > 0) {
                 extrasTotal += v;
-                extrasList.push(k === 'topper' ? 'Topper Acrílico (+$8.000)' : (k === 'vela' ? 'Vela Especial (+$3.000)' : `${k} (+$${v.toLocaleString()})`));
+                const extraInfo = _listaExtras.find(e => e.id === k);
+                const nombreExtra = extraInfo ? extraInfo.nombre : k;
+                extrasList.push(`${nombreExtra} (+$${Number(v).toLocaleString('es-CO')})`);
             }
         }
     }

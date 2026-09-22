@@ -2357,6 +2357,16 @@ window.asegurarEstructuraTortasConfig = function(cfg) {
             { id: 6, name: '#6', img: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=150' }
         ];
     }
+
+    // Migrar a extrasPersonalizados (array CRUD) con retrocompatibilidad
+    if (!Array.isArray(cfg.extrasPersonalizados)) {
+        const compat = cfg.extrasDisponibilidad || {};
+        cfg.extrasPersonalizados = [
+            { id: 'topper', nombre: 'Topper Acrílico Decorativo', precio: 8000, disponible: compat.topper !== false },
+            { id: 'vela',   nombre: 'Vela de Número Especial Dorada', precio: 3000, disponible: compat.vela   !== false }
+        ];
+    }
+
     return cfg;
 };
 
@@ -2746,6 +2756,46 @@ window.renderConfigTortasPublica = function() {
             `;
         });
         grid.innerHTML = html;
+    }
+
+    // Aplicar disponibilidad de extras (Paso 4 del modal - dinámico desde extrasPersonalizados)
+    const container = document.getElementById('container-extras-wizard');
+    if (container && Array.isArray(config.extrasPersonalizados)) {
+        const extrasDisponibles = config.extrasPersonalizados.filter(e => e.disponible !== false);
+
+        if (extrasDisponibles.length === 0) {
+            container.innerHTML = '<p style="color:#94a3b8; font-size:0.83rem; margin:0;">No hay extras disponibles en este momento.</p>';
+        } else {
+            container.innerHTML = extrasDisponibles.map(e => {
+                const precioFmt = `+$${Number(e.precio).toLocaleString('es-CO')}`;
+                const safeId = (e.id || '').replace(/[^a-z0-9_]/gi, '_');
+                const safeNombre = (e.nombre || '').replace(/'/g, "\\'");
+                const isChecked = typeof wizardData !== 'undefined' && wizardData.extras && wizardData.extras[e.id] > 0;
+                return `
+                    <label class="extra-item-row" id="row-extra-${safeId}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#f8fafc; border-radius:10px; cursor:pointer; border:1px solid #e2e8f0;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="extra-${safeId}" ${isChecked ? 'checked' : ''}
+                                onchange="toggleWizardExtra('${e.id}', ${e.precio}, this.checked)"
+                                style="width:18px; height:18px; accent-color:#d81b60;">
+                            <span style="font-size:0.88rem; color:#334155;">${e.nombre}</span>
+                        </div>
+                        <strong style="color:#d81b60; font-size:0.85rem; white-space:nowrap;">${precioFmt}</strong>
+                    </label>`;
+            }).join('');
+        }
+
+        // Limpiar del wizardData los extras que ya no están disponibles
+        if (typeof wizardData !== 'undefined' && wizardData.extras) {
+            const idsDisponibles = extrasDisponibles.map(e => e.id);
+            let removido = false;
+            for (const k of Object.keys(wizardData.extras)) {
+                if (!idsDisponibles.includes(k)) {
+                    delete wizardData.extras[k];
+                    removido = true;
+                }
+            }
+            if (removido && typeof updateWizardSummary === 'function') updateWizardSummary();
+        }
     }
 };
 

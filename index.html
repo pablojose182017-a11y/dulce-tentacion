@@ -1498,24 +1498,12 @@
                         <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">Lo escribiremos con glaseado artesanal sobre tu torta.</small>
                     </div>
 
-                    <!-- COMPLEMENTOS EXTRAS -->
+                    <!-- COMPLEMENTOS EXTRAS (dinámico desde Firestore/tortas_config) -->
                     <div style="background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 15px; margin-bottom: 16px;">
                         <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 10px; display: block;">✨ ¿Deseas agregar algún detalle extra?</label>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <label class="extra-item-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 10px; cursor: pointer; border: 1px solid #e2e8f0;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <input type="checkbox" id="extra-topper" onchange="toggleWizardExtra('topper', 8000, this.checked)" style="width: 18px; height: 18px; accent-color: #d81b60;">
-                                    <span style="font-size: 0.88rem; color: #334155;">Topper Acrílico Decorativo ("Feliz Cumpleaños")</span>
-                                </div>
-                                <strong style="color: #d81b60; font-size: 0.85rem;">+$8.000</strong>
-                            </label>
-                            <label class="extra-item-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 10px; cursor: pointer; border: 1px solid #e2e8f0;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <input type="checkbox" id="extra-vela" onchange="toggleWizardExtra('vela', 3000, this.checked)" style="width: 18px; height: 18px; accent-color: #d81b60;">
-                                    <span style="font-size: 0.88rem; color: #334155;">Vela de Número Especial Dorada</span>
-                                </div>
-                                <strong style="color: #d81b60; font-size: 0.85rem;">+$3.000</strong>
-                            </label>
+                        <div id="container-extras-wizard" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Poblado dinámicamente por renderConfigTortasPublica() -->
+                            <p style="color:#94a3b8; font-size:0.82rem; margin:0;">Cargando extras disponibles...</p>
                         </div>
                     </div>
 
