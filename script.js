@@ -751,7 +751,10 @@ function openOrderHistory(fromProfile = false) {
         });
 
         container.innerHTML = misPedidos.map(pedido => {
-            const statusColor = pedido.estado === 'Entregado' ? '#10b981' : (pedido.estado === 'En preparación' ? '#3b82f6' : '#f59e0b');
+            const statusColor = pedido.estado === 'Entregado' ? '#10b981'
+                : pedido.estado === 'En preparación' ? '#3b82f6'
+                : pedido.estado === 'En Camino' ? '#7c3aed'
+                : '#f59e0b';
             const totalVal = Number(pedido.total || pedido.subtotal || 0);
             const ptsGanados = (pedido.puntosGanados !== undefined && pedido.puntosGanados !== null)
                 ? Number(pedido.puntosGanados)
@@ -2024,6 +2027,8 @@ function renderLiveOrders() {
                         <button onclick="markOrderState('${p.id}', 'Pendiente')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Pendiente' ? '#eab308' : '#fef08a'}; background:${p.status === 'Pendiente' ? '#fef08a' : '#fff'}; color:#a16207; transition:all 0.2s;">🟡 Pendiente</button>
                         
                         <button onclick="markOrderState('${p.id}', 'En preparación')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En preparación' ? '#3b82f6' : '#bfdbfe'}; background:${p.status === 'En preparación' ? '#bfdbfe' : '#fff'}; color:#1d4ed8; transition:all 0.2s;">🔵 Preparando</button>
+                        
+                        <button onclick="markOrderState('${p.id}', 'En Camino')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En Camino' ? '#7c3aed' : '#ddd6fe'}; background:${p.status === 'En Camino' ? '#ddd6fe' : '#fff'}; color:#5b21b6; transition:all 0.2s;">🛵 En Camino</button>
                         
                         <button onclick="markOrderState('${p.id}', 'Entregado')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Entregado' ? '#22c55e' : '#bbf7d0'}; background:${p.status === 'Entregado' ? '#bbf7d0' : '#fff'}; color:#15803d; transition:all 0.2s;">🟢 Entregado</button>
                     </div>
