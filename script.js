@@ -856,8 +856,8 @@ function renderOrders(tabId) {
             let act1 = 'active', act2 = '', act3 = '', act4 = '';
             const st = order.status || 'Pendiente';
 
-            if (st === 'En Horno') { fillWidth = '33%'; act2 = 'active'; }
-            else if (st === 'En Camino') { fillWidth = '66%'; act2 = 'active'; act3 = 'active'; }
+            if (st === 'En Horno' || st === 'Preparando' || st === 'Preparacion') { fillWidth = '33%'; act2 = 'active'; }
+            else if (st === 'En Camino' || st === 'Enviado') { fillWidth = '66%'; act2 = 'active'; act3 = 'active'; }
             else if (st === 'Entregado' || st.includes('Entregado')) { fillWidth = '100%'; act2 = 'active'; act3 = 'active'; act4 = 'active'; }
 
             extraHtml = `
@@ -2907,6 +2907,13 @@ function confirmAdminPasswordChange() {
 
 function logoutUser(e) {
     if (e && e.stopPropagation) e.stopPropagation();
+    
+    // Desuscribirse del listener en tiempo real de Firebase para clientes (si existe)
+    if (typeof window.unsubscribeUserOrders === 'function') {
+        window.unsubscribeUserOrders();
+        window.unsubscribeUserOrders = null;
+    }
+    
     try {
         localStorage.removeItem('dt_user');
         localStorage.removeItem('dt_logged_user');

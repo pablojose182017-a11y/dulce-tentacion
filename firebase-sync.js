@@ -583,38 +583,65 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- 4. CONSULTA DE ESTADOS PARA CLIENTES (MIS PEDIDOS) ---
-    const originalOpenOrdersModal = window.openOrdersModal;
-    if (originalOpenOrdersModal) {
-        window.openOrdersModal = function() {
+    // --- 4. CONSULTA DE ESTADOS PARA CLIENTES EN TIEMPO REAL (MIS PEDIDOS) ---
+    const originalOpenOrderHistory = window.openOrderHistory;
+    if (originalOpenOrderHistory) {
+        window.openOrderHistory = function(fromProfile = false) {
+            // Llamar a la función original para que abra el modal inmediatamente con los datos locales
+            originalOpenOrderHistory(fromProfile);
+            
+            // Iniciar listener en tiempo real si el usuario está autenticado y no hay listener activo
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
-                // Hacer una lectura rápida (one-shot) solo de sus pedidos
-                db.collection('pedidos')
-                  .where('email', '==', currentUser.email)
-                  .get()
-                  .then((snapshot) => {
-                      const misPedidosRemotos = [];
-                      snapshot.forEach(doc => misPedidosRemotos.push(doc.data()));
-                      
-                      if (misPedidosRemotos.length > 0) {
-                          misPedidosRemotos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                          
-                          // Mapear el estado de Firebase a 'status' que usa script.js
-                          misPedidosRemotos.forEach(p => {
-                              if(p.estado) p.status = p.estado;
-                          });
-                          
-                          currentUser.history = misPedidosRemotos;
-                          if (typeof saveUser === 'function') saveUser();
-                      }
-                      originalOpenOrdersModal();
-                  })
-                  .catch(err => {
-                      console.warn("No se pudo obtener actualización de pedidos:", err);
-                      originalOpenOrdersModal();
-                  });
-            } else {
-                originalOpenOrdersModal();
+                if (!window.unsubscribeUserOrders) {
+                    window.unsubscribeUserOrders = db.collection('pedidos')
+                        .where('email', '==', currentUser.email)
+                        .onSnapshot((snapshot) => {
+                            const pedidosActualizados = snapshot.docs.map(doc => ({
+                                idDoc: doc.id,
+                                ...doc.data()
+                            }));
+                            
+                            // Ordenar cronológicamente (más recientes primero)
+                            pedidosActualizados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                            
+                            // Mapear el estado de Firebase a 'status' que usa script.js para renderizar los badges/barras
+                            pedidosActualizados.forEach(p => {
+                                if (p.estado) p.status = p.estado;
+                            });
+                            
+                            currentUser.history = pedidosActualizados;
+                            
+                            // Combinar en window.pedidosHistorial para que openOrderHistory lo detecte
+                            if (!window.pedidosHistorial) window.pedidosHistorial = [];
+                            pedidosActualizados.forEach(p => {
+                                const idx = window.pedidosHistorial.findIndex(hist => hist.id === p.id);
+                                if (idx !== -1) window.pedidosHistorial[idx] = p;
+                                else window.pedidosHistorial.push(p);
+                            });
+                            
+                            if (typeof saveUser === 'function') saveUser();
+                            
+                            // Re-renderizar dinámicamente si el modal de historial está abierto (comprobando su display)
+                            const modalHistory = document.getElementById('modal-order-history');
+                            if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
+                                // Para re-renderizar, invocamos la función original de nuevo (que renderiza) 
+                                // o determinamos la pestaña activa y llamamos a renderOrders.
+                                // La forma más limpia es llamar de nuevo originalOpenOrderHistory pero sin fromProfile
+                                // para no afectar la navegación si venía del perfil, 
+                                // O simplemente llamar a renderOrders con la pestaña que corresponda (asumimos 'curso' si acaba de abrir, o si no se llama desde switchOrderTab).
+                                // Dado que openOrderHistory(fromProfile) llama internamente a renderOrders, la podemos llamar o podemos detectar la pestaña:
+                                const tabActivo = document.querySelector('.order-tab-btn.active');
+                                if (tabActivo) {
+                                    const tabId = tabActivo.id.replace('tab-btn-', '');
+                                    if (typeof renderOrders === 'function') renderOrders(tabId);
+                                } else {
+                                    if (typeof renderOrders === 'function') renderOrders('curso');
+                                }
+                            }
+                        }, (error) => {
+                            console.error("Error en listener de pedidos del cliente:", error);
+                        });
+                }
             }
         };
     }
