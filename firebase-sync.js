@@ -21,6 +21,7 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
+window.db = db; // Expuesto globalmente para acceso desde script.js y otros módulos
 const auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
 console.log("Firebase Firestore y Auth inicializados.");
 

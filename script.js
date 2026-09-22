@@ -1525,12 +1525,101 @@ function saveConfigFromAdmin() {
     showToast('Configuración guardada', '✅');
 }
 
+window.toggleVipPriceEdit = function() {
+    const input = document.getElementById('adminVipPrice');
+    const btnEdit = document.getElementById('btnEditVipPrice');
+    const btnSave = document.getElementById('btnSaveVipPrice');
+    if (!input) return;
+    // Guardar el valor actual como referencia para rollback
+    input.dataset.prevValue = input.value;
+    input.disabled = false;
+    input.style.background = '#fff';
+    input.style.color = '#1e293b';
+    input.style.borderColor = '#d81b60';
+    input.style.cursor = 'text';
+    input.focus();
+    if (btnEdit) btnEdit.style.display = 'none';
+    if (btnSave) btnSave.style.removeProperty('display');
+};
+
 window.saveVipPriceOnly = function() {
-    const vipPrice = parseInt(document.getElementById('adminVipPrice').value) || 20000;
-    if (window.db && typeof window.db.collection === 'function') {
-        window.db.collection('configuracion').doc('vip').set({ precioMensual: vipPrice }, { merge: true })
-            .then(() => showToast('Precio VIP guardado', '✅'))
-            .catch(e => console.warn('Error guardando precio VIP:', e));
+    const input = document.getElementById('adminVipPrice');
+    const btnEdit = document.getElementById('btnEditVipPrice');
+    const btnSave = document.getElementById('btnSaveVipPrice');
+    if (!input) return;
+
+    const vipPrice = parseInt(input.value) || 20000;
+    const formatted = `$${vipPrice.toLocaleString('es-CO')} COP`;
+
+    const confirmed = confirm(`¿Confirmas cambiar la tarifa de la Membresía VIP a ${formatted} al mes?\n\nEste valor se actualizará en tiempo real para todos los clientes.`);
+
+    if (!confirmed) {
+        input.value = input.dataset.prevValue || (window.vipConfig && window.vipConfig.precioMensual ? window.vipConfig.precioMensual : 20000);
+        input.disabled = true;
+        input.style.background = '#f8fafc';
+        input.style.color = '#64748b';
+        input.style.borderColor = '#e2e8f0';
+        input.style.cursor = 'not-allowed';
+        if (btnEdit) btnEdit.style.removeProperty('display');
+        if (btnSave) btnSave.style.display = 'none';
+        return;
+    }
+
+    // 1. RESPALDO LOCAL INMEDIATO
+    try { localStorage.setItem('vipConfig_precioMensual', vipPrice); } catch(lsErr) { console.warn('localStorage error:', lsErr); }
+    if (!window.vipConfig) window.vipConfig = {};
+    window.vipConfig.precioMensual = vipPrice;
+    const promoEl = document.getElementById('uiVipPricePromo');
+    const termsEl = document.getElementById('uiVipPriceTerms');
+    if (promoEl) promoEl.innerText = formatted;
+    if (termsEl) termsEl.innerText = formatted;
+
+    // 2. BLOQUEAR UI
+    input.disabled = true;
+    input.style.background = '#f8fafc';
+    input.style.color = '#64748b';
+    input.style.borderColor = '#e2e8f0';
+    input.style.cursor = 'not-allowed';
+    if (btnEdit) btnEdit.style.removeProperty('display');
+    if (btnSave) btnSave.style.display = 'none';
+
+    showToast('Guardado localmente. Sincronizando con la nube...', '☁️', 3500);
+
+    // 3. ESCRITURA EN FIRESTORE CON MANEJO DE AUTH ASÍNCRONA
+    const _doFirestoreWrite = () => {
+        if (!window.db || typeof window.db.collection !== 'function') {
+            console.warn('window.db no disponible. Precio guardado solo localmente.');
+            return;
+        }
+        window.db.collection('configuracion').doc('vip')
+            .set({ precioMensual: vipPrice }, { merge: true })
+            .then(() => {
+                showToast('👑 Precio VIP actualizado en la nube', '✅');
+            })
+            .catch(e => {
+                console.error('Detalle error Firestore:', e);
+                alert(`Aviso: Guardado localmente, pero falló en la nube (${e.code || e.message}). Revisa la conexión o permisos.`);
+            });
+    };
+
+    const _authModule = (typeof firebase !== 'undefined' && typeof firebase.auth === 'function') ? firebase.auth() : null;
+    if (_authModule && _authModule.currentUser) {
+        _doFirestoreWrite();
+    } else if (_authModule) {
+        let _resolved = false;
+        const _timeout = setTimeout(() => {
+            if (!_resolved) { _resolved = true; _doFirestoreWrite(); }
+        }, 3000);
+        const _unsubAuth = _authModule.onAuthStateChanged((fbUser) => {
+            if (!_resolved) {
+                _resolved = true;
+                clearTimeout(_timeout);
+                _unsubAuth();
+                _doFirestoreWrite();
+            }
+        });
+    } else {
+        _doFirestoreWrite();
     }
 };
 

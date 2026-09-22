@@ -384,13 +384,23 @@
             <div id="admin-tab-usuarios" class="admin-tab-container" style="display:none;">
             <!-- AJUSTES VIP -->
             <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">👑 Ajustes de Membresía VIP</h4>
+                <h4 style="margin-bottom:6px; color:var(--brand-pink); font-size:1rem;">👑 Ajustes de Membresía VIP</h4>
+                <p style="font-size:0.8rem; color:#888; margin:0 0 12px 0;">El precio se actualiza en tiempo real para todos los clientes al guardar.</p>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
                     <div style="flex:1; min-width:150px;">
-                        <label style="font-size:0.85rem; font-weight:bold;">Precio Mensualidad VIP (COP)</label>
-                        <input type="number" id="adminVipPrice" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                        <label style="font-size:0.85rem; font-weight:bold; color:#555;">Precio Mensualidad VIP (COP)</label>
+                        <input type="number" id="adminVipPrice"
+                            disabled
+                            style="width:100%; padding:8px; border:1px solid #e2e8f0; border-radius:8px; margin-top:5px; background:#f8fafc; color:#64748b; font-size:1rem; cursor:not-allowed;">
                     </div>
-                    <button onclick="saveVipPriceOnly()" class="btn-gold" style="padding:8px 20px; border-radius:8px; height: 38px;">Guardar Precio</button>
+                    <button id="btnEditVipPrice" onclick="window.toggleVipPriceEdit()" class="btn-gold"
+                        style="padding:8px 18px; border-radius:8px; height:38px; white-space:nowrap;">
+                        ✏️ Modificar Precio
+                    </button>
+                    <button id="btnSaveVipPrice" onclick="window.saveVipPriceOnly()" class="btn-gold"
+                        style="padding:8px 18px; border-radius:8px; height:38px; white-space:nowrap; display:none; background:linear-gradient(135deg,#16a34a,#22c55e); border-color:#16a34a;">
+                        💾 Guardar Precio
+                    </button>
                 </div>
             </div>
 
