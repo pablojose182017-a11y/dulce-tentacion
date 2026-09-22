@@ -3889,6 +3889,23 @@ function openStoreMaps(e) {
 window.openStoreMaps = openStoreMaps;
 
 function updateCart() {
+    // --- VALIDACIÓN CRUZADA: retirar del carrito productos eliminados del catálogo ---
+    const cartLen = cart.length;
+    cart = cart.filter(item => {
+        // Las tortas personalizadas nunca se validan contra el catálogo
+        if (item.type === 'evento' && item.customData) return true;
+        // Para productos estándar: verificar que sigan activos en el arreglo global
+        const existe = products.some(p => p.id === item.id || p.id === Number(item.id));
+        return existe;
+    });
+    if (cart.length < cartLen) {
+        saveCart();
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Un producto de tu carrito ya no está disponible y fue retirado.', '⚠️', 4000);
+        }
+    }
+    // ---------------------------------------------------------------------------
+
     const totalQty = cart.reduce((a, i) => a + i.quantity, 0);
     let totalPrice = cart.reduce((a, i) => a + (i.price * i.quantity), 0);
 
@@ -5820,11 +5837,33 @@ function editarTortaDesdeCarrito(cartId) {
     const timeInput = document.getElementById('w-time');
     if (timeInput) timeInput.value = wizardData.time || '';
 
-    // Restaurar extras
-    const topperBox = document.getElementById('extra-topper');
-    if (topperBox) topperBox.checked = !!(wizardData.extras && wizardData.extras.topper);
-    const velaBox = document.getElementById('extra-vela');
-    if (velaBox) velaBox.checked = !!(wizardData.extras && wizardData.extras.vela);
+    // Restaurar extras — dinámico, compatible con extrasPersonalizados de Firestore
+    if (wizardData.extras) {
+        // Primero desmarcar todos los checkboxes visibles en el contenedor
+        const containerExtras = document.getElementById('container-extras-wizard');
+        if (containerExtras) {
+            containerExtras.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+        // Marcar solo los que estén en wizardData.extras y aún existan en el DOM
+        const _listaActiva = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.extrasPersonalizados))
+            ? window.dt_tortas_config.extrasPersonalizados.filter(e => e.disponible !== false)
+            : [];
+        for (const extraId of Object.keys(wizardData.extras)) {
+            // Verificar que el extra aún existe y está disponible
+            const extraValido = _listaActiva.find(e => e.id === extraId);
+            if (!extraValido) {
+                // Extra eliminado o agotado: purgar del wizardData silenciosamente
+                delete wizardData.extras[extraId];
+                continue;
+            }
+            // Buscar el checkbox por su ID dinámico generado en renderConfigTortasPublica
+            const safeId = extraId.replace(/[^a-z0-9_]/gi, '_');
+            const cb = document.getElementById(`extra-${safeId}`);
+            if (cb) cb.checked = true;
+        }
+    }
 
     const errDiv = document.getElementById('w-error');
     if (errDiv) errDiv.style.display = 'none';
