@@ -203,7 +203,16 @@ window.addEventListener('DOMContentLoaded', () => {
     window.initDragToScroll();
 });
 
-function saveCart() { try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch (e) { } }
+function saveCart() { 
+    try { 
+        localStorage.setItem('dt_cart', JSON.stringify(cart)); 
+    } catch (e) {
+        console.warn("No se pudo guardar el carrito en localStorage (posible límite de cuota o modo incógnito).", e);
+    } 
+}
+function saveWizardDraft() {
+    try { localStorage.setItem('dt_wizard_draft', JSON.stringify(wizardData)); } catch(e) {}
+}
 function saveUser() { try { if (currentUser) localStorage.setItem('dt_user', JSON.stringify(currentUser)); else localStorage.removeItem('dt_user'); } catch (e) { } }
 function saveAdminConfig() { try { localStorage.setItem('dt_admin_config', JSON.stringify(adminConfig)); } catch (e) { } }
 function savePedidosHistorial() { try { localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosHistorial)); } catch (e) { } }
@@ -5279,6 +5288,69 @@ let wizardData = {
     extras: {}
 };
 
+function syncWizardDOM() {
+    const prices = getCakePrices(wizardData.sabor);
+    updateSizePrices(prices);
+    document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => el.classList.toggle('selected', el.getAttribute('data-flavor') === wizardData.sabor));
+    document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => el.classList.toggle('selected', el.getAttribute('data-size') === wizardData.tamano));
+    
+    document.querySelectorAll('.wizard-design-grid .design-thumb, #cake-design-grid .design-thumb').forEach(el => {
+        const nameEl = el.querySelector('div');
+        const thumbName = nameEl ? nameEl.innerText.trim() : '';
+        if (thumbName === wizardData.diseno) el.classList.add('selected');
+        else el.classList.remove('selected');
+    });
+
+    const uploadCard = document.getElementById('cardUploadCustomDesign');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const uploadPreview = document.getElementById('upload-preview-block');
+    const previewImg = document.getElementById('upload-preview-img');
+    if (wizardData.diseno === 'Diseño Propio (Foto Cliente)' && wizardData.disenoImg) {
+        if (uploadCard) uploadCard.classList.add('selected');
+        if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+        if (uploadPreview) uploadPreview.style.display = 'flex';
+        if (previewImg) { previewImg.src = wizardData.disenoImg; previewImg.style.opacity = '1'; }
+    } else {
+        if (uploadCard) uploadCard.classList.remove('selected');
+        if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
+        if (uploadPreview) uploadPreview.style.display = 'none';
+        if (previewImg) previewImg.src = '';
+    }
+
+    const msgInput = document.getElementById('w-message');
+    if (msgInput) msgInput.value = wizardData.mensaje || '';
+
+    const dateInput = document.getElementById('w-date');
+    if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const yyyy = tomorrow.getFullYear();
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        dateInput.min = `${yyyy}-${mm}-${dd}`;
+        if (wizardData.date) {
+            const parsed = new Date(wizardData.date + 'T00:00:00');
+            if (!isNaN(parsed.getTime())) dateInput.value = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+            else dateInput.value = '';
+        } else dateInput.value = '';
+    }
+
+    const timeInput = document.getElementById('w-time');
+    if (timeInput) timeInput.value = wizardData.time || '';
+
+    if (wizardData.extras) {
+        const containerExtras = document.getElementById('container-extras-wizard');
+        if (containerExtras) containerExtras.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        const _listaActiva = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.extrasPersonalizados)) ? window.dt_tortas_config.extrasPersonalizados.filter(e => e.disponible !== false) : [];
+        for (const extraId of Object.keys(wizardData.extras)) {
+            const extraValido = _listaActiva.find(e => e.id === extraId);
+            if (!extraValido) { delete wizardData.extras[extraId]; continue; }
+            const cb = document.getElementById(`extra-${extraId.replace(/[^a-z0-9_]/gi, '_')}`);
+            if (cb) cb.checked = true;
+        }
+    }
+}
+
 function openWizard() {
     const modal = document.getElementById('modal-evento-personalizado');
     if (modal) modal.style.display = 'flex';
@@ -5293,81 +5365,37 @@ function openWizard() {
         ? (window.dt_tortas_config.sabores.find(s => s.activo !== false)?.name || 'Clásica Tres Leches')
         : 'Clásica Tres Leches';
 
-    // Inicializar datos por defecto
-    wizardData = {
-        sabor: firstActiveSabor,
-        tamano: '1/4 (10 porciones)',
-        precio: 45000,
-        diseno: 'Diseño Tradicional',
-        disenoImg: '',
-        mensaje: '',
-        date: '',
-        time: '',
-        extras: {}
-    };
+    // Intentar cargar borrador
+    let draft = null;
+    try {
+        const stored = localStorage.getItem('dt_wizard_draft');
+        if (stored) draft = JSON.parse(stored);
+    } catch(e) {}
+
+    if (draft && draft.sabor) {
+        wizardData = draft;
+    } else {
+        wizardData = {
+            sabor: firstActiveSabor,
+            tamano: '1/4 (10 porciones)',
+            precio: 45000,
+            diseno: 'Diseño Tradicional',
+            disenoImg: '',
+            mensaje: '',
+            date: '',
+            time: '',
+            extras: {}
+        };
+    }
 
     // Renderizar sabores y diseños públicos
     if (typeof window.renderConfigTortasPublica === 'function') {
         window.renderConfigTortasPublica();
     }
 
-    // Calcular precios según sabor predeterminado
-    const prices = getCakePrices(wizardData.sabor);
-    updateSizePrices(prices);
-    wizardData.precio = prices[wizardData.tamano] || 45000;
+    // Sincronizar el DOM con el estado cargado (o por defecto)
+    syncWizardDOM();
 
-    // Seleccionar visualmente primera tarjeta de sabor
-    document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => {
-        if (el.getAttribute('data-flavor') === wizardData.sabor) el.classList.add('selected');
-        else el.classList.remove('selected');
-    });
-
-    // Seleccionar visualmente primera tarjeta de tamaño
-    document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => {
-        if (el.getAttribute('data-size') === wizardData.tamano) el.classList.add('selected');
-        else el.classList.remove('selected');
-    });
-
-    // Reiniciar bloque de subir foto propia
-    const uploadCard = document.getElementById('cardUploadCustomDesign');
-    if (uploadCard) uploadCard.classList.remove('selected');
-    const uploadPlaceholder = document.getElementById('upload-placeholder');
-    if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
-    const uploadPreview = document.getElementById('upload-preview-block');
-    if (uploadPreview) uploadPreview.style.display = 'none';
-    const photoInput = document.getElementById('wizard-photo-input');
-    if (photoInput) photoInput.value = '';
-
-    // Si existen diseños en el catálogo, seleccionar el primero
-    const firstDesign = document.querySelector('#cake-design-grid .design-thumb');
-    if (firstDesign) {
-        document.querySelectorAll('#cake-design-grid .design-thumb').forEach(d => d.classList.remove('selected'));
-        firstDesign.classList.add('selected');
-        const img = firstDesign.querySelector('img');
-        const name = firstDesign.querySelector('div')?.innerText.trim() || 'Diseño de Catálogo';
-        wizardData.diseno = name;
-        if (img) wizardData.disenoImg = img.src;
-    }
-
-    // Reiniciar campos del paso 4
-    const msgInput = document.getElementById('w-message');
-    if (msgInput) msgInput.value = '';
-    const dateInput = document.getElementById('w-date');
-    if (dateInput) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const yyyy = tomorrow.getFullYear();
-        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-        const dd = String(tomorrow.getDate()).padStart(2, '0');
-        dateInput.min = `${yyyy}-${mm}-${dd}`;
-        dateInput.value = '';
-    }
-    const timeInput = document.getElementById('w-time');
-    if (timeInput) timeInput.value = '';
-    const topperBox = document.getElementById('extra-topper');
-    if (topperBox) topperBox.checked = false;
-    const velaBox = document.getElementById('extra-vela');
-    if (velaBox) velaBox.checked = false;
     const errDiv = document.getElementById('w-error');
     if (errDiv) errDiv.style.display = 'none';
 
@@ -5451,6 +5479,7 @@ function selectSaborCard(sabor, element) {
         wizardData.precio = prices['1/4 (10 porciones)'] || 45000;
     }
 
+    saveWizardDraft();
     updateWizardSummary();
 }
 
@@ -5469,6 +5498,7 @@ function selectTamanoCard(tamano, element) {
         wizardData.precio = prices[tamano];
     }
 
+    saveWizardDraft();
     updateWizardSummary();
 }
 
@@ -5481,6 +5511,7 @@ function selectTamano(element) {
 function selectDisenoCard(diseno, imgUrl, element) {
     wizardData.diseno = diseno;
     wizardData.disenoImg = imgUrl || '';
+    saveWizardDraft();
 
     // Quitar selección de foto personalizada si la hubiera
     const uploadCard = document.getElementById('cardUploadCustomDesign');
@@ -5511,6 +5542,7 @@ function handleWizardCustomPhoto(input) {
             .then(dataUrl => {
                 wizardData.diseno = 'Diseño Propio (Foto Cliente)';
                 wizardData.disenoImg = dataUrl;
+                saveWizardDraft();
 
                 const uploadCard = document.getElementById('cardUploadCustomDesign');
                 if (uploadCard) uploadCard.classList.add('selected');
@@ -5550,11 +5582,13 @@ function toggleWizardExtra(name, price, checked) {
     } else {
         delete wizardData.extras[name];
     }
+    saveWizardDraft();
     updateWizardSummary();
 }
 
 function saveWizardField(field, value) {
     wizardData[field] = value;
+    saveWizardDraft();
     updateWizardSummary();
 }
 
@@ -5669,6 +5703,7 @@ function validateWizardDateNew(val) {
     } else {
         wizardData.date = val;
     }
+    saveWizardDraft();
 }
 
 function addCustomCakeToCartNew() {
@@ -5687,6 +5722,7 @@ function addCustomCakeToCartNew() {
     if (timeVal) {
         wizardData.time = timeVal;
     }
+    saveWizardDraft();
 
     console.log('DEBUG FECHA/HORA:', { dateVal, timeVal, wizardDate: wizardData.date, wizardTime: wizardData.time });
 
@@ -5784,6 +5820,7 @@ function addCustomCakeToCartNew() {
     }
 
     saveCart();
+    try { localStorage.removeItem('dt_wizard_draft'); } catch(e){}
     updateCart();
     closeWizard();
     if (typeof window.showAddToCartToast === 'function') {
@@ -5852,110 +5889,7 @@ function editarTortaDesdeCarrito(cartId) {
         extras:    cd.extras    ? { ...cd.extras } : {}
     };
 
-    // Precios según sabor
-    const prices = getCakePrices(wizardData.sabor);
-    updateSizePrices(prices);
-
-    // Selección visual de sabor
-    document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => {
-        el.classList.toggle('selected', el.getAttribute('data-flavor') === wizardData.sabor);
-    });
-
-    // Selección visual de tamaño
-    document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => {
-        el.classList.toggle('selected', el.getAttribute('data-size') === wizardData.tamano);
-    });
-
-    // Selección visual de diseño (catálogo)
-    let disenoEncontrado = false;
-    document.querySelectorAll('.wizard-design-grid .design-thumb, #cake-design-grid .design-thumb').forEach(el => {
-        const nameEl = el.querySelector('div');
-        const thumbName = nameEl ? nameEl.innerText.trim() : '';
-        if (thumbName === wizardData.diseno) {
-            el.classList.add('selected');
-            disenoEncontrado = true;
-        } else {
-            el.classList.remove('selected');
-        }
-    });
-
-    // Restaurar foto propia si aplica
-    const uploadCard = document.getElementById('cardUploadCustomDesign');
-    const uploadPlaceholder = document.getElementById('upload-placeholder');
-    const uploadPreview = document.getElementById('upload-preview-block');
-    const previewImg = document.getElementById('upload-preview-img');
-    if (wizardData.diseno === 'Diseño Propio (Foto Cliente)' && wizardData.disenoImg) {
-        if (uploadCard) uploadCard.classList.add('selected');
-        if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
-        if (uploadPreview) uploadPreview.style.display = 'flex';
-        if (previewImg) { previewImg.src = wizardData.disenoImg; previewImg.style.opacity = '1'; }
-    } else {
-        if (uploadCard) uploadCard.classList.remove('selected');
-        if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
-        if (uploadPreview) uploadPreview.style.display = 'none';
-        if (previewImg) previewImg.src = '';
-    }
-
-    // Restaurar mensaje
-    const msgInput = document.getElementById('w-message');
-    if (msgInput) msgInput.value = wizardData.mensaje || '';
-
-    // Restaurar fecha
-    const dateInput = document.getElementById('w-date');
-    if (dateInput) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const yyyy = tomorrow.getFullYear();
-        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-        const dd = String(tomorrow.getDate()).padStart(2, '0');
-        dateInput.min = `${yyyy}-${mm}-${dd}`;
-        
-        if (wizardData.date) {
-            const parsed = new Date(wizardData.date + 'T00:00:00');
-            if (!isNaN(parsed.getTime())) {
-                const y = parsed.getFullYear();
-                const m = String(parsed.getMonth() + 1).padStart(2, '0');
-                const d = String(parsed.getDate()).padStart(2, '0');
-                dateInput.value = `${y}-${m}-${d}`;
-            } else {
-                dateInput.value = '';
-            }
-        } else {
-            dateInput.value = '';
-        }
-    }
-
-    // Restaurar hora
-    const timeInput = document.getElementById('w-time');
-    if (timeInput) timeInput.value = wizardData.time || '';
-
-    // Restaurar extras — dinámico, compatible con extrasPersonalizados de Firestore
-    if (wizardData.extras) {
-        // Primero desmarcar todos los checkboxes visibles en el contenedor
-        const containerExtras = document.getElementById('container-extras-wizard');
-        if (containerExtras) {
-            containerExtras.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                cb.checked = false;
-            });
-        }
-        // Marcar solo los que estén en wizardData.extras y aún existan en el DOM
-        const _listaActiva = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.extrasPersonalizados))
-            ? window.dt_tortas_config.extrasPersonalizados.filter(e => e.disponible !== false)
-            : [];
-        for (const extraId of Object.keys(wizardData.extras)) {
-            // Verificar que el extra aún existe y está disponible
-            const extraValido = _listaActiva.find(e => e.id === extraId);
-            if (!extraValido) {
-                // Extra eliminado o agotado: purgar del wizardData silenciosamente
-                delete wizardData.extras[extraId];
-                continue;
-            }
-            // Buscar el checkbox por su ID dinámico generado en renderConfigTortasPublica
-            const safeId = extraId.replace(/[^a-z0-9_]/gi, '_');
-            const cb = document.getElementById(`extra-${safeId}`);
-            if (cb) cb.checked = true;
-        }
-    }
+    syncWizardDOM();
 
     const errDiv = document.getElementById('w-error');
     if (errDiv) errDiv.style.display = 'none';
