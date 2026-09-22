@@ -786,8 +786,12 @@ window.cambiarPestanaAdmin = function(tab) {
     
     const activeBtn = document.getElementById('admin-tab-btn-' + tab);
     if (activeBtn) activeBtn.classList.add('active');
-};
 
+    if (tab === 'usuarios') {
+        const vPriceEl = document.getElementById('adminVipPrice');
+        if (vPriceEl) vPriceEl.value = (window.vipConfig && window.vipConfig.precioMensual) ? window.vipConfig.precioMensual : 20000;
+    }
+};
 document.addEventListener('DOMContentLoaded', () => {
     // 3. EVITAR PANTALLA EN BLANCO Y REPARAR CARRITO:
     const modales = ['modal-detalle-pedido', 'rankingModal', 'adminPasswordModal'];

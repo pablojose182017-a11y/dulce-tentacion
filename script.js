@@ -1515,13 +1515,24 @@ function saveConfigFromAdmin() {
     const min = parseInt(document.getElementById('adminMinPurchase').value) || 0;
     const max = parseInt(document.getElementById('adminMaxDiscount').value) || 0;
     const en = document.getElementById('adminVipEnabled').checked;
+    
     adminConfig.minPurchase = min;
     adminConfig.maxDiscount = max;
     adminConfig.vipEnabled = en;
     saveAdminConfig();
     updateCart();
+    
     showToast('Configuración guardada', '✅');
 }
+
+window.saveVipPriceOnly = function() {
+    const vipPrice = parseInt(document.getElementById('adminVipPrice').value) || 20000;
+    if (window.db && typeof window.db.collection === 'function') {
+        window.db.collection('configuracion').doc('vip').set({ precioMensual: vipPrice }, { merge: true })
+            .then(() => showToast('Precio VIP guardado', '✅'))
+            .catch(e => console.warn('Error guardando precio VIP:', e));
+    }
+};
 
 // ===== PEDIDOS: ALERTAS SONORAS Y WEB AUDIO API =====
 let sharedAudioCtx = null;
@@ -4645,11 +4656,13 @@ window.confirmVipMembership = function() {
 
     // Redirección a WhatsApp del negocio usando el número global del negocio
     const vipPhone = (typeof PHONE !== 'undefined' && PHONE) ? PHONE : '573229512693';
+    const tarifa = window.vipConfig && window.vipConfig.precioMensual ? window.vipConfig.precioMensual : 20000;
+    const formattedTarifa = `$${tarifa.toLocaleString('es-CO')} COP`;
     const vipMsg = encodeURIComponent(
         `¡Hola Punto Dulce! 👋 Quiero solicitar mi Membresía VIP para mi cuenta ${user.email || 'N/A'}. ` +
         `\n\n👤 *Nombre:* ${user.name || 'Cliente'}` +
         `\n📧 *Correo:* ${user.email || 'N/A'}` +
-        `\n\n👑 Acabo de aceptar los Términos y Condiciones del Club VIP y deseo activar mi Membresía VIP Oro ✨`
+        `\n\n👑 Acabo de aceptar los Términos y Condiciones del Club VIP y deseo activar mi Membresía VIP Oro (Tarifa mensual: ${formattedTarifa}) ✨`
     );
     window.open(`https://wa.me/${vipPhone}?text=${vipMsg}`, '_blank');
 };

@@ -382,6 +382,18 @@
 
             <!-- TAB 4: USUARIOS -->
             <div id="admin-tab-usuarios" class="admin-tab-container" style="display:none;">
+            <!-- AJUSTES VIP -->
+            <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">👑 Ajustes de Membresía VIP</h4>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:0.85rem; font-weight:bold;">Precio Mensualidad VIP (COP)</label>
+                        <input type="number" id="adminVipPrice" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                    </div>
+                    <button onclick="saveVipPriceOnly()" class="btn-gold" style="padding:8px 20px; border-radius:8px; height: 38px;">Guardar Precio</button>
+                </div>
+            </div>
+
             <!-- REGISTRAR CLIENTE / PERSONAL -->
             <div
                 style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
@@ -1153,7 +1165,7 @@
             <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">✕</button>
             <h3>👑 Membresía VIP Oro</h3>
             <p style="color:#64748b; margin-bottom:20px; font-size:0.95rem;">Accede al club exclusivo de Dulce Tentación
-                y disfruta de beneficios de por vida.</p>
+                y disfruta de beneficios de por vida por solo <strong id="uiVipPricePromo" style="color:#d81b60;">$20.000 COP</strong> al mes.</p>
             <ul>
                 <li><span>✅</span> 10% de descuento automático en TODAS tus compras.</li>
                 <li><span>🎁</span> Una muestra sorpresa artesanal en cada pedido.</li>
@@ -1556,7 +1568,7 @@
          <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">×</button>
          <span style="font-size: 2.2rem;">👑</span>
          <h3 style="color: #b71c1c; margin: 10px 0; font-size: 1.3rem; font-weight: 800;">Membresía Club VIP Oro</h3>
-         <p style="font-size: 0.9rem; color: #555; margin: 0 0 10px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes más dulces.</p>
+         <p style="font-size: 0.9rem; color: #555; margin: 0 0 10px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes más dulces por solo <strong id="uiVipPriceTerms" style="color:#d81b60;">$20.000 COP</strong> mensual.</p>
          
          <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 15px; text-align: left; font-size: 0.88rem; margin: 15px 0; color: #5d4037;">
            <strong>✨ Beneficios Exclusivos:</strong>

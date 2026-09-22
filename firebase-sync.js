@@ -24,6 +24,25 @@ const db = firebase.firestore();
 const auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
 console.log("Firebase Firestore y Auth inicializados.");
 
+// --- CONFIGURACIÓN DINÁMICA GLOBAL (VIP) ---
+window.vipConfig = { precioMensual: 20000 };
+db.collection('configuracion').doc('vip').onSnapshot((doc) => {
+    if (doc.exists) {
+        const data = doc.data();
+        if (data && data.precioMensual) {
+            window.vipConfig.precioMensual = Number(data.precioMensual);
+        }
+    }
+    // Formatear el precio para inyectarlo en la UI
+    const formattedPrice = `$${window.vipConfig.precioMensual.toLocaleString('es-CO')} COP`;
+    const promoEl = document.getElementById('uiVipPricePromo');
+    const termsEl = document.getElementById('uiVipPriceTerms');
+    if (promoEl) promoEl.innerText = formattedPrice;
+    if (termsEl) termsEl.innerText = formattedPrice;
+}, (error) => {
+    console.warn("No se pudo escuchar configuración VIP:", error);
+});
+
 // Función global para sincronizar el usuario activo de forma atómica en Cloud Firestore
 // FIX: Lee Firestore primero para preservar el rol asignado por el admin.
 // Solo asigna 'cliente' si el documento no existe aún (primera vez).
