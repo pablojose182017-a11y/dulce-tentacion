@@ -3908,12 +3908,21 @@ function updateCart() {
         cs.style.display = 'block'; cs.style.opacity = '1'; if (cc) cc.style.display = 'flex'; bw.style.display = 'flex'; bw.style.opacity = '1'; bw.style.pointerEvents = 'auto';
         ci.innerHTML = cart.map(item => {
             const cid = item.cartId || item.id;
+            const esTorta = item.type === 'evento' && item.customData;
+            const editBtn = esTorta
+                ? `<button type="button" class="btn-edit-custom-cake" onclick="editarTortaDesdeCarrito('${cid}')" title="Modificar torta personalizada">✏️ Modificar</button>`
+                : '';
+            const descBlock = esTorta && item.desc
+                ? `<div class="cart-item-custom-desc">${item.desc}</div>`
+                : '';
             return `
-                <div class="cart-item-row">
+                <div class="cart-item-row${esTorta ? ' cart-item-row--torta' : ''}">
                     <img src="${safeImg(item.img)}" class="cart-item-img" alt="${item.name}" onerror="this.onerror=null; this.src='logo-pys.png';">
                     <div class="cart-item-info">
                         <div class="cart-item-title">${item.name}</div>
+                        ${descBlock}
                         <div class="cart-item-price">$${item.price.toLocaleString('es-CO')} c/u • <strong>$${(item.price * item.quantity).toLocaleString('es-CO')} COP</strong></div>
+                        ${editBtn}
                     </div>
                     <div class="cart-item-actions">
                         <button type="button" onclick="updateQty('${cid}', -1)">−</button>
@@ -4812,6 +4821,7 @@ function requestVipWhatsApp() {
 
 // ===== ASISTENTE DE TORTAS PERSONALIZADAS (WIZARD POR PASOS) =====
 let currentWizardStep = 1;
+let _editingCartId = null; // null = modo creación, string = modo edición (carrito)
 let wizardData = {
     sabor: 'Clásica Tres Leches',
     tamano: '1/4 (10 porciones)',
@@ -4924,6 +4934,12 @@ function closeWizard() {
     const modal = document.getElementById('modal-evento-personalizado');
     if (modal) modal.style.display = 'none';
     document.body.style.overflow = '';
+    // Si se cierra sin confirmar, limpiar modo edición
+    if (_editingCartId) {
+        _editingCartId = null;
+        const btnSubmit = document.getElementById('btnWizardSubmit');
+        if (btnSubmit) btnSubmit.textContent = '🎂 Agregar al Carrito';
+    }
 }
 
 function getCakePrices(sabor) {
@@ -5278,7 +5294,26 @@ function addCustomCakeToCartNew() {
     };
 
     customProduct.quantity = 1;
-    cart.push(customProduct);
+
+    // ── Modo edición: reemplazar ítem existente ──────────────────────────────
+    if (_editingCartId) {
+        const idx = cart.findIndex(x => (x.cartId || x.id) === _editingCartId);
+        if (idx !== -1) {
+            // Conservar la cantidad original
+            customProduct.quantity = cart[idx].quantity;
+            // Preservar el mismo cartId para que sea rastreable
+            customProduct.id = _editingCartId;
+            cart.splice(idx, 1, customProduct);
+        } else {
+            cart.push(customProduct);
+        }
+        _editingCartId = null;
+        // Restaurar texto del botón de confirmar
+        const btnSubmit = document.getElementById('btnWizardSubmit');
+        if (btnSubmit) btnSubmit.textContent = '🎂 Agregar al Carrito';
+    } else {
+        cart.push(customProduct);
+    }
 
     saveCart();
     updateCart();
@@ -5307,6 +5342,139 @@ function addCustomCakeToCartNew() {
         toggleCart();
     }
 }
+
+// ===== EDICIÓN DE TORTA PERSONALIZADA DESDE EL CARRITO =====
+
+/**
+ * Abre el wizard pre-cargado con los datos de la torta ya en el carrito.
+ * @param {string} cartId  Identificador único del ítem en el arreglo cart
+ */
+function editarTortaDesdeCarrito(cartId) {
+    const item = cart.find(x => (x.cartId || x.id) === cartId);
+    if (!item || !item.customData) return;
+
+    _editingCartId = cartId; // marcar modo edición
+
+    const modal = document.getElementById('modal-evento-personalizado');
+    if (modal) modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Asegurar estructura de config
+    if (typeof window.asegurarEstructuraTortasConfig === 'function') {
+        window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
+    }
+
+    // Restaurar sabores/diseños renderizados
+    if (typeof window.renderConfigTortasPublica === 'function') {
+        window.renderConfigTortasPublica();
+    }
+
+    const cd = item.customData;
+
+    // Restaurar wizardData con los valores guardados
+    wizardData = {
+        sabor:     cd.sabor     || 'Clásica Tres Leches',
+        tamano:    cd.tamano    || '1/4 (10 porciones)',
+        precio:    cd.basePrice || item.price,
+        diseno:    cd.diseno    || 'Diseño Tradicional',
+        disenoImg: cd.disenoImg || '',
+        mensaje:   cd.mensaje   || cd.message || '',
+        date:      cd.date      || '',
+        time:      cd.time      || '',
+        extras:    cd.extras    ? { ...cd.extras } : {}
+    };
+
+    // Precios según sabor
+    const prices = getCakePrices(wizardData.sabor);
+    updateSizePrices(prices);
+
+    // Selección visual de sabor
+    document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => {
+        el.classList.toggle('selected', el.getAttribute('data-flavor') === wizardData.sabor);
+    });
+
+    // Selección visual de tamaño
+    document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => {
+        el.classList.toggle('selected', el.getAttribute('data-size') === wizardData.tamano);
+    });
+
+    // Selección visual de diseño (catálogo)
+    let disenoEncontrado = false;
+    document.querySelectorAll('.wizard-design-grid .design-thumb, #cake-design-grid .design-thumb').forEach(el => {
+        const nameEl = el.querySelector('div');
+        const thumbName = nameEl ? nameEl.innerText.trim() : '';
+        if (thumbName === wizardData.diseno) {
+            el.classList.add('selected');
+            disenoEncontrado = true;
+        } else {
+            el.classList.remove('selected');
+        }
+    });
+
+    // Restaurar foto propia si aplica
+    const uploadCard = document.getElementById('cardUploadCustomDesign');
+    const uploadPlaceholder = document.getElementById('upload-placeholder');
+    const uploadPreview = document.getElementById('upload-preview-block');
+    const previewImg = document.getElementById('upload-preview-img');
+    if (wizardData.diseno === 'Diseño Propio (Foto Cliente)' && wizardData.disenoImg) {
+        if (uploadCard) uploadCard.classList.add('selected');
+        if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+        if (uploadPreview) uploadPreview.style.display = 'flex';
+        if (previewImg) { previewImg.src = wizardData.disenoImg; previewImg.style.opacity = '1'; }
+    } else {
+        if (uploadCard) uploadCard.classList.remove('selected');
+        if (uploadPlaceholder) uploadPlaceholder.style.display = 'flex';
+        if (uploadPreview) uploadPreview.style.display = 'none';
+        if (previewImg) previewImg.src = '';
+    }
+
+    // Restaurar mensaje
+    const msgInput = document.getElementById('w-message');
+    if (msgInput) msgInput.value = wizardData.mensaje || '';
+
+    // Restaurar fecha
+    const dateInput = document.getElementById('w-date');
+    if (dateInput) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const yyyy = tomorrow.getFullYear();
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        dateInput.min = `${yyyy}-${mm}-${dd}`;
+        dateInput.value = wizardData.date || '';
+    }
+
+    // Restaurar hora
+    const timeInput = document.getElementById('w-time');
+    if (timeInput) timeInput.value = wizardData.time || '';
+
+    // Restaurar extras
+    const topperBox = document.getElementById('extra-topper');
+    if (topperBox) topperBox.checked = !!(wizardData.extras && wizardData.extras.topper);
+    const velaBox = document.getElementById('extra-vela');
+    if (velaBox) velaBox.checked = !!(wizardData.extras && wizardData.extras.vela);
+
+    const errDiv = document.getElementById('w-error');
+    if (errDiv) errDiv.style.display = 'none';
+
+    // Cambiar el texto del botón de confirmar a modo edición
+    const btnSubmit = document.getElementById('btnWizardSubmit');
+    if (btnSubmit) {
+        btnSubmit.textContent = '💾 Guardar cambios';
+    }
+
+    // Cerrar el carrito para que no solapen los modales
+    const cartModal = document.getElementById('cartModal');
+    if (cartModal) cartModal.style.display = 'none';
+
+    goToWizardStep(1);
+    updateWizardSummary();
+}
+
+// Exponer globalmente
+window.editarTortaDesdeCarrito = editarTortaDesdeCarrito;
+
+// ===== FIN EDICIÓN DE TORTA =====
 
 // Exponer funciones en window para acceso global directo
 window.openWizard = openWizard;

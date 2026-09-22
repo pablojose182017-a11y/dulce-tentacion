@@ -2538,6 +2538,56 @@
             fill: currentColor;
         }
 
+        /* ── Botón editar torta personalizada ────────────────────────────── */
+        .btn-edit-custom-cake {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            padding: 4px 10px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #be185d;
+            background: #fdf2f8;
+            border: 1px solid #f9a8d4;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn-edit-custom-cake:hover {
+            background: #be185d;
+            color: #fff;
+            border-color: #be185d;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit-custom-cake:active {
+            transform: translateY(0);
+        }
+
+        /* ── Descripción colapsada de la torta personalizada ─────────────── */
+        .cart-item-custom-desc {
+            font-size: 0.72rem;
+            color: #64748b;
+            line-height: 1.4;
+            margin-top: 3px;
+            margin-bottom: 2px;
+            /* Truncar a 2 líneas con ellipsis */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Borde izquierdo distintivo para ítems de torta personalizada */
+        .cart-item-row--torta {
+            border-left: 3px solid #f472b6;
+            padding-left: 8px;
+        }
+
         .cart-footer {
             flex-shrink: 0;
             background: #ffffff;
