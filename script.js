@@ -1200,6 +1200,21 @@ function updateKitchenOrderState(orderId, newState) {
     // Update global orders
     const p = pedidosHistorial.find(x => x.id === orderId);
     if (p) {
+        if (newState === 'Entregado') {
+            const abonoVal = p.abono || 0;
+            const saldo = Math.max(0, (p.total || 0) - abonoVal);
+            if (saldo > 0) {
+                const isAdmin = typeof currentUser !== 'undefined' && currentUser && (currentUser.isAdmin || currentUser.role === 'admin' || currentUser.rol === 'admin');
+                if (isAdmin) {
+                    if (!confirm(`Este pedido tiene un saldo pendiente de $${saldo.toLocaleString('es-CO')} COP.\n\nComo administrador, ¿deseas forzar la entrega omitiendo el pago?`)) {
+                        return;
+                    }
+                } else {
+                    if (typeof showToast === 'function') showToast(`❌ Acción denegada: Falta cobrar $${saldo.toLocaleString('es-CO')} COP`, '❌');
+                    return;
+                }
+            }
+        }
         p.status = newState;
         if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
         if (typeof renderLiveOrders === 'function') renderLiveOrders();
@@ -2672,6 +2687,21 @@ const saveAdminPointsConfig = window.saveAdminPointsConfig;
 function markOrderState(id, state) {
     const p = pedidosHistorial.find(x => x.id === id);
     if (p) {
+        if (state === 'Entregado') {
+            const abonoVal = p.abono || 0;
+            const saldo = Math.max(0, (p.total || 0) - abonoVal);
+            if (saldo > 0) {
+                const isAdmin = typeof currentUser !== 'undefined' && currentUser && (currentUser.isAdmin || currentUser.role === 'admin' || currentUser.rol === 'admin');
+                if (isAdmin) {
+                    if (!confirm(`Este pedido tiene un saldo pendiente de $${saldo.toLocaleString('es-CO')} COP.\n\nComo administrador, ¿deseas forzar la entrega omitiendo el pago?`)) {
+                        return;
+                    }
+                } else {
+                    if (typeof showToast === 'function') showToast(`❌ Acción denegada: Falta cobrar $${saldo.toLocaleString('es-CO')} COP`, '❌');
+                    return;
+                }
+            }
+        }
         // Actualizar ambos campos para mantener coherencia local
         p.status = state;
         p.estado = state;

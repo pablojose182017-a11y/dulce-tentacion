@@ -481,18 +481,32 @@ window.abrirLibroContable = window.openLibroContableModal;
 
 
 // === CALCULADORA DE ABONOS Y SANEAMIENTO (SOBREESCRITURAS) ===
-window.registrarAbono = function(orderId, monto) {
+window.registrarAbono = function(orderId, monto, metodo = null) {
     if (typeof pedidosHistorial !== 'undefined') {
         const idx = pedidosHistorial.findIndex(o => o.id === orderId);
         if (idx !== -1) {
+            const p = pedidosHistorial[idx];
+            const abonoAnterior = p.abono || 0;
             const nuevoAbono = parseFloat(monto) || 0;
-            pedidosHistorial[idx].abono = nuevoAbono;
+            const diferencial = nuevoAbono - abonoAnterior;
+
+            p.abono = nuevoAbono;
+            p.historialPagos = p.historialPagos || [];
+
+            if (diferencial > 0) {
+                p.historialPagos.push({
+                    monto: diferencial,
+                    metodo: metodo || p.metodoPago || p.payStatus || 'Efectivo',
+                    fecha: new Date().toISOString()
+                });
+            }
+
             if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
             localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosHistorial));
 
             // Sincronizar en Firestore en tiempo real (multi-dispositivo)
             if (typeof window.updateOrderAbono === 'function') {
-                window.updateOrderAbono(orderId, nuevoAbono);
+                window.updateOrderAbono(orderId, nuevoAbono, p.historialPagos);
             }
 
             if (typeof renderLiveOrders === 'function') renderLiveOrders();
@@ -620,20 +634,31 @@ window.renderLiveOrders = function() {
                 </div>
             </div>
             <div style="margin-bottom:8px; font-size:0.83rem;">${estadoPagoHtml}</div>
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:6px;">\uD83D\uDCB0 Pago: <strong>${p.metodoPago || p.payStatus || 'No especificado'}</strong></div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:6px;">\uD83D\uDCB0 Pago Incial (App): <strong>${p.metodoPago || p.payStatus || 'No especificado'}</strong></div>
+            ${p.historialPagos && p.historialPagos.length > 0 ? `
+            <div style="font-size:0.8rem; background:#fff; border-radius:6px; padding:6px; margin-bottom:8px; border:1px solid #fce7f3;">
+                <strong style="color:#be185d;">Historial de Pagos:</strong><br>
+                ${p.historialPagos.map(h => `&bull; ${h.metodo}: $${h.monto.toLocaleString('es-CO')} <span style="color:#94a3b8; font-size:0.7rem;">(${new Date(h.fecha).toLocaleDateString('es-CO')})</span>`).join('<br>')}
+            </div>` : ''}
             <label style="display:block; font-size:0.82rem; font-weight:700; color:#be185d; margin-bottom:5px;">Registrar Abono / Pago:</label>
-            <div style="display:flex; gap:6px; align-items:center;">
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                 <input type="number" id="input-abono-${p.id}"
                        placeholder="Monto..." value="${abonoVal || ''}"
-                       style="flex:1; padding:7px 10px; border:1.5px solid #e6396b; border-radius:7px; font-size:0.95rem; font-weight:700; min-width:0;">
+                       style="flex:1; padding:7px 10px; border:1.5px solid #e6396b; border-radius:7px; font-size:0.95rem; font-weight:700; min-width:80px;">
+                <select id="select-metodo-${p.id}" style="padding:7px; border:1px solid #ccc; border-radius:7px; font-size:0.8rem;">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Nequi">Nequi</option>
+                    <option value="Daviplata">Daviplata</option>
+                    <option value="Bancolombia">Bancolombia</option>
+                </select>
                 <button type="button"
-                        onclick="registrarAbono('${p.id}', ${anticipoSugerido})"
+                        onclick="registrarAbono('${p.id}', ${anticipoSugerido}, document.getElementById('select-metodo-${p.id}').value)"
                         style="padding:7px 9px; font-size:0.75rem; background:#fff; border:1px solid #ccc; border-radius:7px; cursor:pointer; white-space:nowrap;">50%</button>
                 <button type="button"
-                        onclick="registrarAbono('${p.id}', ${total})"
+                        onclick="registrarAbono('${p.id}', ${total}, document.getElementById('select-metodo-${p.id}').value)"
                         style="padding:7px 9px; font-size:0.75rem; background:#fff; border:1px solid #ccc; border-radius:7px; cursor:pointer; white-space:nowrap;">100%</button>
                 <button type="button"
-                        onclick="registrarAbono('${p.id}', document.getElementById('input-abono-${p.id}').value)"
+                        onclick="registrarAbono('${p.id}', document.getElementById('input-abono-${p.id}').value, document.getElementById('select-metodo-${p.id}').value)"
                         style="padding:7px 11px; font-size:0.8rem; font-weight:700; background:#e6396b; color:#fff; border:none; border-radius:7px; cursor:pointer; white-space:nowrap;">\uD83D\uDCBE Guardar</button>
             </div>
         </div>`;

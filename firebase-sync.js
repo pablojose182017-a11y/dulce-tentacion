@@ -593,12 +593,16 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     const originalUpdateOrderAbono = window.updateOrderAbono;
-    window.updateOrderAbono = function(orderId, nuevoAbono) {
-        if(originalUpdateOrderAbono) originalUpdateOrderAbono(orderId, nuevoAbono);
+    window.updateOrderAbono = function(orderId, nuevoAbono, historialPagos = null) {
+        if(originalUpdateOrderAbono) originalUpdateOrderAbono(orderId, nuevoAbono, historialPagos);
         
         const pedido = window.pedidosHistorial.find(p => p.id === orderId || p.idDoc === orderId);
         if(pedido && pedido.idDoc) {
-            db.collection('pedidos').doc(pedido.idDoc).update({ abono: nuevoAbono })
+            const updatePayload = { abono: nuevoAbono };
+            if (historialPagos !== null) {
+                updatePayload.historialPagos = historialPagos;
+            }
+            db.collection('pedidos').doc(pedido.idDoc).update(updatePayload)
                 .catch(err => console.error("Error actualizando abono en Firestore:", err));
         }
     };
