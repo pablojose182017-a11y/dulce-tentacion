@@ -4064,6 +4064,8 @@ function goToCartStep2() {
         step2.style.display = 'flex';
     }
     updateCart();
+    // Sincronizar tipo de pedido y fecha/hora con las tortas del carrito
+    sincronizarCheckoutConTortas();
 }
 function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) closeCartModal(); }
 
@@ -4082,6 +4084,131 @@ function toggleOrderType(type) {
     if (fields) fields.style.display = type === 'evento' ? 'flex' : 'none';
     updateCart();
 }
+
+// ===== SINCRONIZACIÓN CHECKOUT ↔ TORTAS PERSONALIZADAS =====
+/**
+ * Detecta la composición del carrito y ajusta automáticamente:
+ *   • Tipo de pedido (Inmediato / Programado)
+ *   • Pre-carga de fecha y horario de entrega
+ *   • Panel de carrito mixto con opciones A/B
+ *   • Estado deshabilitado del botón "Inmediato" si solo hay tortas
+ * No toca cálculos de precios, descuentos VIP ni lógica de envío gratis.
+ */
+function sincronizarCheckoutConTortas() {
+    const tortas  = cart.filter(i => i.type === 'evento' && i.customData);
+    const vitrina = cart.filter(i => !(i.type === 'evento' && i.customData));
+
+    const soloTortas = tortas.length > 0 && vitrina.length === 0;
+    const mixto      = tortas.length > 0 && vitrina.length > 0;
+
+    const btnImm      = document.getElementById('btn-order-immediate');
+    const mixedBlock  = document.getElementById('mixedCartBlock');
+    const eventDate   = document.getElementById('eventDate');
+    const eventTime   = document.getElementById('eventTime');
+
+    // --- Obtener la fecha/hora de la primera torta con datos ---
+    const tortaRef = tortas[0]; // primera torta (si existe)
+    const fechaTorta = tortaRef?.customData?.date || '';
+    const horaTorta  = tortaRef?.customData?.time || '';
+
+    // Formatear fecha para mostrar al usuario (DD/MM/YYYY)
+    function _fmtFecha(iso) {
+        if (!iso) return '';
+        const parts = iso.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return iso;
+    }
+
+    // --- CASO A: Solo tortas / todos son encargos ---
+    if (soloTortas) {
+        toggleOrderType('evento');
+
+        // Pre-cargar fecha y hora
+        if (eventDate && fechaTorta) eventDate.value = fechaTorta;
+        if (eventTime && horaTorta)  eventTime.value = horaTorta;
+
+        // Deshabilitar botón "Inmediato"
+        if (btnImm) {
+            btnImm.classList.add('chip-disabled');
+            btnImm.setAttribute('disabled', 'disabled');
+            btnImm.setAttribute('title', 'Las tortas personalizadas requieren horneado anticipado (mín. 24h)');
+            btnImm.setAttribute('aria-disabled', 'true');
+        }
+
+        // Ocultar bloque mixto si existía
+        if (mixedBlock) mixedBlock.style.display = 'none';
+        window.mixedCartMode = null;
+        return;
+    }
+
+    // --- CASO B: Mixto (vitrina + torta) ---
+    if (mixto) {
+        toggleOrderType('evento');
+
+        // Pre-cargar fecha y hora del primer encargo
+        if (eventDate && fechaTorta) eventDate.value = fechaTorta;
+        if (eventTime && horaTorta)  eventTime.value = horaTorta;
+
+        // Habilitar botón inmediato (en modo mixto el usuario puede interactuar)
+        if (btnImm) {
+            btnImm.classList.remove('chip-disabled');
+            btnImm.removeAttribute('disabled');
+            btnImm.removeAttribute('aria-disabled');
+            btnImm.setAttribute('title', '');
+        }
+
+        // Inicializar mixedCartMode si no está definido
+        if (!window.mixedCartMode) window.mixedCartMode = 'together';
+
+        // Construir HTML del panel mixto
+        const fechaDisplay = _fmtFecha(fechaTorta) || '(fecha del encargo)';
+        const htmlMixto = `
+            <div class="mixed-cart-title">📦 Pedido mixto detectado</div>
+            <p style="margin:0 0 9px 0; color:#92400e; font-size:0.79rem; line-height:1.4;">
+                Tu carrito tiene <strong>productos de vitrina</strong> (entrega inmediata)
+                y una <strong>torta personalizada</strong> (fecha programada: <strong>${fechaDisplay}</strong>).
+                ¿Cómo deseas que se despache?
+            </p>
+            <label class="mixed-opt" for="mixedOptTogether">
+                <input type="radio" id="mixedOptTogether" name="mixedCartMode" value="together"
+                    ${window.mixedCartMode === 'together' ? 'checked' : ''}
+                    onchange="window.mixedCartMode='together'">
+                Despachar todo el pedido junto en la fecha programada
+                <strong style="margin-left:4px;">(${fechaDisplay})</strong>
+                <span class="mixed-opt-note">Recomendado: un solo domicilio, todo fresco el día del evento.</span>
+            </label>
+            <label class="mixed-opt" for="mixedOptSplit">
+                <input type="radio" id="mixedOptSplit" name="mixedCartMode" value="split"
+                    ${window.mixedCartMode === 'split' ? 'checked' : ''}
+                    onchange="window.mixedCartMode='split'">
+                Dividir: productos diarios <em>ahora</em> + torta en ${fechaDisplay}
+                <span class="mixed-opt-note">⚠️ Puede aplicar recargo de 2° domicilio si no cumple el mínimo de envío gratis.</span>
+            </label>`;
+
+        if (mixedBlock) {
+            mixedBlock.innerHTML = htmlMixto;
+            mixedBlock.style.display = 'block';
+        }
+        return;
+    }
+
+    // --- CASO C: Ninguna torta (solo vitrina o carrito vacío) ---
+    if (btnImm) {
+        btnImm.classList.remove('chip-disabled');
+        btnImm.removeAttribute('disabled');
+        btnImm.removeAttribute('aria-disabled');
+        btnImm.setAttribute('title', '');
+    }
+    if (mixedBlock) mixedBlock.style.display = 'none';
+    window.mixedCartMode = null;
+    // Restaurar tipo inmediato solo si actualmente era evento por una torta previa
+    // (No forzar si el usuario eligió manualmente "evento" para un combo o fiesta)
+    // → No llamamos toggleOrderType aquí para respetar la elección manual del usuario
+}
+
+window.sincronizarCheckoutConTortas = sincronizarCheckoutConTortas;
+
+// ===== FIN SINCRONIZACIÓN =====
 
 function sendOrder() {
     if (cart.length === 0) return alert("¡Tu carrito está vacío!");
@@ -4184,6 +4311,7 @@ function sendOrder() {
         status: 'Pendiente',
         payStatus: 'Pendiente - ' + selectedPay,
         type: (typeof orderType !== 'undefined' ? orderType : 'inmediato'),
+        mixedCartMode: window.mixedCartMode || null,
         timestamp: Date.now()
     };
 
@@ -4242,6 +4370,16 @@ function sendOrder() {
         }
         msg += `${isMobile ? '\u{1F382} *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*' : '[ENCARGO ESPECIAL DE TORTA PERSONALIZADA]'}\n`;
         const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
+        
+        if (window.mixedCartMode === 'split') {
+            msg += `${symWarn} *Atención: Pedido Mixto Dividido*\n`;
+            msg += `• Los productos de vitrina se despachan AHORA.\n`;
+            msg += `• La torta se despacha en la fecha programada.\n`;
+            msg += `_(Nota: Puede aplicar recargo de 2do domicilio si no cumple el mínimo)_\n\n`;
+        } else if (window.mixedCartMode === 'together') {
+            msg += `📦 *Pedido Mixto - Despachar todo JUNTO en la fecha de la torta*\n\n`;
+        }
+
         if (evtItem && evtItem.customData) {
             msg += `${symDate} *Fecha de entrega:* ${evtItem.customData.date}\n`;
             msg += `${symTime} *Hora:* ${evtItem.customData.time}\n`;
@@ -4308,6 +4446,7 @@ function sendOrder() {
 
     // Vaciar carrito
     cart = [];
+    window.mixedCartMode = null;
     if (typeof saveCart === 'function') saveCart();
     if (typeof updateCart === 'function') updateCart();
     if (typeof showToast === 'function') showToast("Procesando pedido...", "", 1500);

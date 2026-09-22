@@ -2976,6 +2976,65 @@
             color: var(--brand-pink);
         }
 
+        /* ── Botón de tipo de pedido deshabilitado (tortas sin entrega inmediata) ── */
+        .payment-chip[disabled],
+        .payment-chip.chip-disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            pointer-events: none;
+            border-color: #e2e8f0;
+            color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        /* ── Panel de carrito mixto (torta + productos de vitrina) ─────────── */
+        .mixed-cart-block {
+            background: #fffbeb;
+            border: 1.5px solid #fcd34d;
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 0.80rem;
+            color: #78350f;
+        }
+
+        .mixed-cart-block .mixed-cart-title {
+            font-weight: 800;
+            font-size: 0.83rem;
+            color: #92400e;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mixed-cart-block label.mixed-opt {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 7px;
+            cursor: pointer;
+            line-height: 1.4;
+            font-weight: 600;
+            color: #78350f;
+        }
+
+        .mixed-cart-block label.mixed-opt input[type="radio"] {
+            margin-top: 2px;
+            accent-color: #f59e0b;
+            flex-shrink: 0;
+        }
+
+        .mixed-cart-block .mixed-opt-note {
+            font-size: 0.73rem;
+            color: #b45309;
+            font-weight: 400;
+            display: block;
+            margin-top: 1px;
+            margin-left: 22px;
+        }
+
         .avatar-vip-container {
             position: relative;
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
