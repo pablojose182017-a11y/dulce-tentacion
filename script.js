@@ -758,6 +758,18 @@ function openOrderHistory(fromProfile = false) {
                 : Math.floor(totalVal / 1000);
             const orderNum = pedido.id ? (String(pedido.id).startsWith('#') ? pedido.id : `#${pedido.id}`) : '#DT-' + Math.floor(Math.random() * 9000 + 1000);
 
+            const abonoVal = Number(pedido.abono || 0);
+            const porCobrar = Math.max(0, totalVal - abonoVal);
+            let pagoHtml;
+            if (abonoVal >= totalVal && totalVal > 0) {
+                pagoHtml = `<span style="color:#15803d; font-weight:700;">✅ Pago completo ($${totalVal.toLocaleString('es-CO')} COP)</span>`;
+            } else if (abonoVal > 0) {
+                pagoHtml = `<span style="color:#d97706; font-weight:700;">💵 Abonado: $${abonoVal.toLocaleString('es-CO')}</span>
+                            <span style="color:#dc2626; font-weight:700; margin-left:8px;">⏳ Por pagar: $${porCobrar.toLocaleString('es-CO')}</span>`;
+            } else {
+                pagoHtml = `<span style="color:#dc2626; font-weight:700;">⏳ Pendiente de pago total ($${totalVal.toLocaleString('es-CO')} COP)</span>`;
+            }
+
             return `
                     <div class="history-order-card" style="background:#fff; border:1px solid #f1f1f1; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:10px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -771,6 +783,9 @@ function openOrderHistory(fromProfile = false) {
                                 <span>${item.cantidad || 1}x ${item.nombre || item.title}</span>
                             </div>
                             `).join('') || (pedido.products ? `<div>${pedido.products}</div>` : '<div>Productos del pedido</div>')}
+                        </div>
+                        <div style="font-size:0.83rem; margin-bottom:8px; padding:7px 10px; background:#fafafa; border-radius:8px; border:1px solid #f0f0f0;">
+                            ${pagoHtml}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f3f4f6; padding-top:10px; flex-wrap:wrap; gap:6px;">
                             <span style="font-size:0.82rem; font-weight:700; color:#16a34a; display:inline-flex; align-items:center; gap:4px;">
@@ -882,14 +897,24 @@ function renderOrders(tabId) {
                         </div>
                     </div>`;
         } else if (tabId === 'eventos') {
-            const deposit = Math.ceil(order.total / 2);
-            const balance = order.total - deposit;
+            const abonoReal = Number(order.abono || 0);
+            const saldoReal = Math.max(0, (order.total || 0) - abonoReal);
+            let abonoEventoHtml;
+            if (abonoReal >= (order.total || 0) && (order.total || 0) > 0) {
+                abonoEventoHtml = `<span style="color:#15803d; font-weight:700;">✅ Pago completo — gracias por tu confianza</span>`;
+            } else if (abonoReal > 0) {
+                abonoEventoHtml = `
+                    <div style="font-size:0.88rem;">
+                        <span style="color:#d97706; font-weight:700;">💵 Abonado: $${abonoReal.toLocaleString('es-CO')} COP</span><br>
+                        <span style="color:#dc2626; font-weight:700;">⏳ Saldo contra entrega: $${saldoReal.toLocaleString('es-CO')} COP</span>
+                    </div>`;
+            } else {
+                abonoEventoHtml = `<span style="color:#dc2626; font-weight:700;">⏳ Pendiente de pago — coordina tu anticipo con la tienda</span>`;
+            }
             extraHtml = `
-                    <div style="margin-top: 12px; background: #fff5f8; padding: 12px; border-radius: 8px;">
-                        <span class="order-badge-event">Anticipo 50% Cubierto: $${deposit.toLocaleString()}</span>
-                        <p style="margin: 8px 0 0 0; color: #475569; font-size: 0.9rem;">
-                            <strong>Saldo contra entrega:</strong> $${balance.toLocaleString()} COP
-                        </p>
+                    <div style="margin-top:12px; background:#fff5f8; padding:12px; border-radius:8px; border:1px solid #fce7f3;">
+                        <span class="order-badge-event" style="display:block; margin-bottom:8px;">🎉 Pedido de Evento Programado</span>
+                        ${abonoEventoHtml}
                     </div>`;
         }
 
@@ -2642,7 +2667,16 @@ const saveAdminPointsConfig = window.saveAdminPointsConfig;
 function markOrderState(id, state) {
     const p = pedidosHistorial.find(x => x.id === id);
     if (p) {
-        p.status = state; savePedidosHistorial(); renderLiveOrders(); renderAdminDashboard();
+        // Actualizar ambos campos para mantener coherencia local
+        p.status = state;
+        p.estado = state;
+        savePedidosHistorial();
+        renderLiveOrders();
+        renderAdminDashboard();
+        // Sincronizar en Firestore para que el cliente lo reciba en tiempo real
+        if (typeof window.updateOrderStatus === 'function') {
+            window.updateOrderStatus(id, state);
+        }
         showToast(`Pedido marcado como ${state}`, state === 'Entregado' ? '✅' : 'ℹ️');
     }
 }
