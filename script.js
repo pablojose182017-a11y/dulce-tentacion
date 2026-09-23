@@ -951,7 +951,7 @@ function renderOrders(tabId) {
             : Math.floor((order.total || 0) / 1000);
 
         return `
-                <div class="order-card">
+                <div class="order-card" id="order-card-${order.id}">
                     <div class="order-card-header">
                         <div>
                             <h4 class="order-card-title">Pedido ${order.id}</h4>
@@ -2063,12 +2063,14 @@ function renderLiveOrders() {
                         ${depositHtml}
                     </div>
 
-                    <div style="display:flex; gap:8px; margin-top:auto; padding-top:10px; border-top:1px solid #eee;">
+                    <div style="display:flex; gap:8px; margin-top:auto; padding-top:10px; border-top:1px solid #eee; flex-wrap:wrap;">
                         <button onclick="markOrderState('${p.id}', 'Pendiente')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Pendiente' ? '#eab308' : '#fef08a'}; background:${p.status === 'Pendiente' ? '#fef08a' : '#fff'}; color:#a16207; transition:all 0.2s;">🟡 Pendiente</button>
                         
                         <button onclick="markOrderState('${p.id}', 'En preparación')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En preparación' ? '#3b82f6' : '#bfdbfe'}; background:${p.status === 'En preparación' ? '#bfdbfe' : '#fff'}; color:#1d4ed8; transition:all 0.2s;">🔵 Preparando</button>
                         
                         <button onclick="markOrderState('${p.id}', 'En Camino')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En Camino' ? '#7c3aed' : '#ddd6fe'}; background:${p.status === 'En Camino' ? '#ddd6fe' : '#fff'}; color:#5b21b6; transition:all 0.2s;">🛵 En Camino</button>
+                        
+                        ${(p.phone && p.phone !== 'N/A' && /\d{7,}/.test(p.phone)) ? `<a href="https://wa.me/57${p.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent('¡Hola! Tu pedido #' + p.id + ' de Panadería Dulce Tentación ya va en camino con nuestro domiciliario 🛵💨')}" target="_blank" rel="noopener noreferrer" style="flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; padding:10px 12px; border-radius:8px; font-weight:bold; font-size:0.8rem; background:#25D366; color:#fff; text-decoration:none; border:none;">💬 WhatsApp</a>` : ''}
                         
                         <button onclick="markOrderState('${p.id}', 'Entregado')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Entregado' ? '#22c55e' : '#bbf7d0'}; background:${p.status === 'Entregado' ? '#bbf7d0' : '#fff'}; color:#15803d; transition:all 0.2s;">🟢 Entregado</button>
                     </div>
@@ -3674,7 +3676,7 @@ function createCardHTML(p) {
     const tagBadge = (p.tag && p.tag.trim() !== '') ? `<span class="badge-status" style="background:#dbeafe; color:#1e40af; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${p.tag}</span>` : '';
 
     let discountBadge = '';
-    if (p.oldPrice && p.oldPrice > p.price) {
+    if (!p.tag && p.oldPrice && p.oldPrice > p.price) {
         const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         discountBadge = `<span class="badge-discount" style="background:#881337; color:#fff; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">📉 -${pct}%</span>`;
     }
@@ -3773,7 +3775,12 @@ function filterCategory(cat, el) {
     document.querySelectorAll('.cat-chip').forEach(c => {
         c.classList.toggle('active', c.getAttribute('onclick')?.includes(`'${cat}'`));
     });
-    renderProducts(cat === 'todos' ? products : products.filter(p => p.cat === cat));
+    renderProducts(cat === 'todos' ? products : products.filter(p => {
+        if (cat === 'combos' || cat === 'ofertas') {
+            return Boolean(p.enOferta || (p.descuento && p.descuento > 0) || p.precioOferta || p.cat === cat);
+        }
+        return p.cat === cat;
+    }));
     renderFeatured(cat);
 }
 function filterProductsBySearch(inputId) {
@@ -4857,7 +4864,130 @@ function showToast(msg, icon = '🥐', duration = 2600) {
     }, duration);
 }
 
-// ===== VIP FUNCTIONS =====
+// ===== NOTIFICACIÓN DE ESTADO DE PEDIDO (TOAST INTERACTIVO) =====
+(function injectOrderStatusToastStyles() {
+    if (document.getElementById('order-status-toast-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'order-status-toast-styles';
+    s.innerHTML = `
+        .order-status-toast {
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            z-index: 10000;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+            padding: 16px 20px;
+            max-width: 92vw;
+            width: 420px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            border-left: 5px solid #3b82f6;
+            cursor: pointer;
+            transition: transform 0.45s cubic-bezier(.23,1.06,.67,1), opacity 0.35s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .order-status-toast.ost-visible {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .ost-icon { font-size: 1.8rem; flex-shrink: 0; line-height: 1; }
+        .ost-body { flex: 1; }
+        .ost-title { font-weight: 700; font-size: 0.95rem; color: #1e293b; margin-bottom: 4px; }
+        .ost-sub { font-size: 0.82rem; color: #64748b; }
+        .ost-close { font-size: 1.2rem; color: #94a3b8; cursor: pointer; flex-shrink: 0; padding: 2px 4px; line-height:1; align-self:flex-start; }
+        .ost-close:hover { color: #475569; }
+        @keyframes ost-highlight-pulse {
+            0%   { box-shadow: 0 0 0 0 rgba(124,58,237,0.5); }
+            60%  { box-shadow: 0 0 0 12px rgba(124,58,237,0); }
+            100% { box-shadow: 0 0 0 0 rgba(124,58,237,0); }
+        }
+        .ost-order-highlight {
+            animation: ost-highlight-pulse 1.2s ease 2;
+            outline: 2px solid #7c3aed;
+        }
+    `;
+    document.head.appendChild(s);
+})();
+
+window.showOrderStatusToast = function(pedidoId, nuevoEstado) {
+    const CONFIG = {
+        'En preparación': { icon: '👨‍🍳', msg: `Tu pedido #${pedidoId} ya está en preparación en nuestro horno.`, border: '#3b82f6' },
+        'En Camino':      { icon: '🛵💨', msg: `¡Tu pedido #${pedidoId} ya va en camino a tu dirección!`,          border: '#7c3aed' },
+        'Entregado':      { icon: '🎉',   msg: `¡Pedido #${pedidoId} entregado! Gracias por endulzar tu día.`,      border: '#10b981' },
+    };
+    const cfg = CONFIG[nuevoEstado];
+    if (!cfg) return;
+
+    // Sonido sutil via Web Audio API
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+    } catch(e) { /* sin audio si el contexto no está permitido */ }
+
+    // Reutilizar o crear el contenedor
+    let toast = document.getElementById('order-status-toast-el');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'order-status-toast-el';
+        toast.className = 'order-status-toast';
+        document.body.appendChild(toast);
+    }
+
+    if (window._ostTimer) clearTimeout(window._ostTimer);
+
+    toast.style.borderLeftColor = cfg.border;
+    toast.innerHTML = `
+        <div class="ost-icon">${cfg.icon}</div>
+        <div class="ost-body">
+            <div class="ost-title">Actualización de tu pedido</div>
+            <div class="ost-sub">${cfg.msg}</div>
+        </div>
+        <div class="ost-close" id="ost-close-btn" title="Cerrar">&times;</div>
+    `;
+
+    const dismiss = (openHistory) => {
+        toast.classList.remove('ost-visible');
+        if (window._ostTimer) clearTimeout(window._ostTimer);
+        if (openHistory && typeof window.openOrderHistory === 'function') {
+            window.openOrderHistory(false);
+            setTimeout(() => {
+                const card = document.getElementById(`order-card-${pedidoId}`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    card.classList.add('ost-order-highlight');
+                    setTimeout(() => card.classList.remove('ost-order-highlight'), 3000);
+                }
+            }, 400);
+        }
+    };
+
+    toast.onclick = (e) => { if (!e.target.closest('#ost-close-btn')) dismiss(true); };
+    document.getElementById('ost-close-btn').onclick = (e) => { e.stopPropagation(); dismiss(false); };
+
+    // Mostrar
+    requestAnimationFrame(() => {
+        toast.classList.add('ost-visible');
+        window._ostTimer = setTimeout(() => toast.classList.remove('ost-visible'), 7000);
+    });
+};
+
+
 function toggleVIP() {
     if (!currentUser) return alert('Debes iniciar sesión primero.');
     currentUser.vip = !currentUser.vip;

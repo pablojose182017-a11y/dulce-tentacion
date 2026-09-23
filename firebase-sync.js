@@ -617,9 +617,36 @@ window.addEventListener('DOMContentLoaded', () => {
             // Iniciar listener en tiempo real si el usuario está autenticado y no hay listener activo
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
                 if (!window.unsubscribeUserOrders) {
+                    let _isInitialLoad = true;
                     window.unsubscribeUserOrders = db.collection('pedidos')
                         .where('email', '==', currentUser.email)
                         .onSnapshot((snapshot) => {
+                            // --- DETECCIÓN DE CAMBIOS REALES (solo en cambios, no en carga inicial) ---
+                            if (!_isInitialLoad) {
+                                snapshot.docChanges().forEach(change => {
+                                    if (change.type === 'modified') {
+                                        const newData = change.doc.data();
+                                        const nuevoEstado = newData.estado;
+                                        if (!nuevoEstado) return;
+                                        
+                                        // Comparar con el estado previo en memoria
+                                        const pedidoPrevio = window.pedidosHistorial
+                                            ? window.pedidosHistorial.find(h => h.id === newData.id || h.idDoc === change.doc.id)
+                                            : null;
+                                        const estadoPrevio = pedidoPrevio ? (pedidoPrevio.estado || pedidoPrevio.status) : null;
+                                        
+                                        const ESTADOS_NOTIFICABLES = ['En preparación', 'En Camino', 'Entregado'];
+                                        if (nuevoEstado !== estadoPrevio && ESTADOS_NOTIFICABLES.includes(nuevoEstado)) {
+                                            if (typeof window.showOrderStatusToast === 'function') {
+                                                window.showOrderStatusToast(newData.id || change.doc.id, nuevoEstado);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            _isInitialLoad = false;
+
+                            // --- SINCRONIZACIÓN DE DATOS (siempre) ---
                             const pedidosActualizados = snapshot.docs.map(doc => ({
                                 idDoc: doc.id,
                                 ...doc.data()
@@ -645,15 +672,9 @@ window.addEventListener('DOMContentLoaded', () => {
                             
                             if (typeof saveUser === 'function') saveUser();
                             
-                            // Re-renderizar dinámicamente si el modal de historial está abierto (comprobando su display)
+                            // Re-renderizar dinámicamente si el modal de historial está abierto
                             const modalHistory = document.getElementById('modal-order-history');
                             if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
-                                // Para re-renderizar, invocamos la función original de nuevo (que renderiza) 
-                                // o determinamos la pestaña activa y llamamos a renderOrders.
-                                // La forma más limpia es llamar de nuevo originalOpenOrderHistory pero sin fromProfile
-                                // para no afectar la navegación si venía del perfil, 
-                                // O simplemente llamar a renderOrders con la pestaña que corresponda (asumimos 'curso' si acaba de abrir, o si no se llama desde switchOrderTab).
-                                // Dado que openOrderHistory(fromProfile) llama internamente a renderOrders, la podemos llamar o podemos detectar la pestaña:
                                 const tabActivo = document.querySelector('.order-tab-btn.active');
                                 if (tabActivo) {
                                     const tabId = tabActivo.id.replace('tab-btn-', '');
@@ -978,7 +999,8 @@ window.addEventListener('DOMContentLoaded', () => {
             window.dt_promo_regalo = doc.data();
             localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
             if (typeof updateCart === 'function') updateCart();
-            window.renderPromoBanner();
+            if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
+            if (typeof window.renderAdminPromoCard === 'function') window.renderAdminPromoCard();
         }
     }, err => console.warn("Error escuchando promocion_regalo:", err));
 
@@ -991,6 +1013,48 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         }
     }, err => console.warn("Error escuchando config tienda:", err));
+
+    db.collection('config').doc('ofertas_activas').onSnapshot(doc => {
+        if (doc.exists) {
+            window.dtOfertasActivas = doc.data();
+            localStorage.setItem('dt_ofertas_activas', JSON.stringify(window.dtOfertasActivas));
+            
+            if (typeof products !== 'undefined') {
+                products.forEach(p => {
+                    // Restaurar todo producto primero por si se eliminó una oferta en otra pestaña
+                    if (p.oldPrice) p.price = p.oldPrice;
+                    if (p.originalName) p.name = p.originalName;
+                    delete p.oldPrice;
+                    delete p.enOferta;
+                    delete p.tag;
+                    
+                    // Reaplicar las ofertas que sí existen en la fuente remota
+                    if (window.dtOfertasActivas[p.id]) {
+                        if (!p.originalName) p.originalName = p.name;
+                        p.oldPrice = window.dtOfertasActivas[p.id].precioOriginal;
+                        
+                        if (window.dtOfertasActivas[p.id].porcentaje && window.dtOfertasActivas[p.id].porcentaje > 0) {
+                            p.price = Math.round(p.oldPrice * (1 - (window.dtOfertasActivas[p.id].porcentaje / 100)));
+                            window.dtOfertasActivas[p.id].precioOferta = p.price; // Sincronizar en memoria por si acaso
+                        } else {
+                            p.price = window.dtOfertasActivas[p.id].precioOferta;
+                        }
+                        
+                        p.enOferta = true;
+                        if (window.dtOfertasActivas[p.id].badgePromo) {
+                            p.tag = window.dtOfertasActivas[p.id].badgePromo;
+                            p.name = `${p.originalName} [Promo: ${window.dtOfertasActivas[p.id].badgePromo}]`;
+                        }
+                    }
+                });
+            }
+            
+            if (typeof window.renderAdminOfertasActivas === 'function') window.renderAdminOfertasActivas();
+            if (typeof renderProducts === 'function') renderProducts();
+            if (typeof renderFeatured === 'function') renderFeatured();
+            if (typeof renderStockAdmin === 'function') renderStockAdmin();
+        }
+    }, err => console.warn("Error escuchando ofertas_activas:", err));
 
     // INTERCEPCIÓN DEL CARRITO PARA INYECTAR REGALO (Sin tocar script.js)
     if (typeof window.updateCart === 'function') {

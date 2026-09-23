@@ -1518,6 +1518,11 @@ window.dtOfertasActivas = JSON.parse(localStorage.getItem('dt_ofertas_activas') 
 
 window.saveOfertas = function() {
     localStorage.setItem('dt_ofertas_activas', JSON.stringify(window.dtOfertasActivas));
+    if (typeof db !== 'undefined') {
+        // Guardar sin merge:true para que al eliminar una oferta local, se borre en remoto
+        db.collection('config').doc('ofertas_activas').set(window.dtOfertasActivas)
+            .catch(e => console.warn('Error guardando ofertas en Firestore', e));
+    }
 };
 
 // 4. REFLEJO EN LA TIENDA DEL CLIENTE (Interceptar array en memoria)
@@ -1644,6 +1649,8 @@ window.guardarOfertaNueva = function() {
     const precioOriginal = parseInt(document.getElementById('oferta-precio-original').value);
     const precioOferta = parseInt(document.getElementById('oferta-precio-nuevo').value);
     const badgePromo = document.getElementById('oferta-badge-promo').value.trim();
+    const porcentajeInput = document.getElementById('input-oferta-porcentaje').value;
+    const porcentaje = parseFloat(porcentajeInput) || 0;
     
     if (!id || !precioOriginal || !precioOferta) {
         if(typeof showToast === 'function') showToast('Llena todos los campos', '⚠️');
@@ -1658,6 +1665,7 @@ window.guardarOfertaNueva = function() {
         enOferta: true,
         precioOferta: precioOferta,
         precioOriginal: precioOriginal,
+        porcentaje: porcentaje,
         badgePromo: badgePromo
     };
     window.saveOfertas();
@@ -1694,6 +1702,61 @@ window.eliminarOfertaDesdeModal = function() {
     if (id) {
         window.quitarOferta(id);
         document.getElementById('modal-ofertas').style.display = 'none';
+    }
+};
+
+window.renderAdminOfertasActivas = function() {
+    const container = document.getElementById('admin-ofertas-activas-container');
+    if (!container) return;
+    
+    const keys = Object.keys(window.dtOfertasActivas);
+    if (keys.length === 0) {
+        container.innerHTML = '<p style="font-size:0.9rem; color:#94a3b8; margin:10px 0;">No hay productos en oferta actualmente.</p>';
+        return;
+    }
+    
+    let html = `
+        <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:15px; margin-bottom:20px; width:100%;">
+            <h4 style="margin:0 0 15px 0; color:#be123c; font-size:1.1rem;">🔥 Ofertas y Descuentos Activos (${keys.length})</h4>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+    `;
+    
+    keys.forEach(id => {
+        const of = window.dtOfertasActivas[id];
+        let pName = 'Producto ' + id;
+        if (typeof products !== 'undefined') {
+            const p = products.find(x => x.id == id);
+            if (p) pName = p.originalName || p.name;
+        }
+        
+        html += `
+            <div style="background:#fff; border-radius:8px; padding:10px 15px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div>
+                    <strong style="color:#334155;">${pName}</strong>
+                    ${of.badgePromo ? `<span style="background:#fecdd3; color:#be123c; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:8px; font-weight:bold;">${of.badgePromo}</span>` : ''}
+                    <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">
+                        <span style="text-decoration:line-through; margin-right:8px;">$${of.precioOriginal.toLocaleString()}</span>
+                        <strong style="color:#e11d48; font-size:0.95rem;">$${of.precioOferta.toLocaleString()}</strong>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="window.abrirModalEdicionOferta('${id}')" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.85rem;">✏️ Editar</button>
+                    <button onclick="if(confirm('¿Seguro que deseas quitar la oferta de este producto?')) window.quitarOferta('${id}')" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.85rem;">🗑️ Quitar</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+};
+
+window.abrirModalEdicionOferta = function(id) {
+    window.abrirModalOferta();
+    const sel = document.getElementById('oferta-producto');
+    if (sel) {
+        sel.value = id;
+        if (typeof window.updateOfertaPrecio === 'function') window.updateOfertaPrecio();
     }
 };
 
@@ -1939,6 +2002,13 @@ window.guardarEdicionProducto = function(pId) {
             if (isOferta) {
                 p.oldPrice = nuevoPrecio;
                 isOferta.precioOriginal = nuevoPrecio;
+                
+                if (isOferta.porcentaje && isOferta.porcentaje > 0) {
+                    const nuevoPrecioOferta = Math.round(nuevoPrecio * (1 - (isOferta.porcentaje / 100)));
+                    isOferta.precioOferta = nuevoPrecioOferta;
+                    p.price = nuevoPrecioOferta;
+                }
+                
                 if (typeof window.saveOfertas === 'function') window.saveOfertas();
             } else {
                 p.price = nuevoPrecio;
@@ -2047,16 +2117,12 @@ if (originalRenderStockAdminOfertas) {
                 offerBtn.onclick = () => window.abrirModalOferta();
                 controlsDiv.appendChild(offerBtn);
             }
-            if (!document.getElementById('btn-promo-regalo')) {
-                const regaloBtn = document.createElement('button');
-                regaloBtn.id = 'btn-promo-regalo';
-                regaloBtn.className = 'cat-chip';
-                regaloBtn.style.background = '#8b5cf6';
-                regaloBtn.style.color = '#fff';
-                regaloBtn.style.fontWeight = 'bold';
-                regaloBtn.innerHTML = '🎁 Configurar Regalo por Monto';
-                regaloBtn.onclick = () => window.abrirModalPromoRegalo();
-                controlsDiv.appendChild(regaloBtn);
+            if (!document.getElementById('promo-regalo-status-container')) {
+                const container = document.createElement('div');
+                container.id = 'promo-regalo-status-container';
+                container.style.flex = '0 0 auto';
+                controlsDiv.appendChild(container);
+                window.renderAdminPromoCard();
             }
             if (!document.getElementById('btnAdminClubPuntos')) {
                 const clubBtn = document.createElement('button');
@@ -2075,6 +2141,17 @@ if (originalRenderStockAdminOfertas) {
         // Modificar cada tarjeta de la grilla de stock
         const grid = document.getElementById('admin-stock-grid');
         if (!grid) return;
+        
+        let ofertasContainer = document.getElementById('admin-ofertas-activas-container');
+        if (!ofertasContainer) {
+            ofertasContainer = document.createElement('div');
+            ofertasContainer.id = 'admin-ofertas-activas-container';
+            ofertasContainer.style.width = '100%';
+            grid.parentNode.insertBefore(ofertasContainer, grid);
+        }
+        if (typeof window.renderAdminOfertasActivas === 'function') {
+            window.renderAdminOfertasActivas();
+        }
         
         Array.from(grid.children).forEach((child) => {
             const btn = child.querySelector('button[onclick^="toggleStock"]');
@@ -2808,7 +2885,54 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- SISTEMA DE PROMOCIÓN GLOBAL (REGALO POR COMPRA MÍNIMA) ---
-window.dt_promo_regalo = window.dt_promo_regalo || { activa: false, montoMinimo: 0, productoId: null, cantidad: 1 };
+const localPromo = localStorage.getItem('dt_promo_regalo');
+window.dt_promo_regalo = localPromo ? JSON.parse(localPromo) : (window.dt_promo_regalo || { activa: false, montoMinimo: 0, productoId: null, cantidad: 1, nombrePromo: '' });
+
+window.renderAdminPromoCard = function() {
+    const container = document.getElementById('promo-regalo-status-container');
+    if (!container) return;
+    
+    const conf = window.dt_promo_regalo;
+    if (conf && conf.activa) {
+        container.innerHTML = `
+            <div style="background:#f3e8ff; border:1px solid #d8b4fe; border-radius:12px; padding:8px 12px; display:inline-flex; align-items:center; gap:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-right: 10px;">
+                <div>
+                    <strong style="color:#7e22ce; font-size:0.9rem; display:block;">🎁 Promo Activa: ${conf.nombrePromo || 'Regalo'}</strong>
+                    <span style="font-size:0.8rem; color:#6b21a8;">Mín: $${(conf.montoMinimo||0).toLocaleString()}</span>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="window.abrirModalPromoRegalo()" style="background:#a855f7; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">✏️ Editar</button>
+                    <button onclick="window.eliminarPromoRegalo()" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">🗑️ Quitar</button>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = `
+            <button type="button" class="btn-admin-action" id="btn-promo-regalo" onclick="if(window.abrirModalPromoRegalo) window.abrirModalPromoRegalo()" style="background:#8b5cf6; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12);">
+                ➕ Configurar Regalo por Monto
+            </button>
+        `;
+    }
+};
+
+window.eliminarPromoRegalo = function() {
+    if(!confirm('¿Estás seguro de eliminar y desactivar esta promoción?')) return;
+    window.dt_promo_regalo = { activa: false, montoMinimo: 0, productoId: null, cantidad: 1, nombrePromo: '' };
+    localStorage.removeItem('dt_promo_regalo');
+    
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
+            .then(() => {
+                if(typeof showToast === 'function') showToast("Promoción eliminada", "🗑️");
+            })
+            .catch(e => console.error("Error eliminando promo:", e));
+    }
+    
+    document.getElementById('modal-promo-regalo').style.display = 'none';
+    if(typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
+    window.renderAdminPromoCard();
+    if (typeof updateCart === 'function') updateCart();
+};
 
 window.abrirModalPromoRegalo = function() {
     if (!document.getElementById('modal-promo-regalo')) {
@@ -2865,7 +2989,8 @@ window.abrirModalPromoRegalo = function() {
                 </label>
             </div>
             
-            <button onclick="window.guardarPromoRegalo()" style="width:100%; padding:12px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">💾 Guardar Configuración</button>
+            <button onclick="window.guardarPromoRegalo()" style="width:100%; padding:12px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer; margin-bottom:10px;">💾 Guardar Configuración</button>
+            <button onclick="window.eliminarPromoRegalo()" style="width:100%; padding:10px; background:#fef2f2; color:#ef4444; border:1px solid #fca5a5; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">🗑️ Eliminar Promoción</button>
         </div>
     `;
     m.style.display = 'flex';
@@ -2901,6 +3026,9 @@ window.guardarPromoRegalo = function() {
     
     // Forzar re-evaluacion del carrito por si cambia el estado activo
     if (typeof updateCart === 'function') updateCart();
+    
+    window.renderAdminPromoCard();
+    if(typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
 };
 
 window.closeCartModal = function() {
