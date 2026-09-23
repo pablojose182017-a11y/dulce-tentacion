@@ -3584,7 +3584,28 @@ function syncUserUI() {
         }
 
         const vipHtml = isVip
-            ? `<div class="vip-card-golden" onclick="window.showVipStatusModal()" style="cursor:pointer; display:flex; flex-direction:column; align-items:center; text-align:center;"><strong>👑 VIP Activo • Ver vigencia y beneficios ➔</strong></div>`
+            ? `<div onclick="event.stopPropagation(); const menu = document.getElementById('user-dropdown-menu'); if (menu) { menu.classList.remove('active', 'open'); } window.showVipStatusModal();" 
+                    style="background: linear-gradient(135deg, #FFF9E6 0%, #FFF2B2 100%); 
+                           border: 1px solid #F3DA7A; 
+                           border-radius: 12px; 
+                           padding: 12px; 
+                           margin: 10px 0; 
+                           cursor: pointer; 
+                           display: flex; 
+                           flex-direction: column; 
+                           align-items: center; 
+                           text-align: center; 
+                           box-shadow: 0 4px 12px rgba(138, 109, 5, 0.1); 
+                           transition: transform 0.2s ease, box-shadow 0.2s ease;"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(138, 109, 5, 0.15)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(138, 109, 5, 0.1)';">
+                    <span style="font-size: 1.1rem; color: #8A6D05; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        👑 Membresía VIP Activa
+                    </span>
+                    <span style="font-size: 0.85rem; color: #9A7B0E; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                        Ver Beneficios y Vigencia <span style="font-size: 0.9rem;">➔</span>
+                    </span>
+               </div>`
             : `<button class="vip-upgrade-btn" onclick="window.openVipTermsModal && window.openVipTermsModal(event)">✨ Pasar a VIP Oro</button>`;
 
         const dArea = document.getElementById('vip-dropdown-area-desk');
@@ -6289,10 +6310,25 @@ window.showVipStatusModal = function() {
         modal = document.createElement('div');
         modal.id = 'vip-status-modal';
         modal.className = 'modal-overlay';
+        
+        // Estilos del Overlay Fijo
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.height = '100dvh';
+        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.65)';
+        modal.style.backdropFilter = 'blur(3px)';
         modal.style.display = 'none';
-        modal.style.zIndex = '100000';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '100001';
+        modal.style.padding = '16px';
+        modal.style.boxSizing = 'border-box';
+        
         modal.innerHTML = `
-            <div class="modal-content" style="max-width:400px; background:linear-gradient(135deg, #fffbeb, #fef3c7); border:2px solid #fbbf24; border-radius:16px; padding:24px; text-align:center; max-height:88vh; max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-sizing:border-box;">
+            <div class="modal-content" style="max-width:min(92vw, 420px); background:linear-gradient(135deg, #fffbeb, #fef3c7); border:2px solid #fbbf24; border-radius:16px; padding:24px; text-align:center; max-height:88vh; max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-sizing:border-box;">
                 <h2 style="color:#b45309; margin-top:0; margin-bottom:8px; font-size:1.5rem;">👑 Tu Membresía VIP</h2>
                 <div style="background:#f59e0b; color:white; display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.85rem; font-weight:bold; margin-bottom:16px;">
                     <span id="vip-status-badge"></span>
