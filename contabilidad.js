@@ -9,7 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const modalsHTML = `
     <!-- Modal Detalle Contable -->
     <div id="modal-detalle-pedido" class="modal-overlay" style="display:none !important; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
-        <div class="modal-content" style="max-width:500px; padding:20px; text-align:left; background:#fff; border-radius:12px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+        <div class="modal-content" style="max-width:500px; padding:20px; text-align:left; background:#fff; border-radius:12px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2); max-height:88vh; max-height:88dvh; overflow-y:auto; box-sizing:border-box;">
             <h3 style="color:var(--brand-pink); margin-bottom:15px; font-size:1.4rem;">📊 Detalle Contable</h3>
             <div id="contabilidad-detalle-content" style="margin-bottom:20px; font-size:0.95rem; line-height:1.5;"></div>
             <div style="text-align:right;">

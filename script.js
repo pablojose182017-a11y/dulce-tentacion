@@ -2299,8 +2299,11 @@ function renderStockAdmin() {
         `;
     }).join('');
 
+    // Visible cuando la categoría activa sea 'tortas' O 'pasteleria'
+    const esFiltroTortas = (currentStockFilter === 'tortas' || currentStockFilter === 'pasteleria');
+    const mostrarExtras = esFiltroTortas;
     extrasHtml = `
-        <div style="width:100%; margin-bottom:20px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+        <div id="admin-extras-tortas-block" style="display:${mostrarExtras ? 'block' : 'none'}; width:100%; margin-bottom:20px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:15px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
             <h4 style="margin:0 0 12px 0; color:#475569; font-size:1rem; display:flex; align-items:center; gap:8px;">🎂 Disponibilidad de Extras en Tortas</h4>
             <div style="display:flex; flex-direction:column; gap:8px;">
                 ${extrasFilas || '<p style="color:#94a3b8; font-size:0.85rem; margin:0;">Sin extras configurados.</p>'}
@@ -2324,9 +2327,30 @@ function renderStockAdmin() {
     `;
     // ----------------------------------------
 
-    const filteredProducts = currentStockFilter === 'todos'
+    // --- CONTROL DE VISIBILIDAD Y CONTENIDO DEL BLOQUE DE OFERTAS ACTIVAS ---
+    const esFiltroOfertas = (currentStockFilter === 'combos' || currentStockFilter === 'ofertas');
+    const ofertasContainer = document.getElementById('admin-ofertas-activas-container');
+    if (ofertasContainer) {
+        ofertasContainer.style.display = esFiltroOfertas ? 'block' : 'none';
+        // Refrescar contenido de ofertas activas cuando sea visible
+        if (esFiltroOfertas && typeof window.renderAdminOfertasActivas === 'function') {
+            window.renderAdminOfertasActivas();
+        }
+    }
+    // -------------------------------------------------------------------------
+
+    // Cuando el filtro es de ofertas, el grid queda vacío:
+    // toda la información ya aparece en #admin-ofertas-activas-container arriba.
+    const filteredProducts = (currentStockFilter === 'todos')
         ? products
-        : products.filter(p => p.cat === currentStockFilter);
+        : esFiltroOfertas
+            ? []   // ← grid vacío, el panel de ofertas es suficiente
+            : products.filter(p => {
+                if (esFiltroTortas) {
+                    return p.cat === 'tortas' || p.cat === 'pasteleria';
+                }
+                return p.cat === currentStockFilter;
+            });
 
     grid.innerHTML = extrasHtml + filteredProducts.map(p => {
         const isOut = stockConfig[p.id] === true;
@@ -6268,7 +6292,7 @@ window.showVipStatusModal = function() {
         modal.style.display = 'none';
         modal.style.zIndex = '100000';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width:400px; background:linear-gradient(135deg, #fffbeb, #fef3c7); border:2px solid #fbbf24; border-radius:16px; padding:24px; text-align:center;">
+            <div class="modal-content" style="max-width:400px; background:linear-gradient(135deg, #fffbeb, #fef3c7); border:2px solid #fbbf24; border-radius:16px; padding:24px; text-align:center; max-height:88vh; max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-sizing:border-box;">
                 <h2 style="color:#b45309; margin-top:0; margin-bottom:8px; font-size:1.5rem;">👑 Tu Membresía VIP</h2>
                 <div style="background:#f59e0b; color:white; display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.85rem; font-weight:bold; margin-bottom:16px;">
                     <span id="vip-status-badge"></span>
