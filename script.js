@@ -203,6 +203,22 @@ window.addEventListener('DOMContentLoaded', () => {
     window.initDragToScroll();
 });
 
+window.openInstagram = function(e) {
+    if (e) e.preventDefault();
+    const appUrl = 'instagram://user?username=panaderiapuntodulce';
+    const webUrl = 'https://www.instagram.com/panaderiapuntodulce';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        window.location.href = appUrl;
+        setTimeout(() => {
+            window.location.href = webUrl;
+        }, 1500);
+    } else {
+        window.open(webUrl, '_blank', 'noopener,noreferrer');
+    }
+};
+
 function saveCart() { 
     try { 
         localStorage.setItem('dt_cart', JSON.stringify(cart)); 
