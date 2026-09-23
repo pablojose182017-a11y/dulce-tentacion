@@ -314,13 +314,30 @@
             border-radius: var(--r-lg);
             box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
             border: 1px solid #f1e8e4;
-            width: 230px;
+            width: 240px;
             padding: 12px;
             display: none;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
             z-index: 160;
             animation: dropFade 0.2s ease-out;
+            max-height: calc(100vh - 90px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .user-dropdown-menu::-webkit-scrollbar {
+            width: 5px;
+        }
+        .user-dropdown-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .user-dropdown-menu::-webkit-scrollbar-thumb {
+            background: #f1e0dc;
+            border-radius: 10px;
+        }
+        .user-dropdown-menu::-webkit-scrollbar-thumb:hover {
+            background: #f4bec8;
         }
 
         @keyframes dropFade {
@@ -530,10 +547,24 @@
 
         .dropdown-btn.logout {
             color: #e11d48;
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            padding: 4px 10px;
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+            margin-top: 2px;
+            opacity: 0.85;
         }
 
         .dropdown-btn.logout:hover {
-            background: #ffe4e6;
+            background: transparent !important;
+            opacity: 1;
+            color: #be123c;
         }
 
         /* Header Cart Button */
@@ -3289,18 +3320,39 @@
 
         /* --- ESTILOS PARA MIS PEDIDOS --- */
         .dropdown-link-item {
-            padding: 10px 16px;
+            padding: 8px 12px;
             background: #fff5f8;
             color: var(--brand-pink);
             font-weight: 700;
             border-radius: 8px;
             cursor: pointer;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
             transition: all 0.2s ease;
         }
         .dropdown-link-item:hover {
             background: #ffe3ec;
+        }
+
+        /* Mobile profile modal scroll containment */
+        #mobileProfileModal .auth-card {
+            max-height: 85vh;
+            max-height: 85dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+        }
+        #mobileProfileModal .auth-card::-webkit-scrollbar {
+            width: 5px;
+        }
+        #mobileProfileModal .auth-card::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #mobileProfileModal .auth-card::-webkit-scrollbar-thumb {
+            background: #f1e0dc;
+            border-radius: 10px;
         }
 
         .points-history-toggle {

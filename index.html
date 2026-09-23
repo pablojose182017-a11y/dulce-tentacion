@@ -101,13 +101,14 @@
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
-                        <!-- Botón: Historial de Puntos & Movimientos (desktop) -->
-                        <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:6px;">
-                            📊 Historial de Puntos &amp; Movimientos
-                        </div>
-
-                        <div class="dropdown-link-item" onclick="openOrderHistory(true)">
-                            📦 Mis Pedidos
+                        <!-- Accesos Rápidos: 2 columnas compactas -->
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:4px;">
+                            <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:0;">
+                                📊 Historial
+                            </div>
+                            <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom:0;">
+                                📦 Pedidos
+                            </div>
                         </div>
 
                         <div id="vip-dropdown-area-desk"></div>
@@ -746,31 +747,31 @@
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
             </div>
 
-            <!-- Botón: Historial de Puntos & Movimientos (móvil) -->
-            <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-top: 10px; margin-bottom: 6px;">
-                📊 Historial de Puntos &amp; Movimientos
-            </div>
-
-            <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom: 6px;">
-                📦 Mis Pedidos
+            <!-- Accesos Rápidos: 2 columnas compactas (móvil) -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; margin-bottom:4px;">
+                <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:0;">
+                    📊 Historial
+                </div>
+                <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom:0;">
+                    📦 Pedidos
+                </div>
             </div>
 
             <div id="vip-dropdown-area-mob"></div>
 
             <button id="mob-admin-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers();"
-                style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:10px 0;">⚙️
+                style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:8px 0;">⚙️
                 Panel Administrador</button>
             <button id="mob-kitchen-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); openKitchenModal();"
-                style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:10px 0;">👨‍🍳
+                style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:8px 0;">👨‍🍳
                 Modo Cocina / Despacho</button>
 
             <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();"
-                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:10px;">🛒 Ver mi Carrito
+                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:6px;">🛒 Ver mi Carrito
                 (<span class="dropdown-cart-qty">0</span>)</button>
-            <button class="dropdown-btn logout" onclick="closeMobileProfile(); logoutUser(event)"
-                style="width:100%; justify-content:center; background:#fff1f2;">🚪 Cerrar Sesión</button>
+            <button class="dropdown-btn logout" onclick="closeMobileProfile(); logoutUser(event)">🚪 Cerrar Sesión</button>
         </div>
     </div>
 
