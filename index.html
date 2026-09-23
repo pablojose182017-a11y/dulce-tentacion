@@ -505,35 +505,8 @@
             </div>
         </div>
 
-        <!-- ===== CLUB DULCE RECOMPENSA ===== -->
-        <div class="rewards-club-section">
-            <h2 class="rewards-club-title">🎁 Club Dulce Recompensa</h2>
-            <p class="rewards-club-sub">Conéctate con nosotros en redes y acumula beneficios directos para tus pedidos.
-            </p>
-
-            <div class="rewards-btn-group">
-                <a href="https://www.tiktok.com/@dulce.tentacion108" target="_blank" class="rewards-btn btn-tiktok">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 15.68a6.34 6.34 0 0012.67-1.79V9.58a7.81 7.81 0 004.2 1.46V7.43a5.04 5.04 0 01-2.28-.74z" />
-                    </svg>
-                    Síguenos en TikTok (+50 pts)
-                </a>
-
-                <a href="javascript:void(0)" onclick="window.openInstagram(event)" class="rewards-btn btn-instagram">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.85 3.92 2.31 7.15 2.16c1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 2.77.27.27 2.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.28 2.7 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.28-.2 6.78-2.7 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.28-2.7-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm5.23-10.7a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z" />
-                    </svg>
-                    Síguenos en Instagram (+50 pts)
-                </a>
-            </div>
-
-            <div class="rewards-card" onclick="if(typeof PHONE!=='undefined'){ window.open('https://wa.me/'+PHONE+'?text='+encodeURIComponent('¡Hola! Ya los sigo en ambas redes sociales. Aqui les envio la captura para mi detalle dulce sorpresa artesanal.'), '_blank', 'noopener,noreferrer'); }">
-                ✨ ¿Nos sigues en ambas redes? Muéstrale la captura a nuestro equipo por WhatsApp o en tu pedido y recibe
-                un detalle dulce sorpresa artesanal.
-            </div>
-        </div>
+        <!-- ===== CLUB DULCE RECOMPENSA (Renderizado Dinámico desde JS) ===== -->
+        <div id="rewards-club-container"></div>
 
         <div class="custom-cake-banner" onclick="openWizard()">
             <div style="flex:1;">

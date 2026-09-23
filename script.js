@@ -600,6 +600,50 @@ function renderRewards() {
     }).join('');
 }
 
+window.renderRewardsClub = function() {
+    const container = document.getElementById('rewards-club-container');
+    if (!container) return;
+
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.premioRedesReclamado) {
+        container.innerHTML = `
+        <div class="rewards-club-section" style="background: linear-gradient(135deg, #fdf2f8, #fdf4ff); border: 2px solid #fbcfe8;">
+            <h2 class="rewards-club-title" style="color: #be185d;">🎉 ¡Gracias por ser parte de nuestra comunidad!</h2>
+            <p class="rewards-club-sub" style="color: #831843;">Ya reclamaste tu detalle dulce de bienvenida. Síguenos disfrutando en redes y menciónanos en tus historias con <strong>@panaderiapuntodulce</strong> y <strong>#PuntoDulce</strong>.</p>
+            <div class="rewards-btn-group" style="justify-content: center;">
+                <a href="https://www.tiktok.com/@dulce.tentacion108" target="_blank" class="rewards-btn btn-tiktok" style="padding: 10px 15px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 15.68a6.34 6.34 0 0012.67-1.79V9.58a7.81 7.81 0 004.2 1.46V7.43a5.04 5.04 0 01-2.28-.74z"/></svg>
+                    TikTok
+                </a>
+                <a href="javascript:void(0)" onclick="window.openInstagram(event)" class="rewards-btn btn-instagram" style="padding: 10px 15px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.85 3.92 2.31 7.15 2.16c1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 2.77.27.27 2.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.28 2.7 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.28-.2 6.78-2.7 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.28-2.7-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm5.23-10.7a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z"/></svg>
+                    Instagram
+                </a>
+            </div>
+        </div>
+        `;
+    } else {
+        container.innerHTML = `
+        <div class="rewards-club-section">
+            <h2 class="rewards-club-title">🎁 Club Dulce Recompensa</h2>
+            <p class="rewards-club-sub">Conéctate con nosotros en redes y acumula beneficios directos para tus pedidos.</p>
+            <div class="rewards-btn-group">
+                <a href="https://www.tiktok.com/@dulce.tentacion108" target="_blank" class="rewards-btn btn-tiktok">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 15.68a6.34 6.34 0 0012.67-1.79V9.58a7.81 7.81 0 004.2 1.46V7.43a5.04 5.04 0 01-2.28-.74z"/></svg>
+                    Síguenos en TikTok (+50 pts)
+                </a>
+                <a href="javascript:void(0)" onclick="window.openInstagram(event)" class="rewards-btn btn-instagram">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.85 3.92 2.31 7.15 2.16c1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 2.77.27.27 2.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.28 2.7 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.28-.2 6.78-2.7 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.28-2.7-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm5.23-10.7a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z"/></svg>
+                    Síguenos en Instagram (+50 pts)
+                </a>
+            </div>
+            <div class="rewards-card" onclick="if(typeof PHONE!=='undefined'){ window.open('https://wa.me/'+PHONE+'?text='+encodeURIComponent('¡Hola! Ya los sigo en ambas redes sociales. Aqui les envio la captura para mi detalle dulce sorpresa artesanal.'), '_blank', 'noopener,noreferrer'); }">
+                ✨ ¿Nos sigues en ambas redes? Muéstrale la captura a nuestro equipo por WhatsApp o en tu pedido y recibe un detalle dulce sorpresa artesanal.
+            </div>
+        </div>
+        `;
+    }
+};
+
 function openPointsModal() {
     renderRewards();
     const inicioSec = document.getElementById('inicio');
@@ -2058,6 +2102,27 @@ function renderLiveOrders() {
                         📍 ${p.address}
                     </div>
                     
+                    ${
+                        (() => {
+                            // Buscar si es un usuario registrado para revisar su status del premio
+                            const u = db_users.find(x => x.email === p.email);
+                            if (u) {
+                                if (u.premioRedesReclamado) {
+                                    return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
+                                } else {
+                                    return `<button onclick="window.entregarPremioRedes('${p.id}', false, '${u.email}')" style="margin-top:6px; padding:6px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.75rem; border:1px solid #fbcfe8; background:linear-gradient(135deg, #fce7f3, #fbcfe8); color:#be185d; transition:all 0.2s;">🎁 Entregar Premio Redes</button>`;
+                                }
+                            } else {
+                                // Usuario invitado
+                                if (p.premioRedesEntregado) {
+                                    return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
+                                } else {
+                                    return `<button onclick="window.entregarPremioRedes('${p.id}', true, null)" style="margin-top:6px; padding:6px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.75rem; border:1px solid #fbcfe8; background:linear-gradient(135deg, #fce7f3, #fbcfe8); color:#be185d; transition:all 0.2s;">🎁 Entregar Premio Redes (Invitado)</button>`;
+                                }
+                            }
+                        })()
+                    }
+                    
                     <div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1;">
                         <strong>📝 Detalle:</strong><br>${p.products}
                         ${depositHtml}
@@ -2077,6 +2142,53 @@ function renderLiveOrders() {
                 </div>`;
     }).join('');
 }
+
+window.entregarPremioRedes = function(pedidoId, esInvitado, emailCliente) {
+    if (!confirm("¿Confirmas que el cliente mostró la captura y se le entregó el detalle dulce?")) return;
+
+    // Buscar el pedido
+    const pedidoIdx = pedidosHistorial.findIndex(p => p.id === pedidoId);
+    if (pedidoIdx === -1) {
+        showToast("Error: Pedido no encontrado.", "❌");
+        return;
+    }
+    const pedido = pedidosHistorial[pedidoIdx];
+
+    if (!esInvitado && emailCliente) {
+        // Actualizar db_users
+        const uidx = db_users.findIndex(u => u.email === emailCliente);
+        if (uidx !== -1) {
+            db_users[uidx].premioRedesReclamado = true;
+            saveUsersDB();
+            
+            // Actualizar currentUser si es el mismo
+            if (currentUser && currentUser.email === emailCliente) {
+                currentUser.premioRedesReclamado = true;
+                saveUser();
+                syncUserUI();
+                if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
+            }
+
+            // Sincronizar en Firestore para usuarios
+            if (window.db && typeof window.db.collection === 'function') {
+                window.db.collection('usuarios').doc(emailCliente).set({ premioRedesReclamado: true }, { merge: true })
+                    .catch(err => console.error("Error al actualizar premio en Firestore de usuarios:", err));
+            }
+        }
+    }
+
+    // Actualizar el pedido en pedidosHistorial
+    pedido.premioRedesEntregado = true;
+
+    // Actualizar en Firestore para el pedido
+    if (window.db && typeof window.db.collection === 'function' && pedido.idDoc) {
+        window.db.collection('pedidos').doc(pedido.idDoc).update({ premioRedesEntregado: true })
+            .catch(err => console.error("Error al actualizar premio en Firestore del pedido:", err));
+    }
+
+    showToast("🎁 Premio de redes registrado", "✅");
+    renderLiveOrders();
+};
 
 let currentStockFilter = 'todos';
 function setStockFilter(cat, el) {
@@ -3246,6 +3358,7 @@ function logoutUser(e) {
     document.getElementById('mobileProfileModal')?.style.setProperty('display', 'none');
 
     syncUserUI();
+    if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
     showToast("Sesión cerrada.", 'ℹ️');
 }
 
@@ -3506,6 +3619,7 @@ function syncUserUI() {
     if (window.renderAdminNotifList) window.renderAdminNotifList();
     // Refrescar historial de puntos del Club VIP si el contenedor está en el DOM
     if (typeof window.renderHistorialPuntos === 'function') window.renderHistorialPuntos();
+    if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
 }
 
 window.checkRemoteUserSession = function() {
