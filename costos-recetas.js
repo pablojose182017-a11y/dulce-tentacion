@@ -389,15 +389,15 @@ window.renderGuardianView = function() {
         '<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-top:20px;">' +
             '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">' +
                 '<div style="font-size:2rem;">🤖</div>' +
-                '<div>' +
+                '<div style="flex:1;">' +
                     '<h4 style="margin:0; color:#be185d;">Chat con el Guardián Financiero</h4>' +
                     '<span style="font-size:0.8rem; color:#16a34a;">● En línea y vigilando el bolsillo</span>' +
                 '</div>' +
+                '<button onclick="window.configurarGeminiKey()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:5px; font-size:0.8rem; cursor:pointer;" title="Configurar API Key">⚙️ API Key</button>' +
+                '<button onclick="window.reiniciarChatGuardian()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:5px; font-size:0.8rem; cursor:pointer;" title="Nueva charla">🧹 Nueva charla</button>' +
             '</div>' +
             '<div id="guardian-chat-messages" style="height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px;">' +
-                '<div style="background:#f1f5f9; padding:10px 15px; border-radius:15px 15px 15px 0; align-self:flex-start; max-width:80%; font-size:0.9rem; color:#334155;">' +
-                    '¡Hola Pablo! Pregúntame sobre tus recetas, insumos, márgenes o simula precios. Estoy aquí para cuidar tu dinero.' +
-                '</div>' +
+                // Los mensajes se cargarán dinámicamente desde localStorage
             '</div>' +
             '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;">' +
                 '<button onclick="window.enviarMensajeGuardian(\'¿Cuál es el pan más rentable?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Pan más rentable?</button>' +
@@ -411,6 +411,7 @@ window.renderGuardianView = function() {
         '</div>';
 
     container.innerHTML += chatHtml;
+    window.cargarMemoriaGuardian();
 };
 
 window.simularOfertaGuardian = function() {
@@ -502,42 +503,235 @@ window.calcularPuntosVIPGuardian = function() {
     resultDiv.innerHTML = "Exige <strong>" + puntosSugeridos + " Pts</strong><br><span style=\"font-size:0.8rem; font-weight:normal;\">(Cubre su costo $" + costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0}) + " y garantiza " + multiplicador + "x de retorno previo)</span>";
 };
 
-window.enviarMensajeGuardian = function(textoPredefinido = null) {
+window.cargarMemoriaGuardian = function() {
+    const chatContainer = document.getElementById('guardian-chat-messages');
+    if (!chatContainer) return;
+    chatContainer.innerHTML = ''; // Limpiar
+
+    const memoria = JSON.parse(localStorage.getItem('pd_guardian_chat_memory')) || [];
+    
+    if (memoria.length === 0) {
+        window.appendMensajeGuardian('¡Hola Pablo! Pregúntame sobre tus recetas, insumos, márgenes o simula precios. Estoy aquí para cuidar tu dinero.', 'bot', false);
+    } else {
+        memoria.forEach(msg => {
+            window.appendMensajeGuardian(msg.texto, msg.rol, false);
+        });
+    }
+};
+
+window.reiniciarChatGuardian = function() {
+    if(confirm('¿Seguro que deseas iniciar una nueva charla y borrar el historial del chat?')) {
+        localStorage.removeItem('pd_guardian_chat_memory');
+        window.cargarMemoriaGuardian();
+    }
+};
+
+window.configurarGeminiKey = function() {
+    const currentKey = localStorage.getItem('pd_gemini_api_key') || '';
+    const newKey = prompt('Configuración del Guardián IA\nIngresa tu API Key de Google Gemini (inicia con AIzaSy o AQ.):', currentKey);
+    if (newKey !== null) {
+        const keyTrimmed = newKey.trim();
+        if (keyTrimmed.startsWith('AIzaSy') || keyTrimmed.startsWith('AQ.')) {
+            localStorage.setItem('pd_gemini_api_key', keyTrimmed);
+            localStorage.removeItem('pd_gemini_model_name');
+            if(typeof showToast === 'function') showToast('API Key de Gemini guardada.', '⚙️');
+            else alert('API Key de Gemini guardada exitosamente.');
+        } else {
+            alert('La clave ingresada no parece ser válida. Debe iniciar con AIzaSy o AQ.');
+        }
+    }
+};
+
+window.enviarMensajeGuardian = async function(textoPredefinido = null) {
     const input = document.getElementById('guardian-chat-input');
     const msgTexto = textoPredefinido || input.value.trim();
     if (!msgTexto) return;
     
     if (!textoPredefinido) input.value = '';
 
-    window.appendMensajeGuardian(msgTexto, 'user');
+    window.appendMensajeGuardian(msgTexto, 'user', true);
 
-    // Simular pequeño retraso de pensamiento
-    setTimeout(() => {
-        const respuesta = window.procesarMensajeGuardian(msgTexto.toLowerCase());
-        window.appendMensajeGuardian(respuesta, 'bot');
-    }, 600);
+    // Preparar contexto completo
+    const contexto = {
+        insumos: window.costosState.insumos,
+        recetas: window.costosState.recetas,
+        pedidos: JSON.parse(localStorage.getItem('pd_pedidos')) || [] // Traer info de pedidos si existe
+    };
+
+    const memoria = JSON.parse(localStorage.getItem('pd_guardian_chat_memory')) || [];
+
+    // Mostrar "Pensando..."
+    const typingId = "typing-" + Date.now();
+    window.appendMensajeGuardian('<span style="font-style:italic; color:#94a3b8;">El Guardián está pensando... 🥐</span>', 'bot', false, typingId);
+
+    try {
+        const respuesta = await window.enviarMensajeIA(msgTexto.toLowerCase(), contexto, memoria);
+        
+        // Remover el indicador de pensando
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        window.appendMensajeGuardian(respuesta, 'bot', true);
+    } catch (error) {
+        console.error(error);
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+        window.appendMensajeGuardian('Tuve un corto circuito mental. ¿Puedes repetir la pregunta?', 'bot', true);
+    }
 };
 
-window.appendMensajeGuardian = function(html, sender) {
+window.appendMensajeGuardian = function(html, sender, saveToMemory = false, customId = null) {
     const chatContainer = document.getElementById('guardian-chat-messages');
     if (!chatContainer) return;
     
     const align = sender === 'user' ? 'align-self:flex-end; border-radius:15px 15px 0 15px; background:#e0f2fe; color:#0369a1;' : 'align-self:flex-start; border-radius:15px 15px 15px 0; background:#f1f5f9; color:#334155;';
     
     const div = document.createElement('div');
+    if (customId) div.id = customId;
     div.style.cssText = 'padding:10px 15px; max-width:80%; font-size:0.9rem; ' + align;
     div.innerHTML = html;
     
     chatContainer.appendChild(div);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    if (saveToMemory && !customId) {
+        const memoria = JSON.parse(localStorage.getItem('pd_guardian_chat_memory')) || [];
+        memoria.push({ rol: sender, texto: html });
+        localStorage.setItem('pd_guardian_chat_memory', JSON.stringify(memoria));
+    }
 };
 
-window.procesarMensajeGuardian = function(q) {
-    // Calcular stats rápidos
-    const stats = window.costosState.recetas.map(rec => {
+window.obtenerContextoPanaderia = function() {
+    const insumos = (window.costosState && window.costosState.insumos) ? window.costosState.insumos : [];
+    const recetasRaw = (window.costosState && window.costosState.recetas) ? window.costosState.recetas : [];
+
+    const recetas = recetasRaw.map(rec => {
+        let costoInsumos = 0;
+        const ingredientesInfo = rec.ingredientes.map(ing => {
+            const ins = insumos.find(i => i.id === ing.insumoId);
+            if (ins) costoInsumos += ins.costoUnitario * ing.cantidad;
+            return { insumo: ins ? ins.nombre : 'Desconocido', cantidad: ing.cantidad };
+        });
+        const costoTotalTanda = costoInsumos + (costoInsumos * (rec.factorServiciosPct / 100));
+        const costoUnitario = costoTotalTanda / rec.rendimiento;
+        return {
+            nombre: rec.nombre,
+            ingredientes: ingredientesInfo,
+            costoTanda: costoTotalTanda,
+            costoUnitario: costoUnitario,
+            precioVenta: rec.precioVenta
+        };
+    });
+
+    return {
+        insumos: insumos.map(i => ({ nombre: i.nombre, unidad: i.unidadCompra, costoUnitario: i.costoUnitario })),
+        recetasActivas: recetas,
+        alertasRentabilidad: "Avisar si el margen es menor al 30%"
+    };
+};
+
+window.enviarMensajeIA = async function(prompt, contexto, memoria) {
+    // ==========================================
+    // PREPARADO PARA ENDPOINT DE IA EXTERNA Y WEB
+    // ==========================================
+    const apiKey = localStorage.getItem('pd_gemini_api_key');
+    const isBusquedaExterna = prompt.includes('buscar') || prompt.includes('búscame') || prompt.includes('buscame') || prompt.includes('receta de') || prompt.includes('noticias') || prompt.includes('tendencias') || prompt.includes('mercado') || prompt.includes('internet');
+
+    if (apiKey) {
+        try {
+            const contextoDinamico = window.obtenerContextoPanaderia();
+            const systemPrompt = "Eres el Guardián Financiero y Tech Lead de la panadería 'Dulce Tentación'.\n" +
+                                 "Cuentas con dos especialidades clave:\n" +
+                                 "1. Asesor Financiero y de Producción: Analizas márgenes, recetas, insumos, costos fijos y rentabilidad basándote en los datos del negocio.\n" +
+                                 "2. Arquitecto de Software Senior: Eres un experto en JavaScript moderno (ES6+), HTML5 semántico, CSS responsivo/moderno, arquitectura cliente, buenas prácticas de rendimiento y refactorización limpia.\n\n" +
+                                 "MAPA DE ARQUITECTURA DE LA APLICACIÓN:\n" +
+                                 "- Frontend: Vanilla JavaScript (ES6+), HTML5, CSS modular moderno.\n" +
+                                 "- Entorno: Servidor local (127.0.0.1:5500), persistencia en localStorage.\n" +
+                                 "- Archivos clave: index.html (estructura/vistas), costos-recetas.js (fichas técnicas, márgenes y chat IA), estilos en CSS.\n\n" +
+                                 "DIRECTRICES PARA GENERACIÓN DE CÓDIGO Y ASESORÍA TÉCNICA:\n" +
+                                 "- Cuando el usuario te pida cambios visuales, nuevas funciones, arreglos de bugs o mejoras en el código de la panadería, no solo expliques la teoría: entrega el bloque de código completo (JS, CSS o HTML) listo para que el usuario se lo copie a Antigravity y lo implemente de inmediato.\n" +
+                                 "- Usa siempre buenas prácticas: funciones puras, validación defensiva de inputs, nombres claros de variables y sin librerías externas pesadas.\n" +
+                                 "- Formatea siempre el código dentro de bloques Markdown con su lenguaje (```javascript, ```css, ```html).\n\n" +
+                                 "DATOS EN VIVO DEL NEGOCIO:\n" + JSON.stringify(contextoDinamico, null, 2) + "\n\n" +
+                                 "Responde con tono cercano, profesional y práctico, dando cifras claras basadas estrictamente en estos datos.\n\n" +
+                                 "FORMATO DE RECETAS ENCONTRADAS: Cuando entregues una receta de la web, estructúrala así: - Lista de ingredientes en gramos/mililitros. - Paso a paso clave de amasado y horneado. - Estimación de rendimiento en unidades.";
+            
+            const geminiContents = memoria.map(msg => ({
+                role: msg.rol === 'bot' ? 'model' : 'user',
+                parts: [{ text: msg.texto }]
+            }));
+
+            const payload = {
+                system_instruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                contents: geminiContents,
+                tools: [{ googleSearch: {} }]
+            };
+
+            const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey.trim();
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts.length > 0) {
+                    let text = data.candidates[0].content.parts[0].text;
+                    // Renderizado Avanzado: Parsear Markdown a HTML con soporte para Bloques de Código
+                    let partes = text.split(/```/);
+                    for (let i = 0; i < partes.length; i++) {
+                        if (i % 2 !== 0) { // Dentro de bloque de código
+                            let codeLines = partes[i].split('\n');
+                            let lang = codeLines.shift(); // Omitir el lenguaje de la primera línea
+                            let code = codeLines.join('\n');
+                            // Escapar HTML nativo dentro del código para que no rompa el visor
+                            code = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            partes[i] = '<pre style="background:#1e293b; color:#f8fafc; padding:10px; border-radius:5px; overflow-x:auto; margin:10px 0; font-family:monospace; font-size:0.85rem;"><code>' + code + '</code></pre>';
+                        } else { // Texto normal
+                            partes[i] = partes[i].replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                        }
+                    }
+                    return partes.join('');
+                }
+                return "Lo analicé en la red, pero la IA no me dio una respuesta clara.";
+            } else {
+                const errData = await response.json();
+                throw new Error(errData.error?.message || 'Error en la comunicación con la API');
+            }
+        } catch (error) {
+            console.error("Error consultando Gemini:", error);
+            return "Error: " + error.message;
+        }
+    }
+
+    // Motor IA Simulado (Fallback local)
+    await new Promise(resolve => setTimeout(resolve, 800)); // Simular latencia
+    
+    if (isBusquedaExterna) {
+        return '¡Ey Pablo! Para hablar conmigo de forma totalmente libre y buscar recetas en internet, ingresa tu API Key en el botón ⚙️.';
+    }
+
+    // Buscar mención de memoria / historial
+    if (prompt.includes('te acuerdas') || prompt.includes('acuerdas') || prompt.includes('memoria') || prompt.includes('historial')) {
+        if (memoria.length <= 2) return 'Apenas acabamos de empezar a charlar, jefe. Pero tengo memoria de elefante.';
+        return 'Claro que me acuerdo. Nuestra charla ya tiene ' + memoria.length + ' mensajes grabados en piedra.';
+    }
+
+    // Buscar mención de pedidos
+    if (prompt.includes('pedido')) {
+        if (contexto.pedidos.length === 0) return 'No tengo registros de pedidos en la memoria local aún. ¡Hay que registrar las ventas!';
+        return 'Tengo ' + contexto.pedidos.length + ' pedidos en el radar. Todavía estoy aprendiendo a analizarlos a fondo, pero te los estoy cuidando.';
+    }
+
+    // Calcular stats rápidos de recetas
+    const stats = contexto.recetas.map(rec => {
         let costoInsumos = 0;
         rec.ingredientes.forEach(ing => {
-            const ins = window.costosState.insumos.find(i => i.id === ing.insumoId);
+            const ins = contexto.insumos.find(i => i.id === ing.insumoId);
             if (ins) costoInsumos += ins.costoUnitario * ing.cantidad;
         });
         const costoTotal = (costoInsumos + (costoInsumos * (rec.factorServiciosPct / 100))) / rec.rendimiento;
@@ -546,48 +740,52 @@ window.procesarMensajeGuardian = function(q) {
         return { ...rec, costoUnitario: costoTotal, ganancia, margenPct: margen };
     });
 
-    if (q.includes('más rentable') || q.includes('mas rentable') || q.includes('mejor margen')) {
+    if (prompt.includes('más rentable') || prompt.includes('mas rentable') || prompt.includes('mejor margen')) {
         if (stats.length === 0) return 'Aún no tienes recetas registradas.';
         stats.sort((a,b) => b.margenPct - a.margenPct);
         const mejor = stats[0];
         return '🥇 El producto más rentable es <strong>' + mejor.nombre + '</strong> con un margen del ' + mejor.margenPct.toFixed(1) + '% y una ganancia de $' + mejor.ganancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + ' por unidad.';
     }
 
-    if (q.includes('menos rentable') || q.includes('peor margen') || q.includes('perdida') || q.includes('pérdida')) {
+    if (prompt.includes('menos rentable') || prompt.includes('peor margen') || prompt.includes('perdida') || prompt.includes('pérdida')) {
         if (stats.length === 0) return 'Aún no tienes recetas registradas.';
         stats.sort((a,b) => a.margenPct - b.margenPct);
         const peor = stats[0];
         return '⚠️ El producto menos rentable es <strong>' + peor.nombre + '</strong> con un margen del ' + peor.margenPct.toFixed(1) + '%. Ganancia: $' + peor.ganancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + '.';
     }
 
-    if (q.includes('más costoso') || q.includes('mas costoso') || q.includes('mas caro') || q.includes('más caro')) {
-        if (window.costosState.insumos.length === 0) return 'No hay insumos registrados.';
-        const insumos = [...window.costosState.insumos].sort((a,b) => b.costoTotal - a.costoTotal);
+    if (prompt.includes('más costoso') || prompt.includes('mas costoso') || prompt.includes('mas caro') || prompt.includes('más caro')) {
+        if (contexto.insumos.length === 0) return 'No hay insumos registrados.';
+        const insumos = [...contexto.insumos].sort((a,b) => b.costoTotal - a.costoTotal);
         const caro = insumos[0];
         return '💸 El insumo en el que más has gastado es <strong>' + caro.nombre + '</strong> ($' + caro.costoTotal.toLocaleString('es-CO') + ' por ' + caro.cantidadCompra + caro.unidadCompra + ').';
     }
 
-    if (q.includes('consejo') || q.includes('mejorar')) {
+    if (prompt.includes('consejo') || prompt.includes('mejorar')) {
         return '💡 <strong>Consejo del Guardián:</strong> Revisa siempre tus insumos más caros y trata de comprar al por mayor. Si tienes panes con margen menor al 30%, considera subirles el precio o reducir la porción ligeramente. ¡Los centavos suman!';
     }
 
     // Buscar si menciona una receta específica
-    const recEncontrada = stats.find(s => q.includes(s.nombre.toLowerCase()));
+    const recEncontrada = stats.find(s => prompt.includes(s.nombre.toLowerCase()));
     if (recEncontrada) {
         return '🍞 Para <strong>' + recEncontrada.nombre + '</strong>:<br>- Costo Unitario: $' + recEncontrada.costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0}) + '<br>- Precio Venta: $' + recEncontrada.precioVenta.toLocaleString('es-CO') + '<br>- Ganancia: $' + recEncontrada.ganancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + ' (' + recEncontrada.margenPct.toFixed(1) + '% margen).';
     }
 
     // Buscar si menciona un insumo específico
-    const insEncontrado = window.costosState.insumos.find(i => q.includes(i.nombre.toLowerCase()));
+    const insEncontrado = contexto.insumos.find(i => prompt.includes(i.nombre.toLowerCase()));
     if (insEncontrado) {
         return '📦 El insumo <strong>' + insEncontrado.nombre + '</strong> lo compraste a $' + insEncontrado.costoTotal.toLocaleString('es-CO') + '. Su costo base es de $' + insEncontrado.costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:2}) + ' por ' + insEncontrado.unidadBase + '.';
     }
 
-    if (q.includes('vender') || q.includes('precio') || q.includes('descuento') || q.includes('si vendo')) {
+    if (prompt.includes('vender') || prompt.includes('precio') || prompt.includes('descuento') || prompt.includes('si vendo')) {
         return 'Para simular descuentos o cambios de precio te recomiendo usar la herramienta <strong>"Simulador de Descuentos"</strong> que está justo arriba. ¡Es mucho más precisa!';
     }
 
-    return 'Hmm... Como tu Guardián Financiero, te sugiero ser más directo. Pregúntame sobre "cuál es más rentable", "el costo de algún insumo" o pídeme un "consejo". ¡Estoy para cuidar el negocio!';
+    if (prompt.includes('quien eres') || prompt.includes('quién eres') || prompt.includes('creador') || prompt.includes('reglas')) {
+        return 'Soy el Guardián Financiero de Dulce Tentación. Fui creado para obedecer a Pablo, proteger la información del negocio y asegurarme de que nunca vendas a pérdida. ¡Cero tratos ilícitos en mi reloj!';
+    }
+
+    return 'Como tu leal Guardián Financiero, te sugiero ser más directo, Pablo. Pregúntame sobre "cuál es más rentable", "el costo de algún insumo" o pídeme un "consejo". ¡Mi constitución me exige cuidar el dinero!';
 };
 
 // ==========================================
