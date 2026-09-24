@@ -384,6 +384,33 @@ window.renderGuardianView = function() {
             </div>
         </div>
     `;
+
+    const chatHtml = 
+        '<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-top:20px;">' +
+            '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">' +
+                '<div style="font-size:2rem;">🤖</div>' +
+                '<div>' +
+                    '<h4 style="margin:0; color:#be185d;">Chat con el Guardián Financiero</h4>' +
+                    '<span style="font-size:0.8rem; color:#16a34a;">● En línea y vigilando el bolsillo</span>' +
+                '</div>' +
+            '</div>' +
+            '<div id="guardian-chat-messages" style="height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px;">' +
+                '<div style="background:#f1f5f9; padding:10px 15px; border-radius:15px 15px 15px 0; align-self:flex-start; max-width:80%; font-size:0.9rem; color:#334155;">' +
+                    '¡Hola Pablo! Pregúntame sobre tus recetas, insumos, márgenes o simula precios. Estoy aquí para cuidar tu dinero.' +
+                '</div>' +
+            '</div>' +
+            '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;">' +
+                '<button onclick="window.enviarMensajeGuardian(\'¿Cuál es el pan más rentable?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Pan más rentable?</button>' +
+                '<button onclick="window.enviarMensajeGuardian(\'¿Qué insumo es más costoso?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Insumo más costoso?</button>' +
+                '<button onclick="window.enviarMensajeGuardian(\'Consejo para mejorar márgenes\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">Consejo de márgenes</button>' +
+            '</div>' +
+            '<div style="display:flex; gap:10px;">' +
+                '<input type="text" id="guardian-chat-input" class="checkout-input" style="margin:0; flex:1;" placeholder="Pregúntale al Guardián..." onkeypress="if(event.key === \'Enter\') window.enviarMensajeGuardian()">' +
+                '<button onclick="window.enviarMensajeGuardian()" style="background:#be185d; color:#fff; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Enviar 🚀</button>' +
+            '</div>' +
+        '</div>';
+
+    container.innerHTML += chatHtml;
 };
 
 window.simularOfertaGuardian = function() {
@@ -430,18 +457,18 @@ window.simularOfertaGuardian = function() {
     let colorBorder = "";
 
     if (nuevoMargen >= 35) {
-        mensaje = `✅ <strong>¡Oferta segura!</strong> Mantienes un margen del ${nuevoMargen.toFixed(1)}%. Ganas $${nuevaGanancia.toLocaleString('es-CO', {maximumFractionDigits:0})} por cada unidad que vendas en promo.`;
+        mensaje = "✅ <strong>¡Oferta segura!</strong> Mantienes un margen del " + nuevoMargen.toFixed(1) + "%. Ganas $" + nuevaGanancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + " por cada unidad que vendas en promo.";
         colorBg = "#dcfce7"; colorText = "#166534"; colorBorder = "#bbf7d0";
     } else if (nuevoMargen >= 15) {
-        mensaje = `⚠️ <strong>¡Ojo, Pablo!</strong> Estás al límite. El margen cae al ${nuevoMargen.toFixed(1)}%. Ganas apenas $${nuevaGanancia.toLocaleString('es-CO', {maximumFractionDigits:0})} por unidad.`;
+        mensaje = "⚠️ <strong>¡Ojo, Pablo!</strong> Estás al límite. El margen cae al " + nuevoMargen.toFixed(1) + "%. Ganas apenas $" + nuevaGanancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + " por unidad.";
         colorBg = "#fef9c3"; colorText = "#854d0e"; colorBorder = "#fde047";
     } else {
-        mensaje = `🚨 <strong>¡ESTA OFERTA TE QUIEBRA!</strong> ${nuevaGanancia < 0 ? 'Estás perdiendo' : 'Apenas ganas'} $${nuevaGanancia.toLocaleString('es-CO', {maximumFractionDigits:0})} por unidad (Margen: ${nuevoMargen.toFixed(1)}%). Ni se te ocurra activarla así, no cubres los gastos.`;
+        mensaje = "🚨 <strong>¡ESTA OFERTA TE QUIEBRA!</strong> " + (nuevaGanancia < 0 ? 'Estás perdiendo' : 'Apenas ganas') + " $" + nuevaGanancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + " por unidad (Margen: " + nuevoMargen.toFixed(1) + "%). Ni se te ocurra activarla así, no cubres los gastos.";
         colorBg = "#fee2e2"; colorText = "#991b1b"; colorBorder = "#fecaca";
     }
 
     resultDiv.innerHTML = mensaje;
-    resultDiv.style = `margin-top:10px; padding:15px; border-radius:8px; font-size:0.95rem; background:${colorBg}; color:${colorText}; border:1px solid ${colorBorder};`;
+    resultDiv.style.cssText = "margin-top:10px; padding:15px; border-radius:8px; font-size:0.95rem; background:" + colorBg + "; color:" + colorText + "; border:1px solid " + colorBorder + ";";
 };
 
 window.calcularPuntosVIPGuardian = function() {
@@ -472,7 +499,95 @@ window.calcularPuntosVIPGuardian = function() {
     // Usaremos una conversión estándar: Puntos Sugeridos = (Costo * Multiplicador) / 100
     const puntosSugeridos = Math.ceil(gananciaRequerida / 100);
 
-    resultDiv.innerHTML = `Exige <strong>${puntosSugeridos} Pts</strong><br><span style="font-size:0.8rem; font-weight:normal;">(Cubre su costo $${costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0})} y garantiza ${multiplicador}x de retorno previo)</span>`;
+    resultDiv.innerHTML = "Exige <strong>" + puntosSugeridos + " Pts</strong><br><span style=\"font-size:0.8rem; font-weight:normal;\">(Cubre su costo $" + costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0}) + " y garantiza " + multiplicador + "x de retorno previo)</span>";
+};
+
+window.enviarMensajeGuardian = function(textoPredefinido = null) {
+    const input = document.getElementById('guardian-chat-input');
+    const msgTexto = textoPredefinido || input.value.trim();
+    if (!msgTexto) return;
+    
+    if (!textoPredefinido) input.value = '';
+
+    window.appendMensajeGuardian(msgTexto, 'user');
+
+    // Simular pequeño retraso de pensamiento
+    setTimeout(() => {
+        const respuesta = window.procesarMensajeGuardian(msgTexto.toLowerCase());
+        window.appendMensajeGuardian(respuesta, 'bot');
+    }, 600);
+};
+
+window.appendMensajeGuardian = function(html, sender) {
+    const chatContainer = document.getElementById('guardian-chat-messages');
+    if (!chatContainer) return;
+    
+    const align = sender === 'user' ? 'align-self:flex-end; border-radius:15px 15px 0 15px; background:#e0f2fe; color:#0369a1;' : 'align-self:flex-start; border-radius:15px 15px 15px 0; background:#f1f5f9; color:#334155;';
+    
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:10px 15px; max-width:80%; font-size:0.9rem; ' + align;
+    div.innerHTML = html;
+    
+    chatContainer.appendChild(div);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+};
+
+window.procesarMensajeGuardian = function(q) {
+    // Calcular stats rápidos
+    const stats = window.costosState.recetas.map(rec => {
+        let costoInsumos = 0;
+        rec.ingredientes.forEach(ing => {
+            const ins = window.costosState.insumos.find(i => i.id === ing.insumoId);
+            if (ins) costoInsumos += ins.costoUnitario * ing.cantidad;
+        });
+        const costoTotal = (costoInsumos + (costoInsumos * (rec.factorServiciosPct / 100))) / rec.rendimiento;
+        const ganancia = rec.precioVenta - costoTotal;
+        const margen = rec.precioVenta > 0 ? (ganancia / rec.precioVenta) * 100 : 0;
+        return { ...rec, costoUnitario: costoTotal, ganancia, margenPct: margen };
+    });
+
+    if (q.includes('más rentable') || q.includes('mas rentable') || q.includes('mejor margen')) {
+        if (stats.length === 0) return 'Aún no tienes recetas registradas.';
+        stats.sort((a,b) => b.margenPct - a.margenPct);
+        const mejor = stats[0];
+        return '🥇 El producto más rentable es <strong>' + mejor.nombre + '</strong> con un margen del ' + mejor.margenPct.toFixed(1) + '% y una ganancia de $' + mejor.ganancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + ' por unidad.';
+    }
+
+    if (q.includes('menos rentable') || q.includes('peor margen') || q.includes('perdida') || q.includes('pérdida')) {
+        if (stats.length === 0) return 'Aún no tienes recetas registradas.';
+        stats.sort((a,b) => a.margenPct - b.margenPct);
+        const peor = stats[0];
+        return '⚠️ El producto menos rentable es <strong>' + peor.nombre + '</strong> con un margen del ' + peor.margenPct.toFixed(1) + '%. Ganancia: $' + peor.ganancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + '.';
+    }
+
+    if (q.includes('más costoso') || q.includes('mas costoso') || q.includes('mas caro') || q.includes('más caro')) {
+        if (window.costosState.insumos.length === 0) return 'No hay insumos registrados.';
+        const insumos = [...window.costosState.insumos].sort((a,b) => b.costoTotal - a.costoTotal);
+        const caro = insumos[0];
+        return '💸 El insumo en el que más has gastado es <strong>' + caro.nombre + '</strong> ($' + caro.costoTotal.toLocaleString('es-CO') + ' por ' + caro.cantidadCompra + caro.unidadCompra + ').';
+    }
+
+    if (q.includes('consejo') || q.includes('mejorar')) {
+        return '💡 <strong>Consejo del Guardián:</strong> Revisa siempre tus insumos más caros y trata de comprar al por mayor. Si tienes panes con margen menor al 30%, considera subirles el precio o reducir la porción ligeramente. ¡Los centavos suman!';
+    }
+
+    // Buscar si menciona una receta específica
+    const recEncontrada = stats.find(s => q.includes(s.nombre.toLowerCase()));
+    if (recEncontrada) {
+        return '🍞 Para <strong>' + recEncontrada.nombre + '</strong>:<br>- Costo Unitario: $' + recEncontrada.costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0}) + '<br>- Precio Venta: $' + recEncontrada.precioVenta.toLocaleString('es-CO') + '<br>- Ganancia: $' + recEncontrada.ganancia.toLocaleString('es-CO', {maximumFractionDigits:0}) + ' (' + recEncontrada.margenPct.toFixed(1) + '% margen).';
+    }
+
+    // Buscar si menciona un insumo específico
+    const insEncontrado = window.costosState.insumos.find(i => q.includes(i.nombre.toLowerCase()));
+    if (insEncontrado) {
+        return '📦 El insumo <strong>' + insEncontrado.nombre + '</strong> lo compraste a $' + insEncontrado.costoTotal.toLocaleString('es-CO') + '. Su costo base es de $' + insEncontrado.costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:2}) + ' por ' + insEncontrado.unidadBase + '.';
+    }
+
+    if (q.includes('vender') || q.includes('precio') || q.includes('descuento') || q.includes('si vendo')) {
+        return 'Para simular descuentos o cambios de precio te recomiendo usar la herramienta <strong>"Simulador de Descuentos"</strong> que está justo arriba. ¡Es mucho más precisa!';
+    }
+
+    return 'Hmm... Como tu Guardián Financiero, te sugiero ser más directo. Pregúntame sobre "cuál es más rentable", "el costo de algún insumo" o pídeme un "consejo". ¡Estoy para cuidar el negocio!';
 };
 
 // ==========================================
@@ -499,8 +614,8 @@ if (typeof window.guardarEdicionProducto === 'function' && !window._guardianHook
             const costoUnitario = (costoInsumos + (costoInsumos * (rec.factorServiciosPct / 100))) / rec.rendimiento;
             
             if (nuevoPrecio < costoUnitario) {
-                if(typeof showToast === 'function') showToast(`¡GUARDIÁN! Estás vendiendo por debajo del costo de producción ($${costoUnitario.toFixed(0)}).`, '🚨');
-                const confirmacion = confirm(`⚠️ GUARDIÁN FINANCIERO:\\nEl precio de venta $${nuevoPrecio.toLocaleString('es-CO')} es MENOR al costo de la ficha técnica ($${costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0})}).\\n\\n¿Seguro que quieres guardar el producto y perder dinero?`);
+                if(typeof showToast === 'function') showToast("¡GUARDIÁN! Estás vendiendo por debajo del costo de producción ($" + costoUnitario.toFixed(0) + ").", '🚨');
+                const confirmacion = confirm("⚠️ GUARDIÁN FINANCIERO:\nEl precio de venta $" + nuevoPrecio.toLocaleString('es-CO') + " es MENOR al costo de la ficha técnica ($" + costoUnitario.toLocaleString('es-CO', {maximumFractionDigits:0}) + ").\n\n¿Seguro que quieres guardar el producto y perder dinero?");
                 if (!confirmacion) {
                     return; // Bloquea el guardado
                 }
@@ -933,6 +1048,33 @@ window.calcularResumenRecetaEnVivo = function() {
             </div>
         </div>
     `;
+
+    const chatHtml = 
+        '<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-top:20px;">' +
+            '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">' +
+                '<div style="font-size:2rem;">🤖</div>' +
+                '<div>' +
+                    '<h4 style="margin:0; color:#be185d;">Chat con el Guardián Financiero</h4>' +
+                    '<span style="font-size:0.8rem; color:#16a34a;">● En línea y vigilando el bolsillo</span>' +
+                '</div>' +
+            '</div>' +
+            '<div id="guardian-chat-messages" style="height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px;">' +
+                '<div style="background:#f1f5f9; padding:10px 15px; border-radius:15px 15px 15px 0; align-self:flex-start; max-width:80%; font-size:0.9rem; color:#334155;">' +
+                    '¡Hola Pablo! Pregúntame sobre tus recetas, insumos, márgenes o simula precios. Estoy aquí para cuidar tu dinero.' +
+                '</div>' +
+            '</div>' +
+            '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;">' +
+                '<button onclick="window.enviarMensajeGuardian(\'¿Cuál es el pan más rentable?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Pan más rentable?</button>' +
+                '<button onclick="window.enviarMensajeGuardian(\'¿Qué insumo es más costoso?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Insumo más costoso?</button>' +
+                '<button onclick="window.enviarMensajeGuardian(\'Consejo para mejorar márgenes\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">Consejo de márgenes</button>' +
+            '</div>' +
+            '<div style="display:flex; gap:10px;">' +
+                '<input type="text" id="guardian-chat-input" class="checkout-input" style="margin:0; flex:1;" placeholder="Pregúntale al Guardián..." onkeypress="if(event.key === \'Enter\') window.enviarMensajeGuardian()">' +
+                '<button onclick="window.enviarMensajeGuardian()" style="background:#be185d; color:#fff; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Enviar 🚀</button>' +
+            '</div>' +
+        '</div>';
+
+    container.innerHTML += chatHtml;
 };
 
 window.guardarReceta = function() {
