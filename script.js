@@ -4608,6 +4608,18 @@ function handleCartBdrop(e) { if (e.target === document.getElementById('cartModa
 function selectPay(el, method) {
     document.querySelectorAll('.payment-chip').forEach(c => c.classList.remove('active'));
     el.classList.add('active'); selectedPay = method;
+
+    const cashContainer = document.getElementById('cash-calculator-container');
+    if (cashContainer) {
+        if (method === 'Efectivo contra entrega') {
+            cashContainer.style.display = 'block';
+        } else {
+            cashContainer.style.display = 'none';
+            document.getElementById('cashReceivedInput').value = '';
+            document.getElementById('changeReturnDisplay').style.display = 'none';
+            document.getElementById('cashShortageDisplay').style.display = 'none';
+        }
+    }
 }
 
 function toggleOrderType(type) {
@@ -4945,6 +4957,16 @@ function sendOrder() {
         msg += `${symMap} *https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6*\n`;
     }
     msg += `${symPay} *${selectedPay}*\n`;
+    if (selectedPay === 'Efectivo contra entrega') {
+        const cashInput = document.getElementById('cashReceivedInput');
+        if (cashInput && cashInput.value) {
+            const amount = parseInt(cashInput.value, 10);
+            if (amount >= finalTotal) {
+                const change = amount - finalTotal;
+                msg += `💵 *Paga con:* $${amount.toLocaleString('es-CO')} COP | *Cambio:* $${change.toLocaleString('es-CO')} COP\n`;
+            }
+        }
+    }
     if (notes) msg += `${symNotes} *${notes}*\n`;
     msg += `—————————————————————\n`;
     msg += `*PRODUCTOS PEDIDOS:*\n`;
@@ -6383,3 +6405,45 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+window.getCheckoutTotal = function() {
+    const totalEl = document.getElementById('sumTotal');
+    if (!totalEl) return 0;
+    return parseInt(totalEl.innerText.replace(/\D/g, ''), 10) || 0;
+};
+
+window.calculateCashChange = function() {
+    const input = document.getElementById('cashReceivedInput');
+    const total = window.getCheckoutTotal();
+    const returnDisplay = document.getElementById('changeReturnDisplay');
+    const shortageDisplay = document.getElementById('cashShortageDisplay');
+    const returnAmount = document.getElementById('changeReturnAmount');
+
+    if (!input || !input.value) {
+        returnDisplay.style.display = 'none';
+        shortageDisplay.style.display = 'none';
+        return;
+    }
+
+    const amount = parseInt(input.value, 10);
+    
+    if (amount >= total) {
+        const change = amount - total;
+        returnAmount.innerText = '$' + change.toLocaleString('es-CO');
+        returnDisplay.style.display = 'block';
+        shortageDisplay.style.display = 'none';
+    } else {
+        returnDisplay.style.display = 'none';
+        shortageDisplay.style.display = 'block';
+    }
+};
+
+window.setCashAmount = function(amount) {
+    const input = document.getElementById('cashReceivedInput');
+    if (amount === 'exacto') {
+        input.value = window.getCheckoutTotal();
+    } else {
+        input.value = amount;
+    }
+    window.calculateCashChange();
+};

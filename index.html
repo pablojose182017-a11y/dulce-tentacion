@@ -1110,6 +1110,32 @@
                             <div class="payment-chip" onclick="selectPay(this,'Bancolombia')">🔵 Bancolombia</div>
                         </div>
                     </div>
+
+                    <!-- Calculadora de Efectivo (Oculta por defecto) -->
+                    <div id="cash-calculator-container" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">💵 ¿Con cuánto vas a pagar?</label>
+                        
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                            <button type="button" class="cash-quick-btn" onclick="setCashAmount('exacto')">Exacto</button>
+                            <button type="button" class="cash-quick-btn" onclick="setCashAmount(10000)">$10.000</button>
+                            <button type="button" class="cash-quick-btn" onclick="setCashAmount(20000)">$20.000</button>
+                            <button type="button" class="cash-quick-btn" onclick="setCashAmount(50000)">$50.000</button>
+                            <button type="button" class="cash-quick-btn" onclick="setCashAmount(100000)">$100.000</button>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.2rem; font-weight: bold; color: #475569;">$</span>
+                            <input type="number" id="cashReceivedInput" placeholder="Monto entregado" class="checkout-input" style="margin-bottom: 0; flex: 1; font-size: 1rem; font-weight: bold; color: #1e293b;" oninput="calculateCashChange()">
+                        </div>
+
+                        <div id="changeReturnDisplay" style="display: none; margin-top: 10px; font-size: 0.95rem; font-weight: 800; color: #16a34a; background: #dcfce7; padding: 8px; border-radius: 8px; text-align: center;">
+                            Vuelto / Cambio: <span id="changeReturnAmount">$0</span>
+                        </div>
+                        <div id="cashShortageDisplay" style="display: none; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: #dc2626; text-align: center;">
+                            ⚠️ El monto ingresado es menor al total.
+                        </div>
+                    </div>
+
                     <input type="text" id="orderNotes" class="checkout-input" autocomplete="off"
                         placeholder="📝 Notas (Ej: bien tostado, cambio para $50k)">
 

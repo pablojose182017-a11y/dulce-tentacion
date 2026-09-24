@@ -487,18 +487,52 @@ window.registrarAbono = function(orderId, monto, metodo = null) {
         if (idx !== -1) {
             const p = pedidosHistorial[idx];
             const abonoAnterior = p.abono || 0;
-            const nuevoAbono = parseFloat(monto) || 0;
-            const diferencial = nuevoAbono - abonoAnterior;
+            const nuevoTotalAcumulado = parseFloat(monto) || 0;
+            
+            // Lo que el cajero está sumando HOY a la caja
+            const montoEntregadoHoy = nuevoTotalAcumulado - abonoAnterior;
+            const saldoPendiente = Math.max(0, (p.total || 0) - abonoAnterior);
+            
+            const metodoFinal = metodo || p.metodoPago || p.payStatus || 'Efectivo';
 
-            p.abono = nuevoAbono;
-            p.historialPagos = p.historialPagos || [];
+            if (montoEntregadoHoy > saldoPendiente && saldoPendiente > 0) {
+                if (metodoFinal === 'Efectivo') {
+                    const vuelto = montoEntregadoHoy - saldoPendiente;
+                    const abonoReal = saldoPendiente;
+                    
+                    p.abono = abonoAnterior + abonoReal; // Topado al 100% de la orden
+                    p.historialPagos = p.historialPagos || [];
+                    
+                    p.historialPagos.push({
+                        monto: abonoReal,
+                        metodo: `Efectivo (Recibido: $${montoEntregadoHoy.toLocaleString('es-CO')} | Vuelto: $${vuelto.toLocaleString('es-CO')})`,
+                        fecha: new Date().toISOString()
+                    });
+                    
+                    if (typeof showToast === 'function') {
+                        showToast(`Vuelto a entregar: $${vuelto.toLocaleString('es-CO')} COP`, '💵', 4500);
+                    } else {
+                        alert(`💵 Vuelto a entregar: $${vuelto.toLocaleString('es-CO')} COP`);
+                    }
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast(`No puedes abonar más del saldo pendiente con ${metodoFinal}.`, '⚠️', 3500);
+                    } else {
+                        alert(`No puedes abonar más del saldo pendiente con métodos electrónicos.`);
+                    }
+                    return;
+                }
+            } else {
+                p.abono = nuevoTotalAcumulado;
+                p.historialPagos = p.historialPagos || [];
 
-            if (diferencial > 0) {
-                p.historialPagos.push({
-                    monto: diferencial,
-                    metodo: metodo || p.metodoPago || p.payStatus || 'Efectivo',
-                    fecha: new Date().toISOString()
-                });
+                if (montoEntregadoHoy > 0) {
+                    p.historialPagos.push({
+                        monto: montoEntregadoHoy,
+                        metodo: metodoFinal,
+                        fecha: new Date().toISOString()
+                    });
+                }
             }
 
             if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
@@ -506,7 +540,7 @@ window.registrarAbono = function(orderId, monto, metodo = null) {
 
             // Sincronizar en Firestore en tiempo real (multi-dispositivo)
             if (typeof window.updateOrderAbono === 'function') {
-                window.updateOrderAbono(orderId, nuevoAbono, p.historialPagos);
+                window.updateOrderAbono(orderId, p.abono, p.historialPagos);
             }
 
             if (typeof renderLiveOrders === 'function') renderLiveOrders();
