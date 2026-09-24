@@ -267,6 +267,7 @@
             <button class="admin-tab-btn" id="admin-tab-btn-productos" onclick="cambiarPestanaAdmin('productos')">🥐 Control de Productos y Stock</button>
             <button class="admin-tab-btn" id="admin-tab-btn-contabilidad" onclick="cambiarPestanaAdmin('contabilidad')">📊 Contabilidad y Finanzas</button>
             <button class="admin-tab-btn" id="admin-tab-btn-usuarios" onclick="cambiarPestanaAdmin('usuarios')">👥 Usuarios y Personal</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-costos" onclick="cambiarPestanaAdmin('costos')">📊 Costos y Recetas</button>
         </div>
 
         <!-- (Aviso local obsoleto eliminado para evitar confusión) -->
@@ -463,6 +464,22 @@
                 </table>
             </div>
         </div> <!-- Fin Tab Usuarios -->
+
+        <!-- TAB COSTOS Y FICHAS TECNICAS -->
+        <div id="admin-tab-costos" class="admin-tab-container" style="display:none;">
+            <div class="costos-subtabs" style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
+                <button class="stock-filter-chip active" onclick="window.cambiarSubtabCostos('insumos')">📦 Materias Primas</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('recetas')">🥣 Fichas Técnicas</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('informes')">📈 Informes de Rentabilidad</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('guardian')" style="background:#fff1f2; color:#be185d; border-color:#fbcfe8;">🛡️ Guardián Financiero</button>
+            </div>
+            
+            <div id="costos-insumos" class="costos-content"></div>
+            <div id="costos-recetas" class="costos-content" style="display:none;"></div>
+            <div id="costos-informes" class="costos-content" style="display:none;"></div>
+            <div id="costos-guardian" class="costos-content" style="display:none;"></div>
+        </div>
+        
         </div> <!-- Fin admin-only-sections -->
         
         <div style="text-align:center; margin-top:20px;">
@@ -1707,6 +1724,8 @@
     <script src="script.js?v=17"></script>
     <script src="control-roles.js?v=17"></script>
     <script src="contabilidad.js?v=17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="costos-recetas.js?v=1"></script>
     
     <!-- Firebase Sync Module -->
     <script src="firebase-sync.js?v=17"></script>

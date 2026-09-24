@@ -765,7 +765,7 @@ window.cambiarPestanaAdmin = function (tab) {
     }
 
     // 2. Bloqueo de secciones para trabajador
-    if (isWorker && !isAdmin && (tab === 'contabilidad' || tab === 'usuarios')) {
+    if (isWorker && !isAdmin && (tab === 'contabilidad' || tab === 'usuarios' || tab === 'costos')) {
         tab = 'pedidos'; // Redirección defensiva
         if (typeof showToast === 'function') showToast('Acceso denegado: Área exclusiva de administración.', '🚫');
     }
@@ -778,7 +778,7 @@ window.cambiarPestanaAdmin = function (tab) {
         selected.style.setProperty('display', 'block', 'important');
     }
 
-    const btnIds = ['pedidos', 'productos', 'contabilidad', 'usuarios'];
+    const btnIds = ['pedidos', 'productos', 'contabilidad', 'usuarios', 'costos'];
     btnIds.forEach(id => {
         const btn = document.getElementById('admin-tab-btn-' + id);
         if (btn) btn.classList.remove('active');
