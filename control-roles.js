@@ -146,7 +146,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof cart !== 'undefined' && Array.isArray(cart)) {
         cart = cart.filter(i => !isNaN(Number(i.price)) && Number(i.price) >= 0);
         cart.forEach(i => { i.quantity = Number(i.quantity) || 1; i.price = Number(i.price) || 0; });
-        try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch(e){}
+        try { localStorage.setItem('dt_cart', JSON.stringify(cart)); } catch (e) { }
         if (typeof updateCart === 'function') updateCart();
     }
 
@@ -160,9 +160,9 @@ window.addEventListener('DOMContentLoaded', () => {
     //   Admin/SuperAdmin → acceso completo (métricas, usuarios, contabilidad)
     //   Trabajador       → solo funciones operativas (pedidos, stock, cocina)
 
-    const _ADMIN_ONCLICK      = "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
-    const _WORKER_ONCLICK     = "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
-    const _ADMIN_ONCLICK_MOB  = "closeMobileProfile(); " + _ADMIN_ONCLICK;
+    const _ADMIN_ONCLICK = "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+    const _WORKER_ONCLICK = "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+    const _ADMIN_ONCLICK_MOB = "closeMobileProfile(); " + _ADMIN_ONCLICK;
     const _WORKER_ONCLICK_MOB = "closeMobileProfile(); " + _WORKER_ONCLICK;
 
     /**
@@ -170,38 +170,38 @@ window.addEventListener('DOMContentLoaded', () => {
      * Se llama al finalizar syncUserUI() base para aplicar los ajustes correctos de roles.
      * No toca precios, VIP ni Super Admins (los preserva y los fuerza a admin).
      */
-    window._crRolesApplyUI = function() {
+    window._crRolesApplyUI = function () {
         if (typeof currentUser === 'undefined' || !currentUser) return;
 
         const normEmail = (currentUser.email || '').toLowerCase().trim();
-        const isSuper   = isSuperAdmin(normEmail);
+        const isSuper = isSuperAdmin(normEmail);
 
         // Proteger Super Admins: siempre admin, nunca modificable
         if (isSuper) {
             currentUser.role = 'admin';
-            currentUser.rol  = 'admin';
+            currentUser.rol = 'admin';
             currentUser.isAdmin = true;
             currentUser.blocked = false;
-            currentUser.estado  = 'activo';
-            if (typeof adminEmails !== 'undefined' && !adminEmails.map(e => (e||'').toLowerCase()).includes(normEmail)) {
+            currentUser.estado = 'activo';
+            if (typeof adminEmails !== 'undefined' && !adminEmails.map(e => (e || '').toLowerCase()).includes(normEmail)) {
                 adminEmails.push(currentUser.email);
             }
             if (typeof workerEmails !== 'undefined') {
                 workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== normEmail);
             }
-            try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e) {}
-            try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e) {}
+            try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch (e) { }
+            try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch (e) { }
         }
 
-        const isAdmin  = isSuper
+        const isAdmin = isSuper
             || currentUser.role === 'admin'
-            || currentUser.rol  === 'admin'
+            || currentUser.rol === 'admin'
             || currentUser.isAdmin === true
             || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
 
         const isWorker = !isAdmin && (
             currentUser.role === 'trabajador'
-            || currentUser.rol  === 'trabajador'
+            || currentUser.rol === 'trabajador'
             || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email))
         );
 
@@ -210,7 +210,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (deskBtn) {
             if (isAdmin || isWorker) {
                 deskBtn.style.display = 'flex';
-                deskBtn.innerText     = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
+                deskBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
                 deskBtn.setAttribute('onclick', isAdmin ? _ADMIN_ONCLICK : _WORKER_ONCLICK);
             } else {
                 deskBtn.style.display = 'none';
@@ -222,7 +222,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (mobBtn) {
             if (isAdmin || isWorker) {
                 mobBtn.style.display = 'flex';
-                mobBtn.innerText     = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
+                mobBtn.innerText = isAdmin ? '⚙️ Panel Administrador' : '🛠️ Panel de Pedidos / Cocina';
                 mobBtn.setAttribute('onclick', isAdmin ? _ADMIN_ONCLICK_MOB : _WORKER_ONCLICK_MOB);
             } else {
                 mobBtn.style.display = 'none';
@@ -231,7 +231,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // ── Secciones y título del panel
         const adminOnlyDiv = document.getElementById('admin-only-sections');
-        const adminTitle   = document.getElementById('admin-title-panel');
+        const adminTitle = document.getElementById('admin-title-panel');
         if (adminOnlyDiv) adminOnlyDiv.style.display = (isAdmin || isWorker) ? 'block' : 'none';
         if (adminTitle) {
             adminTitle.innerText = isAdmin
@@ -241,15 +241,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // ── Pestañas: Contabilidad y Usuarios solo visibles para Admin
         const tabContabilidad = document.getElementById('admin-tab-btn-contabilidad');
-        const tabUsuarios     = document.getElementById('admin-tab-btn-usuarios');
+        const tabUsuarios = document.getElementById('admin-tab-btn-usuarios');
         if (tabContabilidad) tabContabilidad.style.display = isAdmin ? '' : 'none';
-        if (tabUsuarios)     tabUsuarios.style.display     = isAdmin ? '' : 'none';
+        if (tabUsuarios) tabUsuarios.style.display = isAdmin ? '' : 'none';
 
         // ── Botones de cocina auxiliares (si existen en el DOM)
         const deskKitchenBtn = document.getElementById('desk-kitchen-btn');
-        const mobKitchenBtn  = document.getElementById('mob-kitchen-btn');
+        const mobKitchenBtn = document.getElementById('mob-kitchen-btn');
         if (deskKitchenBtn) deskKitchenBtn.style.display = 'none'; // gestionados por el panel
-        if (mobKitchenBtn)  mobKitchenBtn.style.display  = 'none';
+        if (mobKitchenBtn) mobKitchenBtn.style.display = 'none';
     };
 
     /**
@@ -264,7 +264,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // Evitar doble-envoltura si ya aplicamos el override
         if (base._crWrapped) return true;
 
-        window.syncUserUI = function() {
+        window.syncUserUI = function () {
             base(); // Ejecutar la función base (script.js) que ya maneja VIP y puntos
             window._crRolesApplyUI(); // Post-procesar con la lógica de roles
         };
@@ -288,7 +288,7 @@ window.addEventListener('DOMContentLoaded', () => {
             document.removeEventListener('DOMContentLoaded', _crDOMReady);
         });
         // Segundo fallback con setTimeout para entornos donde DOMContentLoaded ya disparó
-        setTimeout(function() {
+        setTimeout(function () {
             if (typeof window.syncUserUI !== 'function' || !window.syncUserUI._crWrapped) {
                 _crRegistrarOverrideSyncUI();
             }
@@ -299,7 +299,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 4. SOBRESCRIBIR INTERCEPTOR DE LOGIN PARA CUENTAS BLOQUEADAS ---
     const originalLoginCustomUser = window.loginCustomUser;
     if (originalLoginCustomUser) {
-        window.loginCustomUser = function(e) {
+        window.loginCustomUser = function (e) {
             e.preventDefault();
             const emailInput = (document.getElementById('loginEmail')?.value || '').trim();
             const email = emailInput.toLowerCase();
@@ -341,7 +341,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
                 if (typeof workerEmails !== 'undefined') {
                     workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== email);
-                    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+                    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
                 }
 
                 if (typeof loginUserObj === 'function') {
@@ -374,17 +374,17 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 5. RENDER ADMIN USERS (Roles Estandarizados: Normal, VIP, Trabajador, Admin, Super Admin) ---
-    window.renderAdminUsers = function() {
+    window.renderAdminUsers = function () {
         const tbody = document.getElementById('admin-users-table');
         if (!tbody) return;
         const q = (document.getElementById('adminUserSearch')?.value || '').toLowerCase();
-        
+
         const filteredUsers = db_users.filter(u => {
             if (!u || !u.email) return false;
-            const matchSearch = (u.name || '').toLowerCase().includes(q) || 
-                                (u.email || '').toLowerCase().includes(q) || 
-                                (u.phone || '').toLowerCase().includes(q);
-            if(!matchSearch) return false;
+            const matchSearch = (u.name || '').toLowerCase().includes(q) ||
+                (u.email || '').toLowerCase().includes(q) ||
+                (u.phone || '').toLowerCase().includes(q);
+            if (!matchSearch) return false;
 
             const uEmailNorm = (u.email || '').toLowerCase().trim();
             const isSuper = isSuperAdmin(uEmailNorm);
@@ -422,7 +422,7 @@ window.addEventListener('DOMContentLoaded', () => {
             } else {
                 levelHtml = '<span style="color:#64748b;font-weight:bold;">Normal</span>';
             }
-            
+
             return `
         <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
             <td style="padding:10px; display:flex; align-items:center; gap:10px;">
@@ -462,7 +462,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // --- FUNCIONES GLOBALES INTERCEPTADAS ---
 
-window.confirmRoleChange = function(email) {
+window.confirmRoleChange = function (email) {
     const targetEmail = (email || '').toLowerCase().trim();
     if (SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
@@ -479,7 +479,7 @@ window.confirmRoleChange = function(email) {
     if (!u) return;
 
     if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && newRole !== 'Admin') {
-        if(typeof showToast === 'function') showToast('No se puede quitar el rol al administrador principal', 'error');
+        if (typeof showToast === 'function') showToast('No se puede quitar el rol al administrador principal', 'error');
         return;
     }
 
@@ -547,8 +547,8 @@ window.confirmRoleChange = function(email) {
 
     // 2. Persistir localmente en los DB targets explícitos
     if (typeof saveAdminEmails === 'function') saveAdminEmails();
-    try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch(e){}
-    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+    try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch (e) { }
+    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
     if (typeof saveUsersDB === 'function') saveUsersDB();
 
     // 3. Si el usuario modificado es el que está logueado en este navegador, actualizar su 'dt_user' al instante
@@ -589,11 +589,11 @@ window.confirmRoleChange = function(email) {
 
     renderAdminUsers();
     if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
-    
-    if(typeof showToast === 'function') showToast('Rol actualizado a: ' + newRole, '✅');
+
+    if (typeof showToast === 'function') showToast('Rol actualizado a: ' + newRole, '✅');
 };
 
-window.adminToggleBlock = function(email) {
+window.adminToggleBlock = function (email) {
     const targetEmail = (email || '').toLowerCase().trim();
     if (SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
@@ -605,17 +605,17 @@ window.adminToggleBlock = function(email) {
     u.blocked = !u.blocked;
     if (typeof saveUsersDB === 'function') saveUsersDB();
     renderAdminUsers();
-    
+
     // Si el usuario bloqueado es el actual, forzar cierre
-    if (currentUser && (currentUser.email || '').toLowerCase().trim() === targetEmail && u.blocked) { 
-        if(typeof logoutUser === 'function') {
-            logoutUser(new Event('click')); 
+    if (currentUser && (currentUser.email || '').toLowerCase().trim() === targetEmail && u.blocked) {
+        if (typeof logoutUser === 'function') {
+            logoutUser(new Event('click'));
         }
     }
-    if(typeof showToast === 'function') showToast(u.blocked ? 'Usuario bloqueado. No podrá iniciar sesión.' : 'Usuario desbloqueado.', u.blocked ? '⛔' : '✅');
+    if (typeof showToast === 'function') showToast(u.blocked ? 'Usuario bloqueado. No podrá iniciar sesión.' : 'Usuario desbloqueado.', u.blocked ? '⛔' : '✅');
 };
 
-window.adminChangePassword = function(email) {
+window.adminChangePassword = function (email) {
     const target = (email || '').toLowerCase().trim();
     const user = db_users.find(u => u && u.email && u.email.toLowerCase().trim() === target);
     if (!user) return;
@@ -628,11 +628,11 @@ window.adminChangePassword = function(email) {
     if (modal) modal.style.setProperty('display', 'flex', 'important');
 };
 
-window.saveAdminNewPassword = function() {
+window.saveAdminNewPassword = function () {
     const input = document.getElementById('adminNewPasswordInput');
     const newPass = input ? input.value.trim() : '';
     if (!newPass) {
-        if(typeof showToast === 'function') showToast('La contraseña no puede estar vacía', 'error');
+        if (typeof showToast === 'function') showToast('La contraseña no puede estar vacía', 'error');
         return;
     }
     if (!window.userToChangePassword || !window.userToChangePassword.email) return;
@@ -643,32 +643,32 @@ window.saveAdminNewPassword = function() {
 
     u.password = newPass;
     if (typeof saveUsersDB === 'function') saveUsersDB();
-    
+
     const modal = document.getElementById('adminPasswordModal');
     if (modal) modal.style.setProperty('display', 'none', 'important');
-    if(typeof showToast === 'function') showToast('Contraseña restablecida exitosamente', '✅');
+    if (typeof showToast === 'function') showToast('Contraseña restablecida exitosamente', '✅');
 };
 
 // Sincronizar roles en Modo Cocina también
-window.renderKitchenUsers = function() {
+window.renderKitchenUsers = function () {
     const container = document.getElementById('k-users-grid');
     if (!container) return;
     const q = (document.getElementById('k-user-search')?.value || '').toLowerCase();
     const filter = document.getElementById('k-user-filter')?.value || 'todos';
-    
+
     const filtered = db_users.filter(u => {
         if (!u || !u.email) return false;
-        const matchSearch = (u.name || '').toLowerCase().includes(q) || 
-                            (u.email || '').toLowerCase().includes(q) || 
-                            (u.phone || '').toLowerCase().includes(q);
+        const matchSearch = (u.name || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q) ||
+            (u.phone || '').toLowerCase().includes(q);
         if (!matchSearch) return false;
         const uEmailNorm = (u.email || '').toLowerCase().trim();
         const isSuper = isSuperAdmin(uEmailNorm);
         const isAdm = isSuper || adminEmails.includes(u.email);
         const isWork = !isSuper && workerEmails.includes(u.email);
-        
+
         if (filter === 'vip') return u.vip === true;
-        if (filter === 'cocina') return isWork; 
+        if (filter === 'cocina') return isWork;
         if (filter === 'admin') return isAdm;
         return true;
     });
@@ -678,17 +678,17 @@ window.renderKitchenUsers = function() {
         const isSuper = isSuperAdmin(uEmailNorm);
         const isAdm = isSuper || adminEmails.includes(u.email);
         const isWork = !isSuper && workerEmails.includes(u.email);
-        
+
         let currentRoleVal = 'Normal';
         let roleBadgeHtml = '<span class="k-role-badge k-role-regular">Normal</span>';
-        
+
         if (isSuper) { currentRoleVal = 'Admin'; roleBadgeHtml = '<span class="k-role-badge" style="background:#fef3c7; color:#b45309; font-weight:800; border:1px solid #fde68a;">👑 Super Admin (Dueño)</span>'; }
         else if (isAdm) { currentRoleVal = 'Admin'; roleBadgeHtml = '<span class="k-role-badge k-role-admin">🛡️ Administrador</span>'; }
         else if (isWork) { currentRoleVal = 'Trabajador'; roleBadgeHtml = '<span class="k-role-badge k-role-cocina">👨‍🍳 Trabajador</span>'; }
         else if (u.vip) { currentRoleVal = 'VIP'; roleBadgeHtml = '<span class="k-role-badge k-role-vip">⭐ VIP</span>'; }
 
         const pts = u.points || 0;
-        
+
         return `
         <div class="k-user-card" style="${isSuper ? 'border: 2px solid #f59e0b; background:#fffdf5;' : ''}">
             <div class="k-user-header">
@@ -711,10 +711,10 @@ window.renderKitchenUsers = function() {
             </div>
             ` : `
             <select class="k-role-select" onchange="updateUserRole('${u.email}', this.value)">
-                <option value="Normal" ${currentRoleVal==='Normal'?'selected':''}>Normal</option>
-                <option value="VIP" ${currentRoleVal==='VIP'?'selected':''}>⭐ VIP</option>
-                <option value="Trabajador" ${currentRoleVal==='Trabajador'?'selected':''}>👨‍🍳 Trabajador</option>
-                <option value="Admin" ${currentRoleVal==='Admin'?'selected':''}>🛡️ Administrador</option>
+                <option value="Normal" ${currentRoleVal === 'Normal' ? 'selected' : ''}>Normal</option>
+                <option value="VIP" ${currentRoleVal === 'VIP' ? 'selected' : ''}>⭐ VIP</option>
+                <option value="Trabajador" ${currentRoleVal === 'Trabajador' ? 'selected' : ''}>👨‍🍳 Trabajador</option>
+                <option value="Admin" ${currentRoleVal === 'Admin' ? 'selected' : ''}>🛡️ Administrador</option>
             </select>
             `}
 
@@ -738,7 +738,7 @@ window.renderKitchenUsers = function() {
     }).join('');
 };
 
-window.updateUserRole = function(email, role) {
+window.updateUserRole = function (email, role) {
     const targetEmail = (email || '').toLowerCase().trim();
     if (SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
@@ -754,13 +754,13 @@ window.updateUserRole = function(email, role) {
 
 
 // === AJUSTES Y PESTAÑAS (SOBREESCRITURAS) ===
-window.cambiarPestanaAdmin = function(tab) {
+window.cambiarPestanaAdmin = function (tab) {
     const isWorker = (typeof currentUser !== 'undefined' && currentUser && typeof workerEmails !== 'undefined' && workerEmails.includes(currentUser.email));
     const isAdmin = (typeof currentUser !== 'undefined' && currentUser && typeof adminEmails !== 'undefined' && adminEmails.includes(currentUser.email));
 
     // 1. Bloqueo estricto para clientes comunes y VIP
     if (!isWorker && !isAdmin) {
-        if(typeof showSection === 'function') showSection('inicio');
+        if (typeof showSection === 'function') showSection('inicio');
         return;
     }
 
@@ -783,7 +783,7 @@ window.cambiarPestanaAdmin = function(tab) {
         const btn = document.getElementById('admin-tab-btn-' + id);
         if (btn) btn.classList.remove('active');
     });
-    
+
     const activeBtn = document.getElementById('admin-tab-btn-' + tab);
     if (activeBtn) activeBtn.classList.add('active');
 
@@ -827,14 +827,14 @@ document.addEventListener('DOMContentLoaded', () => {
         input.min = minDateStr;
         input.addEventListener('click', () => {
             if (typeof input.showPicker === 'function') {
-                try { input.showPicker(); } catch(e){}
+                try { input.showPicker(); } catch (e) { }
             }
         });
     });
 });
 
 // 3. RESCATE DE PROTECCIÓN DE IMÁGENES ROTAS
-window.addEventListener('error', function(e) {
+window.addEventListener('error', function (e) {
     if (e.target && e.target.tagName === 'IMG') {
         e.target.onerror = null;
         e.target.src = 'logo-pys.png';
@@ -847,14 +847,14 @@ window.addEventListener('error', function(e) {
 
 // 1. REGISTRO Y LOGIN MANUAL MULTI-DISPOSITIVO
 const originalRegisterCustomUser = window.registerCustomUser;
-window.registerCustomUser = function(e) {
+window.registerCustomUser = function (e) {
     if (originalRegisterCustomUser) originalRegisterCustomUser(e);
-    
+
     const nombre = document.getElementById('regName')?.value.trim();
     const correoNormalizado = document.getElementById('regEmail')?.value.trim().toLowerCase();
     const telefono = document.getElementById('regPhone')?.value.trim();
     const password = document.getElementById('regPassword')?.value.trim();
-    
+
     if (correoNormalizado && password && nombre) {
         db.collection('usuarios').doc(correoNormalizado).set({
             nombre: nombre,
@@ -869,11 +869,11 @@ window.registerCustomUser = function(e) {
     }
 };
 
-window.loginCustomUser = function(e) {
+window.loginCustomUser = function (e) {
     if (e && e.preventDefault) e.preventDefault();
     const correoInput = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
     const passInput = (document.getElementById('loginPassword')?.value || '').trim();
-    
+
     if (!correoInput || !passInput) {
         if (typeof showAuthMessage === 'function') showAuthMessage('Por favor ingresa correo y contraseña', 'error');
         else if (typeof showToast === 'function') showToast('Por favor ingresa correo y contraseña', '❌');
@@ -919,7 +919,7 @@ window.loginCustomUser = function(e) {
             if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...superAdminObj };
             else regUsers.push({ ...superAdminObj });
             localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-        } catch(e) {}
+        } catch (e) { }
 
         if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
             adminEmails.push(correoInput);
@@ -927,7 +927,7 @@ window.loginCustomUser = function(e) {
         }
         if (typeof workerEmails !== 'undefined') {
             workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
-            try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+            try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
         }
 
         localStorage.setItem('dt_logged_user', JSON.stringify(superAdminObj));
@@ -944,7 +944,7 @@ window.loginCustomUser = function(e) {
                 estado: 'activo',
                 blocked: false,
                 password: 'Admin123*'
-            }, { merge: true }).catch(() => {});
+            }, { merge: true }).catch(() => { });
         }
 
         if (typeof loginUserObj === 'function') {
@@ -964,11 +964,11 @@ window.loginCustomUser = function(e) {
 
     // 1. Verificar primero en almacenamiento local: dt_registered_users y dt_users_db
     let regUsers = [];
-    try { regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]'); } catch(e) {}
+    try { regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]'); } catch (e) { }
     if (!Array.isArray(regUsers)) regUsers = [];
 
     let dbUsers = [];
-    try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch(e) {}
+    try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch (e) { }
     if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
         dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
     }
@@ -1030,7 +1030,7 @@ window.loginCustomUser = function(e) {
                 isVip: userToLogin.isVip,
                 vip: userToLogin.vip,
                 points: userToLogin.points
-            }, { merge: true }).catch(() => {});
+            }, { merge: true }).catch(() => { });
         }
 
         if (typeof loginUserObj === 'function') {
@@ -1052,7 +1052,7 @@ window.loginCustomUser = function(e) {
         db.collection('usuarios').doc(correoInput).get().then((doc) => {
             if (!doc.exists) {
                 const userExistsWrongPass = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
-                                            dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
+                    dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
                 if (userExistsWrongPass) {
                     if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
                     return alert('Contraseña incorrecta.');
@@ -1069,7 +1069,7 @@ window.loginCustomUser = function(e) {
                 if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Verifica e intenta nuevamente.', 'error');
                 return alert('Contraseña incorrecta.');
             }
-            
+
             const resolvedRole = data.role || data.rol || (isSuper ? 'admin' : 'cliente');
             const isVip = !!(data.isVip || data.vip || resolvedRole === 'vip');
             const remoteUser = {
@@ -1096,7 +1096,7 @@ window.loginCustomUser = function(e) {
                 if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...remoteUser };
                 else regUsers.push({ ...remoteUser });
                 localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-            } catch(e) {}
+            } catch (e) { }
 
             if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
                 const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
@@ -1123,7 +1123,7 @@ window.loginCustomUser = function(e) {
         });
     } else {
         const userExistsWrongPass = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
-                                    dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
+            dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
         if (userExistsWrongPass) {
             if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
             return alert('Contraseña incorrecta.');
@@ -1135,20 +1135,20 @@ window.loginCustomUser = function(e) {
 
 // 2. AUTO-REGISTRO POR GOOGLE SIGN-IN
 const originalHandleCredentialResponse = window.handleCredentialResponse;
-window.handleCredentialResponse = function(response) {
+window.handleCredentialResponse = function (response) {
     if (originalHandleCredentialResponse) originalHandleCredentialResponse(response);
-    
+
     try {
         const base64Url = response.credential.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
-        
+
         const decoded = JSON.parse(jsonPayload);
         const emailLower = (decoded.email || '').toLowerCase().trim();
         const isSuper = isSuperAdmin(emailLower);
-        
+
         const firestoreData = {
             nombre: decoded.name || 'Usuario Google',
             email: emailLower,
@@ -1176,19 +1176,19 @@ window.handleCredentialResponse = function(response) {
                 currentUser.isAdmin = true;
                 currentUser.blocked = false;
                 currentUser.estado = 'activo';
-                try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e){}
-                try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch(e){}
+                try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch (e) { }
+                try { localStorage.setItem('dt_logged_user', JSON.stringify(currentUser)); } catch (e) { }
             }
         }
-        
+
         db.collection('usuarios').doc(emailLower).set(firestoreData, { merge: true });
-    } catch(e) {
+    } catch (e) {
         console.error("Error procesando token de Google:", e);
     }
 };
 
 // 3. TABLA DE USUARIOS DEL ADMINISTRADOR EN TIEMPO REAL
-window.renderUsersTable = function() {
+window.renderUsersTable = function () {
     db.collection('usuarios').onSnapshot((snapshot) => {
         const listaUsuarios = [];
         snapshot.forEach(doc => {
@@ -1201,13 +1201,13 @@ window.renderUsersTable = function() {
                 data.blocked = false;
                 data.estado = 'activo';
                 if (doc.data().rol !== 'admin' || doc.data().estado === 'bloqueado' || doc.data().blocked) {
-                    db.collection('usuarios').doc(doc.id).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => {});
+                    db.collection('usuarios').doc(doc.id).update({ rol: 'admin', estado: 'activo', blocked: false }).catch(() => { });
                 }
             }
             listaUsuarios.push({ id: doc.id, ...data });
         });
         localStorage.setItem('dt_users_db', JSON.stringify(listaUsuarios));
-        
+
         if (typeof pintarTablaUsuarios === 'function') {
             pintarTablaUsuarios(listaUsuarios);
         } else {
@@ -1217,8 +1217,8 @@ window.renderUsersTable = function() {
                 listaUsuarios.forEach(u => {
                     if (!u || !u.email) return;
                     // Mapeo para asegurar compatibilidad
-                    if(!u.name) u.name = u.nombre;
-                    if(!u.blocked) u.blocked = (u.estado === 'bloqueado');
+                    if (!u.name) u.name = u.nombre;
+                    if (!u.blocked) u.blocked = (u.estado === 'bloqueado');
                     const uEmail = (u.email || '').toLowerCase().trim();
                     if (isSuperAdmin(uEmail)) {
                         u.role = 'admin';
@@ -1237,7 +1237,7 @@ window.renderUsersTable = function() {
 
 // Llenar tabla en tiempo real tan pronto inicie
 document.addEventListener('DOMContentLoaded', () => {
-    if(typeof db !== 'undefined') {
+    if (typeof db !== 'undefined') {
         window.renderUsersTable();
     }
 });
@@ -1246,7 +1246,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Extender el bloqueo para actualizar en Firestore
 const originalAdminToggleBlockFS = window.adminToggleBlock;
-window.adminToggleBlock = function(emailTarget) {
+window.adminToggleBlock = function (emailTarget) {
     const targetEmail = (emailTarget || '').toLowerCase().trim();
     if (SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
@@ -1263,7 +1263,7 @@ window.adminToggleBlock = function(emailTarget) {
 
 // Extender eliminación de usuario para proteger a los Super Admins
 const originalAdminDeleteUser = window.adminDeleteUser;
-window.adminDeleteUser = function(emailTarget) {
+window.adminDeleteUser = function (emailTarget) {
     const targetEmail = (emailTarget || '').toLowerCase().trim();
     if (SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
@@ -1342,7 +1342,7 @@ document.addEventListener('DOMContentLoaded', () => {
             grids.forEach(grid => observer.observe(grid, { childList: true, subtree: true }));
         }
     });
-    
+
     const grids = document.querySelectorAll('.grid, #productGrid, #featuredGrid');
     grids.forEach(grid => observer.observe(grid, { childList: true, subtree: true }));
 });
@@ -1350,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // CORRECCIÓN DE SELECTOR DE CANTIDAD EN PRODUCTOS Y RÁFAGA RÁPIDA
 // =========================================================
 
-window.addToCart = function(productId, arg2) {
+window.addToCart = function (productId, arg2) {
     let e = null;
     let forcedQty = null;
 
@@ -1366,7 +1366,7 @@ window.addToCart = function(productId, arg2) {
     if (!p) return;
 
     if (typeof stockConfig !== 'undefined' && stockConfig[productId]) {
-        if(typeof showToast === 'function') showToast("Este producto está agotado por hoy.", "🚫");
+        if (typeof showToast === 'function') showToast("Este producto está agotado por hoy.", "🚫");
         return;
     }
 
@@ -1415,22 +1415,22 @@ window.addToCart = function(productId, arg2) {
     if (currentCard) {
         const inp = currentCard.querySelector(`.qinp-${productId}, #qty-${productId}, .qty-input`);
         if (inp) inp.value = 1; // Restablecer inmediatamente a 1 después de capturarlo para clics rápidos
-        
+
         const btn = currentCard.querySelector(`.badd-${productId}, button[onclick^="addToCart"]`);
         if (btn) {
             // Eliminar bloqueos visuales y permitir ráfagas de clic
             btn.style.pointerEvents = 'auto';
             btn.classList.remove('added'); // Por si el CSS viejo lo bloqueaba
-            
+
             // Agrupar visualmente en vez de congelar
             btn.innerHTML = `<span>✓ ¡Agregado (${qty})!</span>`;
-            
+
             // Limpiar timeout previo si lo hay para que no se superpongan
             if (btn.dataset.timeoutId) {
                 clearTimeout(parseInt(btn.dataset.timeoutId));
             }
-            const tid = setTimeout(() => { 
-                btn.innerHTML = '<span>➕ Agregar al Carrito</span>'; 
+            const tid = setTimeout(() => {
+                btn.innerHTML = '<span>➕ Agregar al Carrito</span>';
             }, 800);
             btn.dataset.timeoutId = tid;
         }
@@ -1448,13 +1448,13 @@ window.addToCart = function(productId, arg2) {
 // --- 5. AUTOMATIZACIÓN DE RENDERIZADO INICIAL Y LIMPIEZA DE DOM ---
 const originalShowSectionAdmin = window.showSection;
 if (originalShowSectionAdmin) {
-    window.showSection = function(sectionId, btn) {
+    window.showSection = function (sectionId, btn) {
         originalShowSectionAdmin.apply(this, arguments);
-        
+
         // Limpieza visual: Ocultar bottom-nav y footer al entrar al admin
         if (sectionId === 'admin-dashboard') {
             document.body.classList.add('admin-view-active');
-            
+
             // Forzar disparo para que todo se pinte bien
             setTimeout(() => {
                 if (typeof window.cambiarPestanaAdmin === 'function') {
@@ -1470,9 +1470,9 @@ if (originalShowSectionAdmin) {
 
 const originalCambiarPestanaRol = window.cambiarPestanaAdmin;
 if (originalCambiarPestanaRol) {
-    window.cambiarPestanaAdmin = function(tabId) {
+    window.cambiarPestanaAdmin = function (tabId) {
         originalCambiarPestanaRol.apply(this, arguments);
-        
+
         if (tabId === 'pedidos') {
             const dateInput = document.querySelector('#filtro-fecha-pedidos, input[type="date"], #orderDateFilter');
             if (dateInput) {
@@ -1490,7 +1490,7 @@ if (originalCambiarPestanaRol) {
             // Asegurar que el botón "Todos" esté activo visualmente
             const catButtons = document.querySelectorAll('#admin-tab-productos .cat-chip');
             catButtons.forEach(btn => btn.classList.remove('active'));
-            if(catButtons.length > 0) catButtons[0].classList.add('active');
+            if (catButtons.length > 0) catButtons[0].classList.add('active');
 
             // Renderizar inmediatamente la grilla de stock con la función correcta
             if (typeof renderStockAdmin === 'function') {
@@ -1516,7 +1516,7 @@ document.head.appendChild(adminStyles);
 // --- 6. MÓDULO DE GESTIÓN DINÁMICA DE OFERTAS Y DESCUENTOS ---
 window.dtOfertasActivas = JSON.parse(localStorage.getItem('dt_ofertas_activas') || '{}');
 
-window.saveOfertas = function() {
+window.saveOfertas = function () {
     localStorage.setItem('dt_ofertas_activas', JSON.stringify(window.dtOfertasActivas));
     if (typeof db !== 'undefined') {
         // Guardar sin merge:true para que al eliminar una oferta local, se borre en remoto
@@ -1586,10 +1586,10 @@ function createOfferModal() {
     document.body.appendChild(modal);
 }
 
-window.calcularDescuentoOferta = function() {
+window.calcularDescuentoOferta = function () {
     const originalPrice = parseInt(document.getElementById('oferta-precio-original').value);
     const porcentaje = parseFloat(document.getElementById('input-oferta-porcentaje').value);
-    
+
     if (!isNaN(originalPrice) && !isNaN(porcentaje) && porcentaje > 0) {
         const nuevoPrecio = Math.round(originalPrice * (1 - porcentaje / 100));
         document.getElementById('oferta-precio-nuevo').value = nuevoPrecio;
@@ -1598,7 +1598,7 @@ window.calcularDescuentoOferta = function() {
 };
 
 
-window.updateOfertaPrecio = function() {
+window.updateOfertaPrecio = function () {
     const sel = document.getElementById('oferta-producto');
     const opt = sel.options[sel.selectedIndex];
     const originalPriceInput = document.getElementById('oferta-precio-original');
@@ -1609,7 +1609,7 @@ window.updateOfertaPrecio = function() {
     if (opt && opt.value) {
         const pId = opt.value;
         const isOferta = window.dtOfertasActivas[pId];
-        
+
         if (isOferta) {
             originalPriceInput.value = isOferta.precioOriginal;
             nuevoPrecioInput.value = isOferta.precioOferta;
@@ -1632,7 +1632,7 @@ window.updateOfertaPrecio = function() {
     }
 };
 
-window.abrirModalOferta = function() {
+window.abrirModalOferta = function () {
     createOfferModal();
     document.getElementById('oferta-producto').value = '';
     document.getElementById('oferta-precio-original').value = '';
@@ -1644,23 +1644,23 @@ window.abrirModalOferta = function() {
     m.style.display = 'flex';
 };
 
-window.guardarOfertaNueva = function() {
+window.guardarOfertaNueva = function () {
     const id = document.getElementById('oferta-producto').value;
     const precioOriginal = parseInt(document.getElementById('oferta-precio-original').value);
     const precioOferta = parseInt(document.getElementById('oferta-precio-nuevo').value);
     const badgePromo = document.getElementById('oferta-badge-promo').value.trim();
     const porcentajeInput = document.getElementById('input-oferta-porcentaje').value;
     const porcentaje = parseFloat(porcentajeInput) || 0;
-    
+
     if (!id || !precioOriginal || !precioOferta) {
-        if(typeof showToast === 'function') showToast('Llena todos los campos', '⚠️');
+        if (typeof showToast === 'function') showToast('Llena todos los campos', '⚠️');
         return;
     }
     if (precioOferta >= precioOriginal) {
-        if(typeof showToast === 'function') showToast('La oferta debe ser menor al precio', '⚠️');
+        if (typeof showToast === 'function') showToast('La oferta debe ser menor al precio', '⚠️');
         return;
     }
-    
+
     window.dtOfertasActivas[id] = {
         enOferta: true,
         precioOferta: precioOferta,
@@ -1669,7 +1669,7 @@ window.guardarOfertaNueva = function() {
         badgePromo: badgePromo
     };
     window.saveOfertas();
-    
+
     // Aplicar en memoria al array products original
     if (typeof products !== 'undefined') {
         const p = products.find(x => x.id == id);
@@ -1687,17 +1687,17 @@ window.guardarOfertaNueva = function() {
             }
         }
     }
-    
+
     document.getElementById('modal-ofertas').style.display = 'none';
-    if(typeof showToast === 'function') showToast('Oferta guardada con éxito', '🔥');
-    
+    if (typeof showToast === 'function') showToast('Oferta guardada con éxito', '🔥');
+
     // Re-render
     if (typeof renderStockAdmin === 'function') renderStockAdmin();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderFeatured === 'function') renderFeatured();
 };
 
-window.eliminarOfertaDesdeModal = function() {
+window.eliminarOfertaDesdeModal = function () {
     const id = document.getElementById('oferta-producto').value;
     if (id) {
         window.quitarOferta(id);
@@ -1705,22 +1705,22 @@ window.eliminarOfertaDesdeModal = function() {
     }
 };
 
-window.renderAdminOfertasActivas = function() {
+window.renderAdminOfertasActivas = function () {
     const container = document.getElementById('admin-ofertas-activas-container');
     if (!container) return;
-    
+
     const keys = Object.keys(window.dtOfertasActivas);
     if (keys.length === 0) {
         container.innerHTML = '<p style="font-size:0.9rem; color:#94a3b8; margin:10px 0;">No hay productos en oferta actualmente.</p>';
         return;
     }
-    
+
     let html = `
         <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:15px; margin-bottom:20px; width:100%;">
             <h4 style="margin:0 0 15px 0; color:#be123c; font-size:1.1rem;">🔥 Ofertas y Descuentos Activos (${keys.length})</h4>
             <div style="display:flex; flex-direction:column; gap:10px;">
     `;
-    
+
     keys.forEach(id => {
         const of = window.dtOfertasActivas[id];
         let pName = 'Producto ' + id;
@@ -1728,7 +1728,7 @@ window.renderAdminOfertasActivas = function() {
             const p = products.find(x => x.id == id);
             if (p) pName = p.originalName || p.name;
         }
-        
+
         html += `
             <div style="background:#fff; border-radius:8px; padding:10px 15px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <div>
@@ -1746,12 +1746,12 @@ window.renderAdminOfertasActivas = function() {
             </div>
         `;
     });
-    
+
     html += `</div></div>`;
     container.innerHTML = html;
 };
 
-window.abrirModalEdicionOferta = function(id) {
+window.abrirModalEdicionOferta = function (id) {
     window.abrirModalOferta();
     const sel = document.getElementById('oferta-producto');
     if (sel) {
@@ -1760,9 +1760,9 @@ window.abrirModalEdicionOferta = function(id) {
     }
 };
 
-window.quitarOferta = function(id) {
+window.quitarOferta = function (id) {
     if (!window.dtOfertasActivas[id]) return;
-    
+
     // Restaurar en memoria
     if (typeof products !== 'undefined') {
         const p = products.find(x => x.id == id);
@@ -1774,24 +1774,24 @@ window.quitarOferta = function(id) {
             delete p.tag;
         }
     }
-    
+
     delete window.dtOfertasActivas[id];
     window.saveOfertas();
-    
-    if(typeof showToast === 'function') showToast('Oferta removida', '✅');
+
+    if (typeof showToast === 'function') showToast('Oferta removida', '✅');
     if (typeof renderStockAdmin === 'function') renderStockAdmin();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderFeatured === 'function') renderFeatured();
 };
 
-window.abrirModalEdicionProducto = function(pId = null) {
+window.abrirModalEdicionProducto = function (pId = null) {
     let p = null;
     let isOferta = null;
     let actualBasePrice = 0;
     let actualName = '';
     let actualImg = '';
     let catSelect = 'panaderia';
-    
+
     let actualPoints = '';
     if (pId) {
         p = products.find(x => x.id === pId);
@@ -1814,19 +1814,19 @@ window.abrirModalEdicionProducto = function(pId = null) {
         modal.style.zIndex = '999999';
         document.body.appendChild(modal);
     }
-    
+
     // Limpiar el badge de promo del nombre si existe
     let cleanName = actualName;
     if (cleanName.includes('[Promo:')) {
         cleanName = cleanName.substring(0, cleanName.indexOf('[Promo:')).trim();
     }
-    
+
     const modalTitle = pId ? '✏️ Editar Producto' : '✨ Crear Nuevo Producto';
     const btnGuardarText = pId ? '💾 Guardar Cambios' : '💾 Crear Producto';
     const btnRestaurar = pId ? `<button type="button" onclick="window.restaurarProductoOriginal(${pId})" style="flex:1; padding:8px 12px; background:transparent; color:#64748b; border:1px solid #cbd5e1; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">🔄 Restaurar</button>` : '';
     const btnEliminar = pId ? `<button type="button" id="btn-borrar-prod-modal" onclick="window.eliminarProducto(${pId})" style="flex:1; background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fee2e2';" onmouseout="this.style.background='#fef2f2';">🗑️ Eliminar Producto</button>` : '';
 
-    
+
     const modal = document.getElementById('modal-editar-producto');
     modal.innerHTML = `
         <div class="auth-content" style="max-width:420px; width:92%; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 12px 32px rgba(0,0,0,0.15);">
@@ -1892,7 +1892,7 @@ window.abrirModalEdicionProducto = function(pId = null) {
     modal.style.display = 'flex';
 };
 
-window.handleProductPhotoUpload = function(input) {
+window.handleProductPhotoUpload = function (input) {
     if (input && input.files && input.files[0]) {
         const file = input.files[0];
         const previewImg = document.querySelector('#editProductImgPreview, .product-img-preview');
@@ -1928,7 +1928,7 @@ window.handleProductPhotoUpload = function(input) {
     }
 };
 
-window.guardarEdicionProducto = function(pId) {
+window.guardarEdicionProducto = function (pId) {
     const nuevoNombre = (document.getElementById('edit-prod-name')?.value || '').trim();
     const nuevoPrecioStr = document.getElementById('edit-prod-price')?.value || '0';
     const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
@@ -1936,20 +1936,20 @@ window.guardarEdicionProducto = function(pId) {
     const nuevaCategoria = document.getElementById('edit-prod-category')?.value || 'panaderia';
     const puntosInput = document.getElementById('newProductPoints');
     const nuevosPuntos = puntosInput && puntosInput.value.trim() !== '' ? Math.max(0, parseInt(puntosInput.value) || 0) : 0;
-    
+
     const nuevoPrecio = parseInt(nuevoPrecioStr.replace(/\D/g, ''));
     if (!nuevoNombre || isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
         if (typeof showToast === 'function') showToast('Completa el nombre y precio', '⚠️');
         return;
     }
-    
+
     let isNew = !pId;
     let targetId = isNew ? Date.now() : pId;
-    
+
     // Guardar en catálogo personalizado
     let localCatalog = {};
-    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
-    
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
+
     localCatalog[targetId] = {
         name: nuevoNombre,
         price: nuevoPrecio,
@@ -1959,13 +1959,13 @@ window.guardarEdicionProducto = function(pId) {
         points: nuevosPuntos,
         puntos: nuevosPuntos
     };
-    
+
     if (isNew) {
         localCatalog[targetId].id = targetId;
         localCatalog[targetId].isCustom = true;
     }
     localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
-    
+
     // Aplicar en memoria (products)
     if (isNew) {
         products.push({
@@ -1986,29 +1986,29 @@ window.guardarEdicionProducto = function(pId) {
             if (!p.originalName) p.originalName = p.name;
             if (!p.originalImg) p.originalImg = p.img;
             if (!p.originalCat) p.originalCat = p.cat;
-            
+
             // Mantener badge de promo si existe en el nombre actual inyectado
             const hasBadge = p.name.includes('[Promo:');
             const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
             p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
-            
+
             p.img = nuevaImg;
             p.image = nuevaImg;
             p.cat = nuevaCategoria;
             p.points = nuevosPuntos;
             p.puntos = nuevosPuntos;
-            
+
             const isOferta = window.dtOfertasActivas ? window.dtOfertasActivas[pId] : null;
             if (isOferta) {
                 p.oldPrice = nuevoPrecio;
                 isOferta.precioOriginal = nuevoPrecio;
-                
+
                 if (isOferta.porcentaje && isOferta.porcentaje > 0) {
                     const nuevoPrecioOferta = Math.round(nuevoPrecio * (1 - (isOferta.porcentaje / 100)));
                     isOferta.precioOferta = nuevoPrecioOferta;
                     p.price = nuevoPrecioOferta;
                 }
-                
+
                 if (typeof window.saveOfertas === 'function') window.saveOfertas();
             } else {
                 p.price = nuevoPrecio;
@@ -2019,23 +2019,23 @@ window.guardarEdicionProducto = function(pId) {
     // Guardar en localStorage('dt_products')
     try {
         localStorage.setItem('dt_products', JSON.stringify(products));
-    } catch(e) {
+    } catch (e) {
         console.warn("No se pudo guardar dt_products:", e);
     }
-    
+
     // Guardar en Firestore
     if (typeof db !== 'undefined') {
         db.collection('config').doc('catalogo_personalizado').set({
             [targetId]: localCatalog[targetId]
         }, { merge: true }).catch(e => console.error("Error guardando producto en Firestore:", e));
     }
-    
+
     window.tempProductImg = null;
     const modalEdit = document.getElementById('modal-editar-producto');
     if (modalEdit) modalEdit.style.display = 'none';
-    
+
     if (typeof showToast === 'function') showToast(isNew ? 'Producto creado' : 'Producto actualizado', '✅');
-    
+
     // Refrescar el catálogo inmediatamente
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderStockAdmin === 'function') renderStockAdmin();
@@ -2045,52 +2045,52 @@ window.guardarEdicionProducto = function(pId) {
 window.saveProduct = window.guardarEdicionProducto;
 window.updateProduct = window.guardarEdicionProducto;
 
-window.restaurarProductoOriginal = function(pId) {
+window.restaurarProductoOriginal = function (pId) {
     let localCatalog = {};
-    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
-    
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
+
     if (localCatalog[pId]) {
         delete localCatalog[pId];
         localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
     }
-    
+
     if (typeof db !== 'undefined') {
         db.collection('config').doc('catalogo_personalizado').update({
             [pId]: firebase.firestore.FieldValue.delete()
         }).catch(e => console.error("Error restaurando", e));
     }
-    
+
     document.getElementById('modal-editar-producto').style.display = 'none';
-    if(typeof showToast === 'function') showToast('Restaurando valores por defecto...', '🔄');
+    if (typeof showToast === 'function') showToast('Restaurando valores por defecto...', '🔄');
     setTimeout(() => window.location.reload(), 1000);
 };
 
-window.eliminarProducto = function(pId) {
+window.eliminarProducto = function (pId) {
     if (!confirm("¿Seguro que deseas eliminar este producto del catálogo?")) return;
-    
+
     let localCatalog = {};
-    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
-    
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
+
     // Marcarlo como eliminado
     localCatalog[pId] = localCatalog[pId] || {};
     localCatalog[pId].eliminado = true;
-    
+
     localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
-    
+
     // Eliminar de memoria
     const idx = products.findIndex(x => x.id === pId);
     if (idx > -1) products.splice(idx, 1);
-    
+
     if (typeof db !== 'undefined') {
         db.collection('config').doc('catalogo_personalizado').set({
             [pId]: { eliminado: true }
         }, { merge: true }).catch(e => console.error("Error eliminando", e));
     }
-    
+
     const modalEditar = document.getElementById('modal-editar-producto');
     if (modalEditar) modalEditar.style.display = 'none';
-    if(typeof showToast === 'function') showToast('Producto eliminado', '✅');
-    
+    if (typeof showToast === 'function') showToast('Producto eliminado', '✅');
+
     if (typeof renderStockAdmin === 'function') renderStockAdmin();
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderFeatured === 'function') renderFeatured();
@@ -2100,9 +2100,9 @@ window.deleteProduct = window.eliminarProducto;
 // 3. ACCIONES DIRECTAS EN CADA TARJETA DE PRODUCTO y BOTÓN GLOBAL
 const originalRenderStockAdminOfertas = window.renderStockAdmin;
 if (originalRenderStockAdminOfertas) {
-    window.renderStockAdmin = function() {
+    window.renderStockAdmin = function () {
         originalRenderStockAdminOfertas.apply(this, arguments);
-        
+
         // Agregar botones adicionales si no existen en la cabecera del stock
         const controlsDiv = document.getElementById('admin-stock-filters-container');
         if (controlsDiv) {
@@ -2137,11 +2137,11 @@ if (originalRenderStockAdminOfertas) {
                 controlsDiv.appendChild(clubBtn);
             }
         }
-        
+
         // Modificar cada tarjeta de la grilla de stock
         const grid = document.getElementById('admin-stock-grid');
         if (!grid) return;
-        
+
         let ofertasContainer = document.getElementById('admin-ofertas-activas-container');
         if (!ofertasContainer) {
             ofertasContainer = document.createElement('div');
@@ -2152,7 +2152,7 @@ if (originalRenderStockAdminOfertas) {
         if (typeof window.renderAdminOfertasActivas === 'function') {
             window.renderAdminOfertasActivas();
         }
-        
+
         Array.from(grid.children).forEach((child) => {
             const btn = child.querySelector('button[onclick^="toggleStock"]');
             if (btn) {
@@ -2160,7 +2160,7 @@ if (originalRenderStockAdminOfertas) {
                 if (match) {
                     const pId = parseInt(match[0]);
                     const isOferta = window.dtOfertasActivas[pId];
-                    
+
                     // Asegurar presencia del selector de Puntos
                     let pointsBox = child.querySelector('.prod-stock-points-container');
                     if (!pointsBox && typeof products !== 'undefined') {
@@ -2179,7 +2179,7 @@ if (originalRenderStockAdminOfertas) {
                             child.appendChild(pointsBox);
                         }
                     }
-                    
+
                     // Botón Editar Producto
                     let btnEditPrice = child.querySelector('.btn-edit-price');
                     if (!btnEditPrice) {
@@ -2200,7 +2200,7 @@ if (originalRenderStockAdminOfertas) {
                         btnEditPrice.onclick = () => window.abrirModalEdicionProducto(pId);
                         child.appendChild(btnEditPrice);
                     }
-                    
+
                     // Botón Oferta
                     let btnOferta = child.querySelector('.btn-oferta-action');
                     if (!btnOferta) {
@@ -2216,19 +2216,19 @@ if (originalRenderStockAdminOfertas) {
                         btnOferta.style.fontSize = '0.8rem';
                         child.appendChild(btnOferta);
                     }
-                    
+
                     if (isOferta) {
                         btnOferta.innerHTML = '❌ Quitar de Oferta';
                         btnOferta.style.background = '#f43f5e';
                         btnOferta.style.color = '#fff';
                         btnOferta.onclick = () => window.quitarOferta(pId);
-                        
+
                         // Mostrar precio tachado en el título de la tarjeta de stock
                         const titleStrong = child.querySelector('strong');
                         if (titleStrong && typeof products !== 'undefined') {
                             const p = products.find(x => x.id === pId);
                             const baseName = p.originalName || p.name;
-                            if(p) titleStrong.innerHTML = `${baseName}<br><s style="color:#999;font-size:0.75rem;">$${isOferta.precioOriginal.toLocaleString()}</s> <span style="color:#e11d48;">$${isOferta.precioOferta.toLocaleString()}</span>`;
+                            if (p) titleStrong.innerHTML = `${baseName}<br><s style="color:#999;font-size:0.75rem;">$${isOferta.precioOriginal.toLocaleString()}</s> <span style="color:#e11d48;">$${isOferta.precioOferta.toLocaleString()}</span>`;
                         }
                     } else {
                         btnOferta.innerHTML = '🏷️ Aplicar Oferta';
@@ -2237,20 +2237,20 @@ if (originalRenderStockAdminOfertas) {
                         btnOferta.onclick = () => {
                             window.abrirModalOferta();
                             const sel = document.getElementById('oferta-producto');
-                            if(sel) {
+                            if (sel) {
                                 sel.value = pId;
                                 window.updateOfertaPrecio();
                             }
                         };
-                        
+
                         // Mostrar nombre y precio base actualizados en el título de la tarjeta
                         const titleStrong = child.querySelector('strong');
                         if (titleStrong && typeof products !== 'undefined') {
                             const p = products.find(x => x.id === pId);
                             const cleanName = p ? (p.originalName || p.name).replace(/ \[Promo:.*?\]/, '') : '';
                             let localCatalog = {};
-                            try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}'); } catch(e){}
-                            
+                            try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}'); } catch (e) { }
+
                             if (p && localCatalog[pId] !== undefined) {
                                 titleStrong.innerHTML = `${localCatalog[pId].name || cleanName}<br><span style="color:#10b981;">$${(localCatalog[pId].price || p.price).toLocaleString()}</span>`;
                             }
@@ -2295,7 +2295,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- HELPER GLOBAL DE COMPRESIÓN DE IMÁGENES (CANVAS / BASE64 OPTIMIZADO) ---
-window.comprimirImagen = function(file, options = {}) {
+window.comprimirImagen = function (file, options = {}) {
     const maxWidth = options.maxWidth || 600;
     const maxHeight = options.maxHeight || 600;
     const quality = options.quality !== undefined ? options.quality : 0.75;
@@ -2328,14 +2328,14 @@ window.comprimirImagen = function(file, options = {}) {
                 canvas.width = Math.max(1, width);
                 canvas.height = Math.max(1, height);
                 const ctx = canvas.getContext('2d');
-                
+
                 if (mimeType === 'image/jpeg') {
                     ctx.fillStyle = '#FFFFFF';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
 
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
+
                 try {
                     const dataUrl = canvas.toDataURL(mimeType, quality);
                     resolve(dataUrl);
@@ -2350,9 +2350,9 @@ window.comprimirImagen = function(file, options = {}) {
 };
 
 // --- MÓDULO DE GESTIÓN DINÁMICA DE TORTAS ---
-window.asegurarEstructuraTortasConfig = function(cfg) {
+window.asegurarEstructuraTortasConfig = function (cfg) {
     if (!cfg || typeof cfg !== 'object') cfg = {};
-    
+
     if (!Array.isArray(cfg.sabores) || cfg.sabores.length === 0) {
         cfg.sabores = [
             {
@@ -2440,7 +2440,7 @@ window.asegurarEstructuraTortasConfig = function(cfg) {
         const compat = cfg.extrasDisponibilidad || {};
         cfg.extrasPersonalizados = [
             { id: 'topper', nombre: 'Topper Acrílico Decorativo', precio: 8000, disponible: compat.topper !== false },
-            { id: 'vela',   nombre: 'Vela de Número Especial Dorada', precio: 3000, disponible: compat.vela   !== false }
+            { id: 'vela', nombre: 'Vela de Número Especial Dorada', precio: 3000, disponible: compat.vela !== false }
         ];
     }
 
@@ -2455,9 +2455,9 @@ try {
     if (cached) {
         window.dt_tortas_config = window.asegurarEstructuraTortasConfig(JSON.parse(cached));
     }
-} catch(e){}
+} catch (e) { }
 
-window.abrirModalConfigTortas = function() {
+window.abrirModalConfigTortas = function () {
     if (!document.getElementById('modal-config-tortas')) {
         const modal = document.createElement('div');
         modal.className = 'auth-modal';
@@ -2471,7 +2471,7 @@ window.abrirModalConfigTortas = function() {
     window.renderModalConfigTortasInterno();
 };
 
-window.renderModalConfigTortasInterno = function() {
+window.renderModalConfigTortasInterno = function () {
     if (typeof window.asegurarEstructuraTortasConfig === 'function') {
         window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
     }
@@ -2607,15 +2607,15 @@ window.renderModalConfigTortasInterno = function() {
     modal.style.display = 'flex';
 };
 
-window.handleTortaDesignUpload = function(index, input) {
+window.handleTortaDesignUpload = function (index, input) {
     if (!input || !input.files || !input.files[0]) return;
     const file = input.files[0];
     const previewImg = document.getElementById(`preview-torta-img-${index}`);
     const hiddenInput = document.getElementById(`torta-img-${index}`);
-    
+
     if (previewImg) previewImg.style.opacity = '0.4';
     if (typeof showToast === 'function') showToast("Optimizando diseño...", "⏳");
-    
+
     window.comprimirImagen(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
         .then(dataUrl => {
             if (hiddenInput) hiddenInput.value = dataUrl;
@@ -2635,7 +2635,7 @@ window.handleTortaDesignUpload = function(index, input) {
         });
 };
 
-window.agregarSaborTorta = function() {
+window.agregarSaborTorta = function () {
     window.guardarEstadoTemporalTortas();
     if (!window.dt_tortas_config.sabores) window.dt_tortas_config.sabores = [];
     window.dt_tortas_config.sabores.push({
@@ -2652,14 +2652,14 @@ window.agregarSaborTorta = function() {
     window.renderModalConfigTortasInterno();
 };
 
-window.eliminarSaborTorta = function(index) {
+window.eliminarSaborTorta = function (index) {
     if (!confirm("¿Eliminar este sabor?")) return;
     window.guardarEstadoTemporalTortas();
     window.dt_tortas_config.sabores.splice(index, 1);
     window.renderModalConfigTortasInterno();
 };
 
-window.toggleDisponibilidadSabor = function(index) {
+window.toggleDisponibilidadSabor = function (index) {
     window.guardarEstadoTemporalTortas();
     if (window.dt_tortas_config.sabores && window.dt_tortas_config.sabores[index]) {
         const s = window.dt_tortas_config.sabores[index];
@@ -2668,9 +2668,9 @@ window.toggleDisponibilidadSabor = function(index) {
     window.renderModalConfigTortasInterno();
 };
 
-window.agregarDisenoTorta = function() {
+window.agregarDisenoTorta = function () {
     window.guardarEstadoTemporalTortas();
-    
+
     window.dt_tortas_config.disenos.push({
         id: Date.now(),
         name: '# Nuevo',
@@ -2679,17 +2679,17 @@ window.agregarDisenoTorta = function() {
     window.renderModalConfigTortasInterno();
 };
 
-window.eliminarDisenoTorta = function(index) {
+window.eliminarDisenoTorta = function (index) {
     if (!confirm("¿Eliminar este diseño?")) return;
     window.guardarEstadoTemporalTortas();
     window.dt_tortas_config.disenos.splice(index, 1);
     window.renderModalConfigTortasInterno();
 };
 
-window.guardarEstadoTemporalTortas = function() {
+window.guardarEstadoTemporalTortas = function () {
     const config = window.dt_tortas_config;
     if (!config.sabores) config.sabores = [];
-    
+
     config.sabores.forEach((s, i) => {
         const nIcon = document.getElementById(`sabor-icon-${i}`);
         const nName = document.getElementById(`sabor-name-${i}`);
@@ -2732,46 +2732,46 @@ window.guardarEstadoTemporalTortas = function() {
         config.disenos.forEach((d, i) => {
             const nName = document.getElementById(`torta-name-${i}`);
             const nImg = document.getElementById(`torta-img-${i}`);
-            if(nName) d.name = nName.value;
-            if(nImg) d.img = nImg.value;
+            if (nName) d.name = nName.value;
+            if (nImg) d.img = nImg.value;
         });
     }
 };
 
-window.guardarConfigTortas = function() {
+window.guardarConfigTortas = function () {
     window.guardarEstadoTemporalTortas();
-    
+
     if (!window.dt_tortas_config.sabores || window.dt_tortas_config.sabores.length === 0) {
-        if(typeof showToast === 'function') showToast("Debe haber al menos un sabor configurado", "⚠️");
+        if (typeof showToast === 'function') showToast("Debe haber al menos un sabor configurado", "⚠️");
         return;
     }
 
     localStorage.setItem('dt_tortas_config', JSON.stringify(window.dt_tortas_config));
-    
+
     if (typeof db !== 'undefined') {
         db.collection('config').doc('tortas_config').set(window.dt_tortas_config)
             .then(() => {
-                if(typeof showToast === 'function') showToast("Configuración de tortas guardada", "✅");
+                if (typeof showToast === 'function') showToast("Configuración de tortas guardada", "✅");
             })
             .catch(e => {
                 console.error("Error guardando config tortas:", e);
-                if(typeof showToast === 'function') showToast("Error guardando en la nube", "⚠️");
+                if (typeof showToast === 'function') showToast("Error guardando en la nube", "⚠️");
             });
     } else {
-        if(typeof showToast === 'function') showToast("Guardado localmente", "✅");
+        if (typeof showToast === 'function') showToast("Guardado localmente", "✅");
     }
-    
+
     const modal = document.getElementById('modal-config-tortas');
     if (modal) modal.style.display = 'none';
     window.renderConfigTortasPublica();
 };
 
-window.renderConfigTortasPublica = function() {
+window.renderConfigTortasPublica = function () {
     if (typeof window.asegurarEstructuraTortasConfig === 'function') {
         window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
     }
     const config = window.dt_tortas_config;
-    
+
     // Renderizar grilla de sabores en el modal del cliente
     const flavorGrid = document.querySelector('.wizard-flavor-grid');
     if (flavorGrid && Array.isArray(config.sabores)) {
@@ -2818,7 +2818,7 @@ window.renderConfigTortasPublica = function() {
             updateWizardSummary();
         }
     }
-    
+
     // Renderizar diseños disponibles
     const grid = document.getElementById('cake-design-grid');
     if (grid && Array.isArray(config.disenos)) {
@@ -2888,17 +2888,17 @@ window.addEventListener('DOMContentLoaded', () => {
 const localPromo = localStorage.getItem('dt_promo_regalo');
 window.dt_promo_regalo = localPromo ? JSON.parse(localPromo) : (window.dt_promo_regalo || { activa: false, montoMinimo: 0, productoId: null, cantidad: 1, nombrePromo: '' });
 
-window.renderAdminPromoCard = function() {
+window.renderAdminPromoCard = function () {
     const container = document.getElementById('promo-regalo-status-container');
     if (!container) return;
-    
+
     const conf = window.dt_promo_regalo;
     if (conf && conf.activa) {
         container.innerHTML = `
             <div style="background:#f3e8ff; border:1px solid #d8b4fe; border-radius:12px; padding:8px 12px; display:inline-flex; align-items:center; gap:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-right: 10px;">
                 <div>
                     <strong style="color:#7e22ce; font-size:0.9rem; display:block;">🎁 Promo Activa: ${conf.nombrePromo || 'Regalo'}</strong>
-                    <span style="font-size:0.8rem; color:#6b21a8;">Mín: $${(conf.montoMinimo||0).toLocaleString()}</span>
+                    <span style="font-size:0.8rem; color:#6b21a8;">Mín: $${(conf.montoMinimo || 0).toLocaleString()}</span>
                 </div>
                 <div style="display:flex; gap:6px;">
                     <button onclick="window.abrirModalPromoRegalo()" style="background:#a855f7; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">✏️ Editar</button>
@@ -2915,26 +2915,26 @@ window.renderAdminPromoCard = function() {
     }
 };
 
-window.eliminarPromoRegalo = function() {
-    if(!confirm('¿Estás seguro de eliminar y desactivar esta promoción?')) return;
+window.eliminarPromoRegalo = function () {
+    if (!confirm('¿Estás seguro de eliminar y desactivar esta promoción?')) return;
     window.dt_promo_regalo = { activa: false, montoMinimo: 0, productoId: null, cantidad: 1, nombrePromo: '' };
     localStorage.removeItem('dt_promo_regalo');
-    
+
     if (typeof db !== 'undefined') {
         db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
             .then(() => {
-                if(typeof showToast === 'function') showToast("Promoción eliminada", "🗑️");
+                if (typeof showToast === 'function') showToast("Promoción eliminada", "🗑️");
             })
             .catch(e => console.error("Error eliminando promo:", e));
     }
-    
+
     document.getElementById('modal-promo-regalo').style.display = 'none';
-    if(typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
+    if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
     window.renderAdminPromoCard();
     if (typeof updateCart === 'function') updateCart();
 };
 
-window.abrirModalPromoRegalo = function() {
+window.abrirModalPromoRegalo = function () {
     if (!document.getElementById('modal-promo-regalo')) {
         const modal = document.createElement('div');
         modal.className = 'auth-modal';
@@ -2945,15 +2945,15 @@ window.abrirModalPromoRegalo = function() {
         modal.style.zIndex = '999999';
         document.body.appendChild(modal);
     }
-    
+
     const m = document.getElementById('modal-promo-regalo');
     const conf = window.dt_promo_regalo;
-    
+
     // Opciones de productos para el regalo
-    const prodOptions = typeof products !== 'undefined' 
-        ? products.map(p => `<option value="${p.id}" ${conf.productoId == p.id ? 'selected' : ''}>${p.name}</option>`).join('') 
+    const prodOptions = typeof products !== 'undefined'
+        ? products.map(p => `<option value="${p.id}" ${conf.productoId == p.id ? 'selected' : ''}>${p.name}</option>`).join('')
         : '';
-        
+
     m.innerHTML = `
         <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
             <button class="auth-close-btn" onclick="document.getElementById('modal-promo-regalo').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
@@ -2996,7 +2996,7 @@ window.abrirModalPromoRegalo = function() {
     m.style.display = 'flex';
 };
 
-window.guardarPromoRegalo = function() {
+window.guardarPromoRegalo = function () {
     window.dt_promo_regalo = {
         activa: document.getElementById('promo-regalo-activa').checked,
         nombrePromo: document.getElementById('promo-regalo-nombre').value.trim() || 'Promo Especial',
@@ -3004,34 +3004,34 @@ window.guardarPromoRegalo = function() {
         productoId: parseInt(document.getElementById('promo-regalo-producto').value) || null,
         cantidad: parseInt(document.getElementById('promo-regalo-qty').value) || 1
     };
-    
+
     if (window.dt_promo_regalo.activa && (!window.dt_promo_regalo.montoMinimo || !window.dt_promo_regalo.productoId)) {
-        if(typeof showToast === 'function') showToast('Revisa monto y producto', '⚠️');
+        if (typeof showToast === 'function') showToast('Revisa monto y producto', '⚠️');
         return;
     }
 
     localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
-    
+
     if (typeof db !== 'undefined') {
         db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
             .then(() => {
-                if(typeof showToast === 'function') showToast("Promo de regalo guardada", "🎁");
+                if (typeof showToast === 'function') showToast("Promo de regalo guardada", "🎁");
             })
             .catch(e => console.error("Error guardando promo:", e));
     } else {
-        if(typeof showToast === 'function') showToast("Promo guardada localmente", "🎁");
+        if (typeof showToast === 'function') showToast("Promo guardada localmente", "🎁");
     }
-    
+
     document.getElementById('modal-promo-regalo').style.display = 'none';
-    
+
     // Forzar re-evaluacion del carrito por si cambia el estado activo
     if (typeof updateCart === 'function') updateCart();
-    
+
     window.renderAdminPromoCard();
-    if(typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
+    if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
 };
 
-window.closeCartModal = function() {
+window.closeCartModal = function () {
     const m = document.getElementById('cartModal');
     if (m) {
         m.style.display = 'none';
@@ -3039,7 +3039,7 @@ window.closeCartModal = function() {
     }
 };
 
-window.openDeliveryCoverageModal = function() {
+window.openDeliveryCoverageModal = function () {
     const m = document.getElementById('deliveryCoverageModal');
     if (m) {
         m.style.display = 'flex';
@@ -3047,7 +3047,7 @@ window.openDeliveryCoverageModal = function() {
     }
 };
 
-window.closeDeliveryCoverageModal = function(e) {
+window.closeDeliveryCoverageModal = function (e) {
     if (e && e.target && e.target !== e.currentTarget && e.target.id !== 'deliveryCoverageModal') {
         return;
     }
@@ -3058,7 +3058,7 @@ window.closeDeliveryCoverageModal = function(e) {
     }
 };
 
-window.toggleMobileMenu = function(e) {
+window.toggleMobileMenu = function (e) {
     if (e && e.stopPropagation) e.stopPropagation();
     const m = document.getElementById('mobileDropdownMenu');
     if (!m) return;
@@ -3069,7 +3069,7 @@ window.toggleMobileMenu = function(e) {
     }
 };
 
-window.openMobileMenu = function() {
+window.openMobileMenu = function () {
     const m = document.getElementById('mobileDropdownMenu');
     if (m) {
         m.style.display = 'block';
@@ -3077,7 +3077,7 @@ window.openMobileMenu = function() {
     }
 };
 
-window.closeMobileMenu = function() {
+window.closeMobileMenu = function () {
     const m = document.getElementById('mobileDropdownMenu');
     if (m) {
         m.style.display = 'none';
@@ -3086,7 +3086,7 @@ window.closeMobileMenu = function() {
 };
 
 // ===== PRODUCT IMAGE LIGHTBOX =====
-window.openProductImageModal = function(src, title) {
+window.openProductImageModal = function (src, title) {
     const modal = document.getElementById('productImageModal');
     if (!modal) return;
     const imgEl = document.getElementById('productLightboxImg');
@@ -3103,7 +3103,7 @@ window.openProductImageModal = function(src, title) {
     document.body.style.overflow = 'hidden';
 };
 
-window.closeProductImageModal = function() {
+window.closeProductImageModal = function () {
     const modal = document.getElementById('productImageModal');
     if (modal) {
         modal.style.display = 'none';
@@ -3113,7 +3113,7 @@ window.closeProductImageModal = function() {
 
 if (!window._productLightboxKeydownAttached) {
     window._productLightboxKeydownAttached = true;
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' || e.key === 'Esc') {
             const modal = document.getElementById('productImageModal');
             if (modal && modal.style.display === 'flex') {
@@ -3126,7 +3126,7 @@ if (!window._productLightboxKeydownAttached) {
 // --- SISTEMA DE CONFIGURACIÓN DE DOMICILIO GRATIS ---
 window.dt_min_free_delivery = window.dt_min_free_delivery || 10000;
 
-window.abrirModalConfigDelivery = function() {
+window.abrirModalConfigDelivery = function () {
     if (!document.getElementById('modal-config-delivery')) {
         const modal = document.createElement('div');
         modal.className = 'auth-modal';
@@ -3137,9 +3137,9 @@ window.abrirModalConfigDelivery = function() {
         modal.style.zIndex = '999999';
         document.body.appendChild(modal);
     }
-    
+
     const m = document.getElementById('modal-config-delivery');
-    
+
     m.innerHTML = `
         <div class="auth-content" style="max-width:350px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
             <button class="auth-close-btn" onclick="document.getElementById('modal-config-delivery').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
@@ -3157,27 +3157,27 @@ window.abrirModalConfigDelivery = function() {
     m.style.display = 'flex';
 };
 
-window.guardarConfigDelivery = function() {
+window.guardarConfigDelivery = function () {
     const val = parseInt(document.getElementById('config-delivery-min').value);
     if (isNaN(val) || val < 0) {
-        if(typeof showToast === 'function') showToast('Ingresa un monto válido', '⚠️');
+        if (typeof showToast === 'function') showToast('Ingresa un monto válido', '⚠️');
         return;
     }
 
     window.dt_min_free_delivery = val;
-    
+
     if (typeof db !== 'undefined') {
         db.collection('config').doc('tienda').set({ minFreeDelivery: val }, { merge: true })
             .then(() => {
-                if(typeof showToast === 'function') showToast("Monto guardado con éxito", "🛵");
+                if (typeof showToast === 'function') showToast("Monto guardado con éxito", "🛵");
                 document.getElementById('modal-config-delivery').style.display = 'none';
                 if (typeof updateCart === 'function') updateCart();
             })
             .catch(err => {
                 console.error("Error guardando config:", err);
-                if(typeof showToast === 'function') showToast("Error al guardar", "❌");
+                if (typeof showToast === 'function') showToast("Error al guardar", "❌");
             });
     } else {
-        if(typeof showToast === 'function') showToast("No hay conexión a BD", "⚠️");
+        if (typeof showToast === 'function') showToast("No hay conexión a BD", "⚠️");
     }
-};
+};
