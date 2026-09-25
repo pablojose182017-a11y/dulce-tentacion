@@ -447,11 +447,16 @@ window.addEventListener('DOMContentLoaded', () => {
                             <option value="Admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
                         </select>
                         <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
-                    <div style="display:flex; gap:4px; width:100%;">
-                        <button onclick="window.abrirModalEditarUsuarioAdmin('${u.email}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1; font-weight:600;">✏️ Editar</button>
-                        ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1;">🔑 Cambiar Clave</button>` : ''}
-                    </div>
-                    <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
+                    <select onchange="window.ejecutarAccionUsuario(this, '${u.email}')" style="width:100%; padding:6px; font-size:0.75rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; background:#f8fafc; color:#334155; font-weight:600; cursor:pointer; margin-top:4px;">
+                        <option value="">⚙️ Más Acciones...</option>
+                        <option value="editar">✏️ Editar Perfil</option>
+                        ${(u.password !== undefined) ? `<option value="clave">🔑 Cambiar Clave</option>` : ''}
+                        <option value="bloquear">${u.blocked ? '🔓 Desbloquear Cuenta' : '🔒 Bloquear Cuenta'}</option>
+                        ${ u.premioRedesReclamado 
+                            ? `<option value="" disabled>🎁 Redes ya validadas</option>`
+                            : `<option value="redes">✅ Validar Redes (Regalo)</option>`
+                        }
+                    </select>
                 </div>`}
             </td>
         </tr>
@@ -461,6 +466,75 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- FUNCIONES GLOBALES INTERCEPTADAS ---
+
+window.ejecutarAccionUsuario = function(selectElement, email) {
+    const accion = selectElement.value;
+    
+    // 1. Restablecer el select al valor neutro
+    selectElement.value = "";
+    
+    // 2. Enrutar a la función nativa original
+    if (!accion) return;
+    
+    switch (accion) {
+        case 'editar':
+            if (typeof window.abrirModalEditarUsuarioAdmin === 'function') {
+                window.abrirModalEditarUsuarioAdmin(email);
+            }
+            break;
+        case 'clave':
+            if (typeof adminChangePassword === 'function') {
+                adminChangePassword(email);
+            }
+            break;
+        case 'bloquear':
+            if (typeof adminToggleBlock === 'function') {
+                adminToggleBlock(email);
+            }
+            break;
+        case 'redes':
+            if (typeof window.entregarPremioRedesDesdeTabla === 'function') {
+                window.entregarPremioRedesDesdeTabla(email);
+            }
+            break;
+    }
+};
+
+window.entregarPremioRedesDesdeTabla = function(email) {
+    if (!confirm("¿Confirmas que este cliente ya verificó sus redes sociales en persona y se le entregará el premio de bienvenida?")) return;
+    
+    // Actualizar db_users local
+    const uidx = db_users.findIndex(u => u.email === email);
+    if (uidx !== -1) {
+        db_users[uidx].premioRedesReclamado = true;
+        if (typeof saveUsersDB === 'function') saveUsersDB();
+        
+        // Actualizar currentUser si es el mismo usuario (por si el admin se auto-asigna)
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.email === email) {
+            currentUser.premioRedesReclamado = true;
+            if (typeof saveUser === 'function') saveUser();
+            if (typeof syncUserUI === 'function') syncUserUI();
+            if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
+        }
+
+        // Refrescar tabla visualmente de inmediato
+        if (typeof window.renderAdminUsers === 'function') window.renderAdminUsers();
+
+        // Actualizar en Firestore
+        if (typeof db !== 'undefined' && typeof db.collection === 'function') {
+            db.collection('usuarios').doc(email).set({ premioRedesReclamado: true }, { merge: true })
+                .then(() => {
+                    if (typeof showToast === 'function') showToast("Redes validadas. Premio registrado.", "✅");
+                })
+                .catch(err => {
+                    console.error("Error al actualizar premioRedesReclamado en Firestore:", err);
+                    alert("Error de conexión al guardar el premio. Verifica tu internet.");
+                });
+        }
+    } else {
+        alert("Usuario no encontrado en la base de datos local.");
+    }
+};
 
 window.confirmRoleChange = function (email) {
     const targetEmail = (email || '').toLowerCase().trim();
