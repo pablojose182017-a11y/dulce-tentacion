@@ -283,6 +283,7 @@
                 <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('panaderia', this)">🥖 Pan</button>
                 <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('pasteleria', this)">🎂 Tortas & Postres</button>
                 <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('combos', this)">🔥 Ofertas</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('regalos', this)">🎁 Regalos</button>
                 <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('antojos', this)">☕ Antojos</button>
                 <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('paquetes', this)">📦 Paquetes</button>
                 <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('eventos', this)">🎉 Eventos & Fiestas</button>
@@ -292,9 +293,7 @@
                 <button id="btn-config-tortas" type="button" onclick="if(window.abrirModalConfigTortas) window.abrirModalConfigTortas()" style="background:#db2777; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
                     🎂 Diseños y Precios de Tortas
                 </button>
-                <div id="promo-regalo-status-container" style="flex:0 0 auto;">
-                    <!-- Se llena con JS: Tarjeta activa o botón + Configurar Regalo -->
-                </div>
+
                 <button type="button" class="btn-admin-action" id="btnAdminClubPuntos" onclick="window.openAdminPointsModal && window.openAdminPointsModal(event)" style="background: linear-gradient(135deg, #e91e63, #ff5722); color: white;">
                     ⭐ Configurar Puntos & Club VIP
                 </button>

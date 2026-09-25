@@ -1258,6 +1258,7 @@ function renderKitchenOrders(tabId) {
                     <p><strong>Dirección:</strong> ${order.address || 'Para recoger'}</p>
                     <div class="kitchen-products">
                         ${order.products.replace(/, /g, '<br>')}
+                        ${(order.cartItems || []).map(item => (item.customData && item.customData.disenoImg) ? `<div style="margin-top:8px;"><strong style="font-size:0.85rem; color:#64748b;">Diseño Adjunto:</strong><br><img src="${item.customData.disenoImg}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.2); cursor:pointer;" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño Cliente'); else window.open(this.src);" title="Ver foto"></div>` : '').join('')}
                     </div>
                     <p style="margin-bottom: 12px; color: #64748b; font-weight: bold;">Estado actual: ${order.status}</p>
                     ${actionsHtml}
@@ -2339,12 +2340,20 @@ function renderStockAdmin() {
     }
     // -------------------------------------------------------------------------
 
-    // Cuando el filtro es de ofertas, el grid queda vacío:
-    // toda la información ya aparece en #admin-ofertas-activas-container arriba.
+    // --- CONTROL DE VISIBILIDAD DE REGALOS ---
+    const esFiltroRegalos = (currentStockFilter === 'regalos');
+    const regaloContainer = document.getElementById('promo-regalo-status-container');
+    if (regaloContainer) {
+        regaloContainer.style.display = esFiltroRegalos ? 'block' : 'none';
+    }
+    // -------------------------------------------------------------------------
+
+    // Cuando el filtro es de ofertas o regalos, el grid queda vacío:
+    // toda la información ya aparece en los contenedores superiores.
     const filteredProducts = (currentStockFilter === 'todos')
         ? products
-        : esFiltroOfertas
-            ? []   // ← grid vacío, el panel de ofertas es suficiente
+        : (esFiltroOfertas || esFiltroRegalos)
+            ? []   // ← grid vacío, el panel superior es suficiente
             : products.filter(p => {
                 if (esFiltroTortas) {
                     return p.cat === 'tortas' || p.cat === 'pasteleria';
@@ -5909,7 +5918,7 @@ function handleWizardCustomPhoto(input) {
         if (previewImg) previewImg.style.opacity = '0.4';
         if (typeof showToast === 'function') showToast("Optimizando foto...", "⏳");
 
-        window.comprimirImagen(file, { maxWidth: 600, maxHeight: 600, quality: 0.75 })
+        window.comprimirImagen(file, { maxWidth: 400, maxHeight: 400, quality: 0.55 })
             .then(dataUrl => {
                 wizardData.diseno = 'Diseño Propio (Foto Cliente)';
                 wizardData.disenoImg = dataUrl;

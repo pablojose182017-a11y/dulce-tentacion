@@ -606,7 +606,10 @@ window.renderLiveOrders = function() {
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; font-size:0.83rem; color:#334155;">
                             <div><span style="color:#64748b;">Sabor:</span> <strong>${cd.sabor || cd.flavor || '—'}</strong></div>
                             <div><span style="color:#64748b;">Tama\u00f1o:</span> <strong>${cd.tamano || cd.size || '—'}</strong></div>
-                            <div><span style="color:#64748b;">Dise\u00f1o:</span> <strong>${cd.diseno || cd.design || '—'}</strong></div>
+                            <div>
+                                <span style="color:#64748b;">Dise\u00f1o:</span> <strong>${cd.diseno || cd.design || '—'}</strong>
+                                ${cd.disenoImg ? `<br><img src="${cd.disenoImg}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.2); margin-top:5px; cursor:pointer;" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño Cliente'); else window.open(this.src);" title="Ver foto">` : ''}
+                            </div>
                             <div><span style="color:#64748b;">Porciones:</span> <strong>${t.quantity || 1}</strong></div>
                         </div>
                         <div style="margin-top:8px; font-size:0.83rem; color:#334155; border-top:1px dashed #fed7aa; padding-top:8px;">

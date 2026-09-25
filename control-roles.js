@@ -2117,13 +2117,7 @@ if (originalRenderStockAdminOfertas) {
                 offerBtn.onclick = () => window.abrirModalOferta();
                 controlsDiv.appendChild(offerBtn);
             }
-            if (!document.getElementById('promo-regalo-status-container')) {
-                const container = document.createElement('div');
-                container.id = 'promo-regalo-status-container';
-                container.style.flex = '0 0 auto';
-                controlsDiv.appendChild(container);
-                window.renderAdminPromoCard();
-            }
+
             if (!document.getElementById('btnAdminClubPuntos')) {
                 const clubBtn = document.createElement('button');
                 clubBtn.type = 'button';
@@ -2144,6 +2138,15 @@ if (originalRenderStockAdminOfertas) {
 
         let ofertasContainer = document.getElementById('admin-ofertas-activas-container');
         if (!ofertasContainer) {
+            let promoRegaloContainer = document.getElementById('promo-regalo-status-container');
+            if (!promoRegaloContainer) {
+                promoRegaloContainer = document.createElement('div');
+                promoRegaloContainer.id = 'promo-regalo-status-container';
+                promoRegaloContainer.style.width = '100%';
+                grid.parentNode.insertBefore(promoRegaloContainer, grid);
+            }
+            window.renderAdminPromoCard();
+
             ofertasContainer = document.createElement('div');
             ofertasContainer.id = 'admin-ofertas-activas-container';
             ofertasContainer.style.width = '100%';
@@ -2894,23 +2897,37 @@ window.renderAdminPromoCard = function () {
 
     const conf = window.dt_promo_regalo;
     if (conf && conf.activa) {
+        let pName = 'Producto Desconocido';
+        if (typeof products !== 'undefined' && conf.productoId) {
+            const p = products.find(x => x.id == conf.productoId);
+            if (p) pName = p.originalName || p.name;
+        }
+        
         container.innerHTML = `
-            <div style="background:#f3e8ff; border:1px solid #d8b4fe; border-radius:12px; padding:8px 12px; display:inline-flex; align-items:center; gap:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-right: 10px;">
-                <div>
-                    <strong style="color:#7e22ce; font-size:0.9rem; display:block;">🎁 Promo Activa: ${conf.nombrePromo || 'Regalo'}</strong>
-                    <span style="font-size:0.8rem; color:#6b21a8;">Mín: $${(conf.montoMinimo || 0).toLocaleString()}</span>
-                </div>
-                <div style="display:flex; gap:6px;">
-                    <button onclick="window.abrirModalPromoRegalo()" style="background:#a855f7; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">✏️ Editar</button>
-                    <button onclick="window.eliminarPromoRegalo()" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.8rem;">🗑️ Quitar</button>
+            <div style="background:#f3e8ff; border:1px solid #d8b4fe; border-radius:12px; padding:15px; margin-bottom:20px; width:100%;">
+                <h4 style="margin:0 0 15px 0; color:#7e22ce; font-size:1.1rem;">🎁 Regalo por Compra Activo</h4>
+                <div style="background:#fff; border-radius:8px; padding:10px 15px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                    <div>
+                        <strong style="color:#334155; display:block;">${conf.nombrePromo || 'Regalo'}</strong>
+                        <div style="font-size:0.85rem; color:#64748b; margin-top:4px;">
+                            Producto: <strong>${conf.cantidad}x ${pName}</strong> <br>
+                            Monto Mínimo: <strong style="color:#7e22ce; font-size:0.95rem;">$${(conf.montoMinimo || 0).toLocaleString()}</strong>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="window.abrirModalPromoRegalo()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.85rem;">✏️ Editar</button>
+                        <button onclick="window.eliminarPromoRegalo()" style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.85rem;">🗑️ Quitar</button>
+                    </div>
                 </div>
             </div>
         `;
     } else {
         container.innerHTML = `
-            <button type="button" class="btn-admin-action" id="btn-promo-regalo" onclick="if(window.abrirModalPromoRegalo) window.abrirModalPromoRegalo()" style="background:#8b5cf6; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12);">
-                ➕ Configurar Regalo por Monto
-            </button>
+            <div style="margin-bottom:20px; width:100%;">
+                <button type="button" onclick="if(window.abrirModalPromoRegalo) window.abrirModalPromoRegalo()" style="background:#f3e8ff; color:#7e22ce; border:1px dashed #d8b4fe; padding:15px; border-radius:12px; font-weight:700; cursor:pointer; font-size:1rem; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:background 0.2s;">
+                    ➕ Configurar Regalo por Monto
+                </button>
+            </div>
         `;
     }
 };
