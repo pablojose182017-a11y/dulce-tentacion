@@ -250,6 +250,18 @@ window.addEventListener('DOMContentLoaded', () => {
         const mobKitchenBtn = document.getElementById('mob-kitchen-btn');
         if (deskKitchenBtn) deskKitchenBtn.style.display = 'none'; // gestionados por el panel
         if (mobKitchenBtn) mobKitchenBtn.style.display = 'none';
+
+        // REVIVAL: Restaurar sección administrativa si quedó pendiente
+        if (isAdmin || isWorker) {
+            const lastSection = localStorage.getItem('dt_last_section');
+            if (lastSection === 'admin-dashboard') {
+                if (typeof showSection === 'function') showSection('admin-dashboard');
+                const lastTab = localStorage.getItem('dt_last_admin_tab');
+                if (lastTab && typeof window.cambiarPestanaAdmin === 'function') {
+                    window.cambiarPestanaAdmin(lastTab);
+                }
+            }
+        }
     };
 
     /**
@@ -1546,6 +1558,19 @@ const originalCambiarPestanaRol = window.cambiarPestanaAdmin;
 if (originalCambiarPestanaRol) {
     window.cambiarPestanaAdmin = function (tabId) {
         originalCambiarPestanaRol.apply(this, arguments);
+
+        // TRACKING: Guardar dt_last_admin_tab solo si tiene permisos
+        const hasAdminWorkerRights = typeof currentUser !== 'undefined' && currentUser && (
+            currentUser.isAdmin === true || 
+            ['admin', 'trabajador'].includes(currentUser.role) || 
+            ['admin', 'trabajador'].includes(currentUser.rol) ||
+            (typeof window.SUPER_ADMINS !== 'undefined' && window.SUPER_ADMINS.includes((currentUser.email || '').toLowerCase().trim())) ||
+            ((currentUser.email || '').toLowerCase().trim() === 'pablojose182017@gmail.com') ||
+            ((currentUser.email || '').toLowerCase().trim() === 'dulcestentaciones2004@gmail.com')
+        );
+        if (hasAdminWorkerRights) {
+            localStorage.setItem('dt_last_admin_tab', tabId);
+        }
 
         if (tabId === 'pedidos') {
             const dateInput = document.querySelector('#filtro-fecha-pedidos, input[type="date"], #orderDateFilter');
