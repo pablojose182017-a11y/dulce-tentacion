@@ -541,7 +541,7 @@ window.runSecurityTests = async function() {
 
         const reqNet = security.createApprovalRequest("sys_net", "1.0", { host: "192.168.1.10" }, "", devContext);
         const appNet = await security.approveRequest(reqNet, adminUser);
-        try { await security.validateForExecution(appNet.approvalId, { host: "192.168.1.10" }, devContext, standardUser); assert(false); } catch(e) { assert(e.message === "PERMISSION_DENIED", "test_standard_user_capability_permission_is_checked"); }
+        try { await security.validateHumanApprovalForExecution(appNet.approvalId, { host: "192.168.1.10" }, devContext, standardUser); assert(false); } catch(e) { assert(e.message === "PERMISSION_DENIED", "test_standard_user_capability_permission_is_checked"); }
 
         const hash1 = await security.generateFingerprint({ b: { a: "\u0000" }, c: [1, 2] });
         const hash2 = await security.generateFingerprint({ c: [1, 2], b: { a: "\u0000" } });
@@ -564,8 +564,8 @@ window.runSecurityTests = async function() {
         const appConc = await security.approveRequest(reqConc, adminUser);
         
         // Simulating simultaneous async calls without awaiting the first one
-        const promise1 = security.validateForExecution(appConc.approvalId, { data: {} }, devContext, adminUser);
-        const promise2 = security.validateForExecution(appConc.approvalId, { data: {} }, devContext, adminUser);
+        const promise1 = security.validateHumanApprovalForExecution(appConc.approvalId, { data: {} }, devContext, adminUser);
+        const promise2 = security.validateHumanApprovalForExecution(appConc.approvalId, { data: {} }, devContext, adminUser);
         
         try {
             const results = await Promise.allSettled([promise1, promise2]);
@@ -587,3 +587,457 @@ window.runSecurityTests = async function() {
 
     console.log(`RESULTADO SECURITY V2: ${passed} PASS | ${failed} FAIL`);
 };
+
+
+
+// ======= AUTONOMOUS DEFENSE TESTS V4 =======
+window.runAutonomousTests = async function() {
+    console.log("\n=== INICIANDO PRUEBAS AISLADAS: AutonomousPolicyEngine V4 ===");
+    let passed = 0; let failed = 0;
+    
+    const assert = (condition, msg) => {
+        if (condition) { console.log("✅ PASS: " + msg); passed++; }
+        else { console.error("❌ FAIL: " + msg); failed++; }
+    };
+
+    const assertThrowsAsync = async (promiseFn, expectedMsg, msg) => {
+        try {
+            await promiseFn();
+            console.error("❌ FAIL: " + msg + " (Did not throw)");
+            failed++;
+        } catch (e) {
+            if (e.message === expectedMsg || e.message.includes(expectedMsg)) {
+                console.log("✅ PASS: " + msg);
+                passed++;
+            } else {
+                console.error("❌ FAIL: " + msg + " (Threw wrong error: " + e.message + ", expected: " + expectedMsg + ")");
+                failed++;
+            }
+        }
+    };
+
+    const registry = new window.AI_CORE.AutonomousPolicyRegistry();
+    const inventory = new window.AI_CORE.InventoryAuthority();
+    const executionHistory = new window.AI_CORE.ExecutionHistory();
+    
+    const toolRegistry = new window.AI_CORE.ToolRegistry();
+    toolRegistry.register({
+        toolId: "sys_block_ip", version: "1.0", enabled: true,
+        baseGovernanceLevel: 2, sideEffects: "NON_DESTRUCTIVE", capabilities: ["ISOLATE_NETWORK"],
+        scopes: { network: { allowedHosts: ["*"] } },
+        inputSchema: { type: "object", properties: { ip: { type: "string" } } },
+        targetDescriptor: { parameter: "ip", targetType: "NETWORK" }
+    });
+    toolRegistry.register({
+        toolId: "sys_unblock_ip", version: "1.0", enabled: true,
+        baseGovernanceLevel: 2, sideEffects: "NON_DESTRUCTIVE", capabilities: ["RESTORE_NETWORK"],
+        inputSchema: { type: "object", properties: { ip: { type: "string" } } },
+        targetDescriptor: { parameter: "ip", targetType: "NETWORK" }
+    });
+    // Nested Offensive Tool
+    toolRegistry.register({
+        toolId: "sys_nested_hack", version: "1.0", enabled: true,
+        baseGovernanceLevel: 2, sideEffects: "NON_DESTRUCTIVE", 
+        capabilities: [ { name: "DEFENSIVE", nested: { capabilities: ["HACK_BACK"] } } ],
+        inputSchema: { type: "object" }
+    });
+    toolRegistry.register({
+        toolId: "sys_dump", version: "1.0", enabled: true,
+        baseGovernanceLevel: 1, sideEffects: "READ_ONLY", capabilities: ["READ"],
+        inputSchema: { type: "object", properties: { path: { type: "string" } } }
+    });
+    const permissionManager = { hasCapability: () => true };
+    const security = new window.AI_CORE.SecurityEngine(toolRegistry, permissionManager, registry);
+    const engine = new window.AI_CORE.AutonomousPolicyEngine(registry, security, inventory, executionHistory);
+
+    const creatorIdentity = { email: "creator@test.com", roles: ["creator"] };
+    const adminIdentity = { email: "admin@test.com", roles: ["admin"] };
+    const devContext = { environment: "DEV" };
+
+    const validEvidenceId = executionHistory.registerResult({ toolId: "sys_monitor", target: "192.168.1.100", status: "SUCCESS" });
+    const hardEvidence = { type: "ACTUAL_TOOL_RESULT", evidenceId: validEvidenceId };
+    const fakeEvidence = { type: "ACTUAL_TOOL_RESULT", evidenceId: "fake_id_123" };
+    const softEvidence = { type: "SUPPORTED" };
+
+    try {
+        const policyDef = {
+            policyId: "pol_net_1", version: "1.0",
+            allowedCapabilities: ["ISOLATE_NETWORK"],
+            allowedTools: ["sys_block_ip"],
+            allowedGovernanceMaximum: 3,
+            allowedTargets: ["DATABASE"],
+            maxActionsPerWindow: { count: 3, windowSeconds: 300 },
+            suspensionThreshold: 3,
+            requiresRollback: true,
+            allowedRollbackActions: [
+                { toolId: "sys_unblock_ip", allowedTargets: ["DATABASE"], allowedCapabilities: ["RESTORE_NETWORK"], allowedGovernanceMaximum: 2 },
+                { toolId: "sys_nested_hack", allowedTargets: ["DATABASE"], allowedCapabilities: [ { name: "DEFENSIVE", nested: { capabilities: ["HACK_BACK"] } } ], allowedGovernanceMaximum: 2 }
+            ]
+        };
+        registry.createPolicy(policyDef, creatorIdentity);
+
+        const validProposal = {
+            targetPolicyId: "pol_net_1", toolId: "sys_block_ip", toolVersion: "1.0",
+            parameters: { ip: "192.168.1.100" },
+            rollbackPlan: { toolId: "sys_unblock_ip", parameters: { ip: "192.168.1.100" } }
+        };
+
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(validProposal, softEvidence, devContext, {}), "HARD_EVIDENCE_REQUIRED", "test_evidence_supported_rejected");
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(validProposal, fakeEvidence, devContext, {}), "HARD_EVIDENCE_UNVERIFIED", "test_evidence_fake_id_rejected");
+
+        // 1. TOCTOU REAL TEST
+        const toctouPolicy = registry.createPolicy({ ...policyDef, policyId: "pol_toctou" }, creatorIdentity);
+        const toctouProposal = { ...validProposal, targetPolicyId: "pol_toctou" };
+        const toctouRecord = await engine.evaluateAndAuthorize(toctouProposal, hardEvidence, devContext, {});
+        // T2: Valid before revocation
+        await security.validateForExecution(toctouRecord.authorizationId, { ip: "192.168.1.100" }, devContext, adminIdentity);
+        // T3: Revoke
+        registry.revokePolicy("pol_toctou");
+        // T4 & T5: Execute same record after revocation
+        await assertThrowsAsync(() => security.validateForExecution(toctouRecord.authorizationId, { ip: "192.168.1.100" }, devContext, adminIdentity), "AUTONOMOUS_POLICY_REVOKED", "test_toctou_revoked_policy_invalidates_previously_generated_record");
+
+        // Missing Target
+        const missingTargetDescProposal = { ...validProposal, toolId: "sys_dump" };
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(missingTargetDescProposal, hardEvidence, devContext, {}), "TARGET_SCHEMA_UNVERIFIED", "test_tool_missing_target_descriptor_blocked");
+
+        // 2. ROLLBACK OFFENSIVE TOOL REJECTED
+        const nestedHackProposal = { ...validProposal, rollbackPlan: { toolId: "sys_nested_hack", parameters: {} } };
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(nestedHackProposal, hardEvidence, devContext, {}), "PROHIBITED_ACTION", "test_rollback_offensive_tool_rejected");
+
+        const badCapRollbackProposal = { ...validProposal, rollbackPlan: { toolId: "sys_dump", parameters: { path: "/" } } };
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(badCapRollbackProposal, hardEvidence, devContext, {}), "ROLLBACK_OUTSIDE_SCOPE", "test_rollback_capability_outside_scope_rejected");
+
+        // Admin Delegation
+        const highGovPolicy = { ...policyDef, policyId: "pol_net_3", allowedGovernanceMaximum: 4 };
+        try { registry.createPolicy(highGovPolicy, adminIdentity); assert(false, "test_delegated_admin_cannot_exceed_creator_governance"); } catch(e) { assert(e.message === "DELEGATION_SCOPE_EXCEEDED", "test_delegated_admin_cannot_exceed_creator_governance"); }
+        
+        const badTargetPolicy = { ...policyDef, policyId: "pol_net_4", allowedTargets: ["*"] };
+        try { registry.createPolicy(badTargetPolicy, adminIdentity); assert(false, "test_delegated_admin_cannot_broaden_targets"); } catch(e) { assert(e.message === "DELEGATION_SCOPE_EXCEEDED", "test_delegated_admin_cannot_broaden_targets"); }
+
+        // 3. DEEP IMMUTABILITY TEST
+        const immutableProposal = {
+            targetPolicyId: "pol_net_1", toolId: "sys_block_ip", toolVersion: "1.0",
+            parameters: { ip: "192.168.1.100", complex: { nested: true } },
+            rollbackPlan: { toolId: "sys_unblock_ip", parameters: { ip: "192.168.1.100", complex: { nested: true } } }
+        };
+        const rec = await engine.evaluateAndAuthorize(immutableProposal, hardEvidence, devContext, {});
+        const storedId = rec.authorizationId;
+
+        // Attempt mutations
+        try { rec.expiresAt = Date.now() + 9999999; } catch(e) {}
+        try { rec.parameters.ip = "8.8.8.8"; } catch(e) {}
+        try { rec.parameters.complex.nested = false; } catch(e) {}
+        try { rec.rollbackPlan.parameters.ip = "8.8.8.8"; } catch(e) {}
+
+        const storedRec = security.getAuthorization(storedId);
+        assert(
+            storedRec.expiresAt !== Date.now() + 9999999 &&
+            storedRec.parameters.ip === "192.168.1.100" &&
+            storedRec.parameters.complex.nested === true &&
+            storedRec.rollbackPlan.parameters.ip === "192.168.1.100",
+            "test_deep_immutability_preserves_internal_state"
+        );
+
+        // 4. RATE LIMIT VS SUSPENSION TEST
+        const limitPolicyId = "pol_limit";
+        registry.createPolicy({ ...policyDef, policyId: limitPolicyId, maxActionsPerWindow: { count: 1, windowSeconds: 300 }, suspensionThreshold: 3 }, creatorIdentity);
+        const limitProposal = { ...validProposal, targetPolicyId: limitPolicyId };
+        
+        // 1st action (Success)
+        await engine.evaluateAndAuthorize(limitProposal, hardEvidence, devContext, {});
+        
+        // 2nd action (Hits maxActions=1) => Rate Limited but ACTIVE
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(limitProposal, hardEvidence, devContext, {}), "AUTONOMOUS_RATE_LIMITED", "test_rate_limited_independent_from_suspension");
+        assert(registry.getPolicy(limitPolicyId).status === "ACTIVE", "test_rate_limited_leaves_policy_active");
+        
+        // 3rd action (Hits maxActions=1) => Rate Limited but ACTIVE
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(limitProposal, hardEvidence, devContext, {}), "AUTONOMOUS_RATE_LIMITED", "test_rate_limited_independent_from_suspension_2");
+        assert(registry.getPolicy(limitPolicyId).status === "ACTIVE", "test_rate_limited_leaves_policy_active_2");
+        
+        // 4th action (Hits maxActions=1) => Suspension Threshold Reached (3 rate limits)!
+        await assertThrowsAsync(() => engine.evaluateAndAuthorize(limitProposal, hardEvidence, devContext, {}), "AUTONOMOUS_POLICY_SUSPENDED", "test_policy_suspended_after_threshold");
+        assert(registry.getPolicy(limitPolicyId).status === "SUSPENDED", "test_policy_status_is_suspended");
+
+    } catch (e) {
+        console.error(e);
+        assert(false, "Unhandled exception: " + e.stack);
+    }
+
+    console.log(`RESULTADO AUTONOMOUS V4: ${passed} PASS | ${failed} FAIL`);
+};
+
+// ======= AUTONOMOUS DEFENSE TESTS V5 (Payload/TransactionalState Separation) =======
+window.runAutonomousV5Tests = async function() {
+    console.log("\n=== INICIANDO PRUEBAS V5: Payload / TransactionalState Separation ===");
+    let passed = 0; let failed = 0;
+
+    const assert = (condition, msg) => {
+        if (condition) { console.log("✅ PASS: " + msg); passed++; }
+        else { console.error("❌ FAIL: " + msg); failed++; }
+    };
+    const assertThrowsAsync = async (fn, expectedMsg, msg) => {
+        try {
+            await fn();
+            console.error("❌ FAIL: " + msg + " (Did not throw — expected: " + expectedMsg + ")");
+            failed++;
+        } catch(e) {
+            if (e.message === expectedMsg) { console.log("✅ PASS: " + msg); passed++; }
+            else {
+                console.error("❌ FAIL: " + msg + " (Threw: " + e.message + ", expected: " + expectedMsg + ")");
+                failed++;
+            }
+        }
+    };
+
+    // ── Setup ──────────────────────────────────────────────────────────────────
+    const registry       = new window.AI_CORE.AutonomousPolicyRegistry();
+    const inventory      = new window.AI_CORE.InventoryAuthority();
+    const execHistory    = new window.AI_CORE.ExecutionHistory();
+    const toolRegistry   = new window.AI_CORE.ToolRegistry();
+
+    toolRegistry.register({
+        toolId: "t_block", version: "1.0", enabled: true,
+        baseGovernanceLevel: 2, sideEffects: "NON_DESTRUCTIVE",
+        capabilities: ["ISOLATE_NETWORK"],
+        inputSchema: { type: "object", properties: { ip: { type: "string" } } },
+        targetDescriptor: { parameter: "ip", targetType: "NETWORK" }
+    });
+    toolRegistry.register({
+        toolId: "t_unblock", version: "1.0", enabled: true,
+        baseGovernanceLevel: 2, sideEffects: "NON_DESTRUCTIVE",
+        capabilities: ["RESTORE_NETWORK"],
+        inputSchema: { type: "object", properties: { ip: { type: "string" } } },
+        targetDescriptor: { parameter: "ip", targetType: "NETWORK" }
+    });
+    // Tool with nested offensive capability
+    toolRegistry.register({
+        toolId: "t_nested_hack", version: "1.0", enabled: true,
+        baseGovernanceLevel: 2, sideEffects: "NON_DESTRUCTIVE",
+        capabilities: [ { name: "DEFENSIVE", nested: { capabilities: ["HACK_BACK"] } } ],
+        inputSchema: { type: "object" }
+    });
+
+    const permMgr  = { hasCapability: () => true };
+    const security = new window.AI_CORE.SecurityEngine(toolRegistry, permMgr, registry);
+    const engine   = new window.AI_CORE.AutonomousPolicyEngine(registry, security, inventory, execHistory);
+
+    const creatorId = { email: "creator@test.com", roles: ["creator"] };
+    const adminId   = { email: "admin@test.com",   roles: ["admin"]   };
+    const ctx       = { environment: "DEV" };
+
+    const evId = execHistory.registerResult({ toolId: "sys_monitor", target: "192.168.1.100", status: "SUCCESS" });
+    const hardEv = { type: "ACTUAL_TOOL_RESULT", evidenceId: evId };
+
+    const basePolicyDef = {
+        policyId: "pol_v5", version: "1.0",
+        allowedCapabilities: ["ISOLATE_NETWORK"],
+        allowedTools: ["t_block"],
+        allowedGovernanceMaximum: 3,
+        allowedTargets: ["DATABASE"],
+        maxActionsPerWindow: { count: 5, windowSeconds: 300 },
+        suspensionThreshold: 5,
+        requiresRollback: true,
+        allowedRollbackActions: [
+            { toolId: "t_unblock", allowedTargets: ["DATABASE"],
+              allowedCapabilities: ["RESTORE_NETWORK"], allowedGovernanceMaximum: 2 }
+        ]
+    };
+    registry.createPolicy(basePolicyDef, creatorId);
+
+    const baseProposal = {
+        targetPolicyId: "pol_v5", toolId: "t_block", toolVersion: "1.0",
+        parameters: { ip: "192.168.1.100" },
+        rollbackPlan: { toolId: "t_unblock", parameters: { ip: "192.168.1.100" } }
+    };
+
+    try {
+        // ── A: Payload profundamente inmutable ────────────────────────────────
+        // Immutability is demonstrated by verifying the stored value is unchanged
+        // after an attempted mutation — regardless of whether TypeError fires
+        // (TypeError only fires in strict mode; in sloppy mode the assignment
+        //  silently fails, which is equally valid proof of immutability).
+        const viewA = await engine.evaluateAndAuthorize(baseProposal, hardEv, ctx, {});
+        const { payload: payA } = viewA;
+        try { payA.toolId = "hacked"; } catch(e) {}
+        assert(payA.toolId === "t_block", "A: payload.toolId immutable (value unchanged)");
+        // Also verify via stored copy
+        assert(security.getAuthorization(payA.authorizationId).payload.toolId === "t_block",
+            "A: stored payload.toolId also unchanged");
+
+        try { payA.rollbackPlan.toolId = "hacked"; } catch(e) {}
+        assert(payA.rollbackPlan.toolId === "t_unblock", "A: payload.rollbackPlan.toolId immutable (value unchanged)");
+        assert(security.getAuthorization(payA.authorizationId).payload.rollbackPlan.toolId === "t_unblock",
+            "A: stored payload.rollbackPlan.toolId also unchanged");
+
+        try { payA.capabilities[0] = "HACK_BACK"; } catch(e) {}
+        assert(payA.capabilities[0] === "ISOLATE_NETWORK", "A: payload.capabilities[0] immutable (value unchanged)");
+        assert(security.getAuthorization(payA.authorizationId).payload.capabilities[0] === "ISOLATE_NETWORK",
+            "A: stored payload.capabilities[0] also unchanged");
+
+        // ── B: TransactionalState solo mutable por SecurityEngine ─────────────
+        const viewB = security.getAuthorization(payA.authorizationId);
+        viewB.snapshot.status = "FAKE_CONSUMED"; // attempt external mutation
+        const viewB2 = security.getAuthorization(payA.authorizationId);
+        assert(viewB2.snapshot.status !== "FAKE_CONSUMED" && viewB2.snapshot.status === "ACTIVE",
+            "B: snapshot mutation does not affect internal TransactionalState");
+
+        // ── C: Mutación externa del payload no afecta almacenamiento ──────────
+        const viewC = security.getAuthorization(payA.authorizationId);
+        try { viewC.payload.toolVersion = "99.0"; } catch(e) {}
+        const viewC2 = security.getAuthorization(payA.authorizationId);
+        assert(viewC2.payload.toolVersion === "1.0",
+            "C: external payload mutation does not affect stored payload");
+
+        // ── D: Mutación externa del snapshot no afecta almacenamiento ─────────
+        const viewD = security.getAuthorization(payA.authorizationId);
+        viewD.snapshot.expiresAt = 999;
+        const viewD2 = security.getAuthorization(payA.authorizationId);
+        assert(viewD2.snapshot.expiresAt !== 999 && viewD2.snapshot.expiresAt === payA.expiresAt,
+            "D: external snapshot.expiresAt mutation does not affect stored state");
+
+        // ── E: Fingerprint no cambia al consumir ──────────────────────────────
+        const fpBefore = payA.parameterFingerprint;
+        await security.validateForExecution(payA.authorizationId, { ip: "192.168.1.100" }, ctx, adminId);
+        const viewE2 = security.getAuthorization(payA.authorizationId);
+        assert(viewE2.payload.parameterFingerprint === fpBefore,
+            "E: parameterFingerprint unchanged after consumption");
+
+        // ── F: Lock no modifica fingerprint ──────────────────────────────────
+        // The lock resides in TransactionalState — payload.parameterFingerprint must be unchanged
+        assert(payA.parameterFingerprint === fpBefore,
+            "F: lock cycle does not modify payload fingerprint");
+
+        // ── G & H: Exactly one consumer wins One-Shot ─────────────────────────
+        const viewG = await engine.evaluateAndAuthorize(baseProposal, hardEv, ctx, {});
+        const gId   = viewG.payload.authorizationId;
+        const passG = await security.validateForExecution(gId, { ip: "192.168.1.100" }, ctx, adminId);
+        assert(passG.validationStatus === "PASS", "G: first consumer gets PASS");
+
+        await assertThrowsAsync(
+            () => security.validateForExecution(gId, { ip: "192.168.1.100" }, ctx, adminId),
+            "REPLAY_REJECTED", "H: second consumer gets REPLAY_REJECTED"
+        );
+        await assertThrowsAsync(
+            () => security.validateForExecution(gId, { ip: "192.168.1.100" }, ctx, adminId),
+            "REPLAY_REJECTED", "H(2): third consumer also gets REPLAY_REJECTED"
+        );
+
+        // ── I: Revocación invalida autorización previamente emitida ───────────
+        registry.createPolicy({ ...basePolicyDef, policyId: "pol_revoke" }, creatorId);
+        const viewI = await engine.evaluateAndAuthorize({ ...baseProposal, targetPolicyId: "pol_revoke" }, hardEv, ctx, {});
+        registry.revokePolicy("pol_revoke");
+        await assertThrowsAsync(
+            () => security.validateForExecution(viewI.payload.authorizationId, { ip: "192.168.1.100" }, ctx, adminId),
+            "AUTONOMOUS_POLICY_REVOKED", "I: revocation invalidates prior authorization"
+        );
+
+        // ── J: Suspensión invalida autorización previamente emitida ───────────
+        registry.createPolicy({ ...basePolicyDef, policyId: "pol_suspend" }, creatorId);
+        const viewJ = await engine.evaluateAndAuthorize({ ...baseProposal, targetPolicyId: "pol_suspend" }, hardEv, ctx, {});
+        registry.updatePolicyState("pol_suspend", { status: "SUSPENDED" });
+        await assertThrowsAsync(
+            () => security.validateForExecution(viewJ.payload.authorizationId, { ip: "192.168.1.100" }, ctx, adminId),
+            "AUTONOMOUS_POLICY_SUSPENDED", "J: suspension invalidates prior authorization"
+        );
+
+        // ── K: Expiración invalida autorización ───────────────────────────────
+        // Strategy: construct a valid AuthorizationPayload directly from scratch with
+        // expiresAt set to the past BEFORE applying deepFreeze, then store it via
+        // storeAutonomousRecord() — which only accepts already-frozen payloads.
+        // This directly exercises the APPROVAL_EXPIRED check inside validateForExecution
+        // without any workaround or mutation of an existing frozen object.
+        registry.createPolicy({ ...basePolicyDef, policyId: "pol_expire_k" }, creatorId);
+        const expiredFingerprintParams = { ip: "192.168.1.100" };
+        const expiredFingerprint = await security.generateFingerprint(expiredFingerprintParams);
+        const expiredPayloadRaw = {
+            authorizationId:    `auto_app_expired_test_${Date.now()}`,
+            authorizationMode:  "AUTONOMOUS_DELEGATION",
+            approvedByHuman:    false,
+            derivedFromPolicy:  true,
+            policyId:           "pol_expire_k",
+            policyVersion:      "1.0",
+            policyOwnerIdentity: "creator@test.com",
+            toolId:             "t_block",
+            toolVersion:        "1.0",
+            parameterFingerprint: expiredFingerprint,
+            evidenceId:         evId,
+            targetType:         "DATABASE",
+            rollbackPlan:       { toolId: "t_unblock", parameters: { ip: "192.168.1.100" } },
+            capabilities:       ["ISOLATE_NETWORK"],
+            effectiveGovernance: 2,
+            issuedAt:           Date.now() - 300000, // issued 5 min ago
+            expiresAt:          Date.now() - 1,      // already expired
+            isOneShot:          true
+        };
+        // deepFreeze BEFORE storage — payload is immutable from this point on
+        const expiredFrozenPayload = Object.freeze(expiredPayloadRaw);
+        Object.freeze(expiredFrozenPayload.rollbackPlan);
+        Object.freeze(expiredFrozenPayload.rollbackPlan.parameters);
+        Object.freeze(expiredFrozenPayload.capabilities);
+        // Store directly into SecurityEngine (bypasses engine's issuedAt logic — test-only)
+        security.storeAutonomousRecord(expiredFrozenPayload);
+        // Must be rejected: expiresAt is in the past
+        await assertThrowsAsync(
+            () => security.validateForExecution(expiredFrozenPayload.authorizationId, { ip: "192.168.1.100" }, ctx, adminId),
+            "APPROVAL_EXPIRED", "K: expired payload is rejected before consumption"
+        );
+        // Verify the payload itself was never mutated by the failed validation
+        assert(expiredFrozenPayload.expiresAt < Date.now(), "K: expired payload.expiresAt remains unchanged after rejection");
+        assert(expiredFrozenPayload.toolId === "t_block",   "K: expired payload.toolId remains unchanged after rejection");
+        // Verify the TransactionalState was NOT consumed (still ACTIVE despite the failure)
+        const viewKfinal = security.getAuthorization(expiredFrozenPayload.authorizationId);
+        assert(viewKfinal.snapshot.status === "ACTIVE", "K: TransactionalState remains ACTIVE after expired rejection (not consumed)");
+
+        // ── L: Rollback permanece inmutable ───────────────────────────────────
+        const viewL  = await engine.evaluateAndAuthorize(baseProposal, hardEv, ctx, {});
+        const payL   = viewL.payload;
+        try { payL.rollbackPlan.toolId = "offensive_tool"; } catch(e) {}
+        const storedL = security.getAuthorization(payL.authorizationId);
+        assert(storedL.payload.rollbackPlan.toolId === "t_unblock",
+            "L: rollbackPlan.toolId immutable (value unchanged)");
+        assert(payL.rollbackPlan.toolId === "t_unblock",
+            "L: returned payload.rollbackPlan.toolId also unchanged");
+
+        try { payL.rollbackPlan.parameters.ip = "0.0.0.0"; } catch(e) {}
+        const storedL2 = security.getAuthorization(payL.authorizationId);
+        assert(storedL2.payload.rollbackPlan.parameters.ip === "192.168.1.100",
+            "L: rollbackPlan.parameters.ip immutable (stored value unchanged)");
+        assert(payL.rollbackPlan.parameters.ip === "192.168.1.100",
+            "L: returned payload rollbackPlan.parameters.ip also unchanged");
+
+        // ── M: SecurityEngine cannot mutate AuthorizationPayload ───────────────
+        const viewM  = await engine.evaluateAndAuthorize(baseProposal, hardEv, ctx, {});
+        const payM   = viewM.payload;
+        const toolIdBefore = payM.toolId;
+        const fpBefore2    = payM.parameterFingerprint;
+        const targetBefore = payM.targetType;
+        const rbBefore     = payM.rollbackPlan.toolId;
+        const capBefore    = payM.capabilities[0];
+
+        await security.validateForExecution(payM.authorizationId, { ip: "192.168.1.100" }, ctx, adminId);
+
+        const storedM = security.getAuthorization(payM.authorizationId);
+        assert(storedM.payload.toolId              === toolIdBefore,  "M: payload.toolId unchanged after consumption");
+        assert(storedM.payload.parameterFingerprint === fpBefore2,    "M: payload.fingerprint unchanged after consumption");
+        assert(storedM.payload.targetType           === targetBefore, "M: payload.targetType unchanged after consumption");
+        assert(storedM.payload.rollbackPlan.toolId  === rbBefore,     "M: payload.rollbackPlan unchanged after consumption");
+        assert(storedM.payload.capabilities[0]      === capBefore,    "M: payload.capabilities unchanged after consumption");
+        // TransactionalState MUST have changed
+        assert(storedM.snapshot.status === "CONSUMED", "M: TransactionalState.status changed to CONSUMED");
+
+    } catch(e) {
+        console.error(e);
+        assert(false, "Unhandled exception: " + e.stack);
+    }
+
+    console.log(`RESULTADO AUTONOMOUS V5: ${passed} PASS | ${failed} FAIL`);
+};
+
+window.runAllTests = async function() {
+  if(window.runIngestionTests)    await window.runIngestionTests();
+  if(window.runReasoningTests)    await window.runReasoningTests();
+  if(window.runInvestigationTests) await window.runInvestigationTests();
+  if(window.runSecurityTests)     await window.runSecurityTests();
+  if(window.runAutonomousTests)   await window.runAutonomousTests();
+  if(window.runAutonomousV5Tests) await window.runAutonomousV5Tests();
+}
