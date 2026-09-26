@@ -221,9 +221,19 @@ window.cargarMemoriaGuardian = function() {
 };
 
 window.reiniciarChatGuardian = function() {
-    if(confirm('¿Seguro que deseas iniciar una nueva charla y borrar el historial del chat?')) {
-        localStorage.removeItem('pd_guardian_chat_memory');
-        window.cargarMemoriaGuardian();
+    if(confirm('¿Seguro que deseas iniciar una nueva charla y borrar el historial del chat de esta sesión?')) {
+        const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') === 'true';
+        if (useNewAiCore) {
+            if (window.AI_CORE && window.AI_CORE.chatBridgeInstance) {
+                window.AI_CORE.chatBridgeInstance.clearSession();
+            }
+            const chatContainer = document.getElementById('guardian-chat-messages');
+            if (chatContainer) chatContainer.innerHTML = '';
+            window.appendMensajeGuardian('¡Sesión de AI Core reiniciada! ¿En qué te ayudo ahora?', 'bot', false);
+        } else {
+            localStorage.removeItem('pd_guardian_chat_memory');
+            window.cargarMemoriaGuardian();
+        }
     }
 };
 
@@ -251,6 +261,32 @@ window.enviarMensajeGuardian = async function(textoPredefinido = null) {
     if (!textoPredefinido) input.value = '';
 
     window.appendMensajeGuardian(msgTexto, 'user', true);
+
+    const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') === 'true';
+
+    if (useNewAiCore) {
+        if (window.AI_CORE && window.AI_CORE.chatBridgeInstance) {
+            const typingId = "typing-" + Date.now();
+            window.appendMensajeGuardian('<span style="font-style:italic; color:#94a3b8;">AI Core procesando... ⚙️</span>', 'bot', false, typingId);
+            try {
+                const currentUserGlobal = (typeof window.currentUser !== 'undefined') ? window.currentUser : (typeof currentUser !== 'undefined' ? currentUser : null);
+                const respuesta = await window.AI_CORE.chatBridgeInstance.receiveMessage(msgTexto, currentUserGlobal, window.costosState);
+                
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                window.appendMensajeGuardian(respuesta, 'bot', false); // memory is handled by ChatBridge, but UI needs it
+            } catch (error) {
+                console.error(error);
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+                window.appendMensajeGuardian('Fallo en el puente cognitivo.', 'bot', false);
+            }
+        } else {
+            window.appendMensajeGuardian('⚠️ Error: El Chat Bridge no está cargado.', 'bot', false);
+        }
+        return;
+    }
 
     // ── Interceptor local: 0ms para consultas de datos directos ──
     const respuestaLocal = window._gf_resolverLocalmente ? window._gf_resolverLocalmente(msgTexto) : null;
