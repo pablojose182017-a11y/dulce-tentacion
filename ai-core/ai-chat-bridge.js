@@ -10,6 +10,7 @@ class ChatBridge {
         
         this.provider = new window.AI_CORE.LocalMockProvider();
         this.reasoningEngine = new window.AI_CORE.ReasoningEngine(this.provider);
+        this.personalityEngine = new window.AI_CORE.PersonalityEngine();
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal) {
@@ -50,6 +51,9 @@ class ChatBridge {
             assembledContext: context
         };
         const analysis = await this.reasoningEngine.reason(inputContext);
+
+        const personalityOrientation = this.personalityEngine.applyPersonality(analysis, inputContext);
+        context.personality = personalityOrientation;
 
         this.memoryManager.addTurn('user', message);
 

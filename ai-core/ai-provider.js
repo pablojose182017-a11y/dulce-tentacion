@@ -46,67 +46,73 @@ class LocalMockProvider extends AIProvider {
             : [];
 
         // === CASO A: Hay conocimiento disponible ===
-        if (knowledgeBlock.length > 0) {
-            // Construir respuesta en español a partir del contenido real de los documentos
+        // FASE 3: Utilizar Personality Orientation
+        const orientation = contextData.personality || { conversationMode: "INFORMATIONAL", epistemicTone: "UNKNOWN", initiative: "NONE" };
+
+        if (orientation.conversationMode === "CASUAL") {
+            return `¡Hola! Soy Guardian. ¿Cómo te puedo ayudar hoy? Si necesitas investigar algo, dímelo.`;
+        }
+
+        if (orientation.conversationMode === "CAPABILITIES") {
+            return `**Estas son mis capacidades actuales (Guardian V1):**\n\n` +
+                   `✅ **IMPLEMENTADO:**\n` +
+                   `- Conversación natural\n` +
+                   `- Gestión de memoria y contexto disponible\n` +
+                   `- Ingesta de conocimiento (Knowledge)\n` +
+                   `- Razonamiento y análisis de evidencia (Reasoning)\n` +
+                   `- Personalidad cognitiva para moderar el tono (Personality)\n` +
+                   `- Detección de contradicciones en los datos cuando existen\n` +
+                   `- Señalar información faltante (Honestidad Epistémica)\n` +
+                   `- Proponer o preguntar antes de asumir (sin ejecutar)\n\n` +
+                   `❌ **NO DISPONIBLE TODAVÍA:**\n` +
+                   `- Ejecución de acciones reales sobre el sistema (Execution = NOT READY)\n` +
+                   `- Conexión a Internet\n` +
+                   `- Interacción por voz real o comandos de voz biométricos\n` +
+                   `- Autonomía operacional y uso de herramientas externas\n` +
+                   `- Autorización mediante voz (Creator Identity = EXPERIMENTAL)\n`;
+        }
+
+        // Si hay conflicto de evidencias
+        if (orientation.conversationMode === "INVESTIGATIVE" && orientation.epistemicTone === "QUALIFIED") {
+            let res = `**He encontrado un conflicto en los datos:**\n`;
+            res += `Hay información contradictoria sobre este tema. Sería prudente revisarlo juntos.\n`;
+            return res;
+        }
+
+        // Si falta información (UNKNOWN)
+        if (orientation.epistemicTone === "UNKNOWN" || knowledgeBlock.length === 0) {
+            let res = `**No lo sé todavía.** (I DON'T KNOW / UNKNOWN)\n`;
+            res += `No tengo suficiente evidencia factual para responder a: "${prompt}".\n`;
+            
+            if (orientation.initiative === "QUESTION") {
+                res += `¿Tienes algún documento o contexto extra que podamos revisar?\n`;
+            } else if (orientation.initiative === "SUGGEST") {
+                res += `Te sugiero que busquemos la información fuente antes de asumir nada.\n`;
+            }
+            return res;
+        }
+
+        // Si hay evidencia y soporte sólido
+        if (orientation.epistemicTone === "CERTAIN") {
             let respuesta = `**Basado en el conocimiento disponible:**\n\n`;
 
             for (const doc of knowledgeBlock) {
                 const titulo = doc.title || doc.id;
                 const contenido = doc.content || '';
-                const fuente = doc.source || 'fuente desconocida';
                 const confianza = doc.confidence != null ? `(confianza: ${(doc.confidence * 100).toFixed(0)}%)` : '';
 
                 respuesta += `📄 **${titulo}** ${confianza}\n`;
-                respuesta += `${contenido}\n`;
-                if (doc.tags && doc.tags.length > 0) {
-                    respuesta += `*Etiquetas: ${doc.tags.join(', ')}*\n`;
-                }
-                respuesta += `\n`;
+                respuesta += `${contenido}\n\n`;
             }
 
-            // Indicar limitación lingüística honesamente
-            respuesta += `---\n`;
-            respuesta += `⚠️ *Nota de idioma: El conocimiento recuperado puede estar en inglés u otro idioma. `;
-            respuesta += `En esta fase (FASE 2) no existe un traductor automático. `;
-            respuesta += `El contenido se muestra tal como fue almacenado. `;
-            respuesta += `Para respuestas completamente en español se requiere un proveedor de IA externo (Gemini) — no conectado en esta fase.*\n\n`;
-            respuesta += `*Proveedor: LOCAL (sin internet, sin Gemini, sin invención de datos)*`;
+            if (orientation.initiative === "SUGGEST") {
+                respuesta += `*Nota:* Observo detalles adicionales que podríamos explorar si te interesa.\n`;
+            }
 
             return respuesta;
         }
 
-        // === CASO B: Sin conocimiento disponible para esta consulta ===
-        
-        // 1. Distinguir intención conversacional de intención factual
-        const pNorm = prompt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        const esConversacional = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|que tal|saludos|hey|como estas|gracias|de nada|quien eres|que puedes hacer|conversemos)[\s\?\!\.]*$/.test(pNorm);
-
-        if (esConversacional) {
-            return `¡Hola! Soy el Guardián (AI Core). ¿En qué te puedo ayudar hoy? Si necesitas datos, por favor consúltame información específica.`;
-        }
-
-        // 2. KNOWLEDGE_SEEKING_INTENT (Factual sin evidencia)
-
-        let respuesta = `**I DON'T KNOW / UNKNOWN**\nNo tengo información suficiente para responder esta pregunta.\n\n`;
-        respuesta += `🔍 **Consulta:** "${prompt}"\n\n`;
-        respuesta += `📭 **Situación:** No encontré documentos de conocimiento almacenados relevantes para esta pregunta ni evidencia verificable.\n\n`;
-        respuesta += `**Para que pueda responder necesito:**\n`;
-        respuesta += `- Documentos de conocimiento sobre el tema de tu pregunta\n`;
-        respuesta += `- Puedes ingresar conocimiento usando el mecanismo de ingesta del sistema\n\n`;
-
-        // Indicar el estado del contexto para diagnóstico
-        if (contextData && contextData.blocks) {
-            const memBlock = contextData.blocks.memory;
-            const hasMemory = memBlock && memBlock.status === 'AVAILABLE' &&
-                memBlock.content && memBlock.content.shortTerm && memBlock.content.shortTerm.length > 0;
-            if (hasMemory) {
-                respuesta += `📝 *Tengo ${memBlock.content.shortTerm.length} turno(s) de conversación en memoria de corto plazo.*\n`;
-            }
-        }
-
-        respuesta += `\n*Proveedor: LOCAL (sin internet, sin Gemini, sin invención de datos)*`;
-
-        return respuesta;
+        return `**I DON'T KNOW / UNKNOWN**\nSin información suficiente.`;
     }
 }
 
