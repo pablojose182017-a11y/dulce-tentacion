@@ -8,20 +8,8 @@ class ChatBridge {
         this.memoryManager = new window.AI_CORE.MemoryManager(this.store, 'pd_memory');
         this.knowledgeManager = new window.AI_CORE.KnowledgeManager(this.store);
         
-        // Mock ToolRegistry to satisfy ReasoningEngine
-        const toolRegistry = {
-            hasCapability: () => false,
-            getToolsByCapability: () => [],
-            getAllTools: () => []
-        };
-        const policyRegistry = {
-            getApplicablePolicy: () => null
-        };
-        this.securityEngine = {
-            evaluateCapabilities: () => ({ authorized: false, reason: "NOT_READY" })
-        };
-        this.reasoningEngine = new window.AI_CORE.ReasoningEngine(toolRegistry, this.securityEngine);
         this.provider = new window.AI_CORE.LocalMockProvider();
+        this.reasoningEngine = new window.AI_CORE.ReasoningEngine(this.provider);
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal) {

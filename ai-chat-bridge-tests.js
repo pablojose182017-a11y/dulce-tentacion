@@ -104,6 +104,20 @@ window.AI_CORE.ExecutionGateway = class {
 async function runTests() {
     console.log("=== INICIANDO PRUEBAS FASE 1: CHAT BRIDGE ===");
     
+    recordTest("T0_1", typeof window.AI_CORE.ReasoningEngine === "function", "ReasoningEngine es una función/clase");
+    let testBridge;
+    try {
+        testBridge = new window.AI_CORE.ChatBridge();
+        recordTest("T0_2", true, "ChatBridge puede instanciarse sin TypeError");
+    } catch(e) {
+        recordTest("T0_2", false, "ChatBridge falló al instanciar: " + e.message);
+    }
+    
+    const engineProvider = testBridge && testBridge.reasoningEngine ? testBridge.reasoningEngine.aiProvider : null;
+    recordTest("T0_3", engineProvider && engineProvider.generate, "LocalMockProvider se utiliza como dependencia del ReasoningEngine");
+    recordTest("T0_4", engineProvider && typeof engineProvider.hasCapability === 'undefined', "ChatBridge NO recibe ToolRegistry como dependencia");
+
+    
     // T1: USE_NEW_AI_CORE=false conserva flujo legacy
     localStorage.setItem('USE_NEW_AI_CORE', 'false');
     localStorage.setItem('pd_gemini_api_key', 'test_key');
