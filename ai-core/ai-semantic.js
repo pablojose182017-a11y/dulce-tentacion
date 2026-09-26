@@ -163,12 +163,57 @@ class Level1Provider {
 }
 
 // 5. SEMANTIC ORCHESTRATOR
+class SemanticComparator {
+    static compare(a, b) {
+        if (a.detectedIntent !== b.detectedIntent) return 'SEMANTICALLY_INCOMPATIBLE';
+        
+        let cA = a.claimProposal || {};
+        let cB = b.claimProposal || {};
+
+        let check = (valA, valB, mismatchResult) => {
+            if (valA === undefined && valB !== undefined) return 'SEMANTICALLY_UNCERTAIN';
+            if (valA !== undefined && valB === undefined) return 'SEMANTICALLY_UNCERTAIN';
+            if (valA !== valB) return mismatchResult;
+            return 'MATCH';
+        };
+
+        let res;
+        res = check(cA.epistemicStatus, cB.epistemicStatus, 'SEMANTICALLY_INCOMPATIBLE');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.subject, cB.subject, 'DISTINCT_COEXISTING');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.predicate, cB.predicate, 'DISTINCT_COEXISTING');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.scope, cB.scope, 'DISTINCT_COEXISTING');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.temporalContext, cB.temporalContext, 'DISTINCT_COEXISTING');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.isNegated, cB.isNegated, 'SEMANTICALLY_INCOMPATIBLE');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.objectValue, cB.objectValue, 'SEMANTICALLY_INCOMPATIBLE');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.unit, cB.unit, 'SEMANTICALLY_INCOMPATIBLE');
+        if (res !== 'MATCH') return res;
+        
+        res = check(cA.knowledgeType, cB.knowledgeType, 'SEMANTICALLY_INCOMPATIBLE');
+        if (res !== 'MATCH') return res;
+        
+        return 'SEMANTICALLY_EQUIVALENT';
+    }
+}
+
 class SemanticOrchestrator {
     constructor(registry) {
         this.registry = registry;
         this.validator = new SemanticStructuralValidator();
         this.strategy = 'WATERFALL_WITH_CONSENSUS'; 
-        // Strategy: L0 is deterministic (first valid wins). L>0 requires consensus if multiple providers exist at the same level.
     }
     
     async interpret(rawInput) {
@@ -247,17 +292,12 @@ class SemanticOrchestrator {
                     }
                 };
 
-                // Deterministic check
                 if (provider.level === 0) {
                     candidateResult.fallbackHistory = fallbackHistory;
                     return this._deepFreeze(candidateResult);
                 }
 
                 candidates.push(candidateResult);
-
-                // For L1 and above, we gather candidates to avoid silent disagreement.
-                // If this is the last provider, or the next provider is a different level, we can stop and evaluate.
-                // Note: to keep it simple, we collect all capable heuristic/probabilistic providers.
                 
             } catch (e) {
                 lastError = this._buildResult(inputIdentity, provider, 'INVALID');
@@ -269,13 +309,28 @@ class SemanticOrchestrator {
             candidates[0].fallbackHistory = fallbackHistory;
             return this._deepFreeze(candidates[0]);
         } else if (candidates.length > 1) {
-            // Disagreement check
-            let firstIntent = candidates[0].detectedIntent;
-            let conflict = candidates.some(c => c.detectedIntent !== firstIntent);
+            let hasConflict = false;
+            let hasDistinct = false;
             
-            if (conflict) {
+            for (let i = 0; i < candidates.length; i++) {
+                for (let j = i + 1; j < candidates.length; j++) {
+                    let rel = SemanticComparator.compare(candidates[i], candidates[j]);
+                    if (rel === 'SEMANTICALLY_INCOMPATIBLE') hasConflict = true;
+                    if (rel === 'DISTINCT_COEXISTING' || rel === 'SEMANTICALLY_UNCERTAIN') hasDistinct = true;
+                }
+            }
+            
+            if (hasConflict) {
                 let res = {
                     interpretationStatus: 'CONFLICTING_INTERPRETATIONS',
+                    inputIdentity: inputIdentity,
+                    candidates: candidates,
+                    fallbackHistory: fallbackHistory
+                };
+                return this._deepFreeze(res);
+            } else if (hasDistinct) {
+                let res = {
+                    interpretationStatus: 'MULTIPLE_INTERPRETATIONS',
                     inputIdentity: inputIdentity,
                     candidates: candidates,
                     fallbackHistory: fallbackHistory
@@ -334,6 +389,7 @@ module.exports = {
     SemanticStructuralValidator,
     SemanticProviderRegistry,
     SemanticOrchestrator,
+    SemanticComparator,
     Level0Provider,
     Level1Provider
 };
