@@ -8,15 +8,20 @@ class IntegratedConsolidationEngine {
     }
 
     _areSourcesIndependent(supports) {
+        if (!Array.isArray(supports)) return 0;
         let roots = new Set();
         for (let s of supports) {
-            // Find root
+            if (!s || !s.source) continue;
             let current = s.source;
             let visited = new Set();
-            while (current && current.copiedFrom) {
+            while (current) {
                 if (visited.has(current.sourceId)) break;
                 visited.add(current.sourceId);
-                current = this.provenance.sources.get(current.copiedFrom) || current; // Wait, sources are in graph!
+                let parentId = current.copiedFrom || current.derivedFrom || current.transformedFrom || current.parentSourceId;
+                if (!parentId) break;
+                let next = this.provenance.sources.get(parentId);
+                if (!next) break;
+                current = next;
             }
             roots.add(current.sourceId);
         }
@@ -30,35 +35,30 @@ class IntegratedConsolidationEngine {
         let proposal = record.claimProposal;
         
         let independentCount = this._areSourcesIndependent(record.supports);
-        let hasUserProvided = record.supports.some(s => s.source.sourceType === 'USER_PROVIDED');
 
         let isConflicted = false;
         let conflictList = Array.from(this.provenance.conflicts.values());
         for (let c of conflictList) {
             if (c.status === 'OPEN' && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)) {
                 isConflicted = true;
-                
-                let gapExists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.status === 'OPEN' && g.relatedClaims.includes(claimId));
-                if (!gapExists) {
-                    this.provenance.createKnowledgeGap(`Resolution required for conflict ${c.conflictId}`, [claimId], 'INDISPENSABLE');
-                }
+                break;
             }
         }
 
         let newState = 'STRUCTURED';
         let type = proposal.knowledgeType || 'UNKNOWN';
-        let epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION'];
+        let epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
 
         if (isConflicted) {
             newState = 'CONFLICTED';
+        } else if (independentCount === 0) {
+            newState = 'UNCERTAIN';
         } else if (epistemicallyRestricted.includes(type)) {
+            // Cap at SUPPORTED
             newState = independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
-        } else if (hasUserProvided) {
-            newState = 'CONSOLIDATED';
-        } else if (independentCount > 1) {
-            newState = 'CONSOLIDATED';
-        } else if (independentCount === 1) {
-            newState = 'SUPPORTED';
+        } else if (type === 'FACT' || type === 'OBSERVATION') {
+            // Can escalate to CONSOLIDATED if independent sources corroborate
+            newState = independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
         } else {
             newState = 'RAW';
         }
@@ -74,41 +74,19 @@ class IntegratedConsolidationEngine {
         return this.consolidationStates.get(claimId) || 'RAW';
     }
 
-    serialize() {
-        return JSON.stringify({
-            states: Array.from(this.consolidationStates.entries()),
-            history: this.history
-        });
-    }
-
-    deserialize(dataStr) {
-        let data;
+    // VULN-01 Remediation: Do not persist the cache. Rehydrate safely from the Immutable Provenance Graph.
+    async rehydrate() {
+        let oldStates = new Map(this.consolidationStates);
+        this.consolidationStates.clear();
+        
         try {
-            data = JSON.parse(dataStr);
+            for (let claimId of this.provenance.claims.keys()) {
+                await this.consolidateClaim(claimId);
+            }
         } catch(e) {
-            throw new Error("Invalid JSON");
+            this.consolidationStates = oldStates;
+            throw new Error("Failed to rehydrate logical state. Rollback applied.");
         }
-
-        if (!data || !Array.isArray(data.states) || !Array.isArray(data.history)) {
-            throw new Error("Invalid schema");
-        }
-
-        let tempStates = new Map();
-        for (let [id, state] of data.states) {
-            if (typeof id !== 'string' || typeof state !== 'string') throw new Error("Invalid state entry");
-            const validStates = ['RAW', 'STRUCTURED', 'SUPPORTED', 'CONSOLIDATED', 'CONFLICTED', 'UNCERTAIN', 'SUPERSEDED', 'NO_ACTION_AUTHORIZED'];
-            if (!validStates.includes(state)) throw new Error("Invalid consolidation state");
-            tempStates.set(id, state);
-        }
-
-        let tempHistory = [];
-        for (let event of data.history) {
-            if (!event || typeof event.type !== 'string' || typeof event.timestamp !== 'string') throw new Error("Invalid history event");
-            tempHistory.push({ type: event.type, claimId: event.claimId, state: event.state, timestamp: event.timestamp, details: event.details });
-        }
-
-        this.consolidationStates = tempStates;
-        this.history = tempHistory;
     }
 }
 
@@ -159,6 +137,19 @@ class SemanticConsolidationPipeline {
 
             let state = await this.engine.consolidateClaim(claimSnapshot.claimId);
             
+            // SIDE-EFFECT SEPARATION: Create gaps for conflicts during ingestion only
+            if (state === 'CONFLICTED') {
+                let conflictList = Array.from(this.provenance.conflicts.values());
+                for (let c of conflictList) {
+                    if (c.status === 'OPEN' && (c.claimA.claimId === claimSnapshot.claimId || c.claimB.claimId === claimSnapshot.claimId)) {
+                        let gapExists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.status === 'OPEN' && g.relatedClaims.includes(claimSnapshot.claimId));
+                        if (!gapExists) {
+                            this.provenance.createKnowledgeGap(`Resolution required for conflict ${c.conflictId}`, [claimSnapshot.claimId], 'INDISPENSABLE');
+                        }
+                    }
+                }
+            }
+
             output.push({
                 claimId: claimSnapshot.claimId,
                 consolidationState: state,

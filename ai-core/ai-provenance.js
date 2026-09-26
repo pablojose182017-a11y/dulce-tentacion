@@ -267,12 +267,21 @@ class ProvenanceGraph {
 
     createKnowledgeGap(description, relatedClaims, priority = 'USEFUL') {
         let gapId = crypto.createHash('sha256').update(description).digest('hex');
-        if (this.knowledgeGaps.has(gapId)) return this.knowledgeGaps.get(gapId);
+        
+        let newRelatedClaims = [...relatedClaims];
+        if (this.knowledgeGaps.has(gapId)) {
+            let existingGap = this.knowledgeGaps.get(gapId);
+            let combinedClaims = new Set([...existingGap.relatedClaims, ...relatedClaims]);
+            newRelatedClaims = Array.from(combinedClaims);
+            if (newRelatedClaims.length === existingGap.relatedClaims.length) {
+                return existingGap;
+            }
+        }
         
         let gap = {
             gapId,
             description,
-            relatedClaims,
+            relatedClaims: newRelatedClaims,
             priority,
             status: 'OPEN',
             createdAt: new Date().toISOString()

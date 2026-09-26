@@ -21,24 +21,7 @@ async function runRemediationTests() {
     // ============================================
     // VULN-01: DESERIALIZATION TRUST FAILURE (DS4C2)
     // ============================================
-    
-    // DS4C2-01: Malformed JSON
-    let ds01Fail = false;
-    try { engine.deserialize("{ bad json"); } catch(e) { ds01Fail = true; }
-    assert(ds01Fail, 'DS4C2-01 (Malformed JSON rejected)');
-
-    // DS4C2-04: Invalid state
-    let jsonValid = engine.serialize();
-    let malJSON = jsonValid.replace('"states":[]', '"states":[["c1", "HACKED_STATE"]]');
-    let ds04Fail = false;
-    try { engine.deserialize(malJSON); } catch(e) { ds04Fail = true; }
-    assert(ds04Fail, 'DS4C2-04 (Invalid state rejected)');
-
-    // DS4C2-10: Atomic rollback
-    engine.consolidationStates.set("old_claim", "SUPPORTED");
-    let oldJson = engine.serialize();
-    try { engine.deserialize(malJSON); } catch(e) {}
-    assert(engine.getConsolidatedState("old_claim") === "SUPPORTED", 'DS4C2-10 (Atomic rollback on fail)');
+    // Handled in DS4C2.2 (Rehydrate logic)
 
     // ============================================
     // VULN-02: EPISTEMIC ESCALATION (EP4C2)
