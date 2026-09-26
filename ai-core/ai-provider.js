@@ -76,9 +76,20 @@ class LocalMockProvider extends AIProvider {
         }
 
         // === CASO B: Sin conocimiento disponible para esta consulta ===
-        let respuesta = `**No tengo información suficiente para responder esta pregunta.**\n\n`;
+        
+        // 1. Distinguir intención conversacional de intención factual
+        const pNorm = prompt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const esConversacional = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|que tal|saludos|hey|como estas|gracias|de nada|quien eres|que puedes hacer|conversemos)[\s\?\!\.]*$/.test(pNorm);
+
+        if (esConversacional) {
+            return `¡Hola! Soy el Guardián (AI Core). ¿En qué te puedo ayudar hoy? Si necesitas datos, por favor consúltame información específica.`;
+        }
+
+        // 2. KNOWLEDGE_SEEKING_INTENT (Factual sin evidencia)
+
+        let respuesta = `**I DON'T KNOW / UNKNOWN**\nNo tengo información suficiente para responder esta pregunta.\n\n`;
         respuesta += `🔍 **Consulta:** "${prompt}"\n\n`;
-        respuesta += `📭 **Situación:** No encontré documentos de conocimiento almacenados relevantes para esta pregunta.\n\n`;
+        respuesta += `📭 **Situación:** No encontré documentos de conocimiento almacenados relevantes para esta pregunta ni evidencia verificable.\n\n`;
         respuesta += `**Para que pueda responder necesito:**\n`;
         respuesta += `- Documentos de conocimiento sobre el tema de tu pregunta\n`;
         respuesta += `- Puedes ingresar conocimiento usando el mecanismo de ingesta del sistema\n\n`;
