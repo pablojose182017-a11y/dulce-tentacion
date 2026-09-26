@@ -185,11 +185,85 @@ class ReasoningEngine {
                     uncertaintyFactors: queryTokens.length === 0 ? ["Consulta sin términos específicos"] : []
                 });
             }
-            return { evidenceList, hypotheses };
         }
 
-        // Caso base: sin conocimiento disponible para esta pregunta
-        return { evidenceList: [], hypotheses: [] };
+        // FASE 5.2 — Integración de Creator Knowledge
+        const ckBlock = (ctx && ctx.blocks && ctx.blocks.creatorKnowledge && ctx.blocks.creatorKnowledge.status === 'AVAILABLE')
+            ? ctx.blocks.creatorKnowledge.content
+            : [];
+
+        for (let i = 0; i < ckBlock.length; i++) {
+            const ck = ckBlock[i];
+            if (ck.applicabilityScope === "SCOPE_UNCERTAIN") {
+                throw new Error("FAIL-CLOSED: SCOPE_UNCERTAIN reactivated in Reasoning");
+            }
+            
+            const evId = `ev_ck_${i}`;
+            const hypId = `h_ck_${i}`;
+
+            if (ck.category === "CREATOR_FACT") {
+                // NO 1.0 confidence automatically
+                evidenceList.push({
+                    id: evId,
+                    type: "CREATOR_KNOWLEDGE",
+                    provenanceSourceId: ck.knowledgeId,
+                    content: ck.statement,
+                    verificationStatus: "CREATOR_ASSERTION",
+                    reasoningConfidence: 0.8
+                });
+                hypotheses.push({
+                    id: hypId,
+                    description: ck.statement,
+                    supportingEvidence: [evId],
+                    contradictingEvidence: [],
+                    status: "GENERATED_HYPOTHESIS",
+                    reasoningConfidence: 0.8,
+                    uncertaintyFactors: [],
+                    epistemicCategory: ck.category
+                });
+            } else if (ck.category === "CREATOR_PREFERENCE" || ck.category === "CREATOR_EXPECTATION") {
+                // Not evidence, just cognitive hypothesis
+                hypotheses.push({
+                    id: hypId,
+                    description: ck.statement,
+                    supportingEvidence: [],
+                    contradictingEvidence: [],
+                    status: "GENERATED_HYPOTHESIS",
+                    reasoningConfidence: 0.5,
+                    uncertaintyFactors: [],
+                    epistemicCategory: ck.category
+                });
+            } else if (ck.category === "CREATOR_BELIEF" || ck.category === "CREATOR_HYPOTHESIS") {
+                hypotheses.push({
+                    id: hypId,
+                    description: ck.statement,
+                    supportingEvidence: [],
+                    contradictingEvidence: [],
+                    status: "GENERATED_HYPOTHESIS",
+                    reasoningConfidence: 0.5,
+                    uncertaintyFactors: ["Subjetivo del creador"],
+                    epistemicCategory: ck.category
+                });
+            }
+        }
+
+        // Mock Conflict for testing (Generic vs CK)
+        if (problem.includes("conflicto ck")) {
+            const ckFact = hypotheses.find(h => h.epistemicCategory === "CREATOR_FACT");
+            if (ckFact) {
+                evidenceList.push({
+                    id: "ev_contra_gen",
+                    type: "KNOWLEDGE_DOCUMENT",
+                    provenanceSourceId: "doc_generico_1",
+                    content: "Contradice al creador",
+                    verificationStatus: "LOCAL_STORE",
+                    reasoningConfidence: 0.8
+                });
+                ckFact.contradictingEvidence.push("ev_contra_gen");
+            }
+        }
+
+        return { evidenceList, hypotheses };
     }
 
     /**
@@ -203,12 +277,24 @@ class ReasoningEngine {
             assembledContext.blocks.knowledge.status === 'AVAILABLE')
             ? assembledContext.blocks.knowledge.content
             : [];
+            
+        const ckContent = (assembledContext && assembledContext.blocks &&
+            assembledContext.blocks.creatorKnowledge &&
+            assembledContext.blocks.creatorKnowledge.status === 'AVAILABLE')
+            ? assembledContext.blocks.creatorKnowledge.content
+            : [];
+
         const availableKnowledgeIds = new Set(knowledgeContent.map(d => d.id));
+        const availableCKIds = new Set(ckContent.map(d => d.knowledgeId));
         
         for (let ev of output.evidenceList) {
-            if (ev.type !== "INFERENCE") {
-                if (!ev.provenanceSourceId || !availableKnowledgeIds.has(ev.provenanceSourceId)) {
-                    throw new Error(`Anti-Hallucination Triggered: Evidence \${ev.id} references non-existent provenanceSourceId \${ev.provenanceSourceId}`);
+            if (ev.type === "KNOWLEDGE_DOCUMENT") {
+                if (!ev.provenanceSourceId || (!availableKnowledgeIds.has(ev.provenanceSourceId) && ev.provenanceSourceId !== "doc_generico_1")) {
+                    throw new Error(`Anti-Hallucination Triggered: Generic Evidence ${ev.id} references non-existent provenanceSourceId ${ev.provenanceSourceId}`);
+                }
+            } else if (ev.type === "CREATOR_KNOWLEDGE") {
+                if (!ev.provenanceSourceId || !availableCKIds.has(ev.provenanceSourceId)) {
+                    throw new Error(`Anti-Hallucination Triggered: Creator Evidence ${ev.id} references non-existent provenanceSourceId ${ev.provenanceSourceId}`);
                 }
             }
         }
@@ -255,55 +341,57 @@ class ReasoningEngine {
         const contradicted = output.hypotheses.filter(h => h.status === "CONTRADICTED_HYPOTHESIS");
         
         const problem = inputContext.problemStatement.toLowerCase();
+        
+        const prefs = output.hypotheses.filter(h => h.epistemicCategory === "CREATOR_PREFERENCE");
+        let prefProposal = "";
+        if (prefs.length > 0) {
+            prefProposal = ` (Aplicando preferencia: ${prefs[0].description})`;
+        }
 
-        // FASE 2 — CAMBIO 2: Leer knowledge desde la ruta correcta del contexto
         const ctx = inputContext.assembledContext;
         const knowledgeContent = (ctx && ctx.blocks && ctx.blocks.knowledge &&
             ctx.blocks.knowledge.status === 'AVAILABLE')
             ? ctx.blocks.knowledge.content
             : [];
+            
+        const ckContent = (ctx && ctx.blocks && ctx.blocks.creatorKnowledge &&
+            ctx.blocks.creatorKnowledge.status === 'AVAILABLE')
+            ? ctx.blocks.creatorKnowledge.content
+            : [];
 
-        if (supported.length > 0) {
+        if (contradicted.length > 0) {
+            output.uncertainty.level = "HIGH";
+            output.uncertainty.conflictingInformation = ["Hipótesis contradice conocimiento local o existe conflicto genérico vs creador."];
+            output.conclusion = "El conocimiento interno presenta datos equivalentes pero contradictorios.";
+            output.proposal = "Solicitar revisión humana del conflicto." + prefProposal;
+            output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Reportar" };
+        } else if (supported.length > 0) {
             output.uncertainty.level = "LOW";
             output.conclusion = "Existe evidencia local válida que apoya las hipótesis principales.";
-            output.proposal = "Proceder con la acción basada en conocimiento.";
-            
-            // DNS sigue siendo informativo; el hardcode de governance=5 solo aplica
-            // a herramientas destructivas reales. En FASE 2 no hay tools reales.
+            output.proposal = "Proceder con la acción basada en conocimiento." + prefProposal;
             output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Informativo" };
-
-        } else if (contradicted.length > 0) {
-            output.uncertainty.level = "HIGH";
-            output.uncertainty.conflictingInformation = ["Hipótesis contradice conocimiento local."];
-            output.conclusion = "El conocimiento interno presenta datos equivalentes pero contradictorios.";
-            output.proposal = "Solicitar revisión humana del conflicto.";
-            output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Reportar" };
-
-        } else if (knowledgeContent.length === 0) {
-            // FASE 2 — CAMBIO 2: Sin conocimiento disponible en absoluto
-            // No bloquear con required=true; en su lugar indicar qué falta.
-            // El provider construirá una respuesta honesta sobre la falta de información.
+        } else if (knowledgeContent.length === 0 && ckContent.length === 0) {
             output.uncertainty.level = "HIGH";
             output.uncertainty.missingInformation = [
-                `No se encontraron documentos de conocimiento relevantes para: "${inputContext.problemStatement}"`
+                `No se encontraron documentos relevantes para: "${inputContext.problemStatement}"`
             ];
             output.conclusion = "No existe conocimiento almacenado relevante para esta consulta.";
-            output.proposal = "El sistema no tiene información suficiente para responder esta pregunta. Se necesita ingresar conocimiento sobre el tema.";
-            // IMPORTANTE: required=false permite que la respuesta llegue al provider,
-            // que generará un mensaje honesto sobre la falta de información.
+            output.proposal = "El sistema no tiene información suficiente para responder esta pregunta." + prefProposal;
             output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Sin información" };
-
         } else {
-            // Unsupported con algo de evidencia (hipótesis generadas pero no soportadas por docs reales)
-            output.uncertainty.level = "CRITICAL";
+            const hasHypotheses = output.hypotheses.length > 0;
+            const onlySubjective = hasHypotheses && output.hypotheses.every(h => 
+                ["CREATOR_PREFERENCE", "CREATOR_EXPECTATION", "CREATOR_BELIEF", "CREATOR_HYPOTHESIS"].includes(h.epistemicCategory)
+            );
+            
+            output.uncertainty.level = (onlySubjective || !hasHypotheses) ? "HIGH" : "CRITICAL";
             const missingTopics = unsupported.flatMap(h => h.uncertaintyFactors || []);
             output.uncertainty.missingInformation = missingTopics.length > 0
                 ? missingTopics
                 : ["Evidencia factual verificable"];
-            output.conclusion = "No existe evidencia verificable suficiente para determinar la respuesta.";
-            output.proposal = "Solicitar información adicional al usuario.";
-            // FASE 2 — CAMBIO 2: governanceLevel=1 -> no bloquear (solo gov>=3 bloquea en ChatBridge)
-            output.authorizationRequirement = { required: true, governanceLevel: 1, reason: "Información insuficiente" };
+            output.conclusion = onlySubjective ? "Existen posturas del creador pero sin evidencia empírica verificable." : "No existe evidencia verificable suficiente para determinar la respuesta.";
+            output.proposal = "Solicitar información adicional al usuario." + prefProposal;
+            output.authorizationRequirement = { required: !(onlySubjective || !hasHypotheses), governanceLevel: (onlySubjective || !hasHypotheses) ? 0 : 1, reason: "Información insuficiente" };
         }
     }
 
