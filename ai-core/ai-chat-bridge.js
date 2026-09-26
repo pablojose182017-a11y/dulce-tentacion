@@ -8,6 +8,21 @@ class ChatBridge {
         this.memoryManager = new window.AI_CORE.MemoryManager(this.store, 'pd_memory');
         this.knowledgeManager = new window.AI_CORE.KnowledgeManager(this.store);
         
+        // Fase 3: Integración de Creator Knowledge con degradación segura
+        if (window.AI_CORE.CreatorKnowledgeStore && window.AI_CORE.CreatorKnowledgeManager) {
+            this.creatorKnowledgeStore = new window.AI_CORE.CreatorKnowledgeStore();
+            this.creatorKnowledgeManager = new window.AI_CORE.CreatorKnowledgeManager(this.creatorKnowledgeStore);
+            try {
+                // Forzamos rehidratación. Si los datos están corruptos, fallará cerradamente.
+                this.creatorKnowledgeManager.rehydrate();
+            } catch (e) {
+                console.warn("[ChatBridge] Creator Knowledge rehydration failed:", e.message);
+                this.creatorKnowledgeManager = null; // Degradación segura: Anula la instancia
+            }
+        } else {
+            this.creatorKnowledgeManager = null;
+        }
+
         this.provider = new window.AI_CORE.LocalMockProvider();
         this.reasoningEngine = new window.AI_CORE.ReasoningEngine(this.provider);
         this.personalityEngine = new window.AI_CORE.PersonalityEngine();
@@ -23,20 +38,30 @@ class ChatBridge {
         );
         await contextManager.assembleContext(currentUserGlobal);
 
-        // Buscar documentos relevantes para la pregunta actual
+        // Buscar documentos relevantes genéricos para la pregunta actual
         let relevantDocs = [];
         try {
             const searchResults = await this.knowledgeManager.search(message);
             relevantDocs = searchResults.map(r => r.document);
         } catch (e) {
-            // Si la búsqueda falla, continuar sin conocimiento (degradación segura)
             relevantDocs = [];
         }
 
-        // Inyectar conocimiento al ContextManager mediante la interfaz oficial
-        contextManager.setKnowledge(relevantDocs);
+        // FASE 3: Recuperar Creator Knowledge de manera independiente
+        let creatorDocs = [];
+        if (this.creatorKnowledgeManager && this.creatorKnowledgeManager.isReady) {
+            try {
+                creatorDocs = this.creatorKnowledgeManager.retrieveActive();
+            } catch (e) {
+                creatorDocs = [];
+            }
+        }
 
-        // Construir contexto completo (ahora con knowledge AVAILABLE si hay docs)
+        // Inyectar conocimiento al ContextManager manteniendo separación estricta
+        contextManager.setKnowledge(relevantDocs);
+        contextManager.setCreatorKnowledge(creatorDocs);
+
+        // Construir contexto completo
         const context = contextManager.buildContext();
 
         // Feed legacy data purely as context
