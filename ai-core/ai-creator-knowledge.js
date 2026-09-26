@@ -274,22 +274,24 @@ class CreatorKnowledgeManager {
             let simulatedLastHash = this.lastHash;
 
             for (let input of recordsInput) {
+                const rec = new CreatorKnowledgeRecord(input);
+                
                 // Validación básica
-                if (!this._validateStructure(input)) throw new Error("Invalid structure");
-                if (input.category === "CREATOR_FACT") {
-                    this._validateEvidenceReference(input.evidenceReference);
+                if (!this._validateStructure(rec)) throw new Error("Invalid structure");
+                if (!rec.provenance) throw new Error("Missing Provenance");
+                
+                if (rec.category === "CREATOR_FACT") {
+                    this._validateEvidenceReference(rec.evidenceReference);
                 }
                 
                 // Validación de vocabulario de scope
-                if (input.applicabilityScope && typeof input.applicabilityScope === 'object') {
-                    if (!this._validateScopeVocabulary(input.applicabilityScope)) {
-                        input.applicabilityScope = "SCOPE_UNCERTAIN"; // HARD DROP trigger
+                if (rec.applicabilityScope && typeof rec.applicabilityScope === 'object') {
+                    if (!this._validateScopeVocabulary(rec.applicabilityScope)) {
+                        rec.applicabilityScope = "SCOPE_UNCERTAIN"; // HARD DROP trigger
                     }
                 } else {
-                    input.applicabilityScope = "SCOPE_UNCERTAIN";
+                    rec.applicabilityScope = "SCOPE_UNCERTAIN";
                 }
-
-                const rec = new CreatorKnowledgeRecord(input);
                 
                 // Preparar integrity
                 simulatedSeq++;

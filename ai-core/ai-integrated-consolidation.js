@@ -1,5 +1,23 @@
 const crypto = require('crypto');
 
+class EvidenceValidator {
+    static isValid(support, provenanceGraph) {
+        if (!support || !support.source || !support.evidence) return false;
+        
+        let sourceExists = provenanceGraph.sources.has(support.source.sourceId);
+        if (!sourceExists) return false;
+        
+        let ev = support.evidence;
+        if (typeof ev !== 'object' && typeof ev !== 'string') return false;
+        if (Array.isArray(ev) && ev.length === 0) return false;
+        
+        // Check for broken reference
+        if (ev.broken || ev.invalid) return false;
+        
+        return true;
+    }
+}
+
 class IntegratedConsolidationEngine {
     constructor(provenanceGraph) {
         this.provenance = provenanceGraph;
@@ -99,7 +117,9 @@ class IntegratedConsolidationEngine {
 
         if (this.consolidationStates.get(claimId) !== newState) {
             this.consolidationStates.set(claimId, newState);
-            this.history.push({ type: 'CONSOLIDATION_CHANGE', claimId: claimId, state: newState, timestamp: new Date().toISOString() });
+            if (!this._isRehydrating) {
+                this.history.push({ type: 'CONSOLIDATION_CHANGE', claimId: claimId, state: newState, timestamp: new Date().toISOString() });
+            }
         }
         return newState;
     }
@@ -227,5 +247,6 @@ class SemanticConsolidationPipeline {
 
 module.exports = {
     IntegratedConsolidationEngine,
+    EvidenceValidator,
     SemanticConsolidationPipeline
 };

@@ -136,10 +136,10 @@ function runTests() {
         if(!rec) return false;
         try {
             rec.applicabilityScope.domain = "HACKED";
-            return false;
         } catch(e) {
-            return true;
+            // Ignorar excepción potencial (en modo estricto)
         }
+        return rec.applicabilityScope.domain === "TEXT";
     }, "Los objetos recuperados son inmutables (Deep Frozen).");
 
     // T06 - Rehydration Fail-Closed
@@ -187,7 +187,7 @@ function runTests() {
         return !disk.some(r => r.knowledgeId === "ghost_123");
     }, "Crash o Abort antes del commit no persiste estado parcial.");
 
-    console.log(`\nRESUMEN: ${passed} / ${total} TESTS EVALUADOS.`);
+    console.log(`\nRESUMEN: ${passed} PASS / ${total} TOTAL`);
 }
 
 if (typeof module !== 'undefined' && require.main === module) {

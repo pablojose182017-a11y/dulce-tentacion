@@ -15,6 +15,7 @@ class ContextManager {
             identity: { available: false, data: null },
             memory: { available: false, data: [] },
             knowledge: { available: false, data: [] },
+            creatorKnowledge: { available: false, data: [] },
             project: { available: false, data: null },
             permissions: { available: false, data: null },
             tools: { available: false, data: [] }
@@ -63,6 +64,35 @@ class ContextManager {
             available: Array.isArray(knowledgeArray) && knowledgeArray.length > 0,
             data: knowledgeArray || [],
             source: 'KnowledgeManager'
+        };
+    }
+
+    setCreatorKnowledge(knowledgeArray) {
+        if (!Array.isArray(knowledgeArray) || knowledgeArray.length === 0) {
+            this.contextData.creatorKnowledge = {
+                available: false,
+                data: [],
+                source: 'CreatorKnowledgeManager'
+            };
+            return;
+        }
+
+        // Sanitizar eliminando integrityRecord para evitar alucinaciones de hashes en el LLM
+        const sanitized = knowledgeArray.map(item => {
+            if (item && typeof item === 'object') {
+                const clone = Object.assign({}, item);
+                delete clone.integrityRecord;
+                // Si llegase a colarse un SCOPE_UNCERTAIN, se aplica HARD-DROP como defensa en profundidad
+                if (clone.applicabilityScope === "SCOPE_UNCERTAIN") return null;
+                return clone;
+            }
+            return item;
+        }).filter(item => item !== null);
+
+        this.contextData.creatorKnowledge = {
+            available: sanitized.length > 0,
+            data: sanitized,
+            source: 'CreatorKnowledgeManager'
         };
     }
 
