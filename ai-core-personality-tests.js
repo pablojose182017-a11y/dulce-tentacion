@@ -71,6 +71,26 @@ function runTests() {
     const p15 = engine.applyPersonality({ uncertainty: { level: "UNKNOWN" } }, { problemStatement: "¿Cuáles son tus capacidades?" });
     test("P15", p15.conversationMode === "CAPABILITIES", "Evita CASUAL, se marca como CAPABILITIES.");
 
+    // P16 — Preferencia subjetiva aplicable
+    const p16 = engine.applyPersonality({ uncertainty: { level: "HIGH", isSubjective: true } }, { problemStatement: "hazlo corto" });
+    test("P16", p16.conversationMode === "COLLABORATIVE" && p16.epistemicTone === "QUALIFIED" && p16.initiative === "SUGGEST", "Preferencia subjetiva aplicable -> COLLABORATIVE + QUALIFIED + SUGGEST.");
+
+    // P17 — UNSUPPORTED_HYPOTHESIS en LOW no puede producir CERTAIN
+    const p17 = engine.applyPersonality({ uncertainty: { level: "LOW" }, hypotheses: [{ status: "UNSUPPORTED_HYPOTHESIS" }] }, { problemStatement: "test" });
+    test("P17", p17.epistemicTone !== "CERTAIN" && p17.epistemicTone === "QUALIFIED", "UNSUPPORTED_HYPOTHESIS en LOW -> no puede producir CERTAIN.");
+
+    // P18 — isSubjective + conflicto -> prioridad al conflicto
+    const p18 = engine.applyPersonality({ uncertainty: { level: "HIGH", isSubjective: true, conflictingInformation: ["conflicto"] } }, { problemStatement: "test" });
+    test("P18", p18.conversationMode === "INVESTIGATIVE" && p18.epistemicTone === "QUALIFIED" && p18.initiative === "FLAG", "isSubjective + conflicto -> INVESTIGATIVE + QUALIFIED + FLAG.");
+
+    // P19 — Incertidumbre factual sin isSubjective -> QUESTION
+    const p19 = engine.applyPersonality({ uncertainty: { level: "HIGH", isSubjective: false, missingInformation: ["falta"] } }, { problemStatement: "test" });
+    test("P19", p19.initiative === "QUESTION", "Incertidumbre factual sin isSubjective -> QUESTION.");
+
+    // P20 — Personality no importa Creator Knowledge ni Security/Execution
+    const hasBadImports = typeof window.AI_CORE.CreatorKnowledgeManager !== 'undefined' || typeof window.AI_CORE.SecurityEngine !== 'undefined';
+    test("P20", !hasBadImports, "Personality no importa Creator Knowledge ni Security/Execution.");
+
     console.log(`\nRESUMEN: ${passed} / ${total} TESTS EVALUADOS.`);
     console.log("NOTA: Tests STATIC. Node.js runtime no disponible.");
 }

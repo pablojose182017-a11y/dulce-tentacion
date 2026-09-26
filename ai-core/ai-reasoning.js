@@ -359,6 +359,12 @@ class ReasoningEngine {
             ? ctx.blocks.creatorKnowledge.content
             : [];
 
+        const hasPrefsOrExps = output.hypotheses.some(h => ["CREATOR_PREFERENCE", "CREATOR_EXPECTATION"].includes(h.epistemicCategory));
+        const hasFactualUnsupported = unsupported.some(h => !["CREATOR_PREFERENCE", "CREATOR_EXPECTATION"].includes(h.epistemicCategory));
+        if (hasPrefsOrExps && contradicted.length === 0 && !hasFactualUnsupported) {
+            output.uncertainty.isSubjective = true;
+        }
+
         if (contradicted.length > 0) {
             output.uncertainty.level = "HIGH";
             output.uncertainty.conflictingInformation = ["Hipótesis contradice conocimiento local o existe conflicto genérico vs creador."];
@@ -409,7 +415,8 @@ class ReasoningEngine {
             uncertainty: {
                 level: "UNKNOWN",
                 missingInformation: [],
-                conflictingInformation: []
+                conflictingInformation: [],
+                isSubjective: false
             },
             conclusion: "",
             proposal: "",

@@ -8,7 +8,7 @@ if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
 class PersonalityEngine {
     
     applyPersonality(reasoningAnalysis, inputContext) {
-        const prompt = (inputContext.problemStatement || "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const prompt = (inputContext.problemStatement || "").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[¿¡]/g, '').trim();
         
         const orientation = {
             conversationMode: "INFORMATIONAL", // CASUAL, INFORMATIONAL, ANALYTICAL, UNCERTAIN, INVESTIGATIVE, COLLABORATIVE, WARNING
@@ -18,7 +18,7 @@ class PersonalityEngine {
         };
 
         // 1. Detección de conversación puramente social (P1, P2)
-        const esConversacional = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|que tal|saludos|hey|como estas|gracias|de nada|quien eres|conversemos)[\s\?\!\.]*$/.test(prompt);
+        const esConversacional = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|que tal|saludos|hey|como estas|gracias|de nada|quien eres|conversemos)(?:\s+guardian)?[\s\?\!\.]*$/.test(prompt);
 
         if (esConversacional) {
             orientation.conversationMode = "CASUAL";
@@ -41,14 +41,21 @@ class PersonalityEngine {
         
         if (uncertainty.level === "HIGH" || uncertainty.level === "CRITICAL") {
             
-            // Hay conflicto entre evidencias (P5)
+            // Priority 1: Hay conflicto entre evidencias (P5)
             if (uncertainty.conflictingInformation && uncertainty.conflictingInformation.length > 0) {
                 orientation.conversationMode = "INVESTIGATIVE";
                 orientation.epistemicTone = "QUALIFIED";
                 orientation.initiative = "FLAG";
                 orientation.styleGuidelines.push("critico", "honesto", "señalar contradiccion");
             } 
-            // Falta información para afirmar un hecho (P3, P7)
+            // Priority 2: Es puramente subjetivo (P16)
+            else if (uncertainty.isSubjective === true) {
+                orientation.conversationMode = "COLLABORATIVE";
+                orientation.epistemicTone = "QUALIFIED";
+                orientation.initiative = "SUGGEST";
+                orientation.styleGuidelines.push("respetar preferencia", "sugerir aplicación");
+            }
+            // Falta información para afirmar un hecho (P3, P7) y no es subjetivo (P19)
             else if (uncertainty.missingInformation && uncertainty.missingInformation.length > 0) {
                 // Si faltan datos, preguntamos antes de asumir (P7) o simplemente reconocemos desconocimiento (P3)
                 orientation.conversationMode = "COLLABORATIVE";
@@ -74,6 +81,7 @@ class PersonalityEngine {
             const hasUnsupported = reasoningAnalysis.hypotheses.some(h => h.status === "UNSUPPORTED_HYPOTHESIS");
             if (hasUnsupported) {
                 orientation.conversationMode = "COLLABORATIVE";
+                orientation.epistemicTone = "QUALIFIED";
                 orientation.initiative = "SUGGEST";
                 orientation.styleGuidelines.push("proactivo", "presentar como hipotesis");
             }

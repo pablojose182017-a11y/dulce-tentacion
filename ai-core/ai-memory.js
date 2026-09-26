@@ -60,6 +60,20 @@ class MemoryManager {
                     evidenceReference: metadata.evidenceReference ? this._deepClone(metadata.evidenceReference) : undefined,
                     supersedesId: metadata.supersedesId
                 };
+            } else if (metadata.isGeneratedResponse === true) {
+                if (metadata.isCreatorKnowledge || metadata.knowledgeId || metadata.category || metadata.provenance || metadata.evidenceReference || metadata.applicabilityScope) {
+                    throw new Error("FAIL-CLOSED: Cannot mix Generated Response with Creator Knowledge fields");
+                }
+                turn.metadata = {
+                    isGeneratedResponse: true,
+                    personalityMode: metadata.personalityMode,
+                    personalityTone: metadata.personalityTone,
+                    personalityInitiative: metadata.personalityInitiative,
+                    reasoningUncertaintyLevel: metadata.reasoningUncertaintyLevel,
+                    isSubjective: !!metadata.isSubjective,
+                    hadConflict: !!metadata.hadConflict,
+                    hadMissingInformation: !!metadata.hadMissingInformation
+                };
             } else {
                 turn.metadata = this._deepClone(metadata);
             }

@@ -98,7 +98,16 @@ class ChatBridge {
             responseText = await this.provider.generate(message, context);
         }
 
-        this.memoryManager.addTurn('assistant', responseText);
+        this.memoryManager.addTurn('assistant', responseText, {
+            isGeneratedResponse: true,
+            personalityMode: personalityOrientation.conversationMode,
+            personalityTone: personalityOrientation.epistemicTone,
+            personalityInitiative: personalityOrientation.initiative,
+            reasoningUncertaintyLevel: analysis.uncertainty.level,
+            isSubjective: Boolean(analysis.uncertainty.isSubjective),
+            hadConflict: Boolean(analysis.uncertainty.conflictingInformation && analysis.uncertainty.conflictingInformation.length > 0),
+            hadMissingInformation: Boolean(analysis.uncertainty.missingInformation && analysis.uncertainty.missingInformation.length > 0)
+        });
 
         return responseText;
     }
