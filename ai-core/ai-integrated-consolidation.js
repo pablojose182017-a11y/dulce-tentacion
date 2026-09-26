@@ -9,23 +9,57 @@ class IntegratedConsolidationEngine {
 
     _areSourcesIndependent(supports) {
         if (!Array.isArray(supports)) return 0;
-        let roots = new Set();
+        
+        let validSources = new Map();
+        
         for (let s of supports) {
             if (!s || !s.source) continue;
-            let current = s.source;
-            let visited = new Set();
-            while (current) {
-                if (visited.has(current.sourceId)) break;
-                visited.add(current.sourceId);
-                let parentId = current.copiedFrom || current.derivedFrom || current.transformedFrom || current.parentSourceId;
-                if (!parentId) break;
-                let next = this.provenance.sources.get(parentId);
-                if (!next) break;
-                current = next;
+            if (!this.provenance._isEvidenceValid(s.evidence)) continue;
+            
+            let srcId = s.source.sourceId;
+            if (!validSources.has(srcId)) {
+                let supportRoots = this.provenance._findRootSources(s.source);
+                let rootIds = new Set();
+                for (let r of supportRoots) {
+                    rootIds.add(r.sourceId);
+                }
+                validSources.set(srcId, rootIds);
             }
-            roots.add(current.sourceId);
         }
-        return roots.size;
+        
+        let sourcesArray = Array.from(validSources.entries());
+        if (sourcesArray.length === 0) return 0;
+        
+        const MAX_EXACT_SOURCES = 15;
+        if (sourcesArray.length > MAX_EXACT_SOURCES) {
+            return 'COMPUTATION_BUDGET_EXCEEDED';
+        }
+        
+        sourcesArray.sort((a, b) => a[0].localeCompare(b[0]));
+        
+        let backtrack = (index, currentSetRootUnion) => {
+            if (index >= sourcesArray.length) return 0;
+            
+            let [srcId, srcRoots] = sourcesArray[index];
+            let canInclude = true;
+            for (let r of srcRoots) {
+                if (currentSetRootUnion.has(r)) {
+                    canInclude = false;
+                    break;
+                }
+            }
+            
+            let countWithout = backtrack(index + 1, currentSetRootUnion);
+            let countWith = 0;
+            if (canInclude) {
+                let nextUnion = new Set(currentSetRootUnion);
+                for (let r of srcRoots) nextUnion.add(r);
+                countWith = 1 + backtrack(index + 1, nextUnion);
+            }
+            return Math.max(countWith, countWithout);
+        };
+        
+        return backtrack(0, new Set());
     }
 
     async consolidateClaim(claimId) {
@@ -51,13 +85,13 @@ class IntegratedConsolidationEngine {
 
         if (isConflicted) {
             newState = 'CONFLICTED';
+        } else if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED') {
+            newState = 'UNCERTAIN';
         } else if (independentCount === 0) {
             newState = 'UNCERTAIN';
         } else if (epistemicallyRestricted.includes(type)) {
-            // Cap at SUPPORTED
             newState = independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
         } else if (type === 'FACT' || type === 'OBSERVATION') {
-            // Can escalate to CONSOLIDATED if independent sources corroborate
             newState = independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
         } else {
             newState = 'RAW';
@@ -74,19 +108,49 @@ class IntegratedConsolidationEngine {
         return this.consolidationStates.get(claimId) || 'RAW';
     }
 
-    // VULN-01 Remediation: Do not persist the cache. Rehydrate safely from the Immutable Provenance Graph.
-    async rehydrate() {
-        let oldStates = new Map(this.consolidationStates);
-        this.consolidationStates.clear();
+    // VULN-01 Remediation: Rehydrate is READ-ONLY. Computes derived state locally.
+    rehydrate() {
+        let derivedStates = {}; // POJO
         
-        try {
-            for (let claimId of this.provenance.claims.keys()) {
-                await this.consolidateClaim(claimId);
+        for (let claimId of this.provenance.claims.keys()) {
+            let record = this.provenance.claims.get(claimId); 
+            if (!record) continue;
+
+            let proposal = record.claimProposal;
+            let independentCount = this._areSourcesIndependent(record.supports);
+
+            let isConflicted = false;
+            let conflictList = Array.from(this.provenance.conflicts.values());
+            for (let c of conflictList) {
+                if (c.status === 'OPEN' && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)) {
+                    isConflicted = true;
+                    break;
+                }
             }
-        } catch(e) {
-            this.consolidationStates = oldStates;
-            throw new Error("Failed to rehydrate logical state. Rollback applied.");
+
+            let newState = 'STRUCTURED';
+            let type = proposal.knowledgeType || 'UNKNOWN';
+            let epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
+
+            if (isConflicted) {
+                newState = 'CONFLICTED';
+            } else if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED') {
+                newState = 'UNCERTAIN';
+            } else if (independentCount === 0) {
+                newState = 'UNCERTAIN';
+            } else if (epistemicallyRestricted.includes(type)) {
+                newState = independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
+            } else if (type === 'FACT' || type === 'OBSERVATION') {
+                newState = independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
+            } else {
+                newState = 'RAW';
+            }
+            
+            derivedStates[claimId] = newState;
         }
+        
+        // Deep freeze POJO (keys and string values)
+        return Object.freeze(derivedStates);
     }
 }
 

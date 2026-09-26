@@ -241,28 +241,104 @@ class ProvenanceGraph {
         let record = this.claims.get(claimId);
         if (!record) return 0;
         
-        let roots = new Set();
-        for (let support of record.supports) {
-            let root = this._findRootSource(support.source);
-            roots.add(root.sourceId);
-        }
-        return roots.size;
-    }
-
-    _findRootSource(source) {
-        let current = source;
-        let visited = new Set();
-        while ((current.copiedFrom || current.derivedFrom || current.transformedFrom || current.parentSourceId) && !visited.has(current.sourceId)) {
-            visited.add(current.sourceId);
-            let parentId = current.copiedFrom || current.derivedFrom || current.transformedFrom || current.parentSourceId;
-            let parent = this.sources.get(parentId);
-            if (parent) {
-                current = parent;
-            } else {
-                break;
+        let validSources = new Map();
+        for (let s of record.supports) {
+            if (!s || !s.source) continue;
+            if (!this._isEvidenceValid(s.evidence)) continue;
+            
+            let srcId = s.source.sourceId;
+            if (!validSources.has(srcId)) {
+                let supportRoots = this._findRootSources(s.source);
+                let rootIds = new Set();
+                for (let r of supportRoots) rootIds.add(r.sourceId);
+                validSources.set(srcId, rootIds);
             }
         }
-        return current;
+        
+        let sourcesArray = Array.from(validSources.entries());
+        if (sourcesArray.length === 0) return 0;
+        
+        const MAX_EXACT_SOURCES = 15;
+        if (sourcesArray.length > MAX_EXACT_SOURCES) {
+            return 'COMPUTATION_BUDGET_EXCEEDED';
+        }
+        
+        sourcesArray.sort((a, b) => a[0].localeCompare(b[0]));
+        
+        let backtrack = (index, currentSetRootUnion) => {
+            if (index >= sourcesArray.length) return 0;
+            
+            let [srcId, srcRoots] = sourcesArray[index];
+            let canInclude = true;
+            for (let r of srcRoots) {
+                if (currentSetRootUnion.has(r)) {
+                    canInclude = false;
+                    break;
+                }
+            }
+            
+            let countWithout = backtrack(index + 1, currentSetRootUnion);
+            let countWith = 0;
+            if (canInclude) {
+                let nextUnion = new Set(currentSetRootUnion);
+                for (let r of srcRoots) nextUnion.add(r);
+                countWith = 1 + backtrack(index + 1, nextUnion);
+            }
+            return Math.max(countWith, countWithout);
+        };
+        
+        return backtrack(0, new Set());
+    }
+
+    _findRootSources(source) {
+        let roots = new Set();
+        let visited = new Set();
+        let queue = [source];
+
+        while (queue.length > 0) {
+            let current = queue.shift();
+            
+            if (visited.has(current.sourceId)) continue;
+            visited.add(current.sourceId);
+
+            let parents = this._getCausalParentIds(current);
+            if (parents.length === 0) {
+                roots.add(current);
+            } else {
+                for (let pid of parents) {
+                    let parent = this.sources.get(pid);
+                    if (parent) {
+                        queue.push(parent);
+                    } else {
+                        // If parent is missing, treat the current node as a root for that branch
+                        roots.add(current);
+                    }
+                }
+            }
+        }
+        return roots;
+    }
+
+    _getCausalParentIds(source) {
+        let ids = new Set();
+        if (source.copiedFrom) ids.add(source.copiedFrom);
+        if (source.derivedFrom) ids.add(source.derivedFrom);
+        if (source.transformedFrom) ids.add(source.transformedFrom);
+        if (source.parentSourceId) ids.add(source.parentSourceId);
+        if (Array.isArray(source.parentSourceIds)) {
+            for (let id of source.parentSourceIds) {
+                ids.add(id);
+            }
+        }
+        return Array.from(ids);
+    }
+
+    _isEvidenceValid(evidence) {
+        if (!evidence) return false;
+        if (typeof evidence === 'string' && evidence.trim() === '') return false;
+        if (Array.isArray(evidence) && evidence.length === 0) return false;
+        if (typeof evidence === 'object' && evidence !== null && (evidence.broken || evidence.invalid)) return false;
+        return true;
     }
 
     createKnowledgeGap(description, relatedClaims, priority = 'USEFUL') {
