@@ -138,7 +138,19 @@ class KnowledgeIngestionEngine {
             confidence: 1.0, 
             version: 1,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            
+            // FASE 4A metadata
+            knowledgeType: proposal.extractedFields.knowledgeType || "FACT",
+            language: proposal.extractedFields.language || "UNSPECIFIED",
+            status: proposal.extractedFields.status || "ACTIVE",
+            learnedAt: new Date().toISOString(),
+            provenance: proposal.extractedFields.provenance || {
+                sourceType: "MANUAL_INPUT",
+                sourceId: job.source,
+                extractionMethod: "AI_PARSER_V1",
+                ingestedAt: new Date().toISOString()
+            }
         };
 
         await this.knowledgeManager.add(doc);

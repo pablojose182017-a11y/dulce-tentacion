@@ -37,7 +37,46 @@ class KnowledgeSchema {
             throw new Error("Field 'updatedAt' must be null, a valid date string, or a timestamp");
         }
 
-        return {
+        // FASE 4A - Nuevos campos opcionales
+        const validKnowledgeTypes = ['FACT', 'INFERENCE', 'HYPOTHESIS', 'RULE', 'PROCEDURE', 'DEFINITION', 'EXAMPLE', 'DOCUMENT', 'UNSPECIFIED'];
+        if (doc.knowledgeType !== undefined) {
+            if (typeof doc.knowledgeType !== 'string' || !validKnowledgeTypes.includes(doc.knowledgeType)) {
+                throw new Error(`Field 'knowledgeType' must be one of: ${validKnowledgeTypes.join(', ')}`);
+            }
+        }
+
+        if (doc.language !== undefined) {
+            if (typeof doc.language !== 'string' || doc.language.trim() === '') {
+                throw new Error("Field 'language' must be a non-empty string");
+            }
+        }
+
+        if (doc.provenance !== undefined) {
+            if (typeof doc.provenance !== 'object' || doc.provenance === null) {
+                throw new Error("Field 'provenance' must be an object");
+            }
+        }
+
+        const validStatuses = ['NONE', 'UNRESOLVED', 'UNDER_REVIEW', 'RESOLVED', 'SUPERSEDED', 'ACTIVE', 'DEPRECATED'];
+        if (doc.status !== undefined) {
+            if (typeof doc.status !== 'string' || !validStatuses.includes(doc.status)) {
+                throw new Error(`Field 'status' must be one of: ${validStatuses.join(', ')}`);
+            }
+        }
+
+        if (doc.evidenceReferences !== undefined) {
+            if (!Array.isArray(doc.evidenceReferences)) {
+                throw new Error("Field 'evidenceReferences' must be an array");
+            }
+        }
+
+        if (doc.learnedAt !== undefined) {
+            if (doc.learnedAt !== null && typeof doc.learnedAt !== 'string' && typeof doc.learnedAt !== 'number') {
+                throw new Error("Field 'learnedAt' must be a valid date string or timestamp");
+            }
+        }
+
+        const normalizedDoc = {
             id: doc.id.trim(),
             title: doc.title.trim(),
             content: doc.content.trim(),
@@ -49,6 +88,15 @@ class KnowledgeSchema {
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt
         };
+
+        if (doc.knowledgeType !== undefined) normalizedDoc.knowledgeType = doc.knowledgeType;
+        if (doc.language !== undefined) normalizedDoc.language = doc.language.trim();
+        if (doc.provenance !== undefined) normalizedDoc.provenance = { ...doc.provenance };
+        if (doc.status !== undefined) normalizedDoc.status = doc.status;
+        if (doc.evidenceReferences !== undefined) normalizedDoc.evidenceReferences = [...doc.evidenceReferences];
+        if (doc.learnedAt !== undefined) normalizedDoc.learnedAt = doc.learnedAt;
+
+        return normalizedDoc;
     }
 }
 
@@ -251,5 +299,175 @@ class KnowledgeManager {
     }
 }
 
+// ==========================================
+// CONCEPT SCHEMA
+// ==========================================
+
+class ConceptSchema {
+    static validate(concept) {
+        if (!concept) throw new Error("Concept cannot be null or undefined");
+        if (typeof concept.conceptId !== 'string' || concept.conceptId.trim() === '') throw new Error("Field 'conceptId' is required and must be a string");
+        if (typeof concept.canonicalName !== 'string' || concept.canonicalName.trim() === '') throw new Error("Field 'canonicalName' is required and must be a string");
+        
+        const validStatuses = ['DRAFT', 'ACTIVE', 'DEPRECATED', 'SUPERSEDED'];
+        if (concept.status && !validStatuses.includes(concept.status)) {
+            throw new Error(`Field 'status' must be one of: ${validStatuses.join(', ')}`);
+        }
+
+        return {
+            conceptId: concept.conceptId.trim(),
+            canonicalName: concept.canonicalName.trim(),
+            aliases: Array.isArray(concept.aliases) ? [...concept.aliases] : [],
+            domain: concept.domain || 'General',
+            languageVariants: Array.isArray(concept.languageVariants) ? [...concept.languageVariants] : [],
+            sourceReferences: Array.isArray(concept.sourceReferences) ? [...concept.sourceReferences] : [],
+            status: concept.status || 'ACTIVE',
+            createdAt: concept.createdAt || new Date().toISOString(),
+            updatedAt: concept.updatedAt || new Date().toISOString()
+        };
+    }
+}
+
+// ==========================================
+// CONCEPT REGISTRY
+// ==========================================
+
+class ConceptRegistry {
+    constructor(store, collectionName = 'concept_registry') {
+        if (!store || typeof store.save !== 'function') {
+            throw new Error("ConceptRegistry requires a valid KnowledgeStore instance");
+        }
+        this.store = store;
+        this.collectionName = collectionName;
+        this._cache = null;
+    }
+
+    async _ensureLoaded() {
+        if (this._cache === null) {
+            this._cache = await this.store.load(this.collectionName) || [];
+        }
+    }
+
+    async add(concept) {
+        const valid = ConceptSchema.validate(concept);
+        await this._ensureLoaded();
+        if (this._cache.find(c => c.conceptId === valid.conceptId)) {
+            throw new Error(`Concept with id '${valid.conceptId}' already exists.`);
+        }
+        this._cache.push(valid);
+        await this.store.save(this.collectionName, this._cache);
+        return valid;
+    }
+
+    async get(conceptId) {
+        await this._ensureLoaded();
+        return this._cache.find(c => c.conceptId === conceptId) || null;
+    }
+}
+
+// ==========================================
+// RELATIONSHIP SCHEMA
+// ==========================================
+
+class RelationshipSchema {
+    static validate(rel) {
+        if (!rel) throw new Error("Relationship cannot be null or undefined");
+        if (typeof rel.sourceConceptId !== 'string' || rel.sourceConceptId.trim() === '') throw new Error("Field 'sourceConceptId' is required");
+        if (typeof rel.targetConceptId !== 'string' || rel.targetConceptId.trim() === '') throw new Error("Field 'targetConceptId' is required");
+        
+        const validTypes = ['IS_A', 'PART_OF', 'HAS_PART', 'RELATED_TO', 'DEPENDS_ON', 'REQUIRES', 'DERIVED_FROM', 'EXAMPLE_OF', 'EQUIVALENT_TO', 'CONTRADICTS', 'SUPPORTS', 'SUPERSEDES', 'USED_IN'];
+        if (typeof rel.relationType !== 'string' || !validTypes.includes(rel.relationType)) {
+            throw new Error(`Field 'relationType' must be one of: ${validTypes.join(', ')}`);
+        }
+
+        if (typeof rel.confidence !== 'number' || rel.confidence < 0 || rel.confidence > 1) {
+            throw new Error("Field 'confidence' must be a number between 0 and 1");
+        }
+
+        if (typeof rel.provenance !== 'object' || rel.provenance === null) {
+            throw new Error("Field 'provenance' must be an object");
+        }
+
+        const validStatuses = ['ACTIVE', 'SUPERSEDED', 'CONFLICTED', 'RETIRED'];
+        if (rel.status && !validStatuses.includes(rel.status)) {
+            throw new Error(`Field 'status' must be one of: ${validStatuses.join(', ')}`);
+        }
+
+        return {
+            id: rel.id || `rel_${Date.now()}_${Math.floor(Math.random()*10000)}`,
+            sourceConceptId: rel.sourceConceptId.trim(),
+            targetConceptId: rel.targetConceptId.trim(),
+            relationType: rel.relationType,
+            confidence: rel.confidence,
+            provenance: { ...rel.provenance },
+            evidenceReferences: Array.isArray(rel.evidenceReferences) ? [...rel.evidenceReferences] : [],
+            status: rel.status || 'ACTIVE',
+            createdAt: rel.createdAt || new Date().toISOString(),
+            updatedAt: rel.updatedAt || new Date().toISOString()
+        };
+    }
+}
+
+// ==========================================
+// RELATIONSHIP REGISTRY
+// ==========================================
+
+class RelationshipRegistry {
+    constructor(store, collectionName = 'relationship_registry') {
+        if (!store || typeof store.save !== 'function') {
+            throw new Error("RelationshipRegistry requires a valid KnowledgeStore instance");
+        }
+        this.store = store;
+        this.collectionName = collectionName;
+        this._cache = null;
+    }
+
+    async _ensureLoaded() {
+        if (this._cache === null) {
+            this._cache = await this.store.load(this.collectionName) || [];
+        }
+    }
+
+    async add(rel, conceptRegistry = null) {
+        const valid = RelationshipSchema.validate(rel);
+        
+        if (conceptRegistry) {
+            const source = await conceptRegistry.get(valid.sourceConceptId);
+            const target = await conceptRegistry.get(valid.targetConceptId);
+            if (!source) throw new Error(`Source concept '${valid.sourceConceptId}' does not exist.`);
+            if (!target) throw new Error(`Target concept '${valid.targetConceptId}' does not exist.`);
+        }
+
+        await this._ensureLoaded();
+        this._cache.push(valid);
+        await this.store.save(this.collectionName, this._cache);
+        return valid;
+    }
+
+    async getRelations(conceptId) {
+        await this._ensureLoaded();
+        return this._cache.filter(r => r.sourceConceptId === conceptId || r.targetConceptId === conceptId);
+    }
+
+    async getOutgoingRelations(conceptId) {
+        await this._ensureLoaded();
+        return this._cache.filter(r => r.sourceConceptId === conceptId);
+    }
+
+    async getIncomingRelations(conceptId) {
+        await this._ensureLoaded();
+        return this._cache.filter(r => r.targetConceptId === conceptId);
+    }
+
+    async getByType(relationType) {
+        await this._ensureLoaded();
+        return this._cache.filter(r => r.relationType === relationType);
+    }
+}
+
 window.AI_CORE.KnowledgeSchema = KnowledgeSchema;
 window.AI_CORE.KnowledgeManager = KnowledgeManager;
+window.AI_CORE.ConceptSchema = ConceptSchema;
+window.AI_CORE.ConceptRegistry = ConceptRegistry;
+window.AI_CORE.RelationshipSchema = RelationshipSchema;
+window.AI_CORE.RelationshipRegistry = RelationshipRegistry;
