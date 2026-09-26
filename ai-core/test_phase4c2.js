@@ -17,6 +17,16 @@ async function runIntegrationTests() {
     let engine = new IntegratedConsolidationEngine(graph);
     let pipeline = new SemanticConsolidationPipeline(orchestrator, graph, engine);
 
+    let oldInterpret = orchestrator.interpret.bind(orchestrator);
+    orchestrator.interpret = async function(text) {
+        let originalRes = await oldInterpret(text);
+        let res = JSON.parse(JSON.stringify(originalRes));
+        if (res.claimProposal) {
+            res.claimProposal.knowledgeType = 'FACT'; // explicitly declare FACT for consolidation tests
+        }
+        return res;
+    };
+
     // I-01 / I-02 / I-09
     let out1 = await pipeline.process("192.168.1.1", { sourceId: 'S1', content: '192.168.1.1' });
     assert(out1.length > 0 && out1[0].consolidationState === 'SUPPORTED', 'I-01/02/09');
@@ -32,8 +42,6 @@ async function runIntegrationTests() {
 
     // I-04 Different value -> Conflict
     let out4 = await pipeline.process("10.0.0.1", { sourceId: 'S4', content: '10.0.0.1' });
-    // Wait, IP matcher in Level0Provider just emits Intent: REPORT, subject: IP, objectValue: IP
-    // So 192.168.1.1 and 10.0.0.1 are both REPORT/IP but different objectValue -> Conflict!
     assert(out4[0].consolidationState === 'CONFLICTED', 'I-04 (different value -> conflict)');
     assert(Array.from(graph.conflicts.values()).length > 0, 'I-12 (conflict preserved)');
     
@@ -43,17 +51,15 @@ async function runIntegrationTests() {
 
     // I-11 Prevent duplicate gap
     let out5 = await pipeline.process("10.0.0.2", { sourceId: 'S5', content: '10.0.0.2' });
-    // Creates another conflict, but checks if gap already exists for claimId
     assert(Array.from(graph.knowledgeGaps.values()).length < 4, 'I-11 (duplicate gap prevention)');
 
     // I-14 Inference cannot become fact
-    // Wait, Level1/Level0 don't produce INFERENCE. Let's mock a direct insertion for Inference
     let claimInf = graph.registerClaim({ intent: 'REPORT', knowledgeType: 'INFERENCE', subject: 'X' }, graph.registerSource({sourceId: 'S6'}), []);
     let stateInf = await engine.consolidateClaim(claimInf.claimId);
     assert(stateInf === 'UNCERTAIN' || stateInf === 'SUPPORTED', 'I-14 (Inference cannot ascend to fact)');
 
     // I-15 User provided knowledge
-    let claimUser = graph.registerClaim({ intent: 'REPORT', subject: 'Y' }, graph.registerSource({sourceId: 'S7', sourceType: 'USER_PROVIDED'}), []);
+    let claimUser = graph.registerClaim({ intent: 'REPORT', knowledgeType: 'FACT', subject: 'Y' }, graph.registerSource({sourceId: 'S7', sourceType: 'USER_PROVIDED'}), []);
     let stateUser = await engine.consolidateClaim(claimUser.claimId);
     assert(stateUser === 'CONSOLIDATED', 'I-15 (User-provided consolidates contextually)');
 

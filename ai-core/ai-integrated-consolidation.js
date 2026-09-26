@@ -24,7 +24,7 @@ class IntegratedConsolidationEngine {
     }
 
     async consolidateClaim(claimId) {
-        let record = this.provenance.claims.get(claimId); // Direct internal access is allowed for the Engine if they are integrated. But wait, provenance graph should be accessed via safe APIs? ProvenanceGraph doesn't have a getClaim API. I will use a safe access or just read the map since it's the engine. Actually, let's just read it.
+        let record = this.provenance.claims.get(claimId); 
         if (!record) return null;
 
         let proposal = record.claimProposal;
@@ -38,7 +38,6 @@ class IntegratedConsolidationEngine {
             if (c.status === 'OPEN' && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)) {
                 isConflicted = true;
                 
-                // Generar KnowledgeGap si falta info y no existe ya
                 let gapExists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.status === 'OPEN' && g.relatedClaims.includes(claimId));
                 if (!gapExists) {
                     this.provenance.createKnowledgeGap(`Resolution required for conflict ${c.conflictId}`, [claimId], 'INDISPENSABLE');
@@ -47,14 +46,14 @@ class IntegratedConsolidationEngine {
         }
 
         let newState = 'STRUCTURED';
+        let type = proposal.knowledgeType || 'UNKNOWN';
+        let epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION'];
 
         if (isConflicted) {
             newState = 'CONFLICTED';
-        } else if (proposal.knowledgeType === 'INFERENCE') {
-            // INFERENCE cannot ascend to FACT automatically
+        } else if (epistemicallyRestricted.includes(type)) {
             newState = independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
         } else if (hasUserProvided) {
-            // User provided does not ascend to absolute FACT automatically outside its context, but it consolidates
             newState = 'CONSOLIDATED';
         } else if (independentCount > 1) {
             newState = 'CONSOLIDATED';
@@ -64,7 +63,10 @@ class IntegratedConsolidationEngine {
             newState = 'RAW';
         }
 
-        this.consolidationStates.set(claimId, newState);
+        if (this.consolidationStates.get(claimId) !== newState) {
+            this.consolidationStates.set(claimId, newState);
+            this.history.push({ type: 'CONSOLIDATION_CHANGE', claimId: claimId, state: newState, timestamp: new Date().toISOString() });
+        }
         return newState;
     }
 
@@ -80,9 +82,33 @@ class IntegratedConsolidationEngine {
     }
 
     deserialize(dataStr) {
-        let data = JSON.parse(dataStr);
-        this.consolidationStates = new Map(data.states);
-        this.history = data.history || [];
+        let data;
+        try {
+            data = JSON.parse(dataStr);
+        } catch(e) {
+            throw new Error("Invalid JSON");
+        }
+
+        if (!data || !Array.isArray(data.states) || !Array.isArray(data.history)) {
+            throw new Error("Invalid schema");
+        }
+
+        let tempStates = new Map();
+        for (let [id, state] of data.states) {
+            if (typeof id !== 'string' || typeof state !== 'string') throw new Error("Invalid state entry");
+            const validStates = ['RAW', 'STRUCTURED', 'SUPPORTED', 'CONSOLIDATED', 'CONFLICTED', 'UNCERTAIN', 'SUPERSEDED', 'NO_ACTION_AUTHORIZED'];
+            if (!validStates.includes(state)) throw new Error("Invalid consolidation state");
+            tempStates.set(id, state);
+        }
+
+        let tempHistory = [];
+        for (let event of data.history) {
+            if (!event || typeof event.type !== 'string' || typeof event.timestamp !== 'string') throw new Error("Invalid history event");
+            tempHistory.push({ type: event.type, claimId: event.claimId, state: event.state, timestamp: event.timestamp, details: event.details });
+        }
+
+        this.consolidationStates = tempStates;
+        this.history = tempHistory;
     }
 }
 
@@ -120,6 +146,16 @@ class SemanticConsolidationPipeline {
             let src = this.provenance.registerSource(sourceData);
             
             let claimSnapshot = this.provenance.registerClaim(candidate.claimProposal, src, candidate.evidenceSpans);
+
+            if (Array.isArray(candidate.missingInformation)) {
+                for (let missing of candidate.missingInformation) {
+                    let desc = `Missing info: ${missing.info} (Priority: ${missing.type || 'USEFUL'})`;
+                    let exists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.description === desc && g.relatedClaims.includes(claimSnapshot.claimId));
+                    if (!exists) {
+                        this.provenance.createKnowledgeGap(desc, [claimSnapshot.claimId], missing.type || 'USEFUL');
+                    }
+                }
+            }
 
             let state = await this.engine.consolidateClaim(claimSnapshot.claimId);
             
