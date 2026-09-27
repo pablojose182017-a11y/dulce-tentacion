@@ -63,7 +63,8 @@ async function runTests() {
         }
     };
 
-    const bridge = new window.AI_CORE.ChatBridge();
+    const dummyInventory = { verifyIdentity: (id) => ({ type: "dummy", canonicalId: id, fingerprint: null }) };
+    const bridge = new window.AI_CORE.ChatBridge(dummyInventory);
     const pm = bridge.permissionManager;
     const creatorUser = { email: "creator@test.com", isCreator: true };
     const stdUser = { email: "std@test.com", isCreator: false };

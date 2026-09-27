@@ -29,9 +29,16 @@ async function runHAETests() {
         else { console.error(`[FAIL] ${name}: ${msg}`); }
     };
 
-    const bridge = new window.AI_CORE.ChatBridge();
+    const dummyInventory = { 
+        verifyIdentity: (id) => {
+            if (id === "db_123") return { type: "database", canonicalId: "db_123", fingerprint: null };
+            return null;
+        } 
+    };
+    const bridge = new window.AI_CORE.ChatBridge(dummyInventory);
     const sec = bridge.securityEngine;
     const gateway = bridge.executionGateway;
+    gateway.inventory = dummyInventory; // ensure it is set
     const admin = { email: "admin@test.com", roles: ["admin"] };
     const user = { email: "user@test.com", roles: [] };
     const ctx = { environment: "PROD" };

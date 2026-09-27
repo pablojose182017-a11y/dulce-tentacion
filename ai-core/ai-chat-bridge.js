@@ -1,7 +1,7 @@
 if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
 
 class ChatBridge {
-    constructor() {
+    constructor(inventoryAuthority = null) {
         this.identityManager = new window.AI_CORE.IdentityManager();
         this.permissionManager = new window.AI_CORE.PermissionManager();
         this.store = new window.AI_CORE.LocalStorageKnowledgeStore('pd_ai_core_');
@@ -42,7 +42,7 @@ class ChatBridge {
                     new window.AI_CORE.VerificationLayer(),
                     new window.AI_CORE.RealExecutionHistory(),
                     new window.AI_CORE.AuditTrail(),
-                    null // inventoryAuthority
+                    inventoryAuthority
                 );
             }
         }
@@ -189,5 +189,5 @@ class ChatBridge {
     }
 }
 
-window.AI_CORE.chatBridgeInstance = new ChatBridge();
+window.AI_CORE.chatBridgeInstance = new ChatBridge({ verifyIdentity: () => null });
 window.AI_CORE.ChatBridge = ChatBridge;

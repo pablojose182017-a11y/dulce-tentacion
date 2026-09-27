@@ -46,10 +46,38 @@ class ExecutionSlotManager {
         const slot = slotInfo.slots.find(s => s.slotId === slotId);
         if (!slot) return;
         
-        if (newState === "RELEASED" && slot.state !== "RELEASED") {
+        if (newState === "RELEASED" && slot.state !== "RELEASED" && slot.state !== "QUARANTINED") {
             slotInfo.count--;
+            slot.state = newState;
+        } else if (newState === "RUNNING" || newState === "RUNAWAY" || newState === "QUARANTINED") {
+            slot.state = newState;
         }
-        slot.state = newState;
+    }
+
+    quarantineRunawaySlot(policyId, slotId, reason) {
+        const slotInfo = this.slots.get(policyId);
+        if (!slotInfo) return;
+        const slot = slotInfo.slots.find(s => s.slotId === slotId);
+        if (slot && slot.state === "RUNAWAY") {
+            slot.state = "QUARANTINED";
+            slot.quarantineReason = reason;
+        }
+    }
+
+    lateResolutionWithEvidence(policyId, slotId, globalOperationId, mechanicalEvidence) {
+        if (!mechanicalEvidence || mechanicalEvidence.operationId !== globalOperationId) {
+            throw new Error("INVALID_MECHANICAL_EVIDENCE");
+        }
+        const slotInfo = this.slots.get(policyId);
+        if (!slotInfo) return;
+        const slot = slotInfo.slots.find(s => s.slotId === slotId);
+        if (slot && (slot.state === "RUNAWAY" || slot.state === "QUARANTINED")) {
+            if (slot.state !== "RELEASED") {
+                slotInfo.count--;
+            }
+            slot.state = "RELEASED";
+            slot.evidence = mechanicalEvidence;
+        }
     }
 }
 
@@ -154,6 +182,9 @@ window.AI_CORE.STATIC_OFFENSIVE_DENY_LIST = STATIC_OFFENSIVE_DENY_LIST;
 
 class ExecutionGateway {
     constructor(securityEngine, adapterRegistry, slotManager, verificationLayer, history, auditTrail, inventoryAuthority) {
+        if (!inventoryAuthority || typeof inventoryAuthority.verifyIdentity !== 'function') {
+            throw new Error("INVENTORY_AUTHORITY_REQUIRED");
+        }
         this.security = securityEngine;
         this.adapters = adapterRegistry;
         this.slots = slotManager;
@@ -233,10 +264,27 @@ class ExecutionGateway {
 
             await this.security.validateForExecution(authorizationId, executionParams, context, executorIdentity);
 
+            const opId = `op_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            const auditBase = {
+                globalOperationId: opId,
+                authorizationId,
+                actor: executorIdentity.email,
+                executorIdentity: executorIdentity.email,
+                toolId: payload.toolId,
+                toolVersion: payload.toolVersion,
+                adapterId: payload.adapterId,
+                adapterVersion: payload.adapterVersion,
+                parameterFingerprint: payload.parameterFingerprint,
+                targetType: payload.targetType || null,
+                targetCanonicalId: payload.targetCanonicalId || null,
+                targetFingerprint: payload.targetFingerprint || null
+            };
+
             this.slots.updateState(payload.policyId, slot.slotId, "RUNNING");
-            this.audit.append({ action: "EXECUTION_STARTED", authorizationId });
+            this.audit.append({ ...auditBase, action: "EXECUTION_STARTED", timestamp: Date.now() });
 
             let rawResult;
+            let physicalExecutionPromise = adapter.execute(executionParams);
             let timeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(() => {
                     if (adapter.supportsCancellation) {
@@ -248,25 +296,42 @@ class ExecutionGateway {
             });
 
             try {
-                rawResult = await Promise.race([adapter.execute(executionParams), timeoutPromise]);
+                rawResult = await Promise.race([physicalExecutionPromise, timeoutPromise]);
             } catch (err) {
                 if (err.message === "TIMEOUT_REQUESTED") {
                     this.slots.updateState(payload.policyId, slot.slotId, "RUNAWAY");
-                    this.audit.append({ action: "EXECUTION_RUNAWAY", authorizationId });
+                    this.audit.append({ ...auditBase, action: "EXECUTION_RUNAWAY", executionState: "RUNAWAY", timestamp: Date.now() });
                     
-                    // Late resolving runaway execution 
-                    adapter.execute(executionParams).then(res => {
-                        this.slots.updateState(payload.policyId, slot.slotId, "RELEASED");
-                        this.audit.append({ action: "RUNAWAY_EXECUTION_TERMINATED", authorizationId });
+                    physicalExecutionPromise.then(res => {
+                        if (res && res.mechanicalEvidence) {
+                            try {
+                                this.slots.lateResolutionWithEvidence(payload.policyId, slot.slotId, opId, res.mechanicalEvidence);
+                                this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_TERMINATED", executionState: "RELEASED", timestamp: Date.now() });
+                            } catch (e) {
+                                this.slots.quarantineRunawaySlot(payload.policyId, slot.slotId, e.message);
+                            }
+                        } else {
+                            this.slots.quarantineRunawaySlot(payload.policyId, slot.slotId, "NO_MECHANICAL_EVIDENCE");
+                            this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_QUARANTINED", executionState: "QUARANTINED", timestamp: Date.now() });
+                        }
                     }).catch(e => {
-                        this.slots.updateState(payload.policyId, slot.slotId, "RELEASED");
-                        this.audit.append({ action: "RUNAWAY_EXECUTION_TERMINATED", authorizationId });
+                        if (e && e.mechanicalEvidence) {
+                            try {
+                                this.slots.lateResolutionWithEvidence(payload.policyId, slot.slotId, opId, e.mechanicalEvidence);
+                                this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_TERMINATED", executionState: "RELEASED", timestamp: Date.now() });
+                            } catch (err) {
+                                this.slots.quarantineRunawaySlot(payload.policyId, slot.slotId, err.message);
+                            }
+                        } else {
+                            this.slots.quarantineRunawaySlot(payload.policyId, slot.slotId, "NO_MECHANICAL_EVIDENCE");
+                            this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_QUARANTINED", executionState: "QUARANTINED", timestamp: Date.now() });
+                        }
                     });
                     
                     throw err;
                 } else if (err.message === "EXECUTION_TERMINATED") {
                     this.slots.updateState(payload.policyId, slot.slotId, "RELEASED");
-                    this.audit.append({ action: "EXECUTION_TERMINATED", authorizationId });
+                    this.audit.append({ ...auditBase, action: "EXECUTION_TERMINATED", executionState: "RELEASED", timestamp: Date.now(), completedAt: Date.now() });
                     throw err;
                 } else {
                     throw err;
@@ -275,7 +340,7 @@ class ExecutionGateway {
 
             const verified = this.verification.verify(rawResult, tool.outputSchema);
             if (verified.verificationStatus === "FAILED") {
-                this.audit.append({ action: "VERIFICATION_FAILED", authorizationId });
+                this.audit.append({ ...auditBase, action: "VERIFICATION_FAILED", timestamp: Date.now(), completedAt: Date.now(), errorReason: "VERIFICATION_FAILED" });
                 this.slots.updateState(payload.policyId, slot.slotId, "RELEASED");
                 throw new Error("VERIFICATION_FAILED");
             }
@@ -299,7 +364,7 @@ class ExecutionGateway {
             };
 
             const evidenceId = this.history.registerResult(verifiedResult, this._historyToken);
-            this.audit.append({ action: "EXECUTION_COMPLETED", authorizationId, executionId: verifiedResult.executionId });
+            this.audit.append({ ...auditBase, action: "EXECUTION_COMPLETED", timestamp: Date.now(), completedAt: Date.now(), verificationStatus: "PASSED", evidenceId });
             this.slots.updateState(payload.policyId, slot.slotId, "RELEASED");
 
             return { status: "SUCCESS", evidenceId };
@@ -308,7 +373,20 @@ class ExecutionGateway {
             if (slot && error.message !== "TIMEOUT_REQUESTED") {
                 this.slots.updateState(payload ? payload.policyId : 'unknown', slot.slotId, "RELEASED");
             }
-            this.audit.append({ action: "EXECUTION_FAILED", authorizationId, reason: error.message });
+            if (payload) {
+                this.audit.append({ 
+                    action: "EXECUTION_FAILED", 
+                    authorizationId, 
+                    toolId: payload.toolId,
+                    toolVersion: payload.toolVersion,
+                    adapterId: payload.adapterId,
+                    adapterVersion: payload.adapterVersion,
+                    parameterFingerprint: payload.parameterFingerprint,
+                    errorReason: error.message,
+                    timestamp: Date.now(),
+                    completedAt: Date.now()
+                });
+            }
             throw error;
         }
     }
@@ -332,12 +410,30 @@ class ExecutionGateway {
                 }
             }
 
+            const opId = `op_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            const auditBase = {
+                globalOperationId: opId,
+                sourceApprovalId: approvalId,
+                authorizationMode: "HUMAN_APPROVAL",
+                actor: executorIdentity.email,
+                executorIdentity: executorIdentity.email,
+                toolId: hae.toolId,
+                toolVersion: hae.toolVersion,
+                adapterId: hae.adapterId,
+                adapterVersion: hae.adapterVersion,
+                parameterFingerprint: hae.parameterFingerprint,
+                targetType: hae.targetType || null,
+                targetCanonicalId: hae.targetCanonicalId || null,
+                targetFingerprint: hae.targetFingerprint || null
+            };
+
             slot = this.slots.reserveSlot("HUMAN_APPROVAL_GLOBAL_POOL", adapter ? adapter.maxConcurrentExecutions || 1 : 1);
             
             this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RUNNING");
-            this.audit.append({ action: "EXECUTION_STARTED", approvalId });
+            this.audit.append({ ...auditBase, action: "EXECUTION_STARTED", timestamp: Date.now() });
 
             let rawResult;
+            let physicalExecutionPromise = adapter.execute(executionParams);
             let timeoutPromise = new Promise((resolve, reject) => {
                 setTimeout(() => {
                     if (adapter && adapter.supportsCancellation) {
@@ -349,24 +445,42 @@ class ExecutionGateway {
             });
 
             try {
-                rawResult = await Promise.race([adapter.execute(executionParams), timeoutPromise]);
+                rawResult = await Promise.race([physicalExecutionPromise, timeoutPromise]);
             } catch (err) {
                 if (err.message === "TIMEOUT_REQUESTED") {
                     this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RUNAWAY");
-                    this.audit.append({ action: "EXECUTION_RUNAWAY", approvalId });
+                    this.audit.append({ ...auditBase, action: "EXECUTION_RUNAWAY", executionState: "RUNAWAY", timestamp: Date.now() });
                     
-                    adapter.execute(executionParams).then(res => {
-                        this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
-                        this.audit.append({ action: "RUNAWAY_EXECUTION_TERMINATED", approvalId });
+                    physicalExecutionPromise.then(res => {
+                        if (res && res.mechanicalEvidence) {
+                            try {
+                                this.slots.lateResolutionWithEvidence("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, opId, res.mechanicalEvidence);
+                                this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_TERMINATED", executionState: "RELEASED", timestamp: Date.now() });
+                            } catch (e) {
+                                this.slots.quarantineRunawaySlot("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, e.message);
+                            }
+                        } else {
+                            this.slots.quarantineRunawaySlot("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "NO_MECHANICAL_EVIDENCE");
+                            this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_QUARANTINED", executionState: "QUARANTINED", timestamp: Date.now() });
+                        }
                     }).catch(e => {
-                        this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
-                        this.audit.append({ action: "RUNAWAY_EXECUTION_TERMINATED", approvalId });
+                        if (e && e.mechanicalEvidence) {
+                            try {
+                                this.slots.lateResolutionWithEvidence("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, opId, e.mechanicalEvidence);
+                                this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_TERMINATED", executionState: "RELEASED", timestamp: Date.now() });
+                            } catch (err) {
+                                this.slots.quarantineRunawaySlot("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, err.message);
+                            }
+                        } else {
+                            this.slots.quarantineRunawaySlot("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "NO_MECHANICAL_EVIDENCE");
+                            this.audit.append({ ...auditBase, action: "RUNAWAY_EXECUTION_QUARANTINED", executionState: "QUARANTINED", timestamp: Date.now() });
+                        }
                     });
                     
                     throw err; 
                 } else if (err.message === "EXECUTION_TERMINATED") {
                     this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
-                    this.audit.append({ action: "EXECUTION_TERMINATED", approvalId });
+                    this.audit.append({ ...auditBase, action: "EXECUTION_TERMINATED", executionState: "RELEASED", timestamp: Date.now(), completedAt: Date.now() });
                     throw err; 
                 } else {
                     throw err; 
@@ -375,7 +489,7 @@ class ExecutionGateway {
 
             const verified = this.verification.verify(rawResult, tool.outputSchema);
             if (verified.verificationStatus === "FAILED") {
-                this.audit.append({ action: "VERIFICATION_FAILED", approvalId });
+                this.audit.append({ ...auditBase, action: "VERIFICATION_FAILED", timestamp: Date.now(), completedAt: Date.now(), errorReason: "VERIFICATION_FAILED" });
                 this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
                 throw new Error("VERIFICATION_FAILED");
             }
@@ -399,7 +513,7 @@ class ExecutionGateway {
             };
 
             const evidenceId = this.history.registerResult(verifiedResult, this._historyToken);
-            this.audit.append({ action: "EXECUTION_COMPLETED", approvalId, executionId: verifiedResult.executionId });
+            this.audit.append({ ...auditBase, action: "EXECUTION_COMPLETED", timestamp: Date.now(), completedAt: Date.now(), verificationStatus: "PASSED", evidenceId });
             this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
 
             this.security.finalizeHumanApproval(approvalId, "SUCCESS");
@@ -409,10 +523,22 @@ class ExecutionGateway {
             if (slot && error.message !== "TIMEOUT_REQUESTED") {
                 this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
             }
-            this.audit.append({ action: "EXECUTION_FAILED", approvalId, reason: error.message });
-            
             if (hae) {
+                this.audit.append({
+                    action: "EXECUTION_FAILED",
+                    sourceApprovalId: approvalId,
+                    toolId: hae.toolId,
+                    toolVersion: hae.toolVersion,
+                    adapterId: hae.adapterId,
+                    adapterVersion: hae.adapterVersion,
+                    parameterFingerprint: hae.parameterFingerprint,
+                    errorReason: error.message,
+                    timestamp: Date.now(),
+                    completedAt: Date.now()
+                });
                 this.security.finalizeHumanApproval(approvalId, "FAILED");
+            } else {
+                this.audit.append({ action: "EXECUTION_FAILED", sourceApprovalId: approvalId, errorReason: error.message, timestamp: Date.now(), completedAt: Date.now() });
             }
             throw error;
         }
