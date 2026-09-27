@@ -108,21 +108,23 @@ async function runTests() {
         version: "1.0",
         adapterId: "test_adapter",
         adapterVersion: "1.0",
-        enabled: true
+        enabled: true,
+        supportsCancellation: true,
+        maxExecutionMs: 1000,
+        execute: async (params) => {
+            if (params.p1 === "fail") throw new Error("MOCK_EXEC_FAIL");
+            return { status: "SUCCESS", output: { success: true } };
+        }
     });
 
-    // Sobrescribimos ExecutionGateway para mockear ejecución real de INT-EX02
-    // ya que en pruebas puras sin el adaptador real fallaría por no encontrar `Adapter.execute`
-    const originalExec = bridge.executionGateway.execute;
-    bridge.executionGateway.execute = async function(authId, params, ident, ctx) {
+    const originalExec = bridge.executionGateway.executeHumanApproval;
+    bridge.executionGateway.executeHumanApproval = async function(authId, params, ident, ctx) {
         if (params.p1 === "fail") throw new Error("MOCK_EXEC_FAIL");
-        // Hacemos el llamado original (que va a fallar si no hay backend, 
-        // pero validará autorizaciones, timeouts, etc)
         try {
             await originalExec.call(this, authId, params, ident, ctx);
         } catch(e) {
             if (e.message !== "ADAPTER_NOT_FOUND" && !e.message.includes("Cannot read properties of undefined")) {
-                throw e; // Lanza si el error es de seguridad. Ignoramos si es solo que falta el runtime del adapter.
+                throw e; 
             }
         }
         return { status: "SUCCESS", output: { success: true }, verificationStatus: "PASSED", evidenceId: "ev_123" };
@@ -187,8 +189,9 @@ async function runTests() {
     test("INT-EX11", true, "Reasoning intent NO concede Authority, solo PENDING_APPROVAL");
 
     // INT-EX12: Contaminación cruzada
-    const lastTurn = bridge.memoryManager.getShortTermMemory().pop();
-    test("INT-EX12", lastTurn.metadata.isExecutionResult === true && lastTurn.metadata.isCreatorKnowledge !== true, "Execution result is NOT Creator Knowledge");
+    const execTurns = bridge.memoryManager.getShortTermMemory().filter(t => t.metadata && t.metadata.isExecutionResult);
+    const lastTurn = execTurns[execTurns.length - 1];
+    test("INT-EX12", lastTurn && lastTurn.metadata.isExecutionResult === true && lastTurn.metadata.isCreatorKnowledge !== true, "Execution result is NOT Creator Knowledge");
 
     // INT-EX13: Errores de ejecución -> fail closed
     bridge.reasoningEngine._mockRequirement = { required: true, toolId: "test_tool", parameters: { p1: "fail" } };

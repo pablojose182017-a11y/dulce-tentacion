@@ -162,14 +162,14 @@ class ChatBridge {
         }
         
         try {
-            const result = await this.executionGateway.execute(
+            const result = await this.executionGateway.executeHumanApproval(
                 authRecord.approvalId,
                 request.proposedParameters,
                 approverIdentity,
                 context
             );
             
-            const resultMsg = `[SUCCESS] Acción ejecutada. Resultado: ${JSON.stringify(result.verifiedOutput)}`;
+            const resultMsg = `[SUCCESS] Acción ejecutada. Resultado: ${JSON.stringify(result)}`;
             this.memoryManager.addTurn('assistant', resultMsg, {
                 isGeneratedResponse: true,
                 isExecutionResult: true,

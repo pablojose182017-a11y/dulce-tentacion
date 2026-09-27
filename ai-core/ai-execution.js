@@ -149,6 +149,8 @@ function effectiveCapabilities(payload, toolDef, adapterDef) {
     }
     return caps;
 }
+window.AI_CORE.effectiveCapabilities = effectiveCapabilities;
+window.AI_CORE.STATIC_OFFENSIVE_DENY_LIST = STATIC_OFFENSIVE_DENY_LIST;
 
 class ExecutionGateway {
     constructor(securityEngine, adapterRegistry, slotManager, verificationLayer, history, auditTrail, inventoryAuthority) {
@@ -307,6 +309,111 @@ class ExecutionGateway {
                 this.slots.updateState(payload ? payload.policyId : 'unknown', slot.slotId, "RELEASED");
             }
             this.audit.append({ action: "EXECUTION_FAILED", authorizationId, reason: error.message });
+            throw error;
+        }
+    }
+
+    async executeHumanApproval(approvalId, executionParams, executorIdentity, context) {
+        let slot = null;
+        let hae = null;
+        let adapter = null;
+        try {
+            hae = await this.security.validateHumanApprovalForExecution(approvalId, executionParams, context, executorIdentity);
+
+            const tool = this.security.registry.getTool(hae.toolId, hae.toolVersion);
+            adapter = this.adapters.getAdapter(hae.toolId, hae.toolVersion);
+            if (!adapter) throw new Error("ADAPTER_NOT_FOUND");
+            
+            if (tool.targetDescriptor && tool.targetDescriptor.parameter) {
+                const targetVal = executionParams[tool.targetDescriptor.parameter];
+                const inv = this.inventory.verifyIdentity(targetVal);
+                if (!inv || inv.type !== hae.targetType || inv.canonicalId !== hae.targetCanonicalId || inv.fingerprint !== hae.targetFingerprint) {
+                    throw new Error("TARGET_IDENTITY_UNVERIFIED");
+                }
+            }
+
+            slot = this.slots.reserveSlot("HUMAN_APPROVAL_GLOBAL_POOL", adapter ? adapter.maxConcurrentExecutions || 1 : 1);
+            
+            this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RUNNING");
+            this.audit.append({ action: "EXECUTION_STARTED", approvalId });
+
+            let rawResult;
+            let timeoutPromise = new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    if (adapter && adapter.supportsCancellation) {
+                        reject(new Error("EXECUTION_TERMINATED"));
+                    } else {
+                        reject(new Error("TIMEOUT_REQUESTED"));
+                    }
+                }, (adapter && adapter.maxExecutionMs) || 50);
+            });
+
+            try {
+                rawResult = await Promise.race([adapter.execute(executionParams), timeoutPromise]);
+            } catch (err) {
+                if (err.message === "TIMEOUT_REQUESTED") {
+                    this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RUNAWAY");
+                    this.audit.append({ action: "EXECUTION_RUNAWAY", approvalId });
+                    
+                    adapter.execute(executionParams).then(res => {
+                        this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
+                        this.audit.append({ action: "RUNAWAY_EXECUTION_TERMINATED", approvalId });
+                    }).catch(e => {
+                        this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
+                        this.audit.append({ action: "RUNAWAY_EXECUTION_TERMINATED", approvalId });
+                    });
+                    
+                    throw err; 
+                } else if (err.message === "EXECUTION_TERMINATED") {
+                    this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
+                    this.audit.append({ action: "EXECUTION_TERMINATED", approvalId });
+                    throw err; 
+                } else {
+                    throw err; 
+                }
+            }
+
+            const verified = this.verification.verify(rawResult, tool.outputSchema);
+            if (verified.verificationStatus === "FAILED") {
+                this.audit.append({ action: "VERIFICATION_FAILED", approvalId });
+                this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
+                throw new Error("VERIFICATION_FAILED");
+            }
+
+            const verifiedResult = {
+                executionId: `exec_${Date.now()}`,
+                sourceApprovalId: approvalId,
+                authorizationMode: "HUMAN_APPROVAL",
+                toolId: hae.toolId,
+                toolVersion: hae.toolVersion,
+                adapterId: hae.adapterId,
+                adapterVersion: hae.adapterVersion,
+                executorIdentity: executorIdentity.email,
+                targetType: hae.targetType,
+                technicalTarget: executionParams[tool.targetDescriptor?.parameter || ''] || null,
+                executedAt: Date.now(),
+                durationMs: 10,
+                status: "SUCCESS",
+                verificationStatus: "PASSED",
+                verifiedOutput: verified.verifiedOutput
+            };
+
+            const evidenceId = this.history.registerResult(verifiedResult, this._historyToken);
+            this.audit.append({ action: "EXECUTION_COMPLETED", approvalId, executionId: verifiedResult.executionId });
+            this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
+
+            this.security.finalizeHumanApproval(approvalId, "SUCCESS");
+            return { status: "SUCCESS", evidenceId };
+
+        } catch (error) {
+            if (slot && error.message !== "TIMEOUT_REQUESTED") {
+                this.slots.updateState("HUMAN_APPROVAL_GLOBAL_POOL", slot.slotId, "RELEASED");
+            }
+            this.audit.append({ action: "EXECUTION_FAILED", approvalId, reason: error.message });
+            
+            if (hae) {
+                this.security.finalizeHumanApproval(approvalId, "FAILED");
+            }
             throw error;
         }
     }

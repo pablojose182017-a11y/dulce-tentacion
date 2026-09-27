@@ -344,7 +344,7 @@ class SecurityEngine {
         if (!record) throw new Error("APPROVAL_NOT_FOUND");
         if (record.isOneShot) {
             if (record.status !== "ACTIVE") throw new Error("APPROVAL_ALREADY_CONSUMED");
-            if (record.lock) throw new Error("APPROVAL_ALREADY_CONSUMED");
+            if (record.lock) throw new Error("REPLAY_REJECTED");
             record.lock = true;
         } else {
             if (record.status !== "ACTIVE") throw new Error(record.status === "REVOKED" ? "APPROVAL_REVOKED" : "APPROVAL_ALREADY_CONSUMED");
@@ -354,21 +354,64 @@ class SecurityEngine {
             const tool = this.registry.getTool(record.toolId, record.toolVersion);
             if (!tool) throw new Error("TOOL_NOT_FOUND");
             if (!tool.enabled) throw new Error("TOOL_DISABLED");
+            
+            const adapter = window.AI_CORE.adapterRegistryInstance ? window.AI_CORE.adapterRegistryInstance.getAdapter(record.toolId, record.toolVersion) : null;
+            
             const effectiveParams      = this.validateSchemaAndInjectDefaults(executionParams, tool.inputSchema);
             const executionFingerprint = await this.generateFingerprint(effectiveParams);
-            if (executionFingerprint !== record.parameterFingerprint) throw new Error("PARAMETER_MISMATCH");
+            if (executionFingerprint !== record.parameterFingerprint) throw new Error("FINGERPRINT_MISMATCH");
             if (!this.checkScopes(tool, effectiveParams))              throw new Error("SCOPE_VIOLATION");
+            
+            if (window.AI_CORE.effectiveCapabilities && window.AI_CORE.STATIC_OFFENSIVE_DENY_LIST) {
+                const effCaps = window.AI_CORE.effectiveCapabilities({capabilities:[]}, tool, adapter);
+                for (let c of effCaps) {
+                    if (window.AI_CORE.STATIC_OFFENSIVE_DENY_LIST.has(c)) {
+                        throw new Error("PROHIBITED_ACTION");
+                    }
+                }
+            }
+
             if (!this._checkPermission(executorIdentity, tool))        throw new Error("PERMISSION_DENIED");
+            
             const currentGov = this.calculateEffectiveGovernance(tool, effectiveParams, context);
             if (currentGov >= 4 && !executorIdentity.roles?.includes("admin") && !executorIdentity.roles?.includes("creator")) {
                 throw new Error("INSUFFICIENT_PRIVILEGES_FOR_GOVERNANCE");
             }
-            if (record.isOneShot) { record.status = "CONSUMED"; record.consumedAt = Date.now(); }
+            
             this._logAudit("HUMAN_APPROVAL_VALIDATED", { approvalId, toolId: tool.toolId });
-            return { validationStatus: "PASS", effectiveGovernance: currentGov };
+            return {
+                executionAuthorizationId: `hae_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+                sourceApprovalId: approvalId,
+                authorizationMode: "HUMAN_APPROVAL",
+                approverIdentity: record.approverIdentity,
+                executorIdentity: executorIdentity.email || "unknown",
+                toolId: tool.toolId,
+                toolVersion: tool.version,
+                adapterId: adapter ? adapter.adapterId : "unknown",
+                adapterVersion: adapter ? adapter.adapterVersion : "unknown",
+                parameters: effectiveParams,
+                parameterFingerprint: executionFingerprint,
+                targetType: tool.targetDescriptor?.type || null,
+                targetCanonicalId: effectiveParams[tool.targetDescriptor?.parameter] || null,
+                targetFingerprint: null,
+                capabilities: tool.capabilities || [],
+                effectiveGovernance: currentGov,
+                issuedAt: record.issuedAt,
+                expiresAt: record.expiresAt
+            };
         } catch (e) {
             if (record.isOneShot && record.status === "ACTIVE") record.lock = false;
             throw e;
+        }
+    }
+
+    finalizeHumanApproval(approvalId, terminalStatus) {
+        const record = this._humanApprovals.get(approvalId);
+        if (record && record.isOneShot && record.status === "ACTIVE") {
+            record.status = "CONSUMED";
+            record.lock = false;
+            record.consumedAt = Date.now();
+            this._logAudit("HUMAN_APPROVAL_CONSUMED", { approvalId, terminalStatus });
         }
     }
 
