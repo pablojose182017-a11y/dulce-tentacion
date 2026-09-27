@@ -38,6 +38,38 @@ class PermissionManager {
             4: "EJECUCIÓN",
             5: "ACCIONES CRÍTICAS"
         };
+        this._grantedCapabilities = new Map(); // email -> Set<string>
+    }
+
+    grantCapability(userEmail, capability) {
+        if (!userEmail || typeof userEmail !== 'string') return false;
+        if (!capability || typeof capability !== 'string') return false;
+        const email = userEmail.toLowerCase().trim();
+        if (!this._grantedCapabilities.has(email)) {
+            this._grantedCapabilities.set(email, new Set());
+        }
+        this._grantedCapabilities.get(email).add(capability);
+        return true;
+    }
+
+    revokeCapability(userEmail, capability) {
+        if (!userEmail || typeof userEmail !== 'string') return false;
+        if (!capability || typeof capability !== 'string') return false;
+        const email = userEmail.toLowerCase().trim();
+        if (this._grantedCapabilities.has(email)) {
+            this._grantedCapabilities.get(email).delete(capability);
+        }
+        return true;
+    }
+
+    hasCapability(user, capability) {
+        if (!user || typeof user !== 'object' || !user.email) return false;
+        if (!capability || typeof capability !== 'string') return false;
+        
+        const email = user.email.toLowerCase().trim();
+        if (!this._grantedCapabilities.has(email)) return false;
+        
+        return this._grantedCapabilities.get(email).has(capability);
     }
 
     canExecute(user, level) {

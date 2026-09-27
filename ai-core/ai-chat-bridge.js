@@ -26,6 +26,25 @@ class ChatBridge {
         this.provider = new window.AI_CORE.LocalMockProvider();
         this.reasoningEngine = new window.AI_CORE.ReasoningEngine(this.provider);
         this.personalityEngine = new window.AI_CORE.PersonalityEngine();
+
+        // FASE 6.4 - Security & Execution Integration
+        if (window.AI_CORE.SecurityEngine && window.AI_CORE.ToolRegistry) {
+            this.toolRegistry = new window.AI_CORE.ToolRegistry();
+            this.securityEngine = new window.AI_CORE.SecurityEngine(this.toolRegistry, this.permissionManager);
+            
+            if (window.AI_CORE.ExecutionGateway) {
+                this.adapterRegistry = new window.AI_CORE.AdapterRegistry();
+                this.executionGateway = new window.AI_CORE.ExecutionGateway(
+                    this.securityEngine,
+                    this.adapterRegistry,
+                    new window.AI_CORE.ExecutionSlotManager(),
+                    new window.AI_CORE.VerificationLayer(),
+                    new window.AI_CORE.RealExecutionHistory(),
+                    new window.AI_CORE.AuditTrail(),
+                    null // inventoryAuthority
+                );
+            }
+        }
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal) {
@@ -85,14 +104,26 @@ class ChatBridge {
         let responseText = "";
 
         if (analysis.authorizationRequirement && analysis.authorizationRequirement.required) {
-            // Solo bloquear si realmente se requiere una tool/acción (governance >= 1)
-            // En FASE 2 no ejecutamos herramientas, pero tampoco bloqueamos respuestas informativas
-            if (analysis.authorizationRequirement.governanceLevel >= 3) {
-                responseText = `Eso requiere una acción sobre los datos comerciales. En este modo puedo analizar/proponer el cambio, pero no ejecutarlo.`;
+            if (this.securityEngine && this.executionGateway) {
+                try {
+                    const toolId = analysis.authorizationRequirement.toolId || "UNKNOWN_TOOL";
+                    const version = analysis.authorizationRequirement.toolVersion || "1.0";
+                    const parameters = analysis.authorizationRequirement.parameters || {};
+                    
+                    const req = this.securityEngine.createApprovalRequest(
+                        toolId, version, parameters, "Autonomous Request", context
+                    );
+                    
+                    if (req.status === "PENDING_APPROVAL") {
+                        responseText = `[PENDING_APPROVAL] Requiere aprobación explícita para la operación (Tool: ${toolId}). ID: ${req.requestId}`;
+                    } else {
+                        responseText = `[FAIL_CLOSED] Estado de autorización desconocido.`;
+                    }
+                } catch (e) {
+                    responseText = `[FAIL_CLOSED] Ejecución denegada por seguridad: ${e.message}`;
+                }
             } else {
-                // Governance 1-2: el sistema puede responder con lo que sabe,
-                // indicando que hace falta información adicional
-                responseText = await this.provider.generate(message, context);
+                responseText = `[FAIL_CLOSED] Subsistema de ejecución/seguridad no disponible.`;
             }
         } else {
             responseText = await this.provider.generate(message, context);
@@ -110,6 +141,36 @@ class ChatBridge {
         });
 
         return responseText;
+    }
+
+    async processApprovalAndExecute(requestId, approverIdentity, context) {
+        if (!this.securityEngine || !this.executionGateway) throw new Error("FAIL_CLOSED: Subsystems not initialized");
+        const request = this.securityEngine._humanApprovals ? this.securityEngine._humanApprovals.get(requestId) : null;
+        if (!request) throw new Error("FAIL_CLOSED: APPROVAL_NOT_FOUND");
+        
+        const authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
+        
+        try {
+            const result = await this.executionGateway.execute(
+                authRecord.approvalId,
+                request.proposedParameters,
+                approverIdentity,
+                context
+            );
+            
+            const resultMsg = `[SUCCESS] Acción ejecutada. Resultado: ${JSON.stringify(result.verifiedOutput)}`;
+            this.memoryManager.addTurn('assistant', resultMsg, {
+                isGeneratedResponse: true,
+                isExecutionResult: true,
+                evidenceId: result.evidenceId
+            });
+            return result;
+        } catch (e) {
+            this.memoryManager.addTurn('assistant', `[FAIL_CLOSED] Falla en ejecución: ${e.message}`, {
+                isGeneratedResponse: true
+            });
+            throw new Error(`FAIL_CLOSED: ${e.message}`);
+        }
     }
 
     clearSession() {
