@@ -173,9 +173,9 @@ async function runTests() {
     let r2 = res.match(/ID: (req_[^ ]+)/)[1];
     
     // mutamos la fecha de expiración manualmente para probar TOCTOU en el approve
-    let appReq = bridge.securityEngine._humanApprovals.get(r2);
+    let appReq = bridge._pendingApprovals.get(r2);
     let authRecord = await bridge.securityEngine.approveRequest(appReq, currentUser);
-    bridge.securityEngine._humanApprovals.get(r2).expiresAt = Date.now() - 10000;
+    bridge.securityEngine._humanApprovals.get(authRecord.approvalId).expiresAt = Date.now() - 10000;
     
     // Modificando para que en Execution Gateway no esté aprobado o que el approval humano que _humanApprovals genera falle
     // En V5, el Execution Gateway busca en payloads. Como approveRequest devuelve un authRecord falso o algo así, 

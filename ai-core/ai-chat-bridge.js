@@ -26,6 +26,7 @@ class ChatBridge {
         this.provider = new window.AI_CORE.LocalMockProvider();
         this.reasoningEngine = new window.AI_CORE.ReasoningEngine(this.provider);
         this.personalityEngine = new window.AI_CORE.PersonalityEngine();
+        this._pendingApprovals = new Map();
 
         // FASE 6.4 - Security & Execution Integration
         if (window.AI_CORE.SecurityEngine && window.AI_CORE.ToolRegistry) {
@@ -115,6 +116,7 @@ class ChatBridge {
                     );
                     
                     if (req.status === "PENDING_APPROVAL") {
+                        this._pendingApprovals.set(req.requestId, req);
                         responseText = `[PENDING_APPROVAL] Requiere aprobación explícita para la operación (Tool: ${toolId}). ID: ${req.requestId}`;
                     } else {
                         responseText = `[FAIL_CLOSED] Estado de autorización desconocido.`;
@@ -145,10 +147,19 @@ class ChatBridge {
 
     async processApprovalAndExecute(requestId, approverIdentity, context) {
         if (!this.securityEngine || !this.executionGateway) throw new Error("FAIL_CLOSED: Subsystems not initialized");
-        const request = this.securityEngine._humanApprovals ? this.securityEngine._humanApprovals.get(requestId) : null;
+        const request = this._pendingApprovals.get(requestId);
         if (!request) throw new Error("FAIL_CLOSED: APPROVAL_NOT_FOUND");
         
-        const authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
+        let authRecord;
+        try {
+            authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
+            // Eliminación segura: la solicitud solo se consume formalmente cuando 
+            // SecurityEngine emite satisfactoriamente el ApprovalRecord (autoridad confirmada).
+            // Esto evita doble aprobación y previene pérdida en caso de fallo intermedio.
+            this._pendingApprovals.delete(requestId);
+        } catch (e) {
+            throw new Error(`FAIL_CLOSED: ${e.message}`);
+        }
         
         try {
             const result = await this.executionGateway.execute(
