@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // 1. FUNCIONES HELPER (AUTORIDAD)
+    // =========================================================================
+
+    // Creador Absoluto (pablojose182017@gmail.com)
+    // Idealmente se debería usar request.auth.uid == 'UID_DEL_CREADOR' en producción
+    // para inmunidad contra cambios de correo.
+    function isCreator() {
+      return request.auth != null && request.auth.uid == 'UID_REAL_DEL_CREADOR';
+    }
+
+    // Nivel de Autoridad: 100(Creador), 80(SuperAdmin), 50(Admin), 20(Trabajador), 0(Cliente)
+    function getRol() {
+      return exists(/databases/$(database)/documents/roles/$(request.auth.uid)) ?
+             get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.nivel : 0;
+    }
+
+    // =========================================================================
+    // 2. COLECCIÓN DE ROLES (NUEVA ARQUITECTURA)
+    // =========================================================================
+    match /roles/{uid} {
+      // Lectura: Cualquier usuario autenticado (para la UI del panel)
+      allow read: if request.auth != null;
+      
+      // Creación/Edición: Creador tiene poder absoluto. SuperAdmin no puede 
+      // darse nivel >= 80 ni modificar a alguien de nivel >= 80 (incluido el Creador).
+      allow create, update: if isCreator() || 
+                           (getRol() >= 80 && request.resource.data.nivel < 80 
+                            && (!exists(/databases/$(database)/documents/roles/$(uid)) || get(/databases/$(database)/documents/roles/$(uid)).data.nivel < 80));
+      
+      // Borrado: Solo Creador.
+      allow delete: if isCreator();
+    }
+
+    // =========================================================================
+    // 3. CONFIGURACIONES GLOBALES (adminConfig, tienda, vip)
+    // =========================================================================
+    match /configuracion/{document=**} {
+      allow read: if true;
+      allow write: if isCreator() || getRol() >= 80;
+    }
+    match /config/{document=**} {
+      allow read: if true;
+      allow write: if isCreator() || getRol() >= 80;
+    }
+
+    // =========================================================================
+    // 4. USUARIOS (PERFILES Y PUNTOS)
+    // =========================================================================
+    match /usuarios/{email} {
+      // Lectura: El propio usuario o Admin+
+      allow read: if (request.auth != null && request.auth.token.email == email) || getRol() >= 50;
+      
+      // Creación: El propio usuario (registro) o Admin+
+      allow create: if (request.auth != null && request.auth.token.email == email) || getRol() >= 50;
+
+      // Actualización: Admin+ tiene control. El propio usuario está RESTRINGIDO.
+      allow update: if isCreator() || getRol() >= 50 || 
+                    (request.auth != null && request.auth.token.email == email &&
+                     // Campos inmutables para el cliente:
+                     request.resource.data.role == resource.data.role &&
+                     request.resource.data.rol == resource.data.rol &&
+                     request.resource.data.isAdmin == resource.data.isAdmin &&
+                     request.resource.data.vip == resource.data.vip &&
+                     request.resource.data.isVip == resource.data.isVip &&
+                     request.resource.data.blocked == resource.data.blocked
+                     // Nota: points no se bloquea aquí por la matemática cliente,
+                     // pero la regla de escritura previene tocar puntos ajenos.
+                    );
+                    
+      allow delete: if isCreator();
+    }
+
+    // =========================================================================
+    // 5. PEDIDOS
+    // =========================================================================
+    match /pedidos/{pedidoId} {
+      // Lectura: El dueño del pedido o Trabajador+
+      allow read: if (request.auth != null && resource.data.ownerId == request.auth.uid) || getRol() >= 20;
+      
+      // Creación: Solo si el ownerId coincide y el estado arranca como Pendiente
+      allow create: if request.auth != null 
+                    && request.resource.data.ownerId == request.auth.uid 
+                    && request.resource.data.estado == "Pendiente";
+
+      // Actualización: 
+      allow update: if isCreator() || getRol() >= 50 || 
+                    // El trabajador solo puede modificar el estado de preparación
+                    (getRol() >= 20 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'status', 'fechaActualizacion'])) ||
+                    // El cliente NO tiene permitido modificar un pedido tras su creación
+                    // (Si a futuro se requiere añadir propina/review, se agregará un diff explícito aquí)
+                    false;
+                    
+      allow delete: if isCreator() || getRol() >= 50;
+    }
+    
+    // =========================================================================
+    // 6. SOLICITUDES VIP Y OTRAS COLECCIONES
+    // =========================================================================
+    match /solicitudes_vip/{docId} {
+      allow read: if getRol() >= 50;
+      allow create: if request.auth != null;
+      allow update, delete: if getRol() >= 50;
+    }
+  }
+}
