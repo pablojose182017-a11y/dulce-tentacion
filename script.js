@@ -7,6 +7,29 @@ function safeImg(src) {
     return src;
 }
 
+function escapeHTML(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+    }[tag] || tag));
+}
+
+function sanitizeImageURL(url) {
+    if (!url || typeof url !== 'string') return '';
+    const cleanUrl = url.trim();
+    if (cleanUrl.toLowerCase().startsWith('javascript:') || cleanUrl.toLowerCase().startsWith('vbscript:')) {
+        return '';
+    }
+    if (cleanUrl.toLowerCase().startsWith('data:')) {
+        if (!cleanUrl.toLowerCase().startsWith('data:image/')) return '';
+    }
+    return escapeHTML(cleanUrl);
+}
+
 const products = [
     // --- PANADERÍA TRADICIONAL ($500) ---
     { id: 1, name: "Pan Cascarita Tradicional", price: 500, cat: "panaderia", img: "pan cascarita 500 pesos.jpeg", desc: "Pan tradicional de costra crocante y miga suave" },
@@ -861,13 +884,13 @@ function openOrderHistory(fromProfile = false) {
                             <strong style="color:var(--brand-pink); font-size:0.95rem;">Pedido ${orderNum}</strong>
                             <span class="badge-status" style="background:${statusColor}18; color:${statusColor}; font-weight:700; padding:4px 8px; border-radius:6px; font-size:0.75rem;">${pedido.estado || pedido.status || 'Pendiente'}</span>
                         </div>
-                        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:8px;">📅 ${pedido.fecha || pedido.date || 'Fecha reciente'}</div>
+                        <div style="font-size:0.8rem; color:#6b7280; margin-bottom:8px;">📅 ${escapeHTML(pedido.fecha || pedido.date || 'Fecha reciente')}</div>
                         <div style="font-size:0.85rem; color:#4b5563; margin-bottom:10px; background:#f9fafb; padding:8px 10px; border-radius:8px;">
                             ${(pedido.items || []).map(item => `
                             <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                                <span>${item.cantidad || 1}x ${item.nombre || item.title}</span>
+                                <span>${escapeHTML(item.cantidad || 1)}x ${escapeHTML(item.nombre || item.title)}</span>
                             </div>
-                            `).join('') || (pedido.products ? `<div>${pedido.products}</div>` : '<div>Productos del pedido</div>')}
+                            `).join('') || (pedido.products ? `<div>${escapeHTML(pedido.products)}</div>` : '<div>Productos del pedido</div>')}
                         </div>
                         <div style="font-size:0.83rem; margin-bottom:8px; padding:7px 10px; background:#fafafa; border-radius:8px; border:1px solid #f0f0f0;">
                             ${pagoHtml}
@@ -956,7 +979,7 @@ function renderOrders(tabId) {
             let act1 = 'active', act2 = '', act3 = '', act4 = '';
             const st = order.status || 'Pendiente';
 
-            if (st === 'En Horno' || st === 'Preparando' || st === 'Preparacion') { fillWidth = '33%'; act2 = 'active'; }
+            if (st === 'En Horno' || st === 'Preparando' || st === 'Preparacion' || st === 'En preparación') { fillWidth = '33%'; act2 = 'active'; }
             else if (st === 'En Camino' || st === 'Enviado') { fillWidth = '66%'; act2 = 'active'; act3 = 'active'; }
             else if (st === 'Entregado' || st.includes('Entregado')) { fillWidth = '100%'; act2 = 'active'; act3 = 'active'; act4 = 'active'; }
 
@@ -1267,11 +1290,11 @@ function renderKitchenOrders(tabId) {
                         <strong style="color: #0f172a; font-size: 1.2rem;">$${order.total.toLocaleString()}</strong>
                     </div>
                     ${eventHtml}
-                    <p><strong>Cliente:</strong> ${order.customer} ${isVip ? '<span class="k-vip-badge">⭐ VIP</span>' : ''}</p>
-                    <p><strong>Dirección:</strong> ${order.address || 'Para recoger'}</p>
+                    <p><strong>Cliente:</strong> ${escapeHTML(order.customer)} ${isVip ? '<span class="k-vip-badge">⭐ VIP</span>' : ''}</p>
+                    <p><strong>Dirección:</strong> ${escapeHTML(order.address || 'Para recoger')}</p>
                     <div class="kitchen-products">
-                        ${order.products.replace(/, /g, '<br>')}
-                        ${(order.cartItems || []).map(item => (item.customData && item.customData.disenoImg) ? `<div style="margin-top:8px;"><strong style="font-size:0.85rem; color:#64748b;">Diseño Adjunto:</strong><br><img src="${item.customData.disenoImg}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.2); cursor:pointer;" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño Cliente'); else window.open(this.src);" title="Ver foto"></div>` : '').join('')}
+                        ${escapeHTML(order.products).replace(/, /g, '<br>')}
+                        ${(order.cartItems || []).map(item => (item.customData && item.customData.disenoImg) ? `<div style="margin-top:8px;"><strong style="font-size:0.85rem; color:#64748b;">Diseño Adjunto:</strong><br><img src="${sanitizeImageURL(item.customData.disenoImg)}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.2); cursor:pointer;" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño Cliente'); else window.open(this.src);" title="Ver foto"></div>` : '').join('')}
                     </div>
                     <p style="margin-bottom: 12px; color: #64748b; font-weight: bold;">Estado actual: ${order.status}</p>
                     ${actionsHtml}
@@ -1566,6 +1589,8 @@ function loginUserObj(userObj) {
     currentUser = userObj;
     saveUser(); syncUserUI(); closeAuthModal();
     try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch (e) { }
+    if (typeof window.initAdminListener === 'function') window.initAdminListener();
+    if (typeof window.checkForGuestOrdersToLink === 'function') window.checkForGuestOrdersToLink();
     if (typeof window.checkRemoteUserSession === 'function') {
         window.checkRemoteUserSession();
     }
@@ -2131,9 +2156,9 @@ function renderLiveOrders() {
                     </div>
                     
                     <div style="font-size:0.95rem; line-height:1.4;">
-                        <strong>👤 ${p.customer}</strong><br>
-                        📞 <a href="https://wa.me/57${p.phone.replace(/[^0-9]/g, '')}" target="_blank" style="color:#25D366; text-decoration:none;">${p.phone}</a><br>
-                        📍 ${p.address}
+                        <strong>👤 ${escapeHTML(p.customer)}</strong><br>
+                        📞 <a href="https://wa.me/57${escapeHTML(p.phone).replace(/[^0-9]/g, '')}" target="_blank" style="color:#25D366; text-decoration:none;">${escapeHTML(p.phone)}</a><br>
+                        📍 ${escapeHTML(p.address)}
                     </div>
                     
                     ${
@@ -2158,7 +2183,7 @@ function renderLiveOrders() {
                     }
                     
                     <div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1;">
-                        <strong>📝 Detalle:</strong><br>${p.products}
+                        <strong>📝 Detalle:</strong><br>${escapeHTML(p.products)}
                         ${depositHtml}
                     </div>
 
@@ -2984,10 +3009,10 @@ function renderAdminUsers() {
             <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
                 <td style="padding:10px; display:flex; align-items:center; gap:10px;">
                     <img src="${safeImg(u.picture)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:30px;height:30px;border-radius:50%;">
-                    <strong>${u.name}</strong>
+                    <strong>${escapeHTML(u.name)}</strong>
                 </td>
-                <td style="padding:10px; font-size:0.85rem; color:#555;">${u.phone || '-'}</td>
-                <td style="padding:10px; font-size:0.85rem; color:#555;">${u.email}</td>
+                <td style="padding:10px; font-size:0.85rem; color:#555;">${escapeHTML(u.phone || '-')}</td>
+                <td style="padding:10px; font-size:0.85rem; color:#555;">${escapeHTML(u.email)}</td>
                 <td style="padding:10px; text-align:center;">${levelHtml}</td>
                 <td style="padding:10px; text-align:center; font-weight:bold; color:${isSuper ? '#10b981' : (u.blocked ? '#e11d48' : '#10b981')};">${isSuper ? 'Inmutable (Activo)' : (u.blocked ? 'Bloqueado' : 'Activo')}</td>
                 <td style="padding:10px; text-align:center;">
@@ -4844,9 +4869,9 @@ function sendOrder() {
 
         if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
 
-        let ptsEarned = Math.floor(tp / 1000);
+        // Puntos eliminados
 
-        if (ptsEarned > 0) {
+        if (false) {
             currentUser.points = (currentUser.points || 0) + ptsEarned;
             const uidx = db_users.findIndex(u => u.email === currentUser.email);
             if (uidx !== -1) { db_users[uidx].points = currentUser.points; saveUsersDB(); }

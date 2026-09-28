@@ -177,10 +177,19 @@ window.addEventListener('DOMContentLoaded', () => {
             if (auth && response && response.credential) {
                 try {
                     const googleCred = firebase.auth.GoogleAuthProvider.credential(response.credential);
-                    await auth.signInWithCredential(googleCred);
-                    console.log("✓ Firebase Auth autenticado con ID Token de Google.");
+                    if (auth.currentUser && auth.currentUser.isAnonymous) {
+                        await auth.currentUser.linkWithCredential(googleCred).catch(async (e) => {
+                            if (e.code === 'auth/credential-already-in-use') {
+                                await auth.signInWithCredential(googleCred);
+                            } else throw e;
+                        });
+                        console.log("✓ Cuenta autenticada/vinculada exitosamente con Google.");
+                    } else {
+                        await auth.signInWithCredential(googleCred);
+                        console.log("✓ Firebase Auth autenticado con ID Token de Google.");
+                    }
                 } catch (authErr) {
-                    console.warn("Aviso Firebase Auth (signInWithCredential):", authErr.message || authErr);
+                    console.warn("Aviso Firebase Auth:", authErr.message || authErr);
                 }
             }
 
@@ -240,6 +249,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 auth.signOut().catch(err => console.warn("Error en Firebase Auth signOut:", err));
             }
             originalLogoutUser.apply(this, arguments);
+            if (typeof window.initAdminListener === 'function') window.initAdminListener();
         };
     }
 
@@ -419,8 +429,27 @@ window.addEventListener('DOMContentLoaded', () => {
             console.warn('Error escuchando solicitudes_vip:', err);
         });
 
-    // Oyente para "Usuarios y Personal" (Tiempo Real)
-    db.collection("usuarios").onSnapshot((snapshot) => {
+    let usuariosQuery = db.collection("usuarios");
+    try {
+        let isPriv = false;
+        let uEmail = null;
+        const uStr = localStorage.getItem('dt_user');
+        if (uStr) {
+            const uObj = JSON.parse(uStr);
+            uEmail = (uObj.email || '').toLowerCase().trim();
+            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+            if (isSuper || uObj.rol === 'admin' || uObj.rol === 'trabajador' || uObj.role === 'admin' || uObj.role === 'trabajador') {
+                isPriv = true;
+            }
+        }
+        if (!isPriv && uEmail) {
+            usuariosQuery = db.collection("usuarios").where("email", "==", uEmail);
+        } else if (!isPriv) {
+            usuariosQuery = db.collection("usuarios").where("email", "==", "guest_no_match");
+        }
+    } catch(e) {}
+
+    usuariosQuery.onSnapshot((snapshot) => {
         let firebaseUsers = [];
         snapshot.forEach(doc => {
             firebaseUsers.push(doc.data());
@@ -516,44 +545,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 3. Sincronización de Pedidos en Vivo (Escritura)
-    // Debemos atrapar el momento exacto donde se genera el nuevo pedido.
-    // Usualmente es dentro de `sendOrder` antes de vaciar el carrito,
-    // pero sendOrder ya fue sobreescrito. Haremos un wrapper final.
-    if (typeof window.sendOrder !== 'undefined') {
-        const originalSendOrder = window.sendOrder;
-        window.sendOrder = function() {
-            // Replicar la captura de datos temporal para subir a firebase
-            // Nota: La lógica original empuja a pedidosHistorial localmente
-            // Lo más seguro es dejar que el original opere
-            
-            // Justo antes de que el original envíe el WhatsApp y limpie todo,
-            // podemos pre-capturar el pedido (leyendo localStorage o el array modificado).
-            // Pero es más fácil extender la sobreescritura actual, o simplemente:
-            
-            let historialPrevio = (typeof pedidosHistorial !== 'undefined') ? pedidosHistorial.length : 0;
-            
-            // Llamar al original
-            const res = originalSendOrder.apply(this, arguments);
-
-            if (typeof pedidosHistorial !== 'undefined' && pedidosHistorial.length > historialPrevio) {
-                // Un nuevo pedido fue añadido al final del arreglo
-                const nuevoPedidoLocal = pedidosHistorial[pedidosHistorial.length - 1];
-                
-                try {
-                    db.collection("pedidos").doc(nuevoPedidoLocal.id).set({
-                        ...nuevoPedidoLocal,
-                        fechaISO: new Date().toISOString()
-                    });
-                    console.log("Pedido enviado a Firestore:", nuevoPedidoLocal.id);
-                } catch (error) {
-                    console.error("Error al enviar pedido a Firestore:", error);
-                }
-            }
-            
-            return res;
-        };
-    }
 
     // --- 1. GESTOR DE AUDIO SILENCIOSO Y SEGURO ---
     window.sonarCampanaNuevoPedido = function() {
@@ -580,79 +571,88 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 2. LISTENER EN TIEMPO REAL (onSnapshot) PARA PEDIDOS ---
-    let isPrivileged = false;
-    try {
-        const uStr = localStorage.getItem('dt_user');
-        if (uStr) {
-            const uObj = JSON.parse(uStr);
-            const uEmail = (uObj.email || '').toLowerCase().trim();
-            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
-            if (isSuper || (uObj && (uObj.rol === 'admin' || uObj.rol === 'trabajador' || uObj.role === 'admin' || uObj.role === 'trabajador'))) {
-                isPrivileged = true;
-            }
-        } else if (typeof currentUser !== 'undefined' && currentUser) {
-            const uEmail = (currentUser.email || '').toLowerCase().trim();
-            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
-            if (isSuper || (currentUser.rol === 'admin' || currentUser.rol === 'trabajador' || currentUser.role === 'admin' || currentUser.role === 'trabajador')) {
-                isPrivileged = true;
-            }
+    let _adminOrderListenerUnsub = null;
+    window.initAdminListener = function() {
+        if (_adminOrderListenerUnsub) {
+            _adminOrderListenerUnsub();
+            _adminOrderListenerUnsub = null;
         }
-    } catch(e) {}
 
-    if (isPrivileged) {
-        let primeraCarga = true;
-        db.collection('pedidos')
-            .orderBy('fechaISO', 'desc')
-            .limit(25)
-            .onSnapshot((snapshot) => {
-            let hayNuevos = false;
-            const pedidosRemotos = [];
-            snapshot.forEach(doc => {
-                pedidosRemotos.push({ idDoc: doc.id, ...doc.data() });
-            });
-
-            // Detectar si entró un pedido nuevo después de la carga inicial
-            if (!primeraCarga) {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        hayNuevos = true;
-                        const data = change.doc.data();
-                        const orderObj = { id: change.doc.id, ...data };
-                        if (typeof window.recordNewOrderNotification === 'function') {
-                            window.recordNewOrderNotification(orderObj, { playSound: false });
-                        }
-                    }
-                });
-                if (hayNuevos) {
-                    if (typeof window.playOrderAlert === 'function') {
-                        window.playOrderAlert();
-                    } else if (typeof window.sonarCampanaNuevoPedido === 'function') {
-                        window.sonarCampanaNuevoPedido();
-                    }
-                    if (typeof showToast === 'function') {
-                        showToast('🔔 ¡Nuevo pedido recibido en la plataforma!');
-                    }
+        let isPrivileged = false;
+        try {
+            const uStr = localStorage.getItem('dt_user');
+            if (uStr) {
+                const uObj = JSON.parse(uStr);
+                const uEmail = (uObj.email || '').toLowerCase().trim();
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+                if (isSuper || (uObj && (uObj.rol === 'admin' || uObj.rol === 'trabajador' || uObj.role === 'admin' || uObj.role === 'trabajador'))) {
+                    isPrivileged = true;
+                }
+            } else if (typeof currentUser !== 'undefined' && currentUser) {
+                const uEmail = (currentUser.email || '').toLowerCase().trim();
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+                if (isSuper || (currentUser.rol === 'admin' || currentUser.rol === 'trabajador' || currentUser.role === 'admin' || currentUser.role === 'trabajador')) {
+                    isPrivileged = true;
                 }
             }
-            primeraCarga = false;
+        } catch(e) {}
 
-            // Actualizar pedidosHistorial y refrescar vistas
-            window.pedidosHistorial = pedidosRemotos;
-            localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosRemotos));
-            if (typeof renderLiveOrders === 'function') renderLiveOrders();
-            if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
-            
-            // Si el libro contable está abierto, actualizarlo también
-            const modalContent = document.getElementById('contabilidad-detalle-content');
-            if (modalContent && modalContent.innerHTML.includes('Libro Contable de Pedidos')) {
-                if (typeof abrirLibroContable === 'function') abrirLibroContable();
-            }
-        }, (err) => {
-            console.error("Error al escuchar pedidos en tiempo real:", err);
-        });
-    } else {
-        console.log("Listener de pedidos omitido para ahorrar cuota (Usuario sin privilegios).");
-    }
+        if (isPrivileged) {
+            let primeraCarga = true;
+            _adminOrderListenerUnsub = db.collection('pedidos')
+                .orderBy('fechaISO', 'desc')
+                .limit(25)
+                .onSnapshot((snapshot) => {
+                let hayNuevos = false;
+                const pedidosRemotos = [];
+                snapshot.forEach(doc => {
+                    pedidosRemotos.push({ idDoc: doc.id, ...doc.data() });
+                });
+
+                // Detectar si entró un pedido nuevo después de la carga inicial
+                if (!primeraCarga) {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            hayNuevos = true;
+                            const data = change.doc.data();
+                            const orderObj = { id: change.doc.id, ...data };
+                            if (typeof window.recordNewOrderNotification === 'function') {
+                                window.recordNewOrderNotification(orderObj, { playSound: false });
+                            }
+                        }
+                    });
+                    if (hayNuevos) {
+                        if (typeof window.playOrderAlert === 'function') {
+                            window.playOrderAlert();
+                        } else if (typeof window.sonarCampanaNuevoPedido === 'function') {
+                            window.sonarCampanaNuevoPedido();
+                        }
+                        if (typeof showToast === 'function') {
+                            showToast('🔔 ¡Nuevo pedido recibido en la plataforma!');
+                        }
+                    }
+                }
+                primeraCarga = false;
+
+                // Actualizar pedidosHistorial y refrescar vistas
+                window.pedidosHistorial = pedidosRemotos;
+                localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosRemotos));
+                if (typeof renderLiveOrders === 'function') renderLiveOrders();
+                if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+                
+                // Si el libro contable está abierto, actualizarlo también
+                const modalContent = document.getElementById('contabilidad-detalle-content');
+                if (modalContent && modalContent.innerHTML.includes('Libro Contable de Pedidos')) {
+                    if (typeof abrirLibroContable === 'function') abrirLibroContable();
+                }
+            }, (err) => {
+                console.error("Error al escuchar pedidos en tiempo real:", err);
+            });
+        } else {
+            console.log("Listener de pedidos omitido para ahorrar cuota (Usuario sin privilegios).");
+        }
+    };
+    window.initAdminListener();
 
     // --- 3. ACTUALIZACIÓN DE ESTADOS HACIA FIRESTORE (Interceptor global) ---
     const originalUpdateOrderStatus = window.updateOrderStatus;
@@ -793,9 +793,20 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (!nuevoPedido.estado) nuevoPedido.estado = 'Pendiente';
                 if (typeof nuevoPedido.abono === 'undefined') nuevoPedido.abono = 0;
                 
-                // FASE 1: Inyectar ownerId
+                // FASE 1 & 2A: Inyectar ownerId y Claim Secret para invitados
                 if (auth && auth.currentUser) {
                     nuevoPedido.ownerId = auth.currentUser.uid;
+                    if (auth.currentUser.isAnonymous) {
+                        const array = new Uint32Array(4);
+                        window.crypto.getRandomValues(array);
+                        const secret = Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('');
+                        nuevoPedido.claimSecret = secret;
+                        try {
+                            let secrets = JSON.parse(localStorage.getItem('dt_claim_secrets') || '{}');
+                            secrets[nuevoPedido.id] = secret;
+                            localStorage.setItem('dt_claim_secrets', JSON.stringify(secrets));
+                        } catch(e) { console.warn("No se pudo guardar claimSecret"); }
+                    }
                 }
                 
                 // PRIMERO: Guardar de inmediato en Firestore
@@ -808,9 +819,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 try {
                     const userEmail = (typeof currentUser !== 'undefined' && currentUser && currentUser.email)
                         ? currentUser.email : null;
-                    const totalPedido = nuevoPedido.total || nuevoPedido.subtotal || 0;
-                    // Regla: 1 punto por cada $1.000 COP (igual que en script.js línea 3985)
-                    const ptsGanados = Math.floor(totalPedido / 1000);
+                    
+                    const ptsGanados = (typeof window.calcularPuntosPedido === 'function' && typeof currentUser !== 'undefined')
+                        ? window.calcularPuntosPedido(nuevoPedido, currentUser)
+                        : 0;
                     
                     if (userEmail && ptsGanados > 0 && typeof window.registrarMovimientoPuntos === 'function') {
                         window.registrarMovimientoPuntos(userEmail, {
@@ -1262,67 +1274,95 @@ window.registrarMovimientoPuntos = async function(userEmail, { tipo, cantidad, m
         orderId: orderId || null
     };
 
-    // 1. Persistir atómicamente en Firestore
     try {
         const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
         if (!db) throw new Error('Firestore no disponible');
-
-        const FieldValue = window.firebase.firestore.FieldValue;
-        await db.collection('usuarios').doc(userEmail).update({
-            points:          FieldValue.increment(delta),
-            puntosActuales:  FieldValue.increment(delta),
-            historialPuntos: FieldValue.arrayUnion(movEntry)
-        });
-        console.log(`[Puntos] ✅ ${tipo} de ${cantidad} pts registrado para ${userEmail}. Motivo: ${motivo}`);
-    } catch (fsErr) {
-        // Si el documento no existe aún, usar set con merge
-        try {
-            const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
-            if (db) {
-                await db.collection('usuarios').doc(userEmail).set({
-                    email: userEmail,
-                    points: Math.max(0, delta),
-                    puntosActuales: Math.max(0, delta),
-                    historialPuntos: [movEntry]
-                }, { merge: true });
-                console.log('[Puntos] ✅ Documento creado con puntos iniciales para:', userEmail);
+        
+        const userRef = db.collection('usuarios').doc(userEmail);
+        
+        await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            
+            let currentPoints = 0;
+            let currentReclamados = [];
+            let currentHistorial = [];
+            let docExists = userDoc.exists;
+            
+            if (docExists) {
+                const data = userDoc.data();
+                currentPoints = data.points || 0;
+                currentReclamados = data.puntosReclamadosIDs || [];
+                currentHistorial = data.historialPuntos || [];
             }
-        } catch (setErr) {
-            console.warn('[Puntos] ⚠️ No se pudo persistir en Firestore:', setErr);
-        }
-    }
-
-    // 2. Actualizar localStorage de forma optimista (UI instantánea sin esperar red)
-    try {
+            
+            // FASE 2B: Protección contra doble ejecución (Idempotencia)
+            if (tipo === 'ganancia' && orderId) {
+                if (currentReclamados.includes(orderId)) {
+                    throw new Error('already_claimed');
+                }
+                currentReclamados.push(orderId);
+            }
+            
+            const newPoints = Math.max(0, currentPoints + delta);
+            currentHistorial.push(movEntry);
+            
+            const updatePayload = {
+                points: newPoints,
+                puntosActuales: newPoints,
+                historialPuntos: currentHistorial,
+                puntosReclamadosIDs: currentReclamados
+            };
+            
+            if (!docExists) {
+                updatePayload.email = userEmail;
+                transaction.set(userRef, updatePayload, { merge: true });
+            } else {
+                transaction.update(userRef, updatePayload);
+            }
+        });
+        
+        console.log(`[Puntos] ✅ ${tipo} de ${cantidad} pts registrado para ${userEmail}. Motivo: ${motivo}`);
+        
+        // Actualizar UI optimista si la transacción fue exitosa
         if (typeof currentUser !== 'undefined' && currentUser && currentUser.email === userEmail) {
             currentUser.points = Math.max(0, (currentUser.points || 0) + delta);
             currentUser.puntosActuales = currentUser.points;
             if (!Array.isArray(currentUser.historialPuntos)) currentUser.historialPuntos = [];
             currentUser.historialPuntos.push(movEntry);
+            if (!Array.isArray(currentUser.puntosReclamadosIDs)) currentUser.puntosReclamadosIDs = [];
+            if (tipo === 'ganancia' && orderId) currentUser.puntosReclamadosIDs.push(orderId);
+            
             localStorage.setItem('dt_user', JSON.stringify(currentUser));
         }
-
-        // Sincronizar también en dt_registered_users
-        const regStr = localStorage.getItem('dt_registered_users');
-        if (regStr) {
-            const regArr = JSON.parse(regStr);
-            if (Array.isArray(regArr)) {
-                const idx = regArr.findIndex(u => u && u.email && u.email.toLowerCase() === userEmail.toLowerCase());
-                if (idx !== -1) {
-                    regArr[idx].points = Math.max(0, (regArr[idx].points || 0) + delta);
-                    regArr[idx].puntosActuales = regArr[idx].points;
-                    if (!Array.isArray(regArr[idx].historialPuntos)) regArr[idx].historialPuntos = [];
-                    regArr[idx].historialPuntos.push(movEntry);
-                    localStorage.setItem('dt_registered_users', JSON.stringify(regArr));
+        
+        try {
+            const regStr = localStorage.getItem('dt_registered_users');
+            if (regStr) {
+                const regArr = JSON.parse(regStr);
+                if (Array.isArray(regArr)) {
+                    const idx = regArr.findIndex(u => u && u.email && u.email.toLowerCase() === userEmail.toLowerCase());
+                    if (idx !== -1) {
+                        regArr[idx].points = Math.max(0, (regArr[idx].points || 0) + delta);
+                        regArr[idx].puntosActuales = regArr[idx].points;
+                        if (!Array.isArray(regArr[idx].historialPuntos)) regArr[idx].historialPuntos = [];
+                        regArr[idx].historialPuntos.push(movEntry);
+                        if (!Array.isArray(regArr[idx].puntosReclamadosIDs)) regArr[idx].puntosReclamadosIDs = [];
+                        if (tipo === 'ganancia' && orderId) regArr[idx].puntosReclamadosIDs.push(orderId);
+                        localStorage.setItem('dt_registered_users', JSON.stringify(regArr));
+                    }
                 }
             }
-        }
-
-        // Refrescar la UI de puntos si está disponible
+        } catch(e) {}
+        
         if (typeof syncUserUI === 'function') syncUserUI();
         if (typeof window.renderHistorialPuntos === 'function') window.renderHistorialPuntos();
-    } catch (lsErr) {
-        console.warn('[Puntos] ⚠️ No se pudo actualizar localStorage:', lsErr);
+        
+    } catch (err) {
+        if (err.message === 'already_claimed') {
+            console.log(`[Puntos] ⚠️ Recompensa ya fue reclamada para el pedido ${orderId} (Idempotencia exitosa)`);
+        } else {
+            console.error('[Puntos] ❌ Error en transacción de puntos:', err);
+        }
     }
 };
 
@@ -1433,4 +1473,69 @@ window.renderHistorialPuntos = function() {
     const deskContainer = document.getElementById('historial-puntos-tabla-desk');
     if (deskContainer) deskContainer.innerHTML = buildMovimientosCardsHTML();
 };
+
+window.checkForGuestOrdersToLink = function() {
+    if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) return;
+    try {
+        const secrets = JSON.parse(localStorage.getItem('dt_claim_secrets') || '{}');
+        const orderIds = Object.keys(secrets);
+        if (orderIds.length === 0) return;
+        
+        const doLink = window.confirm(`Tienes ${orderIds.length} pedido(s) realizados como invitado en este dispositivo.\n¿Deseas vincularlos a tu cuenta actual?`);
+        if (!doLink) {
+            localStorage.removeItem('dt_claim_secrets');
+            return;
+        }
+
+        let linkedCount = 0;
+        let processed = 0;
+        
+        orderIds.forEach(orderId => {
+            const secret = secrets[orderId];
+            db.collection('pedidos').doc(orderId).update({
+                ownerId: auth.currentUser.uid,
+                claimSecret: secret + "_claimed"
+            }).then(() => {
+                linkedCount++;
+                delete secrets[orderId];
+                localStorage.setItem('dt_claim_secrets', JSON.stringify(secrets));
+            }).catch(err => {
+                console.warn(`No se pudo vincular el pedido ${orderId}:`, err);
+            }).finally(() => {
+                processed++;
+                if (processed === orderIds.length) {
+                    if (typeof showToast === 'function' && linkedCount > 0) {
+                        showToast(`¡Se han vinculado ${linkedCount} pedidos a tu cuenta!`, '🔗');
+                        if (typeof renderOrders === 'function') renderOrders('curso');
+                    }
+                }
+            });
+        });
+    } catch(e) {
+        console.error("Error comprobando claim secrets:", e);
+    }
+};
+
+/**
+ * FUENTE DE VERDAD ÚNICA: Cálculo Oficial de Puntos Dulce (Fase 2B)
+ */
+window.calcularPuntosPedido = function(pedido, usuario) {
+    if (!usuario || !usuario.email || usuario.isAnonymous) return 0;
+    
+    const minPurchase = (typeof adminConfig !== 'undefined' && adminConfig.minPurchase) ? adminConfig.minPurchase : 0;
+    const vipEnabled = (typeof adminConfig !== 'undefined' && adminConfig.vipEnabled !== undefined) ? adminConfig.vipEnabled : true;
+    
+    if (!vipEnabled) return 0;
+    
+    const bruto = pedido.subtotal || 0;
+    const descuento = pedido.discount || pedido.descuento || 0;
+    
+    const baseNeta = Math.max(0, bruto - descuento);
+    
+    if (baseNeta < minPurchase) return 0;
+    
+    const puntos = Math.floor(baseNeta / 1000);
+    return puntos > 0 ? puntos : 0;
+};
+
 
