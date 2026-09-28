@@ -6203,6 +6203,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px; /* avoid squeezing buttons against text */
+
     box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.04);
     z-index: 20;
     flex-shrink: 0 !important;
@@ -6215,10 +6217,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 #wizard-summary-badge {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #64748b;
     display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
 }
 
 #wizard-summary-total {
@@ -6345,8 +6351,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     }
 
     .wizard-footer-sticky {
-        padding: 10px 14px;
+        padding: 10px 10px;
         padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+        gap: 6px;
+    }
+    #wizard-summary-badge {
+        max-width: 110px;
     }
 
     #wizard-summary-badge {
@@ -6370,7 +6380,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .product-lightbox-modal {
     position: fixed;
     inset: 0;
-    z-index: 11000; /* Supera la barra inferior móvil y modales estándar */
+    z-index: 9999999 !important; /* Supera la barra inferior móvil y modales estándar (y al wizard) */
     display: flex;
     align-items: center;
     justify-content: center;

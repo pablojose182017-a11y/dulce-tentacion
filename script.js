@@ -4612,11 +4612,13 @@ window.closeMobileMenu = function() {
 };
 
 // ===== PRODUCT IMAGE LIGHTBOX =====
-window.openProductImageModal = function(src, title) {
+window.openProductImageModal = function(src, title, callback) {
     const modal = document.getElementById('productImageModal');
     if (!modal) return;
     const imgEl = document.getElementById('productLightboxImg');
     const captionEl = document.getElementById('productLightboxCaption');
+    const actionContainer = document.getElementById('lightboxActionContainer');
+    
     if (imgEl) {
         imgEl.src = src || 'logo-pys.png';
         imgEl.alt = title || 'Producto';
@@ -4625,6 +4627,12 @@ window.openProductImageModal = function(src, title) {
         captionEl.textContent = title || '';
         captionEl.style.display = title ? 'block' : 'none';
     }
+    
+    if (actionContainer) {
+        window._lightboxCallback = typeof callback === 'function' ? callback : null;
+        actionContainer.style.display = window._lightboxCallback ? 'block' : 'none';
+    }
+    
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 };
@@ -4634,6 +4642,11 @@ window.closeProductImageModal = function() {
     if (modal) {
         modal.style.display = 'none';
         document.body.style.overflow = '';
+        window._lightboxCallback = null;
+        const actionContainer = document.getElementById('lightboxActionContainer');
+        if (actionContainer) {
+            actionContainer.style.display = 'none';
+        }
     }
 };
 
@@ -6036,9 +6049,26 @@ function selectDisenoCard(diseno, imgUrl, element) {
     const uploadCard = document.getElementById('cardUploadCustomDesign');
     if (uploadCard) uploadCard.classList.remove('selected');
 
-    // Seleccionar miniatura
-    document.querySelectorAll('.wizard-design-grid .design-thumb').forEach(el => el.classList.remove('selected'));
-    if (element) element.classList.add('selected');
+    // Deseleccionar TODOS los diseños de manera absoluta
+    document.querySelectorAll('.design-thumb').forEach(el => {
+        el.classList.remove('selected');
+    });
+
+    // Agregar la clase de nuevo al que coincida con el nombre, para evitar referencias a nodos huérfanos
+    if (diseno) {
+        document.querySelectorAll('.design-thumb').forEach(el => {
+            // Usar data-name para mayor robustez
+            if (el.dataset.name === diseno) {
+                el.classList.add('selected');
+            } else {
+                // Fallback por si la estructura antigua todavía estuviese presente (cache)
+                const nameEl = el.querySelector('div:last-child');
+                if (nameEl && nameEl.textContent.trim() === diseno) {
+                    el.classList.add('selected');
+                }
+            }
+        });
+    }
 
     updateWizardSummary();
 }
@@ -6049,6 +6079,16 @@ function selectDiseno(diseno, element) {
     const imgUrl = imgEl ? imgEl.src : '';
     selectDisenoCard(diseno, imgUrl, element);
 }
+
+window.abrirVistaPreviaDiseno = function(diseno, imgUrl, element) {
+    if (typeof window.openProductImageModal === 'function') {
+        window.openProductImageModal(imgUrl, diseno, function() {
+            selectDisenoCard(diseno, imgUrl, element);
+        });
+    } else {
+        selectDisenoCard(diseno, imgUrl, element);
+    }
+};
 
 function handleWizardCustomPhoto(input) {
     if (input.files && input.files[0]) {
@@ -6126,7 +6166,17 @@ function updateWizardSummary() {
     if (summaryBadge) {
         const tShort = (wizardData.tamano || '1/4').split(' ')[0];
         const sShort = (wizardData.sabor || 'Tres Leches').replace('Clásica ', '');
-        summaryBadge.innerText = `${tShort} • ${sShort}`;
+        let dText = '';
+        if (wizardData.diseno) {
+            if (wizardData.diseno === 'Diseño Propio (Foto Cliente)') {
+                dText = ' • 📷 Propio';
+            } else {
+                let shortD = wizardData.diseno;
+                if (shortD.length > 12) shortD = shortD.substring(0, 12) + '...';
+                dText = ' • 🎨 ' + shortD;
+            }
+        }
+        summaryBadge.innerText = `${tShort} • ${sShort}${dText}`;
     }
 
     if (summaryTotal) {

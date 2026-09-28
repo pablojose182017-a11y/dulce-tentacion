@@ -1709,6 +1709,9 @@
             <div class="product-lightbox-body">
                 <img id="productLightboxImg" src="" alt="Producto" class="product-lightbox-image">
                 <div id="productLightboxCaption" class="product-lightbox-caption"></div>
+                <div id="lightboxActionContainer" style="display:none; text-align:center; margin-top:15px;">
+                    <button type="button" id="btnLightboxSelect" style="background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 0.92rem; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);" onclick="if(window._lightboxCallback) { window._lightboxCallback(); window.closeProductImageModal(); }">✓ Seleccionar este diseño</button>
+                </div>
             </div>
         </div>
     </div>

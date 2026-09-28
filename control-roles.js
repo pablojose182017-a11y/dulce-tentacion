@@ -2928,7 +2928,8 @@ window.renderConfigTortasPublica = function () {
         config.disenos.forEach(d => {
             const isSelected = typeof wizardData !== 'undefined' && wizardData.diseno === d.name;
             html += `
-                <div class="design-thumb ${isSelected ? 'selected' : ''}" onclick="selectDiseno('${(d.name || '').replace(/'/g, "\\'")}', this)">
+                <div class="design-thumb ${isSelected ? 'selected' : ''}" data-name="${(d.name || '').replace(/"/g, '&quot;')}" onclick="abrirVistaPreviaDiseno('${(d.name || '').replace(/'/g, "\\'")}', '${d.img || 'logo-pys.png'}', this)">
+                    <div class="card-check-icon">✓</div>
                     <img src="${d.img || 'logo-pys.png'}" alt="Diseño ${d.name}" style="width:100%; border-radius:8px; object-fit:cover; aspect-ratio:1;" onerror="this.onerror=null; this.src='logo-pys.png';">
                     <div style="text-align:center; font-weight:bold; font-size:0.9rem; margin-top:4px;">${d.name}</div>
                 </div>
@@ -3202,11 +3203,13 @@ window.closeMobileMenu = function () {
 };
 
 // ===== PRODUCT IMAGE LIGHTBOX =====
-window.openProductImageModal = function (src, title) {
+window.openProductImageModal = function(src, title, callback) {
     const modal = document.getElementById('productImageModal');
     if (!modal) return;
     const imgEl = document.getElementById('productLightboxImg');
     const captionEl = document.getElementById('productLightboxCaption');
+    const actionContainer = document.getElementById('lightboxActionContainer');
+    
     if (imgEl) {
         imgEl.src = src || 'logo-pys.png';
         imgEl.alt = title || 'Producto';
@@ -3215,15 +3218,26 @@ window.openProductImageModal = function (src, title) {
         captionEl.textContent = title || '';
         captionEl.style.display = title ? 'block' : 'none';
     }
+    
+    if (actionContainer) {
+        window._lightboxCallback = typeof callback === 'function' ? callback : null;
+        actionContainer.style.display = window._lightboxCallback ? 'block' : 'none';
+    }
+    
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 };
 
-window.closeProductImageModal = function () {
+window.closeProductImageModal = function() {
     const modal = document.getElementById('productImageModal');
     if (modal) {
         modal.style.display = 'none';
         document.body.style.overflow = '';
+        window._lightboxCallback = null;
+        const actionContainer = document.getElementById('lightboxActionContainer');
+        if (actionContainer) {
+            actionContainer.style.display = 'none';
+        }
     }
 };
 
