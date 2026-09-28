@@ -243,11 +243,85 @@ window.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // --- LISTENER GLOBAL DE CLIENTE (FASE 1) ---
+    let _globalClientOrdersUnsub = null;
+    function initGlobalClientOrderListener(uid) {
+        if (_globalClientOrdersUnsub) {
+            _globalClientOrdersUnsub();
+            _globalClientOrdersUnsub = null;
+        }
+        if (!uid) return;
+        
+        // Listener Global suscrito a pedidos activos (0 costo al navegar entre paneles)
+        _globalClientOrdersUnsub = db.collection('pedidos')
+            .where('ownerId', '==', uid)
+            .where('estado', 'in', ['Pendiente', 'En preparación', 'En Camino'])
+            .onSnapshot(snapshot => {
+                let changed = false;
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'modified' || change.type === 'added') {
+                        const newData = change.doc.data();
+                        const nuevoEstado = newData.estado;
+                        if (!nuevoEstado) return;
+                        
+                        if (!window.pedidosHistorial) window.pedidosHistorial = [];
+                        const idx = window.pedidosHistorial.findIndex(hist => hist.id === newData.id || hist.idDoc === change.doc.id);
+                        
+                        let estadoPrevio = null;
+                        if (idx !== -1) {
+                            estadoPrevio = window.pedidosHistorial[idx].estado || window.pedidosHistorial[idx].status;
+                            window.pedidosHistorial[idx] = { idDoc: change.doc.id, ...newData, status: nuevoEstado };
+                        } else {
+                            window.pedidosHistorial.push({ idDoc: change.doc.id, ...newData, status: nuevoEstado });
+                        }
+                        
+                        const ESTADOS_NOTIFICABLES = ['En preparación', 'En Camino', 'Entregado'];
+                        if (change.type === 'modified' && nuevoEstado !== estadoPrevio && ESTADOS_NOTIFICABLES.includes(nuevoEstado)) {
+                            if (typeof window.showOrderStatusToast === 'function') {
+                                window.showOrderStatusToast(newData.id || change.doc.id, nuevoEstado);
+                            }
+                        }
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    if (typeof currentUser !== 'undefined' && currentUser) {
+                        currentUser.history = window.pedidosHistorial.filter(p => p.ownerId === uid || p.email === currentUser.email);
+                        if (typeof saveUser === 'function') saveUser();
+                    }
+                    const modalHistory = document.getElementById('modal-order-history');
+                    if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
+                        const tabActivo = document.querySelector('.order-tab-btn.active');
+                        if (tabActivo) {
+                            const tabId = tabActivo.id.replace('tab-btn-', '');
+                            if (typeof renderOrders === 'function') renderOrders(tabId);
+                        } else {
+                            if (typeof renderOrders === 'function') renderOrders('curso');
+                        }
+                    }
+                }
+            }, err => console.warn('Error en global client listener:', err));
+    }
+
     // Observador permanente del estado de autenticación (Firebase Auth onAuthStateChanged)
     // FIX: Restaura el rol completo (rol/role) desde Firestore al detectar sesión activa.
     // Esto evita que syncCurrentUserToCloud sobreescriba con el rol en caché local.
     if (auth) {
         auth.onAuthStateChanged(async (fbUser) => {
+            if (!fbUser) {
+                // FASE 1: Identidad Guest (Firebase Anonymous Auth para invitados)
+                auth.signInAnonymously().catch(err => console.warn("Error signInAnonymously:", err));
+                return;
+            }
+            
+            // Iniciar listener global para el usuario activo (Guest o Auth)
+            initGlobalClientOrderListener(fbUser.uid);
+
+            if (fbUser.isAnonymous) {
+                console.log("Sesión de invitado activa:", fbUser.uid);
+                return;
+            }
+
             if (fbUser && fbUser.email) {
                 const email = fbUser.email.toLowerCase().trim();
                 const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
@@ -614,79 +688,85 @@ window.addEventListener('DOMContentLoaded', () => {
             // Llamar a la función original para que abra el modal inmediatamente con los datos locales
             originalOpenOrderHistory(fromProfile);
             
-            // Iniciar listener en tiempo real si el usuario está autenticado y no hay listener activo
+            // FASE 1: Historial Bajo Demanda (sin listeners adicionales aquí)
+            // Se invoca solo al abrir Mis Pedidos.
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
-                if (!window.unsubscribeUserOrders) {
-                    let _isInitialLoad = true;
-                    window.unsubscribeUserOrders = db.collection('pedidos')
-                        .where('email', '==', currentUser.email)
-                        .onSnapshot((snapshot) => {
-                            // --- DETECCIÓN DE CAMBIOS REALES (solo en cambios, no en carga inicial) ---
-                            if (!_isInitialLoad) {
-                                snapshot.docChanges().forEach(change => {
-                                    if (change.type === 'modified') {
-                                        const newData = change.doc.data();
-                                        const nuevoEstado = newData.estado;
-                                        if (!nuevoEstado) return;
-                                        
-                                        // Comparar con el estado previo en memoria
-                                        const pedidoPrevio = window.pedidosHistorial
-                                            ? window.pedidosHistorial.find(h => h.id === newData.id || h.idDoc === change.doc.id)
-                                            : null;
-                                        const estadoPrevio = pedidoPrevio ? (pedidoPrevio.estado || pedidoPrevio.status) : null;
-                                        
-                                        const ESTADOS_NOTIFICABLES = ['En preparación', 'En Camino', 'Entregado'];
-                                        if (nuevoEstado !== estadoPrevio && ESTADOS_NOTIFICABLES.includes(nuevoEstado)) {
-                                            if (typeof window.showOrderStatusToast === 'function') {
-                                                window.showOrderStatusToast(newData.id || change.doc.id, nuevoEstado);
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                            _isInitialLoad = false;
-
-                            // --- SINCRONIZACIÓN DE DATOS (siempre) ---
-                            const pedidosActualizados = snapshot.docs.map(doc => ({
-                                idDoc: doc.id,
-                                ...doc.data()
-                            }));
-                            
-                            // Ordenar cronológicamente (más recientes primero)
-                            pedidosActualizados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                            
-                            // Mapear el estado de Firebase a 'status' que usa script.js para renderizar los badges/barras
-                            pedidosActualizados.forEach(p => {
-                                if (p.estado) p.status = p.estado;
-                            });
-                            
-                            currentUser.history = pedidosActualizados;
-                            
-                            // Combinar en window.pedidosHistorial para que openOrderHistory lo detecte
-                            if (!window.pedidosHistorial) window.pedidosHistorial = [];
-                            pedidosActualizados.forEach(p => {
-                                const idx = window.pedidosHistorial.findIndex(hist => hist.id === p.id);
-                                if (idx !== -1) window.pedidosHistorial[idx] = p;
-                                else window.pedidosHistorial.push(p);
-                            });
-                            
-                            if (typeof saveUser === 'function') saveUser();
-                            
-                            // Re-renderizar dinámicamente si el modal de historial está abierto
-                            const modalHistory = document.getElementById('modal-order-history');
-                            if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
-                                const tabActivo = document.querySelector('.order-tab-btn.active');
-                                if (tabActivo) {
-                                    const tabId = tabActivo.id.replace('tab-btn-', '');
-                                    if (typeof renderOrders === 'function') renderOrders(tabId);
-                                } else {
-                                    if (typeof renderOrders === 'function') renderOrders('curso');
-                                }
-                            }
-                        }, (error) => {
-                            console.error("Error en listener de pedidos del cliente:", error);
+                db.collection('pedidos')
+                    .where('email', '==', currentUser.email)
+                    .limit(20)
+                    .get()
+                    .then((snapshot) => {
+                        const pedidosActualizados = snapshot.docs.map(doc => ({
+                            idDoc: doc.id,
+                            ...doc.data()
+                        }));
+                        
+                        pedidosActualizados.forEach(p => {
+                            if (p.estado) p.status = p.estado;
                         });
-                }
+                        
+                        // Ordenar cronológicamente (más recientes primero)
+                        pedidosActualizados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                        
+                        currentUser.history = pedidosActualizados;
+                        
+                        if (!window.pedidosHistorial) window.pedidosHistorial = [];
+                        pedidosActualizados.forEach(p => {
+                            const idx = window.pedidosHistorial.findIndex(hist => hist.id === p.id);
+                            if (idx !== -1) window.pedidosHistorial[idx] = p;
+                            else window.pedidosHistorial.push(p);
+                        });
+                        
+                        if (typeof saveUser === 'function') saveUser();
+                        
+                        const modalHistory = document.getElementById('modal-order-history');
+                        if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
+                            const tabActivo = document.querySelector('.order-tab-btn.active');
+                            if (tabActivo) {
+                                const tabId = tabActivo.id.replace('tab-btn-', '');
+                                if (typeof renderOrders === 'function') renderOrders(tabId);
+                            } else {
+                                if (typeof renderOrders === 'function') renderOrders('curso');
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error al obtener historial de pedidos del cliente:", error);
+                    });
+            } else if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
+                // Fallback temporal si no hay email (usamos ownerId)
+                db.collection('pedidos')
+                    .where('ownerId', '==', auth.currentUser.uid)
+                    .limit(20)
+                    .get()
+                    .then((snapshot) => {
+                        const pedidosActualizados = snapshot.docs.map(doc => ({
+                            idDoc: doc.id,
+                            ...doc.data()
+                        }));
+                        pedidosActualizados.forEach(p => { if (p.estado) p.status = p.estado; });
+                        
+                        pedidosActualizados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                        
+                        if (!window.pedidosHistorial) window.pedidosHistorial = [];
+                        pedidosActualizados.forEach(p => {
+                            const idx = window.pedidosHistorial.findIndex(hist => hist.id === p.id);
+                            if (idx !== -1) window.pedidosHistorial[idx] = p;
+                            else window.pedidosHistorial.push(p);
+                        });
+                        
+                        const modalHistory = document.getElementById('modal-order-history');
+                        if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
+                            const tabActivo = document.querySelector('.order-tab-btn.active');
+                            if (tabActivo) {
+                                const tabId = tabActivo.id.replace('tab-btn-', '');
+                                if (typeof renderOrders === 'function') renderOrders(tabId);
+                            } else {
+                                if (typeof renderOrders === 'function') renderOrders('curso');
+                            }
+                        }
+                    })
+                    .catch(e => console.error(e));
             }
         };
     }
@@ -712,6 +792,11 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
                 if (!nuevoPedido.estado) nuevoPedido.estado = 'Pendiente';
                 if (typeof nuevoPedido.abono === 'undefined') nuevoPedido.abono = 0;
+                
+                // FASE 1: Inyectar ownerId
+                if (auth && auth.currentUser) {
+                    nuevoPedido.ownerId = auth.currentUser.uid;
+                }
                 
                 // PRIMERO: Guardar de inmediato en Firestore
                 db.collection('pedidos').doc(nuevoPedido.id).set(nuevoPedido)
