@@ -1290,11 +1290,32 @@ function renderKitchenOrders(tabId) {
                         <strong style="color: #0f172a; font-size: 1.2rem;">$${order.total.toLocaleString()}</strong>
                     </div>
                     ${eventHtml}
-                    <p><strong>Cliente:</strong> ${escapeHTML(order.customer)} ${isVip ? '<span class="k-vip-badge">⭐ VIP</span>' : ''}</p>
-                    <p><strong>Dirección:</strong> ${escapeHTML(order.address || 'Para recoger')}</p>
-                    <div class="kitchen-products">
-                        ${escapeHTML(order.products).replace(/, /g, '<br>')}
-                        ${(order.cartItems || []).map(item => (item.customData && item.customData.disenoImg) ? `<div style="margin-top:8px;"><strong style="font-size:0.85rem; color:#64748b;">Diseño Adjunto:</strong><br><img src="${sanitizeImageURL(item.customData.disenoImg)}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.2); cursor:pointer;" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño Cliente'); else window.open(this.src);" title="Ver foto"></div>` : '').join('')}
+                    <div style="margin-bottom:12px;">
+                        <p style="margin:0;"><strong>Cliente:</strong> ${escapeHTML(order.customer)} ${isVip ? '<span class="k-vip-badge">⭐ VIP</span>' : ''}</p>
+                        <p style="margin:4px 0;"><strong>Dirección:</strong> ${escapeHTML(order.address || 'Para recoger')}</p>
+                        <p style="margin:4px 0;"><strong>Pago:</strong> ${escapeHTML(order.metodoPago || 'N/A')}</p>
+                        ${order.cashReceived ? `<p style="margin:4px 0; color:#15803d; font-size:0.9rem;"><strong>Efectivo Recibido:</strong> ${order.cashReceived.toLocaleString('es-CO')}</p>` : ''}
+                    </div>
+                    ${order.notes ? `<div style="background:#fffbeb; color:#b45309; padding:8px; border-radius:6px; margin:8px 0; font-size:0.9rem; border:1px solid #fde68a;"><strong>📝 Notas del Cliente:</strong><br>${escapeHTML(order.notes)}</div>` : ''}
+                    <div class="kitchen-products" style="background:#f8fafc; padding:10px; border-radius:8px; border:1px dashed #cbd5e1; margin-bottom:12px;">
+                        ${(order.cartItems && order.cartItems.length > 0) ? order.cartItems.map(item => {
+                            let html = `<strong>${escapeHTML(item.quantity.toString())}x ${escapeHTML(item.name)}</strong>`;
+                            if (item.customData) {
+                                let cdHtml = '<ul style="margin:4px 0 0 15px; padding:0; font-size:0.85rem; color:#64748b; list-style-type:disc;">';
+                                if (item.customData.sabor) cdHtml += `<li>Sabor: ${escapeHTML(item.customData.sabor)}</li>`;
+                                if (item.customData.tamano) cdHtml += `<li>Tamaño: ${escapeHTML(item.customData.tamano)}</li>`;
+                                if (item.customData.message) cdHtml += `<li>Mensaje: "${escapeHTML(item.customData.message)}"</li>`;
+                                if (item.customData.date) cdHtml += `<li>Fecha: ${escapeHTML(item.customData.date)}</li>`;
+                                if (item.customData.time) cdHtml += `<li>Hora: ${escapeHTML(item.customData.time)}</li>`;
+                                if (item.customData.diseno) cdHtml += `<li>Diseño: ${escapeHTML(item.customData.diseno)}</li>`;
+                                cdHtml += '</ul>';
+                                html += cdHtml;
+                                if (item.customData.disenoImg) {
+                                    html += `<div style="margin-top:4px;"><img src="${sanitizeImageURL(item.customData.disenoImg)}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño'); else window.open(this.src);" title="Ver foto"></div>`;
+                                }
+                            }
+                            return `<div style="margin-bottom:8px;">${html}</div>`;
+                        }).join('') : escapeHTML(order.products || '').replace(/, /g, '<br>')}
                     </div>
                     <p style="margin-bottom: 12px; color: #64748b; font-weight: bold;">Estado actual: ${order.status}</p>
                     ${actionsHtml}
@@ -2182,8 +2203,23 @@ function renderLiveOrders() {
                         })()
                     }
                     
-                    <div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1;">
-                        <strong>📝 Detalle:</strong><br>${escapeHTML(p.products)}
+                    <div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1; margin-bottom:8px;">
+                        <strong>📝 Detalle:</strong><br>
+                        ${(p.cartItems && p.cartItems.length > 0) ? p.cartItems.map(item => {
+                            let html = `<strong>${escapeHTML(item.quantity.toString())}x ${escapeHTML(item.name)}</strong>`;
+                            if (item.customData) {
+                                let cdHtml = '<ul style="margin:4px 0 0 15px; padding:0; font-size:0.85rem; color:#64748b; list-style-type:disc;">';
+                                if (item.customData.sabor) cdHtml += `<li>Sabor: ${escapeHTML(item.customData.sabor)}</li>`;
+                                if (item.customData.tamano) cdHtml += `<li>Tamaño: ${escapeHTML(item.customData.tamano)}</li>`;
+                                if (item.customData.message) cdHtml += `<li>Mensaje: "${escapeHTML(item.customData.message)}"</li>`;
+                                if (item.customData.date) cdHtml += `<li>Fecha: ${escapeHTML(item.customData.date)}</li>`;
+                                if (item.customData.time) cdHtml += `<li>Hora: ${escapeHTML(item.customData.time)}</li>`;
+                                if (item.customData.diseno) cdHtml += `<li>Diseño: ${escapeHTML(item.customData.diseno)}</li>`;
+                                cdHtml += '</ul>';
+                                html += cdHtml;
+                            }
+                            return `<div style="margin-bottom:6px;">${html}</div>`;
+                        }).join('') : escapeHTML(p.products || '').replace(/, /g, '<br>')}
                         ${depositHtml}
                     </div>
 
@@ -4912,7 +4948,9 @@ function sendOrder() {
         payStatus: 'Pendiente - ' + selectedPay,
         type: (typeof orderType !== 'undefined' ? orderType : 'inmediato'),
         mixedCartMode: window.mixedCartMode || null,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        notes: document.getElementById('orderNotes')?.value.trim() || '',
+        cashReceived: (selectedPay === 'Efectivo contra entrega' && document.getElementById('cashReceivedInput')?.value) ? parseInt(document.getElementById('cashReceivedInput').value, 10) : null
     };
 
     if (typeof pedidosHistorial !== 'undefined') {

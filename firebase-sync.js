@@ -319,8 +319,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (auth) {
         auth.onAuthStateChanged(async (fbUser) => {
             if (!fbUser) {
-                // FASE 1: Identidad Guest (Firebase Anonymous Auth para invitados)
-                auth.signInAnonymously().catch(err => console.warn("Error signInAnonymously:", err));
+                // FASE 5.9: Lazy Auth. No se crea identidad anónima automáticamente al navegar.
                 return;
             }
             
@@ -772,16 +771,109 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 5. INTERCEPTOR DUAL DE CHECKOUT (WHATSAPP + FIRESTORE + PUNTOS) ---
+    let lazyAuthPromise = null;
     const originalSendOrder = window.sendOrder;
     if (originalSendOrder) {
-        window.sendOrder = function() {
+        window.sendOrder = async function() {
+            // 1. FASE 5.11.2: Contexto Síncrono - Abrir ventana de WhatsApp en blanco inmediatamente
+            let whatsappWin = null;
+            try {
+                whatsappWin = window.open('about:blank', '_blank');
+                if (whatsappWin) {
+                    whatsappWin.document.write('<div style="font-family:sans-serif; padding:20px;">Procesando pedido y preparando WhatsApp...</div>');
+                }
+            } catch(e) {
+                console.warn("No se pudo abrir la pestaña síncrona:", e);
+            }
+
+            // FASE 5.9: LAZY AUTH
+            if (auth && !auth.currentUser) {
+                if (!lazyAuthPromise) {
+                    lazyAuthPromise = auth.signInAnonymously();
+                }
+                try {
+                    await lazyAuthPromise;
+                } catch (err) {
+                    console.error("Error en Lazy Auth:", err);
+                    alert("No se pudo iniciar la sesión de invitado para tu pedido. Verifica tu conexión.");
+                    lazyAuthPromise = null;
+                    if (whatsappWin && !whatsappWin.closed) whatsappWin.close();
+                    return; // Detiene la creación del pedido
+                }
+                lazyAuthPromise = null;
+            }
+
+            // Validar que tengamos UID antes de proceder
+            if (auth && (!auth.currentUser || !auth.currentUser.uid)) {
+                alert("Error crítico: No se pudo obtener la identidad de Firebase para guardar el pedido.");
+                if (whatsappWin && !whatsappWin.closed) whatsappWin.close();
+                return;
+            }
+
+            // 2. FASE 5.11.2: Interceptor de window.open temporal
+            const originalOpen = window.open;
+            let overrideActive = true;
+            let timeoutId = null;
+
+            const restoreOpen = () => {
+                if (overrideActive) {
+                    overrideActive = false;
+                    window.open = originalOpen;
+                    if (timeoutId) clearTimeout(timeoutId);
+                }
+            };
+
+            window.open = function(url, target, features) {
+                if (!overrideActive) return originalOpen.apply(this, arguments);
+
+                // Si es la URL de WhatsApp generada por script.js
+                if (url && (url.includes('wa.me') || url.includes('whatsapp'))) {
+                    restoreOpen(); // Restaurar de inmediato
+                    
+                    if (whatsappWin && !whatsappWin.closed) {
+                        whatsappWin.location.href = url; // Redirigir la ventana síncrona
+                        return whatsappWin;
+                    } else {
+                        // Si la ventana fue bloqueada o el usuario la cerró, intentamos el fallback
+                        return originalOpen(url, target, features);
+                    }
+                } else {
+                    // Si es otro popup desconocido, lo dejamos pasar
+                    return originalOpen.apply(this, arguments);
+                }
+            };
+
+            // Timeout de seguridad: Si script.js nunca llama a window.open en 3.5s
+            timeoutId = setTimeout(() => {
+                if (overrideActive) {
+                    restoreOpen();
+                    if (whatsappWin && !whatsappWin.closed) {
+                        whatsappWin.document.body.innerHTML = '<div style="font-family:sans-serif; padding:20px; color:red;">Hubo un error al conectar con WhatsApp.</div>';
+                    }
+                    console.warn("[WhatsApp Override] Timeout de seguridad de 3500ms alcanzado.");
+                }
+            }, 3500);
+
             const histLenBefore = typeof pedidosHistorial !== 'undefined' ? pedidosHistorial.length : 0;
             
-            // Ejecutar la función original que genera el ID, abre WhatsApp y vacía el carrito
-            originalSendOrder.apply(this, arguments);
+            // Ejecutar la función original que genera el ID, valida, abre WhatsApp y vacía el carrito
+            try {
+                originalSendOrder.apply(this, arguments);
+            } catch (err) {
+                restoreOpen();
+                if (whatsappWin && !whatsappWin.closed) whatsappWin.close();
+                throw err;
+            }
             
             // Si el pedido se generó, el historial local habrá crecido
-            if (typeof pedidosHistorial !== 'undefined' && pedidosHistorial.length > histLenBefore) {
+            if (typeof pedidosHistorial !== 'undefined') {
+                if (pedidosHistorial.length === histLenBefore) {
+                    // La validación original de script.js falló (ej. falta nombre, carrito vacío)
+                    restoreOpen();
+                    if (whatsappWin && !whatsappWin.closed) whatsappWin.close();
+                    return; // No hubo pedido, salimos sin hacer nada en Firebase
+                }
+                
                 const nuevoPedido = pedidosHistorial[pedidosHistorial.length - 1];
                 
                 // Estandarizar fechas para el monitor
