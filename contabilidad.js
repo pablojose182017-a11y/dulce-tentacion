@@ -553,7 +553,9 @@ window.renderLiveOrders = function() {
     const grid = document.getElementById('live-orders-grid');
     if (!grid) return;
     
-    let list = [...(typeof pedidosHistorial !== 'undefined' ? pedidosHistorial : [])];
+    let list = window.pedidosHistorial
+        ? [...window.pedidosHistorial]
+        : [...(typeof pedidosHistorial !== 'undefined' ? pedidosHistorial : [])];
     
     list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     if (!list.some(p => p.timestamp)) {

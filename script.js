@@ -2140,7 +2140,7 @@ function renderLiveOrders() {
     const grid = document.getElementById('live-orders-grid');
     if (!grid) return;
 
-    let list = [...pedidosHistorial];
+    let list = window.pedidosHistorial ? [...window.pedidosHistorial] : [...pedidosHistorial];
 
     // Ordenar por timestamp más reciente
     list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -2148,16 +2148,45 @@ function renderLiveOrders() {
         list = list.slice().reverse();
     }
 
+    // --- DIAGNÓSTICO TEMPORAL FALLO A ---
+    console.log("[DIAGNÓSTICO FALLO A] renderLiveOrders EJECUTÁNDOSE");
+    console.log("[DIAGNÓSTICO FALLO A] Cantidad de pedidos ANTES del filtro:", list.length);
+    console.log("[DIAGNÓSTICO FALLO A] orderDateFilterValue:", orderDateFilterValue);
+    
+    if (list.length > 0) {
+        const topOrder = list[0];
+        console.log("[DIAGNÓSTICO FALLO A] Pedido más reciente en la lista (pre-filtro):", topOrder.id || topOrder.idDoc);
+        console.log("[DIAGNÓSTICO FALLO A] Timestamp del pedido más reciente:", topOrder.timestamp, "Fecha:", new Date(topOrder.timestamp).toString());
+    }
+    // ------------------------------------
+
     // Filtrar por fecha exacta
     if (orderDateFilterValue) {
         const [y, m, d] = orderDateFilterValue.split('-');
+        
+        console.log("=== DIAGNOSTICO FALLO A ===");
+        console.log("orderDateFilterValue:", orderDateFilterValue);
+        console.log("Cantidad antes del filtro:", list.length);
+
         list = list.filter(p => {
             if (p.timestamp) {
                 const pd = new Date(p.timestamp);
-                return pd.getFullYear() == y && (pd.getMonth() + 1) == m && pd.getDate() == d;
+                const pasa = pd.getFullYear() == y && (pd.getMonth() + 1) == m && pd.getDate() == d;
+                
+                if (Date.now() - p.timestamp < 300000) {
+                    console.log(`Evaluando ${p.id || p.idDoc}:`);
+                    console.log(`- timestamp: ${p.timestamp} (${pd.toString()})`);
+                    console.log(`- fecha calculada: ${pd.getFullYear()}-${pd.getMonth() + 1}-${pd.getDate()}`);
+                    console.log(`- filtro esperado: ${y}-${m}-${d}`);
+                    console.log(`- Pasa:`, pasa);
+                }
+                return pasa;
             }
-            return true; // Mostrar pedidos sin timestamp
+            return true;
         });
+
+        console.log("Cantidad despues del filtro:", list.length);
+        console.log("===========================");
     }
 
     if (list.length === 0) {
@@ -2173,7 +2202,7 @@ function renderLiveOrders() {
         const depositHtml = isEvent ? `<div style="margin-top:8px; font-size:0.85rem; color:#b45309; font-weight:bold;">Anticipo (50%): $${Math.ceil(p.total / 2).toLocaleString()} COP</div>` : '';
 
         return `
-                <div style="background:#fff; border-radius:12px; padding:15px; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:10px;">
+                <div data-order-id="${p.id}" class="pedido-card" style="background:#fff; border-radius:12px; padding:15px; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div>
                             <span style="background:${tagColor}; color:${tagTextColor}; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${tagIcon}</span>
@@ -5580,9 +5609,14 @@ window.renderAdminNotifList = function() {
 };
 
 window.handleNotifClick = function(event, payloadStr) {
+    console.log("=== DIAGNOSTICO FALLO B ===");
+    console.log("handleNotifClick EJECUTADO!");
+    console.log("payloadStr:", payloadStr);
+
     if (event) event.stopPropagation();
     try {
         const item = JSON.parse(decodeURIComponent(payloadStr));
+        console.log("item parseado:", item);
         
         // 1. Cerrar Dropdown
         const dd = document.getElementById('adminNotifDropdown');
@@ -5599,20 +5633,30 @@ window.handleNotifClick = function(event, payloadStr) {
             
             // Hacer scroll a la tarjeta del pedido
             const oId = item.orderId || (item.title.match(/#([A-Z0-9-]+)/) ? item.title.match(/#([A-Z0-9-]+)/)[1] : null);
+            console.log("oId extraído:", oId);
             if (oId) {
                 setTimeout(() => {
-                    let orderCard = document.querySelector(`[data-order-id="${oId}"]`);
+                    const selector = `.pedido-card[data-order-id="${oId}"]`;
+                    console.log("Selector a utilizar:", selector);
+                    let orderCard = document.querySelector(selector);
+                    console.log("orderCard encontrado (1er intento):", !!orderCard);
                     if (!orderCard) {
                         const allCards = Array.from(document.querySelectorAll('.pedido-card'));
+                        console.log("allCards .pedido-card encontradas:", allCards.length);
                         orderCard = allCards.find(el => el.innerHTML.includes(oId));
+                        console.log("orderCard encontrado (fallback):", !!orderCard);
                     }
                     if (orderCard) {
+                        console.log("Haciendo scrollIntoView...");
                         orderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         const oldBg = orderCard.style.background || '';
                         orderCard.style.background = '#fef08a';
                         setTimeout(() => orderCard.style.background = oldBg, 1500);
+                        console.log("Resaltado completado.");
+                    } else {
+                        console.warn("handleNotifClick: No se encontró la tarjeta del pedido en el DOM para el ID:", oId);
                     }
-                }, 300);
+                }, 800);
             }
         } else if (isVip) {
             if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('usuarios');

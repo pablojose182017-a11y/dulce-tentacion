@@ -932,8 +932,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const originalFilterLiveOrders = window.renderLiveOrders;
     if (originalFilterLiveOrders) {
         window.renderLiveOrders = function() {
-            if (typeof pedidosHistorial !== 'undefined') {
-                pedidosHistorial.forEach(p => {
+            if (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial)) {
+                window.pedidosHistorial.forEach(p => {
                     // Si el pedido no tiene timestamp pero sí fechaISO o date, lo generamos para que el filtro de contabilidad.js no lo ignore
                     if (!p.timestamp) {
                         if (p.fechaISO) {
