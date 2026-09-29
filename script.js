@@ -5629,35 +5629,73 @@ window.handleNotifClick = function(event, payloadStr) {
         if (typeof showSection === 'function') showSection('admin-dashboard');
 
         if (isOrder) {
-            if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('pedidos');
-            
-            // Hacer scroll a la tarjeta del pedido
             const oId = item.orderId || (item.title.match(/#([A-Z0-9-]+)/) ? item.title.match(/#([A-Z0-9-]+)/)[1] : null);
-            console.log("oId extraído:", oId);
-            if (oId) {
-                setTimeout(() => {
-                    const selector = `.pedido-card[data-order-id="${oId}"]`;
-                    console.log("Selector a utilizar:", selector);
-                    let orderCard = document.querySelector(selector);
-                    console.log("orderCard encontrado (1er intento):", !!orderCard);
-                    if (!orderCard) {
-                        const allCards = Array.from(document.querySelectorAll('.pedido-card'));
-                        console.log("allCards .pedido-card encontradas:", allCards.length);
-                        orderCard = allCards.find(el => el.innerHTML.includes(oId));
-                        console.log("orderCard encontrado (fallback):", !!orderCard);
+            
+            const procederFlujoVisual = () => {
+                if (item.timestamp) {
+                    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+                    const orderDateStr = (new Date(item.timestamp - tzoffset)).toISOString().split('T')[0];
+                    const dateInput = document.getElementById('orderDateFilter');
+                    if (dateInput) {
+                        dateInput.value = orderDateStr;
+                        if (typeof filterOrdersByDate === 'function') {
+                            filterOrdersByDate();
+                        }
                     }
-                    if (orderCard) {
-                        console.log("Haciendo scrollIntoView...");
-                        orderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        const oldBg = orderCard.style.background || '';
-                        orderCard.style.background = '#fef08a';
-                        setTimeout(() => orderCard.style.background = oldBg, 1500);
-                        console.log("Resaltado completado.");
-                    } else {
-                        console.warn("handleNotifClick: No se encontró la tarjeta del pedido en el DOM para el ID:", oId);
-                    }
-                }, 800);
+                }
+                if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('pedidos');
+                
+                console.log("oId extraído:", oId);
+                if (oId) {
+                    setTimeout(() => {
+                        const selector = `.pedido-card[data-order-id="${oId}"]`;
+                        console.log("Selector a utilizar:", selector);
+                        let orderCard = document.querySelector(selector);
+                        console.log("orderCard encontrado (1er intento):", !!orderCard);
+                        if (!orderCard) {
+                            const allCards = Array.from(document.querySelectorAll('.pedido-card'));
+                            console.log("allCards .pedido-card encontradas:", allCards.length);
+                            orderCard = allCards.find(el => el.innerHTML.includes(oId));
+                            console.log("orderCard encontrado (fallback):", !!orderCard);
+                        }
+                        if (orderCard) {
+                            console.log("Haciendo scrollIntoView...");
+                            orderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const oldBg = orderCard.style.background || '';
+                            orderCard.style.background = '#fef08a';
+                            setTimeout(() => orderCard.style.background = oldBg, 1500);
+                            console.log("Resaltado completado.");
+                        } else {
+                            console.warn("handleNotifClick: No se encontró la tarjeta del pedido en el DOM para el ID:", oId);
+                        }
+                    }, 800);
+                }
+            };
+
+            if (oId && window.db && typeof window.pedidosHistorial !== 'undefined') {
+                const existe = window.pedidosHistorial.some(p => p.id === oId || p.idDoc === oId);
+                if (!existe) {
+                    window.db.collection('pedidos').doc(oId).get().then(docSnap => {
+                        if (docSnap.exists) {
+                            const existeDobleCheck = window.pedidosHistorial.some(p => p.id === oId || p.idDoc === oId);
+                            if (!existeDobleCheck) {
+                                const pData = { ...docSnap.data(), id: docSnap.id, idDoc: docSnap.id };
+                                window.pedidosHistorial.push(pData);
+                                if (typeof pedidosHistorial !== 'undefined') pedidosHistorial.push(pData);
+                            }
+                            procederFlujoVisual();
+                        } else {
+                            console.warn("handleNotifClick: El pedido no se encuentra en memoria ni en Firestore (ID: " + oId + ")");
+                        }
+                    }).catch(err => {
+                        console.error("handleNotifClick: Error obteniendo pedido antiguo:", err);
+                        procederFlujoVisual();
+                    });
+                    return; 
+                }
             }
+            
+            procederFlujoVisual();
         } else if (isVip) {
             if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('usuarios');
             
