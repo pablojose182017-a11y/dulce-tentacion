@@ -830,10 +830,16 @@ function openOrderHistory(fromProfile = false) {
 
     // Combinar pedidos locales y remotos
     let todosLosPedidos = pedidosHistorial ? [...pedidosHistorial] : [];
-    if (currentUser.history && Array.isArray(currentUser.history)) {
-        const ids = new Set(todosLosPedidos.map(p => p.id));
+        if (currentUser.history && Array.isArray(currentUser.history)) {
         currentUser.history.forEach(h => {
-            if (h && h.id && !ids.has(h.id)) todosLosPedidos.push(h);
+            if (h && h.id) {
+                const idx = todosLosPedidos.findIndex(p => p.id === h.id);
+                if (idx !== -1) {
+                    todosLosPedidos[idx] = h;
+                } else {
+                    todosLosPedidos.push(h);
+                }
+            }
         });
     }
 

@@ -301,12 +301,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                     const modalHistory = document.getElementById('modal-order-history');
                     if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
-                        const tabActivo = document.querySelector('.order-tab-btn.active');
-                        if (tabActivo) {
-                            const tabId = tabActivo.id.replace('tab-btn-', '');
-                            if (typeof renderOrders === 'function') renderOrders(tabId);
-                        } else {
-                            if (typeof renderOrders === 'function') renderOrders('curso');
+                        if (typeof originalOpenOrderHistory === 'function') {
+                            originalOpenOrderHistory(false);
                         }
                     }
                 }
@@ -660,7 +656,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         const pedido = window.pedidosHistorial.find(p => p.id === orderId || p.idDoc === orderId);
         if(pedido && pedido.idDoc) {
-            db.collection('pedidos').doc(pedido.idDoc).update({ estado: nuevoEstado })
+            db.collection('pedidos').doc(pedido.idDoc).update({ estado: nuevoEstado, status: nuevoEstado })
                 .catch(err => console.error("Error actualizando estado en Firestore:", err));
         }
     };
@@ -720,12 +716,8 @@ window.addEventListener('DOMContentLoaded', () => {
                         
                         const modalHistory = document.getElementById('modal-order-history');
                         if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
-                            const tabActivo = document.querySelector('.order-tab-btn.active');
-                            if (tabActivo) {
-                                const tabId = tabActivo.id.replace('tab-btn-', '');
-                                if (typeof renderOrders === 'function') renderOrders(tabId);
-                            } else {
-                                if (typeof renderOrders === 'function') renderOrders('curso');
+                            if (typeof originalOpenOrderHistory === 'function') {
+                                originalOpenOrderHistory(false);
                             }
                         }
                     })
@@ -747,6 +739,10 @@ window.addEventListener('DOMContentLoaded', () => {
                         
                         pedidosActualizados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                         
+                        if (typeof currentUser !== 'undefined') {
+                            currentUser.history = pedidosActualizados;
+                        }
+                        
                         if (!window.pedidosHistorial) window.pedidosHistorial = [];
                         pedidosActualizados.forEach(p => {
                             const idx = window.pedidosHistorial.findIndex(hist => hist.id === p.id);
@@ -756,12 +752,8 @@ window.addEventListener('DOMContentLoaded', () => {
                         
                         const modalHistory = document.getElementById('modal-order-history');
                         if (modalHistory && (modalHistory.style.display === 'flex' || modalHistory.style.display === 'block')) {
-                            const tabActivo = document.querySelector('.order-tab-btn.active');
-                            if (tabActivo) {
-                                const tabId = tabActivo.id.replace('tab-btn-', '');
-                                if (typeof renderOrders === 'function') renderOrders(tabId);
-                            } else {
-                                if (typeof renderOrders === 'function') renderOrders('curso');
+                            if (typeof originalOpenOrderHistory === 'function') {
+                                originalOpenOrderHistory(false);
                             }
                         }
                     })
