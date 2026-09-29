@@ -703,7 +703,7 @@ window.renderLiveOrders = function() {
         </div>`;
 
         return `
-        <div style="background:#fff; border-radius:14px; padding:16px; border:1px solid #eee; box-shadow:0 2px 10px rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:10px;">
+        <div data-order-id="${p.id}" class="pedido-card" style="background:#fff; border-radius:14px; padding:16px; border:1px solid #eee; box-shadow:0 2px 10px rgba(0,0,0,0.06); display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <div>
                     <span style="background:${tagColor}; color:${tagTextColor}; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700;">${tagIcon}</span>
