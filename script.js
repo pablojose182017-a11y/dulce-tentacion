@@ -169,7 +169,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof window.checkRemoteUserSession === 'function') window.checkRemoteUserSession();
 
     // ===== UTILITARIO: DRAG TO SCROLL (Clic sostenido para desplazamiento horizontal en PC) =====
-    window.enableDragToScroll = function(element) {
+    window.enableDragToScroll = function (element) {
         if (!element || element.dataset.dragScrollInit) return;
         element.dataset.dragScrollInit = 'true';
 
@@ -218,7 +218,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }, true);
     };
 
-    window.initDragToScroll = function(selector) {
+    window.initDragToScroll = function (selector) {
         const sel = selector || '.cat-chip-scroll, .admin-tabs-nav, #admin-stock-filters-container, .orders-tabs';
         document.querySelectorAll(sel).forEach(window.enableDragToScroll);
     };
@@ -226,12 +226,12 @@ window.addEventListener('DOMContentLoaded', () => {
     window.initDragToScroll();
 });
 
-window.openInstagram = function(e) {
+window.openInstagram = function (e) {
     if (e) e.preventDefault();
     const appUrl = 'instagram://user?username=panaderiapuntodulce';
     const webUrl = 'https://www.instagram.com/panaderiapuntodulce';
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
+
     if (isMobile) {
         window.location.href = appUrl;
         setTimeout(() => {
@@ -242,15 +242,15 @@ window.openInstagram = function(e) {
     }
 };
 
-function saveCart() { 
-    try { 
-        localStorage.setItem('dt_cart', JSON.stringify(cart)); 
+function saveCart() {
+    try {
+        localStorage.setItem('dt_cart', JSON.stringify(cart));
     } catch (e) {
         console.warn("No se pudo guardar el carrito en localStorage (posible límite de cuota o modo incógnito).", e);
-    } 
+    }
 }
 function saveWizardDraft() {
-    try { localStorage.setItem('dt_wizard_draft', JSON.stringify(wizardData)); } catch(e) {}
+    try { localStorage.setItem('dt_wizard_draft', JSON.stringify(wizardData)); } catch (e) { }
 }
 function saveUser() { try { if (currentUser) localStorage.setItem('dt_user', JSON.stringify(currentUser)); else localStorage.removeItem('dt_user'); } catch (e) { } }
 function saveAdminConfig() { try { localStorage.setItem('dt_admin_config', JSON.stringify(adminConfig)); } catch (e) { } }
@@ -274,8 +274,8 @@ function showSection(id, element) {
 
     // TRACKING: Guardar dt_last_section si es worker/admin
     const hasAdminWorkerRights = typeof currentUser !== 'undefined' && currentUser && (
-        currentUser.isAdmin === true || 
-        ['admin', 'trabajador'].includes(currentUser.role) || 
+        currentUser.isAdmin === true ||
+        ['admin', 'trabajador'].includes(currentUser.role) ||
         ['admin', 'trabajador'].includes(currentUser.rol) ||
         (typeof window.SUPER_ADMINS !== 'undefined' && window.SUPER_ADMINS.includes((currentUser.email || '').toLowerCase().trim())) ||
         ((currentUser.email || '').toLowerCase().trim() === 'pablojose182017@gmail.com') ||
@@ -333,7 +333,7 @@ function toggleMobileSearch() {
 }
 
 // ===== AUTH =====
-window.togglePasswordVisibility = function(inputId, btn) {
+window.togglePasswordVisibility = function (inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) return;
     if (input.type === 'password') {
@@ -460,7 +460,7 @@ function loginCustomUser(e) {
         try {
             regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
             if (!Array.isArray(regUsers)) regUsers = [];
-        } catch(err) { regUsers = []; }
+        } catch (err) { regUsers = []; }
         const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
         if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...superAdminObj };
         else regUsers.push({ ...superAdminObj });
@@ -476,13 +476,13 @@ function loginCustomUser(e) {
         if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
             dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
         }
-    } catch(err) { dbUsers = db_users || []; }
+    } catch (err) { dbUsers = db_users || []; }
 
     let regUsers = [];
     try {
         regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
         if (!Array.isArray(regUsers)) regUsers = [];
-    } catch(err) { regUsers = []; }
+    } catch (err) { regUsers = []; }
 
     // Buscar coincidencia en dt_registered_users y luego en dbUsers
     let foundUser = regUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && (u.password === pass)));
@@ -493,7 +493,7 @@ function loginCustomUser(e) {
     // Si aún no se encontró con contraseña exacta, comprobar si el usuario existe para mensaje claro
     if (!foundUser) {
         const userExists = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email))) ||
-                           dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)));
+            dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)));
         if (userExists) {
             return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
         }
@@ -591,7 +591,7 @@ try {
     if (savedPointRewards && Array.isArray(savedPointRewards) && savedPointRewards.length > 0) {
         pointRewards = savedPointRewards;
     }
-} catch(e) {
+} catch (e) {
     console.warn("Aviso cargando pointRewards de localStorage:", e);
 }
 window.pointRewards = pointRewards;
@@ -636,7 +636,7 @@ function renderRewards() {
     }).join('');
 }
 
-window.renderRewardsClub = function() {
+window.renderRewardsClub = function () {
     const container = document.getElementById('rewards-club-container');
     if (!container) return;
 
@@ -830,7 +830,7 @@ function openOrderHistory(fromProfile = false) {
 
     // Combinar pedidos locales y remotos
     let todosLosPedidos = pedidosHistorial ? [...pedidosHistorial] : [];
-        if (currentUser.history && Array.isArray(currentUser.history)) {
+    if (currentUser.history && Array.isArray(currentUser.history)) {
         currentUser.history.forEach(h => {
             if (h && h.id) {
                 const idx = todosLosPedidos.findIndex(p => p.id === h.id);
@@ -843,7 +843,7 @@ function openOrderHistory(fromProfile = false) {
         });
     }
 
-    const misPedidos = todosLosPedidos.filter(p => 
+    const misPedidos = todosLosPedidos.filter(p =>
         p && (p.clienteEmail === currentUser.email || p.email === currentUser.email || (currentUser.history && currentUser.history.some(h => h.id === p.id)))
     );
 
@@ -864,8 +864,8 @@ function openOrderHistory(fromProfile = false) {
         container.innerHTML = misPedidos.map(pedido => {
             const statusColor = pedido.estado === 'Entregado' ? '#10b981'
                 : pedido.estado === 'En preparación' ? '#3b82f6'
-                : pedido.estado === 'En Camino' ? '#7c3aed'
-                : '#f59e0b';
+                    : pedido.estado === 'En Camino' ? '#7c3aed'
+                        : '#f59e0b';
             const totalVal = Number(pedido.total || pedido.subtotal || 0);
             const ptsGanados = (pedido.puntosGanados !== undefined && pedido.puntosGanados !== null)
                 ? Number(pedido.puntosGanados)
@@ -1199,7 +1199,7 @@ async function updateUserRole(email, role) {
 
     try {
         if (typeof showToast === 'function') showToast("Guardando cambios en la nube...", "⏳", 1500);
-        
+
         // Dispara la orden directamente a Firestore como única fuente de verdad
         await db.collection("usuarios").doc(targetEmail).set({
             role: role,
@@ -1207,7 +1207,7 @@ async function updateUserRole(email, role) {
             vip: (role === 'vip'),
             isAdmin: (role === 'admin')
         }, { merge: true });
-        
+
         if (typeof showToast === 'function') showToast("Rol actualizado exitosamente", "✅", 2000);
     } catch (e) {
         console.error("Error al actualizar rol en Firebase", e);
@@ -1305,23 +1305,23 @@ function renderKitchenOrders(tabId) {
                     ${order.notes ? `<div style="background:#fffbeb; color:#b45309; padding:8px; border-radius:6px; margin:8px 0; font-size:0.9rem; border:1px solid #fde68a;"><strong>📝 Notas del Cliente:</strong><br>${escapeHTML(order.notes)}</div>` : ''}
                     <div class="kitchen-products" style="background:#f8fafc; padding:10px; border-radius:8px; border:1px dashed #cbd5e1; margin-bottom:12px;">
                         ${(order.cartItems && order.cartItems.length > 0) ? order.cartItems.map(item => {
-                            let html = `<strong>${escapeHTML(item.quantity.toString())}x ${escapeHTML(item.name)}</strong>`;
-                            if (item.customData) {
-                                let cdHtml = '<ul style="margin:4px 0 0 15px; padding:0; font-size:0.85rem; color:#64748b; list-style-type:disc;">';
-                                if (item.customData.sabor) cdHtml += `<li>Sabor: ${escapeHTML(item.customData.sabor)}</li>`;
-                                if (item.customData.tamano) cdHtml += `<li>Tamaño: ${escapeHTML(item.customData.tamano)}</li>`;
-                                if (item.customData.message) cdHtml += `<li>Mensaje: "${escapeHTML(item.customData.message)}"</li>`;
-                                if (item.customData.date) cdHtml += `<li>Fecha: ${escapeHTML(item.customData.date)}</li>`;
-                                if (item.customData.time) cdHtml += `<li>Hora: ${escapeHTML(item.customData.time)}</li>`;
-                                if (item.customData.diseno) cdHtml += `<li>Diseño: ${escapeHTML(item.customData.diseno)}</li>`;
-                                cdHtml += '</ul>';
-                                html += cdHtml;
-                                if (item.customData.disenoImg) {
-                                    html += `<div style="margin-top:4px;"><img src="${sanitizeImageURL(item.customData.disenoImg)}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño'); else window.open(this.src);" title="Ver foto"></div>`;
-                                }
-                            }
-                            return `<div style="margin-bottom:8px;">${html}</div>`;
-                        }).join('') : escapeHTML(order.products || '').replace(/, /g, '<br>')}
+            let html = `<strong>${escapeHTML(item.quantity.toString())}x ${escapeHTML(item.name)}</strong>`;
+            if (item.customData) {
+                let cdHtml = '<ul style="margin:4px 0 0 15px; padding:0; font-size:0.85rem; color:#64748b; list-style-type:disc;">';
+                if (item.customData.sabor) cdHtml += `<li>Sabor: ${escapeHTML(item.customData.sabor)}</li>`;
+                if (item.customData.tamano) cdHtml += `<li>Tamaño: ${escapeHTML(item.customData.tamano)}</li>`;
+                if (item.customData.message) cdHtml += `<li>Mensaje: "${escapeHTML(item.customData.message)}"</li>`;
+                if (item.customData.date) cdHtml += `<li>Fecha: ${escapeHTML(item.customData.date)}</li>`;
+                if (item.customData.time) cdHtml += `<li>Hora: ${escapeHTML(item.customData.time)}</li>`;
+                if (item.customData.diseno) cdHtml += `<li>Diseño: ${escapeHTML(item.customData.diseno)}</li>`;
+                cdHtml += '</ul>';
+                html += cdHtml;
+                if (item.customData.disenoImg) {
+                    html += `<div style="margin-top:4px;"><img src="${sanitizeImageURL(item.customData.disenoImg)}" style="width:70px; height:70px; object-fit:cover; border-radius:8px; cursor:pointer; box-shadow:0 2px 5px rgba(0,0,0,0.2);" onclick="if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, 'Diseño'); else window.open(this.src);" title="Ver foto"></div>`;
+                }
+            }
+            return `<div style="margin-bottom:8px;">${html}</div>`;
+        }).join('') : escapeHTML(order.products || '').replace(/, /g, '<br>')}
                     </div>
                     <p style="margin-bottom: 12px; color: #64748b; font-weight: bold;">Estado actual: ${order.status}</p>
                     ${actionsHtml}
@@ -1425,7 +1425,7 @@ function handleCredentialResponse(response) {
     loginUserObj(user);
 }
 
-window.initGoogleSignIn = function() {
+window.initGoogleSignIn = function () {
     if (window.googleGsiInitialized) return;
 
     if (window.google && window.google.accounts && window.google.accounts.id && typeof window.google.accounts.id.initialize === 'function') {
@@ -1600,7 +1600,7 @@ function loginUserObj(userObj) {
             const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
             const dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : JSON.parse(localStorage.getItem('dt_users_db') || '[]');
             const reg = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail) ||
-                        dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
+                dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
             if (reg) {
                 userObj.role = reg.role || reg.rol || userObj.role || 'cliente';
                 userObj.rol = userObj.role;
@@ -1681,7 +1681,7 @@ function adminToggleVIP(email) {
         u.vipEndDate = null;
     }
     saveUsersDB(); renderAdminUsers();
-    
+
     // Sincronizar Firestore si existe el cliente
     if (window.db && typeof window.db.collection === 'function') {
         window.db.collection('usuarios').doc(u.email).set({
@@ -1713,17 +1713,17 @@ function saveConfigFromAdmin() {
     const min = parseInt(document.getElementById('adminMinPurchase').value) || 0;
     const max = parseInt(document.getElementById('adminMaxDiscount').value) || 0;
     const en = document.getElementById('adminVipEnabled').checked;
-    
+
     adminConfig.minPurchase = min;
     adminConfig.maxDiscount = max;
     adminConfig.vipEnabled = en;
     saveAdminConfig();
     updateCart();
-    
+
     showToast('Configuración guardada', '✅');
 }
 
-window.toggleVipPriceEdit = function() {
+window.toggleVipPriceEdit = function () {
     const input = document.getElementById('adminVipPrice');
     const btnEdit = document.getElementById('btnEditVipPrice');
     const btnSave = document.getElementById('btnSaveVipPrice');
@@ -1740,7 +1740,7 @@ window.toggleVipPriceEdit = function() {
     if (btnSave) btnSave.style.removeProperty('display');
 };
 
-window.saveVipPriceOnly = function() {
+window.saveVipPriceOnly = function () {
     const input = document.getElementById('adminVipPrice');
     const btnEdit = document.getElementById('btnEditVipPrice');
     const btnSave = document.getElementById('btnSaveVipPrice');
@@ -1764,7 +1764,7 @@ window.saveVipPriceOnly = function() {
     }
 
     // 1. RESPALDO LOCAL INMEDIATO
-    try { localStorage.setItem('vipConfig_precioMensual', vipPrice); } catch(lsErr) { console.warn('localStorage error:', lsErr); }
+    try { localStorage.setItem('vipConfig_precioMensual', vipPrice); } catch (lsErr) { console.warn('localStorage error:', lsErr); }
     if (!window.vipConfig) window.vipConfig = {};
     window.vipConfig.precioMensual = vipPrice;
     const promoEl = document.getElementById('uiVipPricePromo');
@@ -1832,7 +1832,7 @@ function getSharedAudioContext() {
             }
         }
         if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
-            sharedAudioCtx.resume().catch(() => {});
+            sharedAudioCtx.resume().catch(() => { });
         }
         return sharedAudioCtx;
     } catch (e) {
@@ -1845,9 +1845,9 @@ const unlockAudioOnGesture = () => {
     try {
         const ctx = getSharedAudioContext();
         if (ctx && ctx.state === 'suspended') {
-            ctx.resume().catch(() => {});
+            ctx.resume().catch(() => { });
         }
-    } catch (e) {}
+    } catch (e) { }
     document.removeEventListener('click', unlockAudioOnGesture);
     document.removeEventListener('touchstart', unlockAudioOnGesture);
     document.removeEventListener('keydown', unlockAudioOnGesture);
@@ -1856,12 +1856,12 @@ document.addEventListener('click', unlockAudioOnGesture, { passive: true });
 document.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
 document.addEventListener('keydown', unlockAudioOnGesture, { passive: true });
 
-window.playOrderAlert = function() {
+window.playOrderAlert = function () {
     if (typeof orderSoundEnabled !== 'undefined' && !orderSoundEnabled) return;
     try {
         const ctx = getSharedAudioContext() || new (window.AudioContext || window.webkitAudioContext)();
         if (ctx.state === 'suspended') {
-            ctx.resume().catch(() => {});
+            ctx.resume().catch(() => { });
         }
         const now = ctx.currentTime;
         // Acorde melódico tipo chime (C5 = 523.25Hz, E5 = 659.25Hz, G5 = 783.99Hz)
@@ -1906,13 +1906,13 @@ function toggleOrderSound() {
 }
 
 // ===== REGISTRO CENTRALIZADO DE NOTIFICACIONES =====
-window.recordNewOrderNotification = function(newOrder, options = { playSound: true }) {
+window.recordNewOrderNotification = function (newOrder, options = { playSound: true }) {
     if (!newOrder) return;
     try {
         const orderId = newOrder.id || ('DT-' + Date.now().toString().slice(-4));
         const customerName = newOrder.customerName || newOrder.customer || (typeof currentUser !== 'undefined' && currentUser ? currentUser.name : '') || 'Cliente';
-        const rawTotal = (typeof newOrder.totalFormatted !== 'undefined') 
-            ? newOrder.totalFormatted 
+        const rawTotal = (typeof newOrder.totalFormatted !== 'undefined')
+            ? newOrder.totalFormatted
             : (typeof newOrder.total === 'number' ? newOrder.total.toLocaleString('es-CO') : (newOrder.total || '0'));
 
         const notif = {
@@ -1954,7 +1954,7 @@ window.recordNewOrderNotification = function(newOrder, options = { playSound: tr
                 if (alerts.length > 50) alerts = alerts.slice(0, 50);
                 localStorage.setItem('dt_live_alerts', JSON.stringify(alerts));
             }
-        } catch (e) {}
+        } catch (e) { }
 
         // Actualizar la interfaz de la campanita
         if (typeof window.renderAdminNotifList === 'function') {
@@ -2152,7 +2152,7 @@ function renderLiveOrders() {
     console.log("[DIAGNÓSTICO FALLO A] renderLiveOrders EJECUTÁNDOSE");
     console.log("[DIAGNÓSTICO FALLO A] Cantidad de pedidos ANTES del filtro:", list.length);
     console.log("[DIAGNÓSTICO FALLO A] orderDateFilterValue:", orderDateFilterValue);
-    
+
     if (list.length > 0) {
         const topOrder = list[0];
         console.log("[DIAGNÓSTICO FALLO A] Pedido más reciente en la lista (pre-filtro):", topOrder.id || topOrder.idDoc);
@@ -2163,7 +2163,7 @@ function renderLiveOrders() {
     // Filtrar por fecha exacta
     if (orderDateFilterValue) {
         const [y, m, d] = orderDateFilterValue.split('-');
-        
+
         console.log("=== DIAGNOSTICO FALLO A ===");
         console.log("orderDateFilterValue:", orderDateFilterValue);
         console.log("Cantidad antes del filtro:", list.length);
@@ -2172,7 +2172,7 @@ function renderLiveOrders() {
             if (p.timestamp) {
                 const pd = new Date(p.timestamp);
                 const pasa = pd.getFullYear() == y && (pd.getMonth() + 1) == m && pd.getDate() == d;
-                
+
                 if (Date.now() - p.timestamp < 300000) {
                     console.log(`Evaluando ${p.id || p.idDoc}:`);
                     console.log(`- timestamp: ${p.timestamp} (${pd.toString()})`);
@@ -2217,44 +2217,43 @@ function renderLiveOrders() {
                         📍 ${escapeHTML(p.address)}
                     </div>
                     
-                    ${
-                        (() => {
-                            // Buscar si es un usuario registrado para revisar su status del premio
-                            const u = db_users.find(x => x.email === p.email);
-                            if (u) {
-                                if (u.premioRedesReclamado) {
-                                    return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
-                                } else {
-                                    return `<button onclick="window.entregarPremioRedes('${p.id}', false, '${u.email}')" style="margin-top:6px; padding:6px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.75rem; border:1px solid #fbcfe8; background:linear-gradient(135deg, #fce7f3, #fbcfe8); color:#be185d; transition:all 0.2s;">🎁 Entregar Premio Redes</button>`;
-                                }
-                            } else {
-                                // Usuario invitado
-                                if (p.premioRedesEntregado) {
-                                    return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
-                                } else {
-                                    return `<button onclick="window.entregarPremioRedes('${p.id}', true, null)" style="margin-top:6px; padding:6px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.75rem; border:1px solid #fbcfe8; background:linear-gradient(135deg, #fce7f3, #fbcfe8); color:#be185d; transition:all 0.2s;">🎁 Entregar Premio Redes (Invitado)</button>`;
-                                }
-                            }
-                        })()
+                    ${(() => {
+                // Buscar si es un usuario registrado para revisar su status del premio
+                const u = db_users.find(x => x.email === p.email);
+                if (u) {
+                    if (u.premioRedesReclamado) {
+                        return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
+                    } else {
+                        return `<button onclick="window.entregarPremioRedes('${p.id}', false, '${u.email}')" style="margin-top:6px; padding:6px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.75rem; border:1px solid #fbcfe8; background:linear-gradient(135deg, #fce7f3, #fbcfe8); color:#be185d; transition:all 0.2s;">🎁 Entregar Premio Redes</button>`;
                     }
+                } else {
+                    // Usuario invitado
+                    if (p.premioRedesEntregado) {
+                        return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
+                    } else {
+                        return `<button onclick="window.entregarPremioRedes('${p.id}', true, null)" style="margin-top:6px; padding:6px 10px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.75rem; border:1px solid #fbcfe8; background:linear-gradient(135deg, #fce7f3, #fbcfe8); color:#be185d; transition:all 0.2s;">🎁 Entregar Premio Redes (Invitado)</button>`;
+                    }
+                }
+            })()
+            }
                     
                     <div style="background:#f8fafc; padding:10px; border-radius:8px; font-size:0.85rem; color:#334155; border:1px dashed #cbd5e1; margin-bottom:8px;">
                         <strong>📝 Detalle:</strong><br>
                         ${(p.cartItems && p.cartItems.length > 0) ? p.cartItems.map(item => {
-                            let html = `<strong>${escapeHTML(item.quantity.toString())}x ${escapeHTML(item.name)}</strong>`;
-                            if (item.customData) {
-                                let cdHtml = '<ul style="margin:4px 0 0 15px; padding:0; font-size:0.85rem; color:#64748b; list-style-type:disc;">';
-                                if (item.customData.sabor) cdHtml += `<li>Sabor: ${escapeHTML(item.customData.sabor)}</li>`;
-                                if (item.customData.tamano) cdHtml += `<li>Tamaño: ${escapeHTML(item.customData.tamano)}</li>`;
-                                if (item.customData.message) cdHtml += `<li>Mensaje: "${escapeHTML(item.customData.message)}"</li>`;
-                                if (item.customData.date) cdHtml += `<li>Fecha: ${escapeHTML(item.customData.date)}</li>`;
-                                if (item.customData.time) cdHtml += `<li>Hora: ${escapeHTML(item.customData.time)}</li>`;
-                                if (item.customData.diseno) cdHtml += `<li>Diseño: ${escapeHTML(item.customData.diseno)}</li>`;
-                                cdHtml += '</ul>';
-                                html += cdHtml;
-                            }
-                            return `<div style="margin-bottom:6px;">${html}</div>`;
-                        }).join('') : escapeHTML(p.products || '').replace(/, /g, '<br>')}
+                let html = `<strong>${escapeHTML(item.quantity.toString())}x ${escapeHTML(item.name)}</strong>`;
+                if (item.customData) {
+                    let cdHtml = '<ul style="margin:4px 0 0 15px; padding:0; font-size:0.85rem; color:#64748b; list-style-type:disc;">';
+                    if (item.customData.sabor) cdHtml += `<li>Sabor: ${escapeHTML(item.customData.sabor)}</li>`;
+                    if (item.customData.tamano) cdHtml += `<li>Tamaño: ${escapeHTML(item.customData.tamano)}</li>`;
+                    if (item.customData.message) cdHtml += `<li>Mensaje: "${escapeHTML(item.customData.message)}"</li>`;
+                    if (item.customData.date) cdHtml += `<li>Fecha: ${escapeHTML(item.customData.date)}</li>`;
+                    if (item.customData.time) cdHtml += `<li>Hora: ${escapeHTML(item.customData.time)}</li>`;
+                    if (item.customData.diseno) cdHtml += `<li>Diseño: ${escapeHTML(item.customData.diseno)}</li>`;
+                    cdHtml += '</ul>';
+                    html += cdHtml;
+                }
+                return `<div style="margin-bottom:6px;">${html}</div>`;
+            }).join('') : escapeHTML(p.products || '').replace(/, /g, '<br>')}
                         ${depositHtml}
                     </div>
 
@@ -2265,7 +2264,7 @@ function renderLiveOrders() {
                         
                         <button onclick="markOrderState('${p.id}', 'En Camino')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En Camino' ? '#7c3aed' : '#ddd6fe'}; background:${p.status === 'En Camino' ? '#ddd6fe' : '#fff'}; color:#5b21b6; transition:all 0.2s;">🛵 En Camino</button>
                         
-                        ${(p.phone && p.phone !== 'N/A' && /\d{7,}/.test(p.phone)) ? `<a href="https://wa.me/57${p.phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent('¡Hola! Tu pedido #' + p.id + ' de Panadería Dulce Tentación ya va en camino con nuestro domiciliario 🛵💨')}" target="_blank" rel="noopener noreferrer" style="flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; padding:10px 12px; border-radius:8px; font-weight:bold; font-size:0.8rem; background:#25D366; color:#fff; text-decoration:none; border:none;">💬 WhatsApp</a>` : ''}
+                        ${(p.phone && p.phone !== 'N/A' && /\d{7,}/.test(p.phone)) ? `<a href="https://wa.me/57${p.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('¡Hola! Tu pedido #' + p.id + ' de Panadería Dulce Tentación ya va en camino con nuestro domiciliario 🛵💨')}" target="_blank" rel="noopener noreferrer" style="flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; padding:10px 12px; border-radius:8px; font-weight:bold; font-size:0.8rem; background:#25D366; color:#fff; text-decoration:none; border:none;">💬 WhatsApp</a>` : ''}
                         
                         <button onclick="markOrderState('${p.id}', 'Entregado')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Entregado' ? '#22c55e' : '#bbf7d0'}; background:${p.status === 'Entregado' ? '#bbf7d0' : '#fff'}; color:#15803d; transition:all 0.2s;">🟢 Entregado</button>
                     </div>
@@ -2273,7 +2272,7 @@ function renderLiveOrders() {
     }).join('');
 }
 
-window.entregarPremioRedes = function(pedidoId, esInvitado, emailCliente) {
+window.entregarPremioRedes = function (pedidoId, esInvitado, emailCliente) {
     if (!confirm("¿Confirmas que el cliente mostró la captura y se le entregó el detalle dulce?")) return;
 
     // Buscar el pedido
@@ -2290,7 +2289,7 @@ window.entregarPremioRedes = function(pedidoId, esInvitado, emailCliente) {
         if (uidx !== -1) {
             db_users[uidx].premioRedesReclamado = true;
             saveUsersDB();
-            
+
             // Actualizar currentUser si es el mismo
             if (currentUser && currentUser.email === emailCliente) {
                 currentUser.premioRedesReclamado = true;
@@ -2330,7 +2329,7 @@ function setStockFilter(cat, el) {
 
 // ---- FUNCIONES CRUD EXTRAS PERSONALIZADOS ----
 
-window.guardarExtrasPersonalizadosFirestore = function(nuevaLista, successMsg) {
+window.guardarExtrasPersonalizadosFirestore = function (nuevaLista, successMsg) {
     if (!window.db || typeof window.db.collection !== 'function') {
         alert('Sin conexión a la base de datos. Recarga la página.');
         return;
@@ -2346,7 +2345,7 @@ window.guardarExtrasPersonalizadosFirestore = function(nuevaLista, successMsg) {
     });
 };
 
-window.toggleExtraStockAdmin = function(extraId) {
+window.toggleExtraStockAdmin = function (extraId) {
     const cfg = window.dt_tortas_config || {};
     const lista = Array.isArray(cfg.extrasPersonalizados) ? cfg.extrasPersonalizados : [];
     const idx = lista.findIndex(e => e.id === extraId);
@@ -2355,7 +2354,7 @@ window.toggleExtraStockAdmin = function(extraId) {
     window.guardarExtrasPersonalizadosFirestore(lista, lista[idx].disponible ? '✅ Extra disponible nuevamente' : '❌ Extra marcado como Agotado');
 };
 
-window.eliminarExtraPersonalizado = function(extraId) {
+window.eliminarExtraPersonalizado = function (extraId) {
     const cfg = window.dt_tortas_config || {};
     const lista = Array.isArray(cfg.extrasPersonalizados) ? cfg.extrasPersonalizados : [];
     const extra = lista.find(e => e.id === extraId);
@@ -2365,7 +2364,7 @@ window.eliminarExtraPersonalizado = function(extraId) {
     window.guardarExtrasPersonalizadosFirestore(nuevaLista, `🗑️ Extra "${extra.nombre}" eliminado`);
 };
 
-window.agregarExtraPersonalizado = function() {
+window.agregarExtraPersonalizado = function () {
     const nombreInput = document.getElementById('nuevo-extra-nombre');
     const precioInput = document.getElementById('nuevo-extra-precio');
     if (!nombreInput || !precioInput) return;
@@ -2396,7 +2395,7 @@ function renderStockAdmin() {
     const extrasFilas = listaExtras.map(e => {
         const out = !e.disponible;
         return `
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid ${ out ? '#fecdd3' : '#bbf7d0'}; background:${out ? '#fff1f2' : '#f0fdf4'}; border-radius:8px; gap:8px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid ${out ? '#fecdd3' : '#bbf7d0'}; background:${out ? '#fff1f2' : '#f0fdf4'}; border-radius:8px; gap:8px; flex-wrap:wrap;">
                 <span style="flex:1; font-weight:600; font-size:0.9rem; color:#334155;">${e.nombre}</span>
                 <span style="font-size:0.82rem; color:#64748b;">+$${Number(e.precio).toLocaleString('es-CO')}</span>
                 <button onclick="window.toggleExtraStockAdmin('${e.id}')" style="padding:5px 10px; border-radius:6px; font-weight:bold; font-size:0.78rem; cursor:pointer; border:none; color:#fff; background:${out ? '#e11d48' : '#10b981'}; white-space:nowrap;">
@@ -2509,7 +2508,7 @@ function deleteProduct(pId) {
     if (!confirm("¿Seguro que deseas eliminar este producto del catálogo?")) return;
 
     let localCatalog = {};
-    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
     localCatalog[pId] = localCatalog[pId] || {};
     localCatalog[pId].eliminado = true;
     localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
@@ -2541,7 +2540,7 @@ function updateProductPoints(pId, pointsVal) {
         p.puntos = pts;
     }
     let localCatalog = {};
-    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch(e){}
+    try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
     localCatalog[pId] = localCatalog[pId] || {};
     localCatalog[pId].points = pts;
     localCatalog[pId].puntos = pts;
@@ -2559,7 +2558,7 @@ window.updateProductPoints = updateProductPoints;
 
 // ===== CARGA Y EDICIÓN DE FOTOS DE PRODUCTOS (CANVAS / BASE64 OPTIMIZADO) =====
 if (typeof window.comprimirImagen !== 'function') {
-    window.comprimirImagen = function(file, options = {}) {
+    window.comprimirImagen = function (file, options = {}) {
         const maxWidth = options.maxWidth || 600;
         const maxHeight = options.maxHeight || 600;
         const quality = options.quality !== undefined ? options.quality : 0.75;
@@ -2592,14 +2591,14 @@ if (typeof window.comprimirImagen !== 'function') {
                     canvas.width = Math.max(1, width);
                     canvas.height = Math.max(1, height);
                     const ctx = canvas.getContext('2d');
-                    
+
                     if (mimeType === 'image/jpeg') {
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                     }
 
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
+
                     try {
                         const dataUrl = canvas.toDataURL(mimeType, quality);
                         resolve(dataUrl);
@@ -2668,7 +2667,7 @@ function getAdminPointsModal() {
         modal.style.alignItems = 'center';
         modal.style.justifyContent = 'center';
         modal.style.zIndex = '999999';
-        modal.onclick = function(e) {
+        modal.onclick = function (e) {
             if (e.target === modal) window.closeAdminPointsModal();
         };
         document.body.appendChild(modal);
@@ -2676,7 +2675,7 @@ function getAdminPointsModal() {
     return modal;
 }
 
-window.openAdminPointsModal = function(e) {
+window.openAdminPointsModal = function (e) {
     if (e) {
         if (typeof e.preventDefault === 'function') e.preventDefault();
         if (typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -2712,7 +2711,7 @@ window.openAdminPointsModal = function(e) {
 };
 const openAdminPointsModal = window.openAdminPointsModal;
 
-window.closeAdminPointsModal = function(e) {
+window.closeAdminPointsModal = function (e) {
     if (e) {
         if (typeof e.preventDefault === 'function') e.preventDefault();
         if (typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -2769,7 +2768,7 @@ function createRewardCardHtml(r = {}) {
     </div>`;
 }
 
-window.handleRewardFileUpload = function(fileInput) {
+window.handleRewardFileUpload = function (fileInput) {
     if (!fileInput.files || !fileInput.files[0]) return;
     const file = fileInput.files[0];
     const itemCard = fileInput.closest('.admin-reward-item');
@@ -2800,11 +2799,11 @@ function renderAdminPointsModalContent() {
     const modal = getAdminPointsModal();
     if (!modal) return;
 
-    const rewards = (window.tempAdminRewards && Array.isArray(window.tempAdminRewards)) 
-        ? window.tempAdminRewards 
+    const rewards = (window.tempAdminRewards && Array.isArray(window.tempAdminRewards))
+        ? window.tempAdminRewards
         : (window.pointRewards || pointRewards || defaultPointRewards);
 
-    const rewardsRows = rewards.length === 0 
+    const rewardsRows = rewards.length === 0
         ? `<div class="empty-rewards-msg" style="text-align:center; padding:28px 16px; color:#64748b; font-size:0.95rem; background:#f8fafc; border-radius:14px; border:2px dashed #cbd5e1;">No hay recompensas configuradas aún. Pulsa el botón verde abajo para agregar la primera.</div>`
         : rewards.map((r, idx) => createRewardCardHtml(r)).join('');
 
@@ -2842,7 +2841,7 @@ window.renderAdminPointsModalContent = renderAdminPointsModalContent;
 window.renderAdminRewardsTable = renderAdminPointsModalContent;
 window.renderAdminPointsRewards = renderAdminPointsModalContent;
 
-window.addAdminRewardItem = function() {
+window.addAdminRewardItem = function () {
     const container = document.getElementById('admin-rewards-list-container');
     if (!container) return;
 
@@ -2865,7 +2864,7 @@ window.addAdminRewardItem = function() {
 };
 const addAdminRewardItem = window.addAdminRewardItem;
 
-window.removeAdminRewardItem = function(buttonOrIdx) {
+window.removeAdminRewardItem = function (buttonOrIdx) {
     if (typeof buttonOrIdx === 'number') {
         const container = document.getElementById('admin-rewards-list-container');
         if (container) {
@@ -2878,7 +2877,7 @@ window.removeAdminRewardItem = function(buttonOrIdx) {
 };
 const removeAdminRewardItem = window.removeAdminRewardItem;
 
-window.syncAdminRewardsFromDOM = function() {
+window.syncAdminRewardsFromDOM = function () {
     const container = document.getElementById('admin-rewards-list-container');
     if (!container) return [];
     const cards = container.querySelectorAll('.admin-reward-item');
@@ -2906,7 +2905,7 @@ window.syncAdminRewardsFromDOM = function() {
     return list;
 };
 
-window.saveAdminPointsConfig = function() {
+window.saveAdminPointsConfig = function () {
     const container = document.getElementById('admin-rewards-list-container');
     if (!container) return;
 
@@ -3266,7 +3265,7 @@ function adminRegisterUser() {
         if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...newUser };
         else regUsers.push({ ...newUser });
         localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-    } catch(e) {}
+    } catch (e) { }
 
     if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
         db.collection('usuarios').doc(email).set({
@@ -3280,7 +3279,7 @@ function adminRegisterUser() {
             blocked: false,
             points: 15,
             puntos: 15
-        }, { merge: true }).catch(() => {});
+        }, { merge: true }).catch(() => { });
     }
 
     if (role === 'trabajador' && !workerEmails.includes(email)) {
@@ -3301,7 +3300,7 @@ function adminRegisterUser() {
 }
 
 // ===== FUNCIONES PARA EDITAR NOMBRE Y CORREO DESDE EL PANEL =====
-window.abrirModalEditarUsuarioAdmin = function(email) {
+window.abrirModalEditarUsuarioAdmin = function (email) {
     const targetEmail = (email || '').toLowerCase().trim();
     if (typeof window.SUPER_ADMINS !== 'undefined' && window.SUPER_ADMINS.includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar a un Dueño / Super Administrador.");
@@ -3316,7 +3315,7 @@ window.abrirModalEditarUsuarioAdmin = function(email) {
         try {
             const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
             user = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === targetEmail);
-        } catch(e) {}
+        } catch (e) { }
     }
 
     if (!user) {
@@ -3339,14 +3338,14 @@ window.abrirModalEditarUsuarioAdmin = function(email) {
     }
 };
 
-window.cerrarModalEdicionUsuarioAdmin = function() {
+window.cerrarModalEdicionUsuarioAdmin = function () {
     const modal = document.getElementById('adminEditUserModal');
     if (modal) {
         modal.style.setProperty('display', 'none', 'important');
     }
 };
 
-window.guardarEdicionUsuarioAdmin = function() {
+window.guardarEdicionUsuarioAdmin = function () {
     const origEmail = (document.getElementById('adminEditUserOriginalEmail')?.value || '').toLowerCase().trim();
     const newName = (document.getElementById('adminEditUserName')?.value || '').trim();
     const newEmail = (document.getElementById('adminEditUserEmail')?.value || '').toLowerCase().trim();
@@ -3378,7 +3377,7 @@ window.guardarEdicionUsuarioAdmin = function() {
             try {
                 const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
                 occupied = regUsers.some(u => u && u.email && u.email.toLowerCase().trim() === newEmail && u.email.toLowerCase().trim() !== origEmail);
-            } catch(e) {}
+            } catch (e) { }
         }
         if (occupied) {
             if (typeof showToast === 'function') showToast("El nuevo correo ya está registrado por otro usuario.", '❌');
@@ -3413,7 +3412,7 @@ window.guardarEdicionUsuarioAdmin = function() {
             }
             localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
         }
-    } catch(e) {}
+    } catch (e) { }
 
     // 3. Actualizar listas de roles si el correo cambió
     if (newEmail !== origEmail) {
@@ -3426,7 +3425,7 @@ window.guardarEdicionUsuarioAdmin = function() {
             const wIdx = workerEmails.findIndex(e => (e || '').toLowerCase().trim() === origEmail);
             if (wIdx !== -1) {
                 workerEmails[wIdx] = newEmail;
-                try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+                try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
             }
         }
     }
@@ -3437,7 +3436,7 @@ window.guardarEdicionUsuarioAdmin = function() {
         currentUser.nombre = newName;
         currentUser.email = newEmail;
         if (typeof saveUser === 'function') saveUser();
-        try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch(e){}
+        try { localStorage.setItem('dt_user', JSON.stringify(currentUser)); } catch (e) { }
         if (typeof syncUserUI === 'function') syncUserUI();
     }
 
@@ -3450,7 +3449,7 @@ window.guardarEdicionUsuarioAdmin = function() {
         }, { merge: true }).catch(err => console.warn("Aviso Firestore al guardar edición:", err));
 
         if (newEmail !== origEmail) {
-            db.collection('usuarios').doc(origEmail).delete().catch(() => {});
+            db.collection('usuarios').doc(origEmail).delete().catch(() => { });
         }
     }
 
@@ -3479,27 +3478,27 @@ function confirmAdminPasswordChange() {
 
 function logoutUser(e) {
     if (e && e.stopPropagation) e.stopPropagation();
-    
+
     // Desuscribirse del listener en tiempo real de Firebase para clientes (si existe)
     if (typeof window.unsubscribeUserOrders === 'function') {
         window.unsubscribeUserOrders();
         window.unsubscribeUserOrders = null;
     }
-    
+
     try {
         localStorage.removeItem('dt_user');
         localStorage.removeItem('dt_logged_user');
         localStorage.removeItem('dt_last_section');
         localStorage.removeItem('dt_last_admin_tab');
-    } catch(err) {}
-    currentUser = null; 
-    saveUser(); 
+    } catch (err) { }
+    currentUser = null;
+    saveUser();
 
     // Ocultar inmediatamente el panel administrativo y todas las secciones administrativas
     const adminDash = document.getElementById('admin-dashboard');
-    if (adminDash) { 
-        adminDash.style.display = 'none'; 
-        adminDash.classList.remove('active'); 
+    if (adminDash) {
+        adminDash.style.display = 'none';
+        adminDash.classList.remove('active');
     }
     const kitchenModal = document.getElementById('kitchenModal');
     if (kitchenModal) kitchenModal.style.display = 'none';
@@ -3541,7 +3540,7 @@ function syncUserUI() {
                 const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
                 const dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : JSON.parse(localStorage.getItem('dt_users_db') || '[]');
                 const registeredUser = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail) ||
-                                       dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
+                    dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
 
                 if (isSuper) {
                     parsedUser.role = 'admin';
@@ -3685,7 +3684,7 @@ function syncUserUI() {
             endDate.setDate(now.getDate() + 30);
             currentUser.vipStartDate = now.toISOString();
             currentUser.vipEndDate = endDate.toISOString();
-            
+
             if (typeof db_users !== 'undefined') {
                 const uidx = db_users.findIndex(u => u.email === currentUser.email);
                 if (uidx !== -1) {
@@ -3737,8 +3736,8 @@ function syncUserUI() {
         if (cIncentive) cIncentive.style.display = 'none';
 
         const normEmail = (currentUser.email || '').toLowerCase().trim();
-        const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') 
-            ? window.SUPER_ADMINS.includes(normEmail) 
+        const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
+            ? window.SUPER_ADMINS.includes(normEmail)
             : (normEmail === 'pablojose182017@gmail.com' || normEmail === 'dulcestentaciones2004@gmail.com');
         const isAdmin = isSuper || (currentUser.role === 'admin') || (currentUser.rol === 'admin') || (currentUser.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
         const isWorker = !isSuper && !isAdmin && ((currentUser.role === 'trabajador') || (currentUser.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email)));
@@ -3831,7 +3830,7 @@ function syncUserUI() {
     if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
 }
 
-window.checkRemoteUserSession = function() {
+window.checkRemoteUserSession = function () {
     if (!currentUser || !currentUser.email) return;
     const uEmail = currentUser.email.toLowerCase().trim();
     if (window.db && typeof window.db.collection === 'function') {
@@ -4289,7 +4288,7 @@ function setDeliveryType(type) {
         if (mapsBtn) {
             mapsBtn.href = 'https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6';
             mapsBtn.setAttribute('href', 'https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6');
-            mapsBtn.onclick = function(e) {
+            mapsBtn.onclick = function (e) {
                 if (e && e.preventDefault) e.preventDefault();
                 window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');
                 return false;
@@ -4600,7 +4599,7 @@ function closeCartModal() {
 }
 window.closeCartModal = closeCartModal;
 
-window.openDeliveryCoverageModal = function() {
+window.openDeliveryCoverageModal = function () {
     const m = document.getElementById('deliveryCoverageModal');
     if (m) {
         m.style.display = 'flex';
@@ -4608,7 +4607,7 @@ window.openDeliveryCoverageModal = function() {
     }
 };
 
-window.closeDeliveryCoverageModal = function(e) {
+window.closeDeliveryCoverageModal = function (e) {
     if (e && e.target && e.target !== e.currentTarget && e.target.id !== 'deliveryCoverageModal') {
         return;
     }
@@ -4619,7 +4618,7 @@ window.closeDeliveryCoverageModal = function(e) {
     }
 };
 
-window.toggleMobileMenu = function(e) {
+window.toggleMobileMenu = function (e) {
     if (e && e.stopPropagation) e.stopPropagation();
     const m = document.getElementById('mobileDropdownMenu');
     if (!m) return;
@@ -4630,7 +4629,7 @@ window.toggleMobileMenu = function(e) {
     }
 };
 
-window.openMobileMenu = function() {
+window.openMobileMenu = function () {
     const m = document.getElementById('mobileDropdownMenu');
     if (m) {
         m.style.display = 'block';
@@ -4638,7 +4637,7 @@ window.openMobileMenu = function() {
     }
 };
 
-window.closeMobileMenu = function() {
+window.closeMobileMenu = function () {
     const m = document.getElementById('mobileDropdownMenu');
     if (m) {
         m.style.display = 'none';
@@ -4647,13 +4646,13 @@ window.closeMobileMenu = function() {
 };
 
 // ===== PRODUCT IMAGE LIGHTBOX =====
-window.openProductImageModal = function(src, title, callback) {
+window.openProductImageModal = function (src, title, callback) {
     const modal = document.getElementById('productImageModal');
     if (!modal) return;
     const imgEl = document.getElementById('productLightboxImg');
     const captionEl = document.getElementById('productLightboxCaption');
     const actionContainer = document.getElementById('lightboxActionContainer');
-    
+
     if (imgEl) {
         imgEl.src = src || 'logo-pys.png';
         imgEl.alt = title || 'Producto';
@@ -4662,17 +4661,17 @@ window.openProductImageModal = function(src, title, callback) {
         captionEl.textContent = title || '';
         captionEl.style.display = title ? 'block' : 'none';
     }
-    
+
     if (actionContainer) {
         window._lightboxCallback = typeof callback === 'function' ? callback : null;
         actionContainer.style.display = window._lightboxCallback ? 'block' : 'none';
     }
-    
+
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 };
 
-window.closeProductImageModal = function() {
+window.closeProductImageModal = function () {
     const modal = document.getElementById('productImageModal');
     if (modal) {
         modal.style.display = 'none';
@@ -4687,7 +4686,7 @@ window.closeProductImageModal = function() {
 
 if (!window._productLightboxKeydownAttached) {
     window._productLightboxKeydownAttached = true;
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' || e.key === 'Esc') {
             const modal = document.getElementById('productImageModal');
             if (modal && modal.style.display === 'flex') {
@@ -4776,21 +4775,21 @@ function toggleOrderType(type) {
  * No toca cálculos de precios, descuentos VIP ni lógica de envío gratis.
  */
 function sincronizarCheckoutConTortas() {
-    const tortas  = cart.filter(i => i.type === 'evento' && i.customData);
+    const tortas = cart.filter(i => i.type === 'evento' && i.customData);
     const vitrina = cart.filter(i => !(i.type === 'evento' && i.customData));
 
     const soloTortas = tortas.length > 0 && vitrina.length === 0;
-    const mixto      = tortas.length > 0 && vitrina.length > 0;
+    const mixto = tortas.length > 0 && vitrina.length > 0;
 
-    const btnImm      = document.getElementById('btn-order-immediate');
-    const mixedBlock  = document.getElementById('mixedCartBlock');
-    const eventDate   = document.getElementById('eventDate');
-    const eventTime   = document.getElementById('eventTime');
+    const btnImm = document.getElementById('btn-order-immediate');
+    const mixedBlock = document.getElementById('mixedCartBlock');
+    const eventDate = document.getElementById('eventDate');
+    const eventTime = document.getElementById('eventTime');
 
     // --- Obtener la fecha/hora de la primera torta con datos ---
     const tortaRef = tortas[0]; // primera torta (si existe)
     const fechaTorta = tortaRef?.customData?.date || '';
-    const horaTorta  = tortaRef?.customData?.time || '';
+    const horaTorta = tortaRef?.customData?.time || '';
 
     // Formatear fecha para mostrar al usuario (DD/MM/YYYY)
     function _fmtFecha(iso) {
@@ -4806,7 +4805,7 @@ function sincronizarCheckoutConTortas() {
 
         // Pre-cargar fecha y hora
         if (eventDate && fechaTorta) eventDate.value = fechaTorta;
-        if (eventTime && horaTorta)  eventTime.value = horaTorta;
+        if (eventTime && horaTorta) eventTime.value = horaTorta;
 
         // Deshabilitar botón "Inmediato"
         if (btnImm) {
@@ -4828,7 +4827,7 @@ function sincronizarCheckoutConTortas() {
 
         // Pre-cargar fecha y hora del primer encargo
         if (eventDate && fechaTorta) eventDate.value = fechaTorta;
-        if (eventTime && horaTorta)  eventTime.value = horaTorta;
+        if (eventTime && horaTorta) eventTime.value = horaTorta;
 
         // Habilitar botón inmediato (en modo mixto el usuario puede interactuar)
         if (btnImm) {
@@ -5020,7 +5019,7 @@ function sendOrder() {
     }
 
     const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-    
+
     // Símbolos dinámicos
     const symVIP = isMobile ? '\u{2B50}' : '★';
     const symOrder = isMobile ? '\u{1F4F2}' : '[NUEVO PEDIDO]';
@@ -5048,7 +5047,7 @@ function sendOrder() {
         msg += `${symVIP} *PEDIDO PRIORITARIO VIP* ${symVIP}\n\n`;
     }
     msg += `${symOrder} *${isMobile ? 'NUEVO PEDIDO ' : 'ID: '}${orderId}*\n`;
-    
+
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
         if (currentUser && currentUser.vip) {
@@ -5056,7 +5055,7 @@ function sendOrder() {
         }
         msg += `${isMobile ? '\u{1F382} *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*' : '[ENCARGO ESPECIAL DE TORTA PERSONALIZADA]'}\n`;
         const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
-        
+
         if (window.mixedCartMode === 'split') {
             msg += `${symWarn} *Atención: Pedido Mixto Dividido*\n`;
             msg += `• Los productos de vitrina se despachan AHORA.\n`;
@@ -5170,7 +5169,7 @@ function openWhatsAppChat() {
 let cartToastTimer = null;
 let cartBumpTimer = null;
 
-window.showAddToCartToast = function(productName, qty = 1) {
+window.showAddToCartToast = function (productName, qty = 1) {
     let toast = document.getElementById('cartToastNotification');
     if (!toast) {
         toast = document.createElement('div');
@@ -5279,11 +5278,11 @@ function showToast(msg, icon = '🥐', duration = 2600) {
     document.head.appendChild(s);
 })();
 
-window.showOrderStatusToast = function(pedidoId, nuevoEstado) {
+window.showOrderStatusToast = function (pedidoId, nuevoEstado) {
     const CONFIG = {
         'En preparación': { icon: '👨‍🍳', msg: `Tu pedido #${pedidoId} ya está en preparación en nuestro horno.`, border: '#3b82f6' },
-        'En Camino':      { icon: '🛵💨', msg: `¡Tu pedido #${pedidoId} ya va en camino a tu dirección!`,          border: '#7c3aed' },
-        'Entregado':      { icon: '🎉',   msg: `¡Pedido #${pedidoId} entregado! Gracias por endulzar tu día.`,      border: '#10b981' },
+        'En Camino': { icon: '🛵💨', msg: `¡Tu pedido #${pedidoId} ya va en camino a tu dirección!`, border: '#7c3aed' },
+        'Entregado': { icon: '🎉', msg: `¡Pedido #${pedidoId} entregado! Gracias por endulzar tu día.`, border: '#10b981' },
     };
     const cfg = CONFIG[nuevoEstado];
     if (!cfg) return;
@@ -5302,7 +5301,7 @@ window.showOrderStatusToast = function(pedidoId, nuevoEstado) {
         gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.5);
-    } catch(e) { /* sin audio si el contexto no está permitido */ }
+    } catch (e) { /* sin audio si el contexto no está permitido */ }
 
     // Reutilizar o crear el contenedor
     let toast = document.getElementById('order-status-toast-el');
@@ -5365,7 +5364,7 @@ function toggleVIP() {
 }
 
 // ===== MODAL DE TÉRMINOS Y BENEFICIOS VIP =====
-window.openVipTermsModal = function(e) {
+window.openVipTermsModal = function (e) {
     if (e) {
         if (typeof e.preventDefault === 'function') e.preventDefault();
         if (typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -5390,7 +5389,7 @@ window.openVipTermsModal = function(e) {
     if (typeof closeMobileProfile === 'function') closeMobileProfile();
 };
 
-window.closeVipTermsModal = function() {
+window.closeVipTermsModal = function () {
     const m = document.getElementById('modalVipTerms');
     if (m) {
         m.style.display = 'none';
@@ -5399,7 +5398,7 @@ window.closeVipTermsModal = function() {
     }
 };
 
-window.confirmVipMembership = function() {
+window.confirmVipMembership = function () {
     const check = document.getElementById('checkAcceptVipTerms');
     if (!check || !check.checked) {
         alert("Debes marcar la casilla para aceptar los Términos y Condiciones.");
@@ -5433,7 +5432,7 @@ window.confirmVipMembership = function() {
         notifs.unshift(vipNotif);
         if (notifs.length > 50) notifs = notifs.slice(0, 50);
         localStorage.setItem('dt_notifications', JSON.stringify(notifs));
-    } catch(e) {}
+    } catch (e) { }
     try {
         let alerts = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
         alerts.unshift({
@@ -5444,7 +5443,7 @@ window.confirmVipMembership = function() {
             date: new Date().toLocaleString('es-CO')
         });
         localStorage.setItem('dt_live_alerts', JSON.stringify(alerts));
-    } catch(e) {}
+    } catch (e) { }
     if (window.renderAdminNotifList) window.renderAdminNotifList();
 
     if (window.db && typeof window.db.collection === 'function') {
@@ -5468,7 +5467,7 @@ window.confirmVipMembership = function() {
 };
 
 // ===== CENTRO DE NOTIFICACIONES (ADMIN / TRABAJADOR) =====
-window.adjustNotifDropdownPosition = function() {
+window.adjustNotifDropdownPosition = function () {
     const dd = document.getElementById('adminNotifDropdown');
     const wrapper = document.querySelector('.admin-notif-wrapper');
     const bell = document.getElementById('btnAdminNotifBell');
@@ -5478,7 +5477,7 @@ window.adjustNotifDropdownPosition = function() {
         // En móviles/pantallas estrechas, fijar posición respetando límites seguros de pantalla
         const anchor = bell || wrapper;
         const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 60, top: 20 };
-        
+
         let targetTop = rect.bottom + 8;
         // Si el botón está muy abajo en la pantalla, abrir hacia arriba
         if (targetTop + 280 > window.innerHeight) {
@@ -5508,7 +5507,7 @@ window.adjustNotifDropdownPosition = function() {
     }
 };
 
-window.toggleAdminNotifDropdown = function() {
+window.toggleAdminNotifDropdown = function () {
     const dd = document.getElementById('adminNotifDropdown');
     if (!dd) return;
     const isOpen = dd.style.display === 'block';
@@ -5532,15 +5531,15 @@ window.toggleAdminNotifDropdown = function() {
             if (changed) {
                 localStorage.setItem('dt_notifications', JSON.stringify(notifs));
             }
-        } catch (e) {}
+        } catch (e) { }
         if (window.renderAdminNotifList) window.renderAdminNotifList();
     }
 };
 
-window.renderAdminNotifList = function() {
+window.renderAdminNotifList = function () {
     const listEl = document.getElementById('adminNotifList');
     const badgeEl = document.getElementById('adminNotifBadge');
-    
+
     let notifications = [];
     try {
         notifications = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
@@ -5562,7 +5561,7 @@ window.renderAdminNotifList = function() {
                     timestamp: Date.now()
                 }));
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -5608,7 +5607,7 @@ window.renderAdminNotifList = function() {
     }).join('');
 };
 
-window.handleNotifClick = function(event, payloadStr) {
+window.handleNotifClick = function (event, payloadStr) {
     console.log("=== DIAGNOSTICO FALLO B ===");
     console.log("handleNotifClick EJECUTADO!");
     console.log("payloadStr:", payloadStr);
@@ -5617,7 +5616,7 @@ window.handleNotifClick = function(event, payloadStr) {
     try {
         const item = JSON.parse(decodeURIComponent(payloadStr));
         console.log("item parseado:", item);
-        
+
         // 1. Cerrar Dropdown
         const dd = document.getElementById('adminNotifDropdown');
         if (dd) dd.style.display = 'none';
@@ -5630,7 +5629,7 @@ window.handleNotifClick = function(event, payloadStr) {
 
         if (isOrder) {
             const oId = item.orderId || (item.title.match(/#([A-Z0-9-]+)/) ? item.title.match(/#([A-Z0-9-]+)/)[1] : null);
-            
+
             const procederFlujoVisual = () => {
                 if (item.timestamp) {
                     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
@@ -5644,7 +5643,7 @@ window.handleNotifClick = function(event, payloadStr) {
                     }
                 }
                 if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('pedidos');
-                
+
                 console.log("oId extraído:", oId);
                 if (oId) {
                     setTimeout(() => {
@@ -5691,14 +5690,14 @@ window.handleNotifClick = function(event, payloadStr) {
                         console.error("handleNotifClick: Error obteniendo pedido antiguo:", err);
                         procederFlujoVisual();
                     });
-                    return; 
+                    return;
                 }
             }
-            
+
             procederFlujoVisual();
         } else if (isVip) {
             if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('usuarios');
-            
+
             // Filtrado automático en #adminUserSearch
             const emailMatch = item.message ? item.message.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/) : null;
             if (emailMatch) {
@@ -5711,18 +5710,18 @@ window.handleNotifClick = function(event, payloadStr) {
                 }, 300);
             }
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Error al procesar click de notificación:", e);
     }
 };
 
-window.clearAdminNotifs = function() {
+window.clearAdminNotifs = function () {
     localStorage.setItem('dt_notifications', '[]');
     localStorage.setItem('dt_live_alerts', '[]');
     if (window.renderAdminNotifList) window.renderAdminNotifList();
 };
 
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const wrapper = document.querySelector('.admin-notif-wrapper');
     const dd = document.getElementById('adminNotifDropdown');
     const bell = document.getElementById('btnAdminNotifBell');
@@ -5734,7 +5733,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
     const dd = document.getElementById('adminNotifDropdown');
     if (dd && dd.style.display === 'block' && typeof window.adjustNotifDropdownPosition === 'function') {
         window.adjustNotifDropdownPosition();
@@ -5844,7 +5843,7 @@ window.addEventListener('resize', function() {
             document.removeEventListener('touchcancel', onEnd);
 
             if (hasMoved) {
-                const clickBlocker = function(ev) {
+                const clickBlocker = function (ev) {
                     ev.stopPropagation();
                     ev.preventDefault();
                     bell.removeEventListener('click', clickBlocker, true);
@@ -5913,7 +5912,7 @@ function syncWizardDOM() {
     updateSizePrices(prices);
     document.querySelectorAll('.wizard-flavor-grid .flavor-card').forEach(el => el.classList.toggle('selected', el.getAttribute('data-flavor') === wizardData.sabor));
     document.querySelectorAll('.wizard-size-grid .size-card').forEach(el => el.classList.toggle('selected', el.getAttribute('data-size') === wizardData.tamano));
-    
+
     document.querySelectorAll('.wizard-design-grid .design-thumb, #cake-design-grid .design-thumb').forEach(el => {
         const nameEl = el.querySelector('div');
         const thumbName = nameEl ? nameEl.innerText.trim() : '';
@@ -5981,7 +5980,7 @@ function openWizard() {
         window.dt_tortas_config = window.asegurarEstructuraTortasConfig(window.dt_tortas_config);
     }
 
-    const firstActiveSabor = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.sabores)) 
+    const firstActiveSabor = (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.sabores))
         ? (window.dt_tortas_config.sabores.find(s => s.activo !== false)?.name || 'Clásica Tres Leches')
         : 'Clásica Tres Leches';
 
@@ -5990,7 +5989,7 @@ function openWizard() {
     try {
         const stored = localStorage.getItem('dt_wizard_draft');
         if (stored) draft = JSON.parse(stored);
-    } catch(e) {}
+    } catch (e) { }
 
     if (draft && draft.sabor) {
         wizardData = draft;
@@ -6039,8 +6038,8 @@ function getCakePrices(sabor) {
     let prices = { '1/4 (10 porciones)': 45000, '1/2 (20 porciones)': 75000, '1 Libra (30 porciones)': 130000 };
 
     if (window.dt_tortas_config && Array.isArray(window.dt_tortas_config.sabores) && window.dt_tortas_config.sabores.length > 0) {
-        const found = window.dt_tortas_config.sabores.find(s => 
-            s.name === sabor || 
+        const found = window.dt_tortas_config.sabores.find(s =>
+            s.name === sabor ||
             (sabor && s.name && s.name.toLowerCase() === sabor.toLowerCase()) ||
             (sabor && s.id && s.id.toLowerCase() === sabor.toLowerCase()) ||
             (sabor && s.name && sabor.toLowerCase().includes(s.name.toLowerCase())) ||
@@ -6168,9 +6167,9 @@ function selectDiseno(diseno, element) {
     selectDisenoCard(diseno, imgUrl, element);
 }
 
-window.abrirVistaPreviaDiseno = function(diseno, imgUrl, element) {
+window.abrirVistaPreviaDiseno = function (diseno, imgUrl, element) {
     if (typeof window.openProductImageModal === 'function') {
-        window.openProductImageModal(imgUrl, diseno, function() {
+        window.openProductImageModal(imgUrl, diseno, function () {
             selectDisenoCard(diseno, imgUrl, element);
         });
     } else {
@@ -6477,7 +6476,7 @@ function addCustomCakeToCartNew() {
     }
 
     saveCart();
-    try { localStorage.removeItem('dt_wizard_draft'); } catch(e){}
+    try { localStorage.removeItem('dt_wizard_draft'); } catch (e) { }
     updateCart();
     closeWizard();
     if (typeof window.showAddToCartToast === 'function') {
@@ -6535,15 +6534,15 @@ function editarTortaDesdeCarrito(cartId) {
 
     // Restaurar wizardData con los valores guardados
     wizardData = {
-        sabor:     cd.sabor     || 'Clásica Tres Leches',
-        tamano:    cd.tamano    || '1/4 (10 porciones)',
-        precio:    cd.basePrice || item.price,
-        diseno:    cd.diseno    || 'Diseño Tradicional',
+        sabor: cd.sabor || 'Clásica Tres Leches',
+        tamano: cd.tamano || '1/4 (10 porciones)',
+        precio: cd.basePrice || item.price,
+        diseno: cd.diseno || 'Diseño Tradicional',
         disenoImg: cd.disenoImg || '',
-        mensaje:   cd.mensaje   || cd.message || '',
-        date:      cd.date      || '',
-        time:      cd.time      || '',
-        extras:    cd.extras    ? { ...cd.extras } : {}
+        mensaje: cd.mensaje || cd.message || '',
+        date: cd.date || '',
+        time: cd.time || '',
+        extras: cd.extras ? { ...cd.extras } : {}
     };
 
     syncWizardDOM();
@@ -6587,12 +6586,12 @@ window.saveWizardField = saveWizardField;
 window.validateWizardDateNew = validateWizardDateNew;
 window.addCustomCakeToCartNew = addCustomCakeToCartNew;
 
-window.showVipStatusModal = function() {
+window.showVipStatusModal = function () {
     if (!currentUser || (!currentUser.vip && !currentUser.isVip)) {
         if (typeof window.openVipTermsModal === 'function') window.openVipTermsModal();
         return;
     }
-    
+
     if (!currentUser.vipEndDate) {
         const now = new Date();
         const endDate = new Date();
@@ -6605,20 +6604,20 @@ window.showVipStatusModal = function() {
     const startDate = new Date(currentUser.vipStartDate || new Date());
     const endDate = new Date(currentUser.vipEndDate);
     const today = new Date();
-    
+
     const diffTime = endDate - today;
     const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-    
+
     const formatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     const startStr = startDate.toLocaleDateString('es-CO', formatOptions);
     const endStr = endDate.toLocaleDateString('es-CO', formatOptions);
-    
+
     let modal = document.getElementById('vip-status-modal');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'vip-status-modal';
         modal.className = 'modal-overlay';
-        
+
         // Estilos del Overlay Fijo
         modal.style.position = 'fixed';
         modal.style.top = '0';
@@ -6634,7 +6633,7 @@ window.showVipStatusModal = function() {
         modal.style.zIndex = '100001';
         modal.style.padding = '16px';
         modal.style.boxSizing = 'border-box';
-        
+
         modal.innerHTML = `
             <div class="modal-content" style="max-width:min(92vw, 420px); background:linear-gradient(135deg, #fffbeb, #fef3c7); border:2px solid #fbbf24; border-radius:16px; padding:24px; text-align:center; max-height:88vh; max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-sizing:border-box;">
                 <h2 style="color:#b45309; margin-top:0; margin-bottom:8px; font-size:1.5rem;">👑 Tu Membresía VIP</h2>
@@ -6666,16 +6665,16 @@ window.showVipStatusModal = function() {
             </div>
         `;
         document.body.appendChild(modal);
-        
+
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.style.display = 'none';
         });
     }
-    
+
     document.getElementById('vip-status-badge').innerText = `Activa • ${daysLeft} días restantes`;
     document.getElementById('vip-start-date').innerText = startStr;
     document.getElementById('vip-end-date').innerText = endStr;
-    
+
     modal.style.display = 'flex';
 };
 
@@ -6692,13 +6691,13 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-window.getCheckoutTotal = function() {
+window.getCheckoutTotal = function () {
     const totalEl = document.getElementById('sumTotal');
     if (!totalEl) return 0;
     return parseInt(totalEl.innerText.replace(/\D/g, ''), 10) || 0;
 };
 
-window.calculateCashChange = function() {
+window.calculateCashChange = function () {
     const input = document.getElementById('cashReceivedInput');
     const total = window.getCheckoutTotal();
     const returnDisplay = document.getElementById('changeReturnDisplay');
@@ -6712,7 +6711,7 @@ window.calculateCashChange = function() {
     }
 
     const amount = parseInt(input.value, 10);
-    
+
     if (amount >= total) {
         const change = amount - total;
         returnAmount.innerText = '$' + change.toLocaleString('es-CO');
@@ -6724,7 +6723,7 @@ window.calculateCashChange = function() {
     }
 };
 
-window.setCashAmount = function(amount) {
+window.setCashAmount = function (amount) {
     const input = document.getElementById('cashReceivedInput');
     if (amount === 'exacto') {
         input.value = window.getCheckoutTotal();
