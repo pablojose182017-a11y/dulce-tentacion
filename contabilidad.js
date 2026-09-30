@@ -572,9 +572,18 @@ window.renderLiveOrders = function() {
             return true; 
         });
     }
+ 
+    if (typeof orderSearchIdValue !== 'undefined' && orderSearchIdValue) {
+        const q = orderSearchIdValue.toUpperCase();
+        list = list.filter(p => (p.id && p.id.toUpperCase() === q) || (p.idDoc && p.idDoc.toUpperCase() === q));
+    }
 
     if (list.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-soft);">No hay pedidos para mostrar.</div>`;
+        if (typeof orderSearchIdValue !== 'undefined' && orderSearchIdValue) {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px 20px;color:var(--text-soft);"><p style="font-size:1.1rem;margin-bottom:12px;color:#475569;">❌ No se encontró ningún pedido con el número <strong>${typeof escapeHTML === 'function' ? escapeHTML(orderSearchIdValue) : orderSearchIdValue}</strong></p><button onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:7px 16px; border-radius:8px; font-weight:700; cursor:pointer;">🔄 Ver Todos los Pedidos</button></div>`;
+        } else {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-soft);">No hay pedidos para mostrar.</div>`;
+        }
         return;
     }
     

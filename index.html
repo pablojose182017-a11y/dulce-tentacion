@@ -324,11 +324,18 @@
                 </div>
             </div>
             
-            <div style="background:#fff; border-radius:10px; padding:10px 15px; margin-bottom:15px; box-shadow:var(--shadow-s); display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                <span style="font-size:0.85rem; font-weight:bold; color:var(--text-dark);">📅 Filtro de Fecha:</span>
-                <input type="date" id="orderDateFilter" onchange="filterOrdersByDate()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit;">
-                <button class="btn-gold" style="padding:6px 12px; font-size:0.85rem;" onclick="setOrderDateToToday()">📅 Pedidos de Hoy</button>
-                <button style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; font-family:inherit;" onclick="clearOrderDateFilter()">🔄 Ver Todos</button>
+            <div style="background:#fff; border-radius:10px; padding:10px 15px; margin-bottom:15px; box-shadow:var(--shadow-s); display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:0.85rem; font-weight:bold; color:var(--text-dark);">📅 Filtro de Fecha:</span>
+                    <input type="date" id="orderDateFilter" onchange="filterOrdersByDate()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit;">
+                    <button class="btn-gold" style="padding:6px 12px; font-size:0.85rem;" onclick="setOrderDateToToday()">📅 Pedidos de Hoy</button>
+                    <button style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; font-family:inherit;" onclick="clearOrderDateFilter()">🔄 Ver Todos</button>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="orderSearchInput" placeholder="🔍 # Orden (ej: DT-7386)..." onkeydown="if(event.key === 'Enter') buscarPedidoPorId()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit; font-size:0.85rem; width:190px;">
+                    <button type="button" class="btn-primary-custom" onclick="buscarPedidoPorId()" style="background:#db2777; color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;">Buscar</button>
+                    <button type="button" onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;" title="Limpiar búsqueda">✕</button>
+                </div>
             </div>
 
             <div class="live-orders-grid" id="live-orders-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:15px;">

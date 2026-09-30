@@ -2054,8 +2054,109 @@ function goToOrders() {
 }
 
 let orderDateFilterValue = '';
+let orderSearchIdValue = '';
+
+function upsertPedidoEnMemoria(order) {
+    if (!order || (!order.id && !order.idDoc)) return;
+    const targetId = order.id || order.idDoc;
+
+    if (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial)) {
+        const idx = window.pedidosHistorial.findIndex(p => p.id === targetId || p.idDoc === targetId);
+        if (idx !== -1) {
+            window.pedidosHistorial[idx] = { ...window.pedidosHistorial[idx], ...order };
+        } else {
+            window.pedidosHistorial.unshift(order);
+        }
+    }
+
+    if (typeof pedidosHistorial !== 'undefined' && Array.isArray(pedidosHistorial)) {
+        const idx = pedidosHistorial.findIndex(p => p.id === targetId || p.idDoc === targetId);
+        if (idx !== -1) {
+            pedidosHistorial[idx] = { ...pedidosHistorial[idx], ...order };
+        } else {
+            pedidosHistorial.unshift(order);
+        }
+    }
+}
+
+async function buscarPedidoPorId() {
+    const input = document.getElementById('orderSearchInput');
+    if (!input) return;
+
+    let raw = (input.value || '').trim();
+    if (!raw) {
+        limpiarBusquedaPedido();
+        return;
+    }
+
+    // Paso 1: Normalizar input
+    let normalized = raw.toUpperCase();
+    if (!normalized.startsWith('DT-') && /^\d+$/.test(normalized)) {
+        normalized = 'DT-' + normalized;
+    }
+    input.value = normalized;
+
+    // Limpiar filtro de fecha para no restringir la búsqueda a un solo día
+    const dateInput = document.getElementById('orderDateFilter');
+    if (dateInput) dateInput.value = '';
+    orderDateFilterValue = '';
+
+    // Paso 2: Buscar en memoria (zero reads)
+    const sourceList = (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial))
+        ? window.pedidosHistorial
+        : (typeof pedidosHistorial !== 'undefined' ? pedidosHistorial : []);
+
+    const enMemoria = sourceList.find(p => p.id === normalized || p.idDoc === normalized);
+
+    if (enMemoria) {
+        orderSearchIdValue = normalized;
+        if (typeof renderLiveOrders === 'function') renderLiveOrders();
+        return;
+    }
+
+    // Paso 3: Fallback on-demand a Firestore (exactamente 1 lectura de documento)
+    if (window.db && typeof window.db.collection === 'function') {
+        const grid = document.getElementById('live-orders-grid');
+        if (grid) {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:#64748b;"><span style="font-size:1.5rem;">🔍</span><br>Buscando pedido <strong>${escapeHTML(normalized)}</strong> en la base de datos...</div>`;
+        }
+        try {
+            const docSnap = await window.db.collection('pedidos').doc(normalized).get();
+            if (docSnap.exists) {
+                const pData = { id: docSnap.id, idDoc: docSnap.id, ...docSnap.data() };
+                upsertPedidoEnMemoria(pData);
+                orderSearchIdValue = normalized;
+                if (typeof renderLiveOrders === 'function') renderLiveOrders();
+            } else {
+                orderSearchIdValue = normalized;
+                if (typeof renderLiveOrders === 'function') renderLiveOrders();
+            }
+        } catch (err) {
+            console.error("Error al buscar pedido en Firestore:", err);
+            if (grid) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#dc2626;">Error al consultar el pedido. Intente nuevamente.</div>';
+            }
+        }
+    } else {
+        orderSearchIdValue = normalized;
+        if (typeof renderLiveOrders === 'function') renderLiveOrders();
+    }
+}
+window.buscarPedidoPorId = buscarPedidoPorId;
+
+function limpiarBusquedaPedido() {
+    const input = document.getElementById('orderSearchInput');
+    if (input) input.value = '';
+    orderSearchIdValue = '';
+    if (typeof renderLiveOrders === 'function') renderLiveOrders();
+}
+window.limpiarBusquedaPedido = limpiarBusquedaPedido;
+
 function filterOrdersByDate() {
     orderDateFilterValue = document.getElementById('orderDateFilter').value;
+    const sInput = document.getElementById('orderSearchInput');
+    if (sInput) sInput.value = '';
+    orderSearchIdValue = '';
     renderLiveOrders();
 }
 function setOrderDateToToday() {
@@ -2063,11 +2164,17 @@ function setOrderDateToToday() {
     const today = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
     document.getElementById('orderDateFilter').value = today;
     orderDateFilterValue = today;
+    const sInput = document.getElementById('orderSearchInput');
+    if (sInput) sInput.value = '';
+    orderSearchIdValue = '';
     renderLiveOrders();
 }
 function clearOrderDateFilter() {
     document.getElementById('orderDateFilter').value = '';
     orderDateFilterValue = '';
+    const sInput = document.getElementById('orderSearchInput');
+    if (sInput) sInput.value = '';
+    orderSearchIdValue = '';
     renderLiveOrders();
 }
 
@@ -2210,8 +2317,17 @@ function renderLiveOrders() {
         console.log("===========================");
     }
 
+    if (typeof orderSearchIdValue !== 'undefined' && orderSearchIdValue) {
+        const q = orderSearchIdValue.toUpperCase();
+        list = list.filter(p => (p.id && p.id.toUpperCase() === q) || (p.idDoc && p.idDoc.toUpperCase() === q));
+    }
+
     if (list.length === 0) {
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-soft);">No hay pedidos para mostrar.</div>`;
+        if (typeof orderSearchIdValue !== 'undefined' && orderSearchIdValue) {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px 20px;color:var(--text-soft);"><p style="font-size:1.1rem;margin-bottom:12px;color:#475569;">❌ No se encontró ningún pedido con el número <strong>${escapeHTML(orderSearchIdValue)}</strong></p><button onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:7px 16px; border-radius:8px; font-weight:700; cursor:pointer;">🔄 Ver Todos los Pedidos</button></div>`;
+        } else {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-soft);">No hay pedidos para mostrar.</div>`;
+        }
         return;
     }
 
