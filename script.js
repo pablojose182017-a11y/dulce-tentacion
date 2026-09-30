@@ -121,6 +121,7 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch (e) { }
     try { const a = localStorage.getItem('dt_admin_config'); if (a) adminConfig = JSON.parse(a); } catch (e) { }
     try { const p = localStorage.getItem('dt_pedidos_historial'); if (p) pedidosHistorial = JSON.parse(p); } catch (e) { }
+    window.pedidosHistorial = pedidosHistorial;
     try {
         const s = localStorage.getItem('dt_sound_enabled');
         if (s !== null) {
@@ -1330,8 +1331,14 @@ function renderKitchenOrders(tabId) {
 }
 
 function updateKitchenOrderState(orderId, newState) {
-    // Update global orders
-    const p = pedidosHistorial.find(x => x.id === orderId);
+    // Update global orders: resolver por id o idDoc en window.pedidosHistorial o pedidosHistorial
+    const sourceList = (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial) && window.pedidosHistorial.length > 0)
+        ? window.pedidosHistorial
+        : (typeof pedidosHistorial !== 'undefined' ? pedidosHistorial : []);
+    let p = sourceList.find(x => x.id === orderId || x.idDoc === orderId);
+    if (!p && typeof pedidosHistorial !== 'undefined' && Array.isArray(pedidosHistorial)) {
+        p = pedidosHistorial.find(x => x.id === orderId || x.idDoc === orderId);
+    }
     if (p) {
         if (newState === 'Entregado') {
             const abonoVal = p.abono || 0;
@@ -1349,15 +1356,29 @@ function updateKitchenOrderState(orderId, newState) {
             }
         }
         p.status = newState;
+        p.estado = newState;
+        // Sincronizar en ambas referencias en memoria
+        if (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial)) {
+            const wp = window.pedidosHistorial.find(x => x.id === orderId || x.idDoc === orderId);
+            if (wp) { wp.status = newState; wp.estado = newState; }
+        }
+        if (typeof pedidosHistorial !== 'undefined' && Array.isArray(pedidosHistorial)) {
+            const lp = pedidosHistorial.find(x => x.id === orderId || x.idDoc === orderId);
+            if (lp) { lp.status = newState; lp.estado = newState; } else { pedidosHistorial.unshift(p); }
+        }
         if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
         if (typeof renderLiveOrders === 'function') renderLiveOrders();
+        if (typeof window.updateOrderStatus === 'function') {
+            window.updateOrderStatus(orderId, newState);
+        }
 
         // Sync with user's specific history
         const u = db_users.find(x => x.email === p.email);
         if (u && u.history) {
-            const uOrder = u.history.find(o => o.id === orderId);
+            const uOrder = u.history.find(o => o.id === orderId || o.idDoc === orderId);
             if (uOrder) {
                 uOrder.status = newState;
+                uOrder.estado = newState;
                 saveUsersDB();
                 if (currentUser && currentUser.email === u.email) {
                     currentUser = u;
@@ -2985,7 +3006,14 @@ window.saveAdminPointsRewards = window.saveAdminPointsConfig;
 const saveAdminPointsConfig = window.saveAdminPointsConfig;
 
 function markOrderState(id, state) {
-    const p = pedidosHistorial.find(x => x.id === id);
+    // Resolver pedido por id o idDoc en window.pedidosHistorial o pedidosHistorial
+    const sourceList = (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial) && window.pedidosHistorial.length > 0)
+        ? window.pedidosHistorial
+        : (typeof pedidosHistorial !== 'undefined' ? pedidosHistorial : []);
+    let p = sourceList.find(x => x.id === id || x.idDoc === id);
+    if (!p && typeof pedidosHistorial !== 'undefined' && Array.isArray(pedidosHistorial)) {
+        p = pedidosHistorial.find(x => x.id === id || x.idDoc === id);
+    }
     if (p) {
         if (state === 'Entregado') {
             const abonoVal = p.abono || 0;
@@ -3005,6 +3033,15 @@ function markOrderState(id, state) {
         // Actualizar ambos campos para mantener coherencia local
         p.status = state;
         p.estado = state;
+        // Sincronizar en ambas referencias en memoria
+        if (typeof window.pedidosHistorial !== 'undefined' && Array.isArray(window.pedidosHistorial)) {
+            const wp = window.pedidosHistorial.find(x => x.id === id || x.idDoc === id);
+            if (wp) { wp.status = state; wp.estado = state; }
+        }
+        if (typeof pedidosHistorial !== 'undefined' && Array.isArray(pedidosHistorial)) {
+            const lp = pedidosHistorial.find(x => x.id === id || x.idDoc === id);
+            if (lp) { lp.status = state; lp.estado = state; } else { pedidosHistorial.unshift(p); }
+        }
         savePedidosHistorial();
         renderLiveOrders();
         renderAdminDashboard();

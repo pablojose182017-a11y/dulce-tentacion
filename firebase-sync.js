@@ -631,6 +631,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
                 // Actualizar pedidosHistorial y refrescar vistas
                 window.pedidosHistorial = pedidosRemotos;
+                if (typeof pedidosHistorial !== 'undefined') {
+                    try {
+                        pedidosHistorial = pedidosRemotos;
+                    } catch (e) {
+                        console.warn("No se pudo sincronizar pedidosHistorial léxico:", e);
+                    }
+                }
                 localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosRemotos));
                 if (typeof renderLiveOrders === 'function') renderLiveOrders();
                 if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
