@@ -813,6 +813,9 @@ window.addEventListener('DOMContentLoaded', () => {
             const originalOpen = window.open;
             let overrideActive = true;
             let timeoutId = null;
+            let capturedWhatsAppUrl = null;
+            let resolveWhatsAppUrl = null;
+            const whatsAppUrlPromise = new Promise(resolve => { resolveWhatsAppUrl = resolve; });
 
             const restoreOpen = () => {
                 if (overrideActive) {
@@ -825,35 +828,32 @@ window.addEventListener('DOMContentLoaded', () => {
             window.open = function(url, target, features) {
                 if (!overrideActive) return originalOpen.apply(this, arguments);
 
-                // Si es la URL de WhatsApp generada por script.js
+                // Si es la URL de WhatsApp generada por script.js, la capturamos
                 if (url && (url.includes('wa.me') || url.includes('whatsapp'))) {
-                    restoreOpen(); // Restaurar de inmediato
-                    
-                    if (whatsappWin && !whatsappWin.closed) {
-                        whatsappWin.location.href = url; // Redirigir la ventana síncrona
-                        return whatsappWin;
-                    } else {
-                        // Si la ventana fue bloqueada o el usuario la cerró, intentamos el fallback
-                        return originalOpen(url, target, features);
-                    }
+                    capturedWhatsAppUrl = url;
+                    if (resolveWhatsAppUrl) resolveWhatsAppUrl(url);
+                    return whatsappWin;
                 } else {
-                    // Si es otro popup desconocido, lo dejamos pasar
                     return originalOpen.apply(this, arguments);
                 }
             };
 
-            // Timeout de seguridad: Si script.js nunca llama a window.open en 3.5s
+            // Timeout de seguridad: Si script.js nunca llama a window.open en 8s
             timeoutId = setTimeout(() => {
                 if (overrideActive) {
                     restoreOpen();
                     if (whatsappWin && !whatsappWin.closed) {
                         whatsappWin.document.body.innerHTML = '<div style="font-family:sans-serif; padding:20px; color:red;">Hubo un error al conectar con WhatsApp.</div>';
                     }
-                    console.warn("[WhatsApp Override] Timeout de seguridad de 3500ms alcanzado.");
+                    console.warn("[WhatsApp Override] Timeout de seguridad de 8000ms alcanzado.");
                 }
-            }, 3500);
+            }, 8000);
 
             const histLenBefore = typeof pedidosHistorial !== 'undefined' ? pedidosHistorial.length : 0;
+            let cartBackup = null;
+            try {
+                cartBackup = (typeof cart !== 'undefined' && Array.isArray(cart)) ? JSON.parse(JSON.stringify(cart)) : null;
+            } catch(e) {}
             
             // Ejecutar la función original que genera el ID, valida, abre WhatsApp y vacía el carrito
             try {
@@ -874,6 +874,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 const nuevoPedido = pedidosHistorial[pedidosHistorial.length - 1];
+                const initialId = nuevoPedido.id;
+                let currentOrderId = initialId;
                 
                 // Estandarizar fechas para el monitor
                 if (!nuevoPedido.fechaISO) {
@@ -885,25 +887,174 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (typeof nuevoPedido.abono === 'undefined') nuevoPedido.abono = 0;
                 
                 // FASE 1 & 2A: Inyectar ownerId y Claim Secret para invitados
+                let anonymousSecret = null;
                 if (auth && auth.currentUser) {
                     nuevoPedido.ownerId = auth.currentUser.uid;
                     if (auth.currentUser.isAnonymous) {
                         const array = new Uint32Array(4);
                         window.crypto.getRandomValues(array);
-                        const secret = Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('');
-                        nuevoPedido.claimSecret = secret;
+                        anonymousSecret = Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('');
+                        nuevoPedido.claimSecret = anonymousSecret;
                         try {
                             let secrets = JSON.parse(localStorage.getItem('dt_claim_secrets') || '{}');
-                            secrets[nuevoPedido.id] = secret;
+                            secrets[currentOrderId] = anonymousSecret;
                             localStorage.setItem('dt_claim_secrets', JSON.stringify(secrets));
                         } catch(e) { console.warn("No se pudo guardar claimSecret"); }
                     }
                 }
                 
-                // PRIMERO: Guardar de inmediato en Firestore
-                db.collection('pedidos').doc(nuevoPedido.id).set(nuevoPedido)
-                  .then(() => console.log("Pedido guardado exitosamente en Firestore:", nuevoPedido.id))
-                  .catch((err) => console.error("Error al guardar pedido en Firestore:", err));
+                // ESCRITURA SEGURA EN FIRESTORE CON PROTECCIÓN ANTI-COLISIÓN (Reintentos acotados a 3)
+                let writeSuccess = false;
+                let lastError = null;
+                const MAX_ATTEMPTS = 3;
+
+                for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                    try {
+                        nuevoPedido.id = currentOrderId;
+                        nuevoPedido.idDoc = currentOrderId;
+
+                        await db.collection('pedidos').doc(currentOrderId).set(nuevoPedido);
+                        writeSuccess = true;
+                        console.log(`[Checkout] Pedido ${currentOrderId} guardado en Firestore con éxito (intento ${attempt}).`);
+                        break;
+                    } catch (err) {
+                        lastError = err;
+                        console.warn(`[Checkout] Error al guardar pedido ${currentOrderId} en Firestore (intento ${attempt}):`, err);
+
+                        const isPermissionDenied = err && (err.code === 'permission-denied' || (err.message && err.message.includes('permission-denied')));
+                        const isCreationCollision = isPermissionDenied &&
+                            auth && auth.currentUser && auth.currentUser.uid &&
+                            nuevoPedido.ownerId === auth.currentUser.uid &&
+                            nuevoPedido.estado === 'Pendiente';
+
+                        if (isCreationCollision && attempt < MAX_ATTEMPTS) {
+                            const oldId = currentOrderId;
+                            const newId = (typeof window.generateSecureOrderId === 'function')
+                                ? window.generateSecureOrderId()
+                                : ('DT-' + String(new Date().getFullYear()).slice(-2) + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + Math.random().toString(36).substring(2, 6).toUpperCase());
+
+                            console.warn(`[Checkout] Colisión de ID detectada para ${oldId}. Regenerando a ${newId}...`);
+                            currentOrderId = newId;
+                            continue;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                // SI LA CREACIÓN EN FIRESTORE FALLÓ: No abrir WhatsApp ni engañar al cliente
+                if (!writeSuccess) {
+                    restoreOpen();
+                    if (timeoutId) clearTimeout(timeoutId);
+                    if (whatsappWin && !whatsappWin.closed) whatsappWin.close();
+
+                    // Revertir pedido local no guardado de pedidosHistorial
+                    if (typeof pedidosHistorial !== 'undefined' && Array.isArray(pedidosHistorial)) {
+                        const pIdx = pedidosHistorial.findIndex(p => p.id === initialId || p.id === currentOrderId);
+                        if (pIdx !== -1) {
+                            pedidosHistorial.splice(pIdx, 1);
+                            if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
+                        }
+                    }
+
+                    // Revertir en currentUser.history si aplica
+                    if (typeof currentUser !== 'undefined' && currentUser && Array.isArray(currentUser.history)) {
+                        const uIdx = currentUser.history.findIndex(p => p.id === initialId || p.id === currentOrderId);
+                        if (uIdx !== -1) {
+                            currentUser.history.splice(uIdx, 1);
+                            if (typeof saveUsersDB === 'function') saveUsersDB();
+                            if (typeof saveUser === 'function') saveUser();
+                        }
+                    }
+
+                    // Restaurar carrito si se había vaciado
+                    if (cartBackup && cartBackup.length > 0 && typeof cart !== 'undefined' && cart.length === 0) {
+                        cart = cartBackup;
+                        if (typeof saveCart === 'function') saveCart();
+                        if (typeof updateCart === 'function') updateCart();
+                    }
+
+                    alert("No se pudo registrar tu pedido en el servidor. Por favor verifica tu conexión a internet e intenta nuevamente.");
+                    return;
+                }
+
+                // SI HUBO REGENERACIÓN DE ID POR COLISIÓN: Sincronizar todas las referencias
+                if (currentOrderId !== initialId) {
+                    nuevoPedido.id = currentOrderId;
+                    nuevoPedido.idDoc = currentOrderId;
+
+                    if (typeof savePedidosHistorial === 'function') savePedidosHistorial();
+
+                    if (typeof currentUser !== 'undefined' && currentUser && Array.isArray(currentUser.history)) {
+                        const hOrder = currentUser.history.find(p => p.id === initialId || p.id === currentOrderId);
+                        if (hOrder) {
+                            hOrder.id = currentOrderId;
+                            hOrder.idDoc = currentOrderId;
+                            if (typeof saveUsersDB === 'function') saveUsersDB();
+                            if (typeof saveUser === 'function') saveUser();
+                        }
+                    }
+
+                    if (anonymousSecret) {
+                        try {
+                            let secrets = JSON.parse(localStorage.getItem('dt_claim_secrets') || '{}');
+                            delete secrets[initialId];
+                            secrets[currentOrderId] = anonymousSecret;
+                            localStorage.setItem('dt_claim_secrets', JSON.stringify(secrets));
+                        } catch(e) {}
+                    }
+
+                    try {
+                        let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
+                        let nMod = false;
+                        notifs.forEach(n => {
+                            if (n.orderId === initialId || (n.title && n.title.includes(initialId))) {
+                                n.orderId = currentOrderId;
+                                n.title = `Nuevo Pedido #${currentOrderId}`;
+                                nMod = true;
+                            }
+                        });
+                        if (nMod) localStorage.setItem('dt_notifications', JSON.stringify(notifs));
+
+                        let alerts = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
+                        let aMod = false;
+                        alerts.forEach(a => {
+                            if (a.title && a.title.includes(initialId)) {
+                                a.title = `🛍️ Nuevo Pedido #${currentOrderId}`;
+                                aMod = true;
+                            }
+                        });
+                        if (aMod) localStorage.setItem('dt_live_alerts', JSON.stringify(alerts));
+                        if (typeof renderNotificationBell === 'function') renderNotificationBell();
+                    } catch(e) {}
+                }
+
+                // ESPERAR Y REDIRIGIR WHATSAPP SOLO TRAS CONFIRMACIÓN EXITOSA EN FIRESTORE
+                let targetUrl = capturedWhatsAppUrl;
+                if (!targetUrl) {
+                    try {
+                        targetUrl = await Promise.race([
+                            whatsAppUrlPromise,
+                            new Promise(res => setTimeout(() => res(null), 2500))
+                        ]);
+                    } catch(e) {}
+                }
+
+                if (currentOrderId !== initialId && targetUrl) {
+                    targetUrl = targetUrl
+                        .split(encodeURIComponent(initialId)).join(encodeURIComponent(currentOrderId))
+                        .split(initialId).join(currentOrderId);
+                }
+
+                restoreOpen();
+
+                if (targetUrl) {
+                    if (whatsappWin && !whatsappWin.closed) {
+                        whatsappWin.location.href = targetUrl;
+                    } else {
+                        originalOpen(targetUrl, '_blank');
+                    }
+                }
                   
                 // SEGUNDO (INDEPENDIENTE): Registrar puntos ganados en Firestore
                 // ⚠️ Encapsulado en try/catch: cualquier fallo aquí NO bloquea WhatsApp

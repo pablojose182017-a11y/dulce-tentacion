@@ -82,18 +82,21 @@ service cloud.firestore {
       // Lectura: El dueño del pedido o Trabajador+
       allow read: if (request.auth != null && resource.data.ownerId == request.auth.uid) || getRol() >= 20;
       
-      // Creación: Solo si el ownerId coincide y el estado arranca como Pendiente
+      // Creación: Solo si el pedido NO existe previamente, el ownerId coincide y el estado arranca como Pendiente
       allow create: if request.auth != null 
+                    && !exists(/databases/$(database)/documents/pedidos/$(pedidoId))
                     && request.resource.data.ownerId == request.auth.uid 
                     && request.resource.data.estado == "Pendiente";
 
       // Actualización: 
-      allow update: if isCreator() || getRol() >= 50 || 
-                    // El trabajador solo puede modificar el estado de preparación
-                    (getRol() >= 20 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'status', 'fechaActualizacion'])) ||
-                    // El cliente NO tiene permitido modificar un pedido tras su creación
-                    // (Si a futuro se requiere añadir propina/review, se agregará un diff explícito aquí)
-                    false;
+      allow update: if (isCreator() || getRol() >= 50)
+                      // Los administradores pueden gestionar pedidos legítimamente (abonos, estados, notas),
+                      // pero NUNCA sobreescribir la identidad/creación original de un pedido preexistente.
+                      ? (!('timestamp' in resource.data) || request.resource.data.timestamp == resource.data.timestamp)
+                        && (!('fechaISO' in resource.data) || request.resource.data.fechaISO == resource.data.fechaISO)
+                        && (!('date' in resource.data) || request.resource.data.date == resource.data.date)
+                      // El trabajador solo puede modificar el estado de preparación
+                      : (getRol() >= 20 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'status', 'fechaActualizacion']));
                     
       allow delete: if isCreator() || getRol() >= 50;
     }

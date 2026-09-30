@@ -1930,7 +1930,7 @@ function toggleOrderSound() {
 window.recordNewOrderNotification = function (newOrder, options = { playSound: true }) {
     if (!newOrder) return;
     try {
-        const orderId = newOrder.id || ('DT-' + Date.now().toString().slice(-4));
+        const orderId = newOrder.id || (typeof window.generateSecureOrderId === 'function' ? window.generateSecureOrderId() : 'DT-DESCONOCIDO');
         const customerName = newOrder.customerName || newOrder.customer || (typeof currentUser !== 'undefined' && currentUser ? currentUser.name : '') || 'Cliente';
         const rawTotal = (typeof newOrder.totalFormatted !== 'undefined')
             ? newOrder.totalFormatted
@@ -2089,10 +2089,12 @@ async function buscarPedidoPorId() {
         return;
     }
 
-    // Paso 1: Normalizar input
+    // Paso 1: Normalizar input (soporta DT-XXXX legado y DT-YYMM-XXXX nuevo)
     let normalized = raw.toUpperCase();
-    if (!normalized.startsWith('DT-') && /^\d+$/.test(normalized)) {
-        normalized = 'DT-' + normalized;
+    if (!normalized.startsWith('DT-')) {
+        if (/^\d+$/.test(normalized) || /^\d{4}-[A-Z0-9]+$/i.test(normalized)) {
+            normalized = 'DT-' + normalized;
+        }
     }
     input.value = normalized;
 
@@ -5041,7 +5043,30 @@ function sincronizarCheckoutConTortas() {
 
 window.sincronizarCheckoutConTortas = sincronizarCheckoutConTortas;
 
-// ===== FIN SINCRONIZACIÓN =====
+// ===== GENERADOR CRIPTOGRÁFICO DE ID DE PEDIDOS (DT-YYMM-XXXX) =====
+// Alfabeto de 32 caracteres inequívocos (excluye 0, O, 1, I).
+// Mapeo sin sesgo: 256 % 32 == 0 (máscara de 5 bits byte & 31 es matemáticamente uniforme).
+function generateSecureOrderId() {
+    const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    let randPart = '';
+    const cryptoObj = (typeof window !== 'undefined' && window.crypto) ? window.crypto : (typeof crypto !== 'undefined' ? crypto : null);
+    if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+        const bytes = new Uint8Array(4);
+        cryptoObj.getRandomValues(bytes);
+        for (let i = 0; i < 4; i++) {
+            randPart += ALPHABET[bytes[i] & 31];
+        }
+    } else {
+        for (let i = 0; i < 4; i++) {
+            randPart += ALPHABET[Math.floor(Math.random() * 32)];
+        }
+    }
+    return `DT-${yy}${mm}-${randPart}`;
+}
+window.generateSecureOrderId = generateSecureOrderId;
 
 function sendOrder() {
     if (cart.length === 0) return alert("¡Tu carrito está vacío!");
@@ -5124,7 +5149,7 @@ function sendOrder() {
     const finalTotal = (tp - discount) + costoDomicilio;
 
     // Generar Orden y Guardar en Historial
-    const orderId = 'DT-' + Date.now().toString().slice(-4);
+    const orderId = generateSecureOrderId();
     const dateStr = new Date().toLocaleString('es-CO');
     const newOrder = {
         id: orderId,
