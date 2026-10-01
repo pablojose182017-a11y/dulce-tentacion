@@ -46,9 +46,69 @@ class ChatBridge {
                 );
             }
         }
+        // FASE 7 - Research Integration
+        if (window.AI_CORE.ResearchEngine && window.AI_CORE.OfflineResolver && window.AI_CORE.WebFetcher) {
+            const offlineResolver = new window.AI_CORE.OfflineResolver(this.knowledgeManager);
+            const webFetcher = new window.AI_CORE.DdgWebFetcher(); 
+            const ingestionEngine = window.AI_CORE.KnowledgeIngestionEngine 
+                ? new window.AI_CORE.KnowledgeIngestionEngine(this.knowledgeManager, this.memoryManager) 
+                : null;
+            this.researchEngine = new window.AI_CORE.ResearchEngine({
+                offlineResolver,
+                investigationEngine: null,
+                reasoningEngine: this.reasoningEngine,
+                webFetcher,
+                ingestionEngine,
+                permissionManager: this.permissionManager
+            });
+        }
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal) {
+        const msgLower = message.toLowerCase();
+        const isResearchIntent = msgLower.startsWith('investiga') || 
+                                 msgLower.startsWith('research') || 
+                                 msgLower.includes('investigate') || 
+                                 msgLower.includes('find out why') ||
+                                 msgLower.includes('busca información') ||
+                                 msgLower.includes('busca informacion') ||
+                                 msgLower.includes('averigua');
+
+        if (isResearchIntent && this.researchEngine) {
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const contextData = { user: { data: user } };
+            try {
+                const report = await this.researchEngine.investigate(message, contextData);
+                
+                let responseText = '';
+                if (report.status === 'COMPLETED' || report.status === 'LOCAL_SUFFICIENT' || report.status === 'OFFLINE_ONLY') {
+                    responseText = `[INVESTIGACIÓN COMPLETA]\nConclusión: ${report.conclusion}\n` +
+                                   `Confianza: ${(report.confidence * 100).toFixed(0)}%\n` +
+                                   (report.contradictions.length > 0 ? `Contradicciones: ${report.contradictions.join(', ')}\n` : '') +
+                                   `Fuentes: Locales(${report.localResultsUsed.length}), Web(${report.webResultsUsed.length})\n` +
+                                   (report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}` : '');
+                } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
+                    responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${report.limitations.join(', ')}`;
+                } else {
+                    responseText = `[INVESTIGACIÓN] Estado inesperado: ${report.status}`;
+                }
+
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    isGeneratedResponse: true,
+                    isResearchReport: true,
+                    researchStatus: report.status
+                });
+
+                return responseText;
+            } catch (e) {
+                const errText = `[ERROR DE INVESTIGACIÓN] Hubo un problema al investigar: ${e.message}`;
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', errText, { isGeneratedResponse: true, isError: true });
+                return errText;
+            }
+        }
+
         // FASE 2 — CAMBIO 1: Recuperar conocimiento relevante ANTES de buildContext()
         // Flujo oficial: KnowledgeManager -> búsqueda -> ContextManager -> ReasoningEngine
         const contextManager = new window.AI_CORE.ContextManager(

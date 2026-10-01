@@ -20,23 +20,13 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 const urlParams = new URLSearchParams(window.location.search);
 const useEmulator = urlParams.get('emulator') === 'true';
 
-if (isLocalhost) {
-    if (!useEmulator) {
-        document.body.innerHTML = `
-            <div style="padding: 40px; text-align: center; font-family: sans-serif; color: #721c24; background-color: #f8d7da; height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                <h1 style="margin-bottom: 15px;">⚠️ Acceso Local Bloqueado</h1>
-                <p>Estás ejecutando la aplicación en <b>localhost</b> pero no has habilitado el modo emulador.</p>
-                <p>Para proteger los datos de producción, la inicialización de Firebase ha sido cancelada.</p>
-                <p style="margin-top: 20px;">Por favor, recarga la página agregando <b>?emulator=true</b> a la URL.</p>
-            </div>
-        `;
-        throw new Error("FAIL CLOSED: Ejecución en localhost sin ?emulator=true bloqueada para proteger producción.");
-    } else {
-        // Habilitar modo emulador
-        firebaseConfig.projectId = "demo-punto-dulce";
-        firebaseConfig.apiKey = "fake-api-key-for-emulator";
-        console.warn("⚠️ MODO EMULADOR ACTIVADO ⚠️");
-    }
+// NOTA: Se eliminó el bloqueo de localhost. Ahora la aplicación en desarrollo local 
+// se conecta por defecto al proyecto real de Firebase (producción) usando la configuración original.
+// Si se desea usar el emulador, aún se puede habilitar con ?emulator=true.
+if (isLocalhost && useEmulator) {
+    firebaseConfig.projectId = "demo-punto-dulce";
+    firebaseConfig.apiKey = "fake-api-key-for-emulator";
+    console.warn("⚠️ MODO EMULADOR ACTIVADO ⚠️");
 }
 
 // Evitar inicializar si ya existe
