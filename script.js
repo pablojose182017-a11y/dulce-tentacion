@@ -160,7 +160,6 @@ window.addEventListener('DOMContentLoaded', () => {
     lastOrderCount = pedidosHistorial.length;
     const soundTog = document.getElementById('soundToggle');
     if (soundTog) soundTog.checked = orderSoundEnabled;
-    setInterval(checkNewOrders, 3000);
 
     renderFeatured();
     renderProducts(products);
@@ -5493,6 +5492,7 @@ window.showOrderStatusToast = function (pedidoId, nuevoEstado) {
     if (window._ostTimer) clearTimeout(window._ostTimer);
 
     toast.style.borderLeftColor = cfg.border;
+    toast.style.cursor = '';
     toast.innerHTML = `
         <div class="ost-icon">${cfg.icon}</div>
         <div class="ost-body">
@@ -5528,6 +5528,99 @@ window.showOrderStatusToast = function (pedidoId, nuevoEstado) {
         window._ostTimer = setTimeout(() => toast.classList.remove('ost-visible'), 7000);
     });
 };
+
+// ===== SALUDO DE BIENVENIDA (WELCOME GREETING TOAST) =====
+/**
+ * Muestra un saludo de bienvenida usando el sistema de order-status-toast existente.
+ * @param {Object} [opts]
+ * @param {string}  [opts.name]      - Primer nombre del usuario (opcional).
+ * @param {boolean} [opts.returning] - true si el usuario ya tenía sesión activa.
+ */
+window.showWelcomeGreeting = function (opts) {
+    opts = opts || {};
+    const name = (opts.name || '').trim();
+    const isReturning = !!opts.returning;
+
+    const icon = isReturning ? '🎉' : '🍰';
+    const borderColor = '#d81b60'; // fucsia corporativo Dulce Tentación
+    const title = isReturning
+        ? `¡Hola, ${name || 'amigo'}!`
+        : '¡Bienvenido a Dulce Tentación!';
+    const subtitle = isReturning
+        ? `¡Qué alegría tenerte de vuelta! ¿Qué se te antoja hoy?`
+        : `Nos alegra tenerte por aquí. ¿Qué se te antoja hoy?`;
+
+    // Reutilizar o crear el contenedor (mismo elemento que order-status-toast)
+    let toast = document.getElementById('order-status-toast-el');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'order-status-toast-el';
+        toast.className = 'order-status-toast';
+        document.body.appendChild(toast);
+    }
+
+    // Cancelar cualquier timer anterior
+    if (window._ostTimer) clearTimeout(window._ostTimer);
+    toast.classList.remove('ost-visible');
+
+    toast.style.borderLeftColor = borderColor;
+    // Desactivar el puntero de "clic para abrir pedido" en el saludo
+    toast.style.cursor = 'default';
+    toast.innerHTML = `
+        <div class="ost-icon">${icon}</div>
+        <div class="ost-body">
+            <div class="ost-title">${title}</div>
+            <div class="ost-sub">${subtitle}</div>
+        </div>
+        <div class="ost-close" id="ost-close-btn" title="Cerrar" role="button" aria-label="Cerrar saludo">&times;</div>
+    `;
+
+    const dismiss = () => {
+        toast.classList.remove('ost-visible');
+        if (window._ostTimer) clearTimeout(window._ostTimer);
+        // Restaurar cursor por si el order-status-toast lo usa después
+        toast.style.cursor = '';
+    };
+
+    toast.onclick = (e) => { if (!e.target.closest('#ost-close-btn')) { /* saludo no navega */ } };
+    const closeBtn = document.getElementById('ost-close-btn');
+    if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); dismiss(); };
+
+    // Mostrar con animación
+    requestAnimationFrame(() => {
+        toast.classList.add('ost-visible');
+        window._ostTimer = setTimeout(dismiss, 6000);
+    });
+};
+
+// ===== SALUDO DE BIENVENIDA UNIFICADO (CARGA DE PÁGINA) =====
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (typeof window.showWelcomeGreeting !== 'function') return;
+
+        try {
+            // Evaluamos la identidad con los datos locales ya hidratados
+            const isReturning = (typeof currentUser !== 'undefined' && currentUser && currentUser.email);
+            
+            // Limitamos a 1 vez por sesión de pestaña (sessionStorage).
+            // No usamos 24h con localStorage porque el modelo actual no provee un ID no-sensible (ej. UID)
+            // de forma síncrona en el frontend, y el requerimiento prohíbe usar emails como llaves.
+            const sessionKey = 'dt_welcomed_session';
+            if (sessionStorage.getItem(sessionKey)) return;
+            
+            sessionStorage.setItem(sessionKey, 'true');
+
+            if (isReturning) {
+                const firstName = (currentUser.name || '').split(' ')[0];
+                window.showWelcomeGreeting({ name: firstName, returning: true });
+            } else {
+                window.showWelcomeGreeting({ returning: false });
+            }
+        } catch (e) {
+            console.warn("No se pudo procesar el saludo de bienvenida:", e);
+        }
+    }, 1400);
+});
 
 
 function toggleVIP() {
