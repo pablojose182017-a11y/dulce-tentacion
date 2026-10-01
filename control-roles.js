@@ -932,28 +932,6 @@ window.addEventListener('error', function (e) {
 // =========================================================
 
 // 1. REGISTRO Y LOGIN MANUAL MULTI-DISPOSITIVO
-const originalRegisterCustomUser = window.registerCustomUser;
-window.registerCustomUser = function (e) {
-    if (originalRegisterCustomUser) originalRegisterCustomUser(e);
-
-    const nombre = document.getElementById('regName')?.value.trim();
-    const correoNormalizado = document.getElementById('regEmail')?.value.trim().toLowerCase();
-    const telefono = document.getElementById('regPhone')?.value.trim();
-    const password = document.getElementById('regPassword')?.value.trim();
-
-    if (correoNormalizado && password && nombre) {
-        db.collection('usuarios').doc(correoNormalizado).set({
-            nombre: nombre,
-            email: correoNormalizado,
-            telefono: telefono || 'Sin registrar',
-            password: password,
-            rol: 'cliente',
-            estado: 'activo',
-            fechaRegistro: new Date().toLocaleDateString(),
-            origen: 'manual'
-        }, { merge: true });
-    }
-};
 
 window.loginCustomUser = function (e) {
     if (e && e.preventDefault) e.preventDefault();

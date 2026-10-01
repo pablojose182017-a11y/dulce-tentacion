@@ -566,7 +566,7 @@ async function registerCustomUser(e) {
             saveUsersDB();
             saveUser();
             syncUserUI();
-            if (typeof window.syncCurrentUserToCloud === 'function') window.syncCurrentUserToCloud();
+            if (typeof window.syncCurrentUserToCloud === 'function') await window.syncCurrentUserToCloud();
             
             closeAuthModal();
             showToast("¡Registro exitoso! Bienvenido al Club P&S Punto Dulce 🍰", "🎉");

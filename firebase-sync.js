@@ -6,7 +6,7 @@
  */
 
 // 1. Inicialización de Firebase
-const firebaseConfig = {
+let firebaseConfig = {
     apiKey: "AIzaSyAXsUDZeDStUV1oqfBfHre84u4u9TxYr1E",
     authDomain: "ps-punto-dulce.firebaseapp.com",
     projectId: "ps-punto-dulce",
@@ -16,13 +16,44 @@ const firebaseConfig = {
     measurementId: "G-806J8JJ3VD"
 };
 
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const urlParams = new URLSearchParams(window.location.search);
+const useEmulator = urlParams.get('emulator') === 'true';
+
+if (isLocalhost) {
+    if (!useEmulator) {
+        document.body.innerHTML = `
+            <div style="padding: 40px; text-align: center; font-family: sans-serif; color: #721c24; background-color: #f8d7da; height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <h1 style="margin-bottom: 15px;">⚠️ Acceso Local Bloqueado</h1>
+                <p>Estás ejecutando la aplicación en <b>localhost</b> pero no has habilitado el modo emulador.</p>
+                <p>Para proteger los datos de producción, la inicialización de Firebase ha sido cancelada.</p>
+                <p style="margin-top: 20px;">Por favor, recarga la página agregando <b>?emulator=true</b> a la URL.</p>
+            </div>
+        `;
+        throw new Error("FAIL CLOSED: Ejecución en localhost sin ?emulator=true bloqueada para proteger producción.");
+    } else {
+        // Habilitar modo emulador
+        firebaseConfig.projectId = "demo-punto-dulce";
+        firebaseConfig.apiKey = "fake-api-key-for-emulator";
+        console.warn("⚠️ MODO EMULADOR ACTIVADO ⚠️");
+    }
+}
+
 // Evitar inicializar si ya existe
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
-window.db = db; // Expuesto globalmente para acceso desde script.js y otros módulos
 const auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
+
+if (isLocalhost && useEmulator) {
+    db.useEmulator('127.0.0.1', 8080);
+    if (auth) {
+        auth.useEmulator('http://127.0.0.1:9099');
+    }
+}
+
+window.db = db; // Expuesto globalmente para acceso desde script.js y otros módulos
 console.log("Firebase Firestore y Auth inicializados.");
 
 // --- CONFIGURACIÓN DINÁMICA GLOBAL (VIP) ---
