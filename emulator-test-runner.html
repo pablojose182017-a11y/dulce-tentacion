@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Punto Dulce — Emulator Test Runner</title>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --border: #2e2e42;
+      --accent: #a855f7;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --blue: #60a5fa;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --font: 'Segoe UI', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 24px; }
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 { font-size: 1.6rem; color: var(--accent); }
+    header p { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+    #env-banner {
+      background: #1e1b30; border: 1px solid var(--accent); border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px; font-size: 0.82rem; color: var(--muted);
+      display: flex; gap: 24px; flex-wrap: wrap;
+    }
+    #env-banner span { display: flex; align-items: center; gap: 6px; }
+    #env-banner b { color: var(--text); }
+    #safety-error {
+      display: none; background: #2d0a0a; border: 2px solid var(--red);
+      border-radius: 10px; padding: 20px; margin-bottom: 24px; text-align: center;
+    }
+    #safety-error h2 { color: var(--red); margin-bottom: 8px; }
+    #safety-error p { color: var(--muted); font-size: 0.88rem; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    button {
+      padding: 9px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 0.85rem; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    button:hover { border-color: var(--accent); background: #1f1f30; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    button.primary:hover { background: #9333ea; }
+    button.danger { border-color: var(--red); color: var(--red); }
+    button.danger:hover { background: #2d0a0a; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    #test-list { display: flex; flex-direction: column; gap: 10px; }
+    .test-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 18px; display: grid; grid-template-columns: 220px 1fr auto;
+      align-items: start; gap: 12px;
+    }
+    .test-name { font-weight: 600; font-size: 0.88rem; }
+    .test-desc { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+    .test-log { font-size: 0.78rem; font-family: 'Consolas', monospace; color: var(--muted); margin-top: 6px; white-space: pre-wrap; word-break: break-all; }
+    .badge {
+      padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+      white-space: nowrap; min-width: 80px; text-align: center;
+    }
+    .badge.pending  { background: #1e1b30; color: var(--muted); border: 1px solid var(--border); }
+    .badge.running  { background: #1c2540; color: var(--blue); border: 1px solid var(--blue); }
+    .badge.pass     { background: #052e16; color: var(--green); border: 1px solid var(--green); }
+    .badge.fail     { background: #2d0a0a; color: var(--red); border: 1px solid var(--red); }
+    .badge.blocked  { background: #271d00; color: var(--yellow); border: 1px solid var(--yellow); }
+    footer { margin-top: 40px; text-align: center; font-size: 0.78rem; color: var(--muted); }
+    footer b { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Punto Dulce - Emulator Test Runner</h1>
+  <p>Pruebas funcionales aisladas contra Firebase Emulator Suite. Ningun dato de produccion es accedido o modificado.</p>
+</header>
+
+<div id="safety-error">
+  <h2>SALVAGUARDA ACTIVA - EJECUCION BLOQUEADA</h2>
+  <p id="safety-error-msg">Esta pagina solo puede conectarse al proyecto demo-punto-dulce en localhost.</p>
+</div>
+
+<div id="env-banner">
+  <span>Proyecto: <b id="info-project">-</b></span>
+  <span>Auth Emulator: <b id="info-auth">-</b></span>
+  <span>Firestore Emulator: <b id="info-fs">-</b></span>
+  <span>Salvaguarda: <b id="info-safe">-</b></span>
+</div>
+
+<div class="controls" id="controls" style="display:none">
+  <button class="primary" id="btn-run-all" onclick="runAll()">Ejecutar todas las pruebas</button>
+  <button id="btn-reset" class="danger" onclick="resetState()">Limpiar estado (sign out)</button>
+</div>
+
+<div id="test-list"></div>
+
+<footer>
+  <p>Este runner valida el comportamiento del SDK de Firebase y el emulador.<br/>
+  <b>No prueba la integracion completa de la UI del sitio de produccion.</b> Ese paso requiere pruebas manuales en el navegador.</p>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+<script>
+'use strict';
+
+var EMULATOR_CONFIG = {
+  REQUIRED_PROJECT_ID:     'demo-punto-dulce',
+  AUTH_EMULATOR_URL:        'http://127.0.0.1:9099',
+  FIRESTORE_EMULATOR_HOST:  '127.0.0.1',
+  FIRESTORE_EMULATOR_PORT:   8080
+};
+
+var fakeFirebaseConfig = {
+  apiKey:     'demo-fake-api-key-local-only',
+  authDomain: 'demo-punto-dulce.firebaseapp.com',
+  projectId:  EMULATOR_CONFIG.REQUIRED_PROJECT_ID
+};
+
+function validateSafeguards() {
+  var pid     = fakeFirebaseConfig.projectId;
+  var authUrl = EMULATOR_CONFIG.AUTH_EMULATOR_URL;
+  var fsHost  = EMULATOR_CONFIG.FIRESTORE_EMULATOR_HOST;
+
+  var projectOk = (pid === 'demo-punto-dulce');
+  var authOk    = authUrl.startsWith('http://127.0.0.1') || authUrl.startsWith('http://localhost');
+  var fsOk      = (fsHost === '127.0.0.1' || fsHost === 'localhost');
+
+  if (!projectOk || !authOk || !fsOk) {
+    var reason = [];
+    if (!projectOk) reason.push('ProjectID "' + pid + '" no es "demo-punto-dulce"');
+    if (!authOk)    reason.push('Auth URL "' + authUrl + '" no es localhost');
+    if (!fsOk)      reason.push('Firestore host "' + fsHost + '" no es localhost');
+    return { ok: false, reason: reason.join(' | ') };
+  }
+  return { ok: true };
+}
+
+var testApp, testAuth, testDb;
+
+function initTestFirebase() {
+  testApp  = firebase.initializeApp(fakeFirebaseConfig, 'emulator-test-runner');
+  testAuth = testApp.auth();
+  testDb   = testApp.firestore();
+
+  testAuth.useEmulator(EMULATOR_CONFIG.AUTH_EMULATOR_URL);
+  testDb.useEmulator(
+    EMULATOR_CONFIG.FIRESTORE_EMULATOR_HOST,
+    EMULATOR_CONFIG.FIRESTORE_EMULATOR_PORT
+  );
+}
+
+var TEST_EMAIL     = 'test.usuario@demo-punto-dulce.local';
+var TEST_PASSWORD  = 'PruebaLocal123!';
+var TEST_DOC_ID    = 'test-runner-doc';
+
+var tests = [
+  {
+    id: 'T1',
+    name: 'Registro de cuenta nueva',
+    desc: 'Crea una cuenta con email/contrasena en el Auth Emulator.',
+    fn: async function() {
+      var cred = await testAuth.createUserWithEmailAndPassword(TEST_EMAIL, TEST_PASSWORD);
+      if (!cred.user || !cred.user.uid) throw new Error('No se obtuvo un UID del emulador.');
+      return 'UID obtenido: ' + cred.user.uid;
+    }
+  },
+  {
+    id: 'T2',
+    name: 'Inicio de sesion correcto',
+    desc: 'Autentica con el email y contrasena creados en T1.',
+    fn: async function() {
+      await testAuth.signOut();
+      var cred = await testAuth.signInWithEmailAndPassword(TEST_EMAIL, TEST_PASSWORD);
+      if (!cred.user) throw new Error('signInWithEmailAndPassword no devolvio un usuario.');
+      return 'Sesion iniciada como: ' + cred.user.email + ' (UID: ' + cred.user.uid + ')';
+    }
+  },
+  {
+    id: 'T3',
+    name: 'Email duplicado en registro',
+    desc: 'Intenta crear una segunda cuenta con el mismo email. Debe arrojar auth/email-already-in-use.',
+    fn: async function() {
+      var caught = null;
+      try { await testAuth.createUserWithEmailAndPassword(TEST_EMAIL, TEST_PASSWORD); }
+      catch (err) { caught = err; }
+      if (!caught) throw new Error('No se lanzo ningun error — el emulador deberia rechazar el email duplicado.');
+      if (caught.code !== 'auth/email-already-in-use') throw new Error('Error inesperado: ' + caught.code);
+      return 'Error correcto recibido: ' + caught.code;
+    }
+  },
+  {
+    id: 'T4',
+    name: 'Contrasena incorrecta',
+    desc: 'Intenta iniciar sesion con contrasena erronea. Debe arrojar un codigo de error de credencial invalida.',
+    fn: async function() {
+      await testAuth.signOut();
+      var caught = null;
+      try { await testAuth.signInWithEmailAndPassword(TEST_EMAIL, 'Contrasena_Incorrecta_999!'); }
+      catch (err) { caught = err; }
+      if (!caught) throw new Error('No se lanzo error — el emulador deberia rechazar la contrasena incorrecta.');
+      var accepted = ['auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-login-credentials'];
+      if (!accepted.includes(caught.code)) throw new Error('Error inesperado: ' + caught.code);
+      return 'Error correcto recibido: ' + caught.code;
+    }
+  },
+  {
+    id: 'T5',
+    name: 'Autenticacion anonima',
+    desc: 'Inicia sesion anonimamente. Simula el flujo de invitado que realiza pedidos sin registrarse.',
+    fn: async function() {
+      await testAuth.signOut();
+      var cred = await testAuth.signInAnonymously();
+      if (!cred.user || !cred.user.isAnonymous) throw new Error('El usuario no es anonimo.');
+      return 'Usuario anonimo creado. UID: ' + cred.user.uid;
+    }
+  },
+  {
+    id: 'T6',
+    name: 'Vinculacion anonima -> email/contrasena',
+    desc: 'Vincula la cuenta anonima de T5 a email. El UID debe permanecer identico (preserva pedidos de invitado).',
+    fn: async function() {
+      var anonUser = testAuth.currentUser;
+      if (!anonUser || !anonUser.isAnonymous) throw new Error('T5 debe ejecutarse primero y dejar una sesion anonima activa.');
+      var uidAntes = anonUser.uid;
+      var linkEmail = 'invitado.vinculado@demo-punto-dulce.local';
+      var linkPass  = 'PruebaLink123!';
+      var cred = firebase.auth.EmailAuthProvider.credential(linkEmail, linkPass);
+      var linked = await anonUser.linkWithCredential(cred);
+      if (linked.user.uid !== uidAntes) {
+        throw new Error('UID cambio! Antes: ' + uidAntes + ' Despues: ' + linked.user.uid);
+      }
+      return 'UID preservado: ' + linked.user.uid + '\nEmail vinculado: ' + linked.user.email;
+    }
+  },
+  {
+    id: 'T7',
+    name: 'Escritura en Firestore Emulator',
+    desc: 'Escribe un documento de prueba en la coleccion test_runner del Firestore Emulator.',
+    fn: async function() {
+      var user = testAuth.currentUser;
+      if (!user) throw new Error('Se requiere sesion activa. T6 debe haberse ejecutado.');
+      var ref = testDb.collection('test_runner').doc(TEST_DOC_ID);
+      await ref.set({
+        tipo: 'prueba_funcional',
+        proyecto: 'demo-punto-dulce',
+        uid: user.uid,
+        email: user.email || '(anonimo vinculado)',
+        ts: new Date().toISOString(),
+        nota: 'Documento creado por emulator-test-runner. No es un dato de produccion.'
+      });
+      return 'Documento escrito exitosamente en: test_runner/' + TEST_DOC_ID;
+    }
+  },
+  {
+    id: 'T8',
+    name: 'Lectura desde Firestore Emulator',
+    desc: 'Lee el documento creado en T7 y verifica su contenido.',
+    fn: async function() {
+      var ref  = testDb.collection('test_runner').doc(TEST_DOC_ID);
+      var snap = await ref.get();
+      if (!snap.exists) throw new Error('Documento test_runner/' + TEST_DOC_ID + ' no encontrado.');
+      var data = snap.data();
+      if (data.proyecto !== 'demo-punto-dulce') throw new Error('El campo proyecto no coincide.');
+      return 'Documento leido correctamente.\nUID guardado: ' + data.uid + '\nTimestamp: ' + data.ts;
+    }
+  },
+  {
+    id: 'T9',
+    name: 'Cierre de sesion',
+    desc: 'Cierra la sesion activa y verifica que currentUser quede en null.',
+    fn: async function() {
+      await testAuth.signOut();
+      var user = testAuth.currentUser;
+      if (user !== null) throw new Error('Todavia hay sesion activa: ' + user.uid);
+      return 'Sesion cerrada exitosamente. currentUser = null.';
+    }
+  }
+];
+
+var state = {};
+
+function badgeLabel(status) {
+  var labels = { pending: 'PENDIENTE', running: 'EJECUTANDO', pass: 'PASS', fail: 'FAIL', blocked: 'BLOQUEADO' };
+  return labels[status] || status.toUpperCase();
+}
+
+function renderTests() {
+  var list = document.getElementById('test-list');
+  list.innerHTML = '';
+  tests.forEach(function(t) {
+    var s = state[t.id] || { status: 'pending', log: '' };
+    var card = document.createElement('div');
+    card.className = 'test-card';
+    card.id = 'card-' + t.id;
+    card.innerHTML =
+      '<div>' +
+        '<div class="test-name">' + t.id + ': ' + t.name + '</div>' +
+        '<div class="test-desc">' + t.desc + '</div>' +
+      '</div>' +
+      '<div class="test-log">' + (s.log || '-') + '</div>' +
+      '<div class="badge ' + s.status + '">' + badgeLabel(s.status) + '</div>';
+    list.appendChild(card);
+  });
+}
+
+function updateCard(id, status, log) {
+  state[id] = { status: status, log: log };
+  var card = document.getElementById('card-' + id);
+  if (!card) return;
+  card.querySelector('.test-log').textContent = log || '-';
+  var badge = card.querySelector('.badge');
+  badge.className = 'badge ' + status;
+  badge.textContent = badgeLabel(status);
+}
+
+async function runAll() {
+  document.getElementById('btn-run-all').disabled = true;
+  for (var i = 0; i < tests.length; i++) {
+    var t = tests[i];
+    updateCard(t.id, 'running', 'Ejecutando...');
+    try {
+      var result = await t.fn();
+      updateCard(t.id, 'pass', result);
+    } catch (err) {
+      updateCard(t.id, 'fail', 'ERROR: ' + (err.message || err.code || String(err)));
+    }
+    await new Promise(function(r) { setTimeout(r, 300); });
+  }
+  document.getElementById('btn-run-all').disabled = false;
+}
+
+async function resetState() {
+  if (!confirm('Cerrar sesion y reiniciar el estado de las pruebas? No elimina cuentas del emulador.')) return;
+  try { await testAuth.signOut(); } catch(e) {}
+  tests.forEach(function(t) { state[t.id] = { status: 'pending', log: '' }; });
+  renderTests();
+}
+
+(function main() {
+  var guard = validateSafeguards();
+
+  document.getElementById('info-project').textContent = fakeFirebaseConfig.projectId;
+  document.getElementById('info-auth').textContent    = EMULATOR_CONFIG.AUTH_EMULATOR_URL;
+  document.getElementById('info-fs').textContent      = EMULATOR_CONFIG.FIRESTORE_EMULATOR_HOST + ':' + EMULATOR_CONFIG.FIRESTORE_EMULATOR_PORT;
+
+  if (!guard.ok) {
+    document.getElementById('info-safe').textContent     = 'BLOQUEADO';
+    document.getElementById('info-safe').style.color     = '#ef4444';
+    document.getElementById('safety-error-msg').textContent =
+      'Configuracion rechazada: ' + guard.reason + '. Esta pagina no puede operar en esta configuracion.';
+    document.getElementById('safety-error').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('info-safe').textContent = 'Aislado (demo-punto-dulce)';
+  document.getElementById('info-safe').style.color = '#22c55e';
+
+  initTestFirebase();
+
+  document.getElementById('controls').style.display = 'flex';
+  tests.forEach(function(t) { state[t.id] = { status: 'pending', log: '' }; });
+  renderTests();
+})();
+</script>
+</body>
+</html>

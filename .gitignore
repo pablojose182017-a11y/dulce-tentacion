@@ -1,3 +1,13 @@
 *.bak
 backup_*
 _backup*/
+
+# Firebase Emulator Suite (local only — never commit)
+.firebase/
+firestore-debug.log
+ui-debug.log
+firestore-export/
+
+# Emulator-only config files — not for production deployment
+firebase.emulator.json
+firestore.emulator.rules

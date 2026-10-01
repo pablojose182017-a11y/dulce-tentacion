@@ -252,7 +252,7 @@ function saveCart() {
 function saveWizardDraft() {
     try { localStorage.setItem('dt_wizard_draft', JSON.stringify(wizardData)); } catch (e) { }
 }
-function saveUser() { try { if (currentUser) localStorage.setItem('dt_user', JSON.stringify(currentUser)); else localStorage.removeItem('dt_user'); } catch (e) { } }
+function saveUser() { try { if (currentUser) { const safeUser = { ...currentUser }; delete safeUser.password; localStorage.setItem('dt_user', JSON.stringify(safeUser)); } else localStorage.removeItem('dt_user'); } catch (e) { } }
 function saveAdminConfig() { try { localStorage.setItem('dt_admin_config', JSON.stringify(adminConfig)); } catch (e) { } }
 function savePedidosHistorial() { try { localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosHistorial)); } catch (e) { } }
 
@@ -422,7 +422,7 @@ function showAuthMessage(msg, type) {
     msgEl.style.display = 'block';
 }
 
-function loginCustomUser(e) {
+async function loginCustomUser(e) {
     if (e && e.preventDefault) e.preventDefault();
     const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
     const pass = (document.getElementById('loginPassword')?.value || '').trim();
@@ -431,121 +431,89 @@ function loginCustomUser(e) {
         return showAuthMessage('Por favor, completa todos los campos.', 'error');
     }
 
+    // Mantener la verificación de super admin por compatibilidad estricta
     if (SUPER_ADMINS.includes(email) && pass === 'Admin123*') {
         const adminName = (email === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
         const superAdminObj = {
-            name: adminName,
-            nombre: adminName,
-            email: email,
-            password: 'Admin123*',
-            role: 'admin',
-            rol: 'admin',
-            isAdmin: true,
-            blocked: false,
-            points: 500,
-            vip: true,
-            isVip: true,
-            vipStatus: 'activo',
+            name: adminName, nombre: adminName, email: email,
+            role: 'admin', rol: 'admin', isAdmin: true, blocked: false,
+            points: 500, vip: true, isVip: true, vipStatus: 'activo',
             picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
         };
         const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
-        if (uidx !== -1) {
-            db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
-        } else {
-            db_users.push({ ...superAdminObj });
-        }
+        if (uidx !== -1) db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
+        else db_users.push({ ...superAdminObj });
         saveUsersDB();
-
-        let regUsers = [];
-        try {
-            regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-            if (!Array.isArray(regUsers)) regUsers = [];
-        } catch (err) { regUsers = []; }
-        const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
-        if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...superAdminObj };
-        else regUsers.push({ ...superAdminObj });
-        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-
         return loginUserObj(superAdminObj);
     }
 
-    // Buscar en dt_users_db y dt_registered_users
-    let dbUsers = [];
-    try {
-        dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]');
-        if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
-            dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        try {
+            await firebase.auth().signInWithEmailAndPassword(email, pass);
+            
+            // Buscar perfil local para hidratar
+            let dbUsers = [];
+            try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch (err) {}
+            if (!Array.isArray(dbUsers) || dbUsers.length === 0) dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
+            
+            let foundUser = dbUsers.find(u => u && u.email && u.email.trim().toLowerCase() === email);
+            if (!foundUser) {
+                // Generar perfil base si no existe localmente pero sí autenticó
+                foundUser = { email: email, name: email.split('@')[0] };
+            }
+
+            if (foundUser.blocked || foundUser.estado === 'bloqueado') {
+                firebase.auth().signOut();
+                return showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
+            }
+
+            const resolvedRole = foundUser.role || foundUser.rol || 'cliente';
+            const isVip = !!(foundUser.isVip || foundUser.vip || resolvedRole === 'vip');
+            const userToLogin = {
+                name: foundUser.name || foundUser.nombre || (email.split('@')[0]),
+                nombre: foundUser.name || foundUser.nombre || (email.split('@')[0]),
+                email: email,
+                phone: foundUser.phone || foundUser.telefono || '',
+                role: resolvedRole, rol: resolvedRole, isAdmin: (resolvedRole === 'admin'),
+                isVip: isVip, vip: isVip, vipStatus: foundUser.vipStatus || (isVip ? 'activo' : 'inactivo'),
+                points: (foundUser.points !== undefined && foundUser.points !== null) ? foundUser.points : (foundUser.puntos || 15),
+                picture: foundUser.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(foundUser.name || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+                blocked: false
+            };
+
+            const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+            if (dbIdx !== -1) db_users[dbIdx] = { ...db_users[dbIdx], ...userToLogin };
+            else db_users.push({ ...userToLogin });
+            saveUsersDB();
+
+            loginUserObj(userToLogin);
+
+        } catch (err) {
+            // Verificar si el usuario existe localmente (Legacy) pero no en Firebase
+            let localExists = false;
+            try {
+                const dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+                localExists = dbUsers.some(u => u && u.email && u.email.toLowerCase() === email);
+            } catch (e) {}
+
+            if (err.code === 'auth/user-not-found') {
+                if (localExists) {
+                    return showAuthMessage('Tu cuenta es antigua. Por seguridad, regístrate nuevamente con este correo para migrar tus datos y conservar tu historial.', 'error');
+                }
+                return showAuthMessage('El usuario no existe o el correo es incorrecto.', 'error');
+            } else if (err.code === 'auth/wrong-password') {
+                return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
+            } else if (err.code === 'auth/too-many-requests') {
+                return showAuthMessage('Demasiados intentos fallidos. Por favor, intenta más tarde.', 'error');
+            }
+            return showAuthMessage('Error de autenticación: ' + (err.message || err.code), 'error');
         }
-    } catch (err) { dbUsers = db_users || []; }
-
-    let regUsers = [];
-    try {
-        regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-        if (!Array.isArray(regUsers)) regUsers = [];
-    } catch (err) { regUsers = []; }
-
-    // Buscar coincidencia en dt_registered_users y luego en dbUsers
-    let foundUser = regUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && (u.password === pass)));
-    if (!foundUser) {
-        foundUser = dbUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)) && (u.password === pass)));
-    }
-
-    // Si aún no se encontró con contraseña exacta, comprobar si el usuario existe para mensaje claro
-    if (!foundUser) {
-        const userExists = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email))) ||
-            dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === email || (u.username && u.username.trim().toLowerCase() === email)));
-        if (userExists) {
-            return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
-        }
-        return showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');
-    }
-
-    if (foundUser.blocked || foundUser.estado === 'bloqueado') {
-        return showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
-    }
-
-    // Normalizar objeto de usuario con rol y estado VIP correctos
-    const resolvedRole = foundUser.role || foundUser.rol || 'cliente';
-    const isVip = !!(foundUser.isVip || foundUser.vip || resolvedRole === 'vip');
-    const userToLogin = {
-        name: foundUser.name || foundUser.nombre || (email.split('@')[0]),
-        nombre: foundUser.name || foundUser.nombre || (email.split('@')[0]),
-        email: (foundUser.email || email).toLowerCase().trim(),
-        phone: foundUser.phone || foundUser.telefono || '',
-        password: foundUser.password || pass,
-        role: resolvedRole,
-        rol: resolvedRole,
-        isAdmin: (resolvedRole === 'admin'),
-        isVip: isVip,
-        vip: isVip,
-        vipStatus: foundUser.vipStatus || (isVip ? 'activo' : 'inactivo'),
-        points: (foundUser.points !== undefined && foundUser.points !== null) ? foundUser.points : (foundUser.puntos || 15),
-        picture: foundUser.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(foundUser.name || 'Usuario')}&background=d81b60&color=fff&bold=true`,
-        blocked: false
-    };
-
-    // Sincronizar en db_users / dt_users_db
-    const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === userToLogin.email);
-    if (dbIdx !== -1) {
-        db_users[dbIdx] = { ...db_users[dbIdx], ...userToLogin };
     } else {
-        db_users.push({ ...userToLogin });
+        return showAuthMessage('El servicio de autenticación no está disponible en este momento.', 'error');
     }
-    saveUsersDB();
-
-    // Sincronizar en dt_registered_users
-    const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === userToLogin.email);
-    if (rIdx !== -1) {
-        regUsers[rIdx] = { ...regUsers[rIdx], ...userToLogin };
-    } else {
-        regUsers.push({ ...userToLogin });
-    }
-    localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-
-    loginUserObj(userToLogin);
 }
 
-function registerCustomUser(e) {
+async function registerCustomUser(e) {
     e.preventDefault();
     const name = document.getElementById('regName').value.trim();
     const phone = document.getElementById('regPhone').value.trim();
@@ -557,26 +525,63 @@ function registerCustomUser(e) {
         return showAuthMessage('Por favor, completa todos los campos obligatorios para registrarte.', 'error');
     }
 
-    if (db_users.find(u => u && u.email && u.email.trim().toLowerCase() === email)) {
-        return showAuthMessage('Este correo ya está registrado. Por favor inicia sesión.', 'error');
-    }
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const authObj = firebase.auth();
+        try {
+            // Manejar vinculación si hay una cuenta anónima activa (para preservar pedidos invitados)
+            if (authObj.currentUser && authObj.currentUser.isAnonymous) {
+                const cred = firebase.auth.EmailAuthProvider.credential(email, pass);
+                await authObj.currentUser.linkWithCredential(cred);
+            } else {
+                await authObj.createUserWithEmailAndPassword(email, pass);
+            }
 
-    const newUser = {
-        name,
-        email,
-        phone,
-        password: pass,
-        birthday: birthday,
-        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-        points: 15
-    };
-    db_users.push(newUser);
-    currentUser = newUser;
-    saveUsersDB();
-    saveUser();
-    syncUserUI();
-    closeAuthModal();
-    showToast("¡Registro exitoso! Bienvenido al Club P&S Punto Dulce 🍰", "🎉");
+            // Ya no verificamos db_users.find preventivamente porque Firebase maneja la unicidad real.
+            // Si el correo existía localmente, la cuenta de Firebase lo validará o se unificará el perfil aquí.
+            const newUser = {
+                name,
+                email,
+                phone,
+                birthday: birthday,
+                picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
+                points: 15
+            };
+            
+            const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+            if (dbIdx !== -1) {
+                // Preservar historial o rol legacy seguro si existía localmente, pero limpiando password
+                const legacy = db_users[dbIdx];
+                newUser.points = (legacy.points !== undefined && legacy.points !== null) ? legacy.points : 15;
+                if (legacy.role === 'admin' && !SUPER_ADMINS.includes(email)) {
+                    // No transferir privilegios de admin local automáticamente a cuentas nuevas de Firebase
+                } else {
+                    newUser.role = legacy.role || 'cliente';
+                }
+                db_users[dbIdx] = newUser;
+            } else {
+                db_users.push(newUser);
+            }
+
+            currentUser = newUser;
+            saveUsersDB();
+            saveUser();
+            syncUserUI();
+            if (typeof window.syncCurrentUserToCloud === 'function') window.syncCurrentUserToCloud();
+            
+            closeAuthModal();
+            showToast("¡Registro exitoso! Bienvenido al Club P&S Punto Dulce 🍰", "🎉");
+
+        } catch (err) {
+            if (err.code === 'auth/email-already-in-use' || err.code === 'auth/credential-already-in-use') {
+                return showAuthMessage('Este correo ya está registrado en la nube. Por favor inicia sesión.', 'error');
+            } else if (err.code === 'auth/weak-password') {
+                return showAuthMessage('La contraseña es demasiado débil (mínimo 6 caracteres).', 'error');
+            }
+            return showAuthMessage('Error al registrar: ' + (err.message || err.code), 'error');
+        }
+    } else {
+        return showAuthMessage('El servicio de autenticación no está disponible en este momento.', 'error');
+    }
 }
 
 const defaultPointRewards = [
@@ -1598,7 +1603,7 @@ function saveAdminEmails() {
     try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
 }
 function saveStockConfig() { try { localStorage.setItem('dt_stock_config', JSON.stringify(stockConfig)); } catch (e) { } }
-function saveUsersDB() { try { localStorage.setItem('dt_users_db', JSON.stringify(db_users)); } catch (e) { } }
+function saveUsersDB() { try { const safeDB = db_users.map(u => { const safeU = { ...u }; delete safeU.password; return safeU; }); localStorage.setItem('dt_users_db', JSON.stringify(safeDB)); } catch (e) { } }
 
 function loginUserObj(userObj) {
     if (userObj && userObj.email) {
