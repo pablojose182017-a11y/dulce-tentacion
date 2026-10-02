@@ -2636,6 +2636,21 @@ function renderStockAdmin() {
 function toggleStock(id) {
     stockConfig[id] = !stockConfig[id];
     saveStockConfig();
+
+    // Actualizar disponibilidad en Firebase
+    try {
+        let localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {};
+        if (!localCatalog[id]) localCatalog[id] = {};
+        localCatalog[id].agotado = stockConfig[id];
+        localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+        
+        if (typeof db !== 'undefined') {
+            db.collection('config').doc('catalogo_personalizado').set({
+                [id]: { agotado: stockConfig[id] }
+            }, { merge: true }).catch(e => console.warn("Error sync stock", e));
+        }
+    } catch(e) { console.warn("Error update local stock", e); }
+
     renderStockAdmin();
     if (typeof renderKitchenStock === 'function') renderKitchenStock();
     renderProducts();
@@ -5074,6 +5089,13 @@ window.generateSecureOrderId = generateSecureOrderId;
 
 function sendOrder() {
     if (cart.length === 0) return alert("¡Tu carrito está vacío!");
+
+    // FASE 14: Validar si algún producto del carrito se agotó recientemente
+    const agotados = cart.filter(item => typeof stockConfig !== 'undefined' && stockConfig[item.id]);
+    if (agotados.length > 0) {
+        const nombresAgotados = agotados.map(i => i.name).join(', ');
+        return alert(`Lo sentimos, los siguientes productos se acaban de agotar: ${nombresAgotados}. Por favor, retíralos del carrito para continuar.`);
+    }
 
     const nameElement = document.getElementById('orderName');
     const addrElement = document.getElementById('orderAddress');

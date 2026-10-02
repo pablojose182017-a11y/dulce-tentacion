@@ -1247,6 +1247,12 @@ window.addEventListener('DOMContentLoaded', () => {
                         p.points = pts;
                         p.puntos = pts;
                     }
+
+                    if (customData.agotado !== undefined) {
+                        if (typeof stockConfig !== 'undefined') {
+                            stockConfig[p.id] = customData.agotado;
+                        }
+                    }
                 }
             }
             if (typeof renderProducts === 'function') renderProducts();
@@ -1261,14 +1267,19 @@ window.addEventListener('DOMContentLoaded', () => {
         if (localCatalog) applyCustomCatalog(localCatalog);
     } catch(e) {}
 
-    // Luego consultar Firestore
-    db.collection('config').doc('catalogo_personalizado').get().then(doc => {
+    // Luego suscribirse a Firestore (Tiempo Real)
+    if (window.unsubCatalogo) {
+        window.unsubCatalogo();
+    }
+    window.unsubCatalogo = db.collection('config').doc('catalogo_personalizado').onSnapshot(doc => {
         if (doc.exists) {
             const remoteCatalog = doc.data();
             localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(remoteCatalog));
             applyCustomCatalog(remoteCatalog);
         }
-    }).catch(err => console.warn("No se pudo cargar el catálogo personalizado de Firestore", err));
+    }, err => {
+        console.warn("No se pudo cargar el catálogo personalizado de Firestore o se perdió la conexión", err);
+    });
 
     // --- SINCRONIZACIÓN DE RECOMPENSAS CLUB VIP & PUNTOS ---
     try {
