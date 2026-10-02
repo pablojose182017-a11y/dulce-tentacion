@@ -62,19 +62,84 @@ class ChatBridge {
                 permissionManager: this.permissionManager
             });
         }
+        
+        if (window.AI_CORE.LanguageUnderstandingEngine) {
+            this.understandingEngine = new window.AI_CORE.LanguageUnderstandingEngine();
+        }
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal) {
-        const msgLower = message.toLowerCase();
-        const isResearchIntent = msgLower.startsWith('investiga') || 
-                                 msgLower.startsWith('research') || 
-                                 msgLower.includes('investigate') || 
-                                 msgLower.includes('find out why') ||
-                                 msgLower.includes('busca información') ||
-                                 msgLower.includes('busca informacion') ||
-                                 msgLower.includes('averigua');
+        // --- 1. NATURAL LANGUAGE UNDERSTANDING ---
+        let interpretation = { intent: "UNKNOWN_FACTUAL", isClarificationNeeded: false };
+        if (this.understandingEngine) {
+            const contextHistory = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+            interpretation = this.understandingEngine.analyze(message, contextHistory);
+        } else {
+            // Fallback legacy research detection
+            const msgLower = message.toLowerCase();
+            const isLegacyResearch = msgLower.startsWith('investiga') || msgLower.startsWith('research') || msgLower.includes('busca información');
+            if (isLegacyResearch) interpretation.intent = "RESEARCH_REQUEST";
+        }
 
-        if (isResearchIntent && this.researchEngine) {
+        // --- 2. CLARIFICATION HANDLING ---
+        if (interpretation.isClarificationNeeded && this.understandingEngine) {
+            const responseText = this.understandingEngine.generateClarificationMessage(interpretation);
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, isClarification: true });
+            return responseText;
+        }
+
+        // --- 3. CONVERSATIONAL & DIRECT ROUTING ---
+        if (interpretation.intent === "SOCIAL_GREETING") {
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const isCreator = user && user.email === 'pablojose182017@gmail.com';
+            const responseText = isCreator ? "¡Hola, Pablo! 😄 Todo listo por aquí. ¿Qué revisamos hoy en el sistema, costos o código?" : "¡Hola! 👋 Soy el Guardián Financiero. Estoy aquí para ayudarte. ¿Qué necesitas revisar hoy?";
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
+        if (interpretation.intent === "SOCIAL_QUESTION") {
+            const responseText = "¡Estoy listo y operando al 100%! 🚀 ¿Qué vamos a resolver hoy?";
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
+        if (interpretation.intent === "SOCIAL_THANKS") {
+            const responseText = "¡De nada! Es mi deber como tu Guardián. Cuenta conmigo para lo que necesites.";
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
+        if (interpretation.intent === "SOCIAL_FAREWELL") {
+            const responseText = "¡Hasta luego! 👋 Estaré aquí vigilando los números y la seguridad del sistema mientras no estás.";
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
+        if (interpretation.intent === "KNOWLEDGE_SHARING") {
+            const responseText = "Perfecto. Compárteme la información y la analizaré. Para almacenarla permanentemente, utiliza el formato estricto iniciando tu mensaje con la frase 'Guarda este conocimiento: '. Antes de guardarla, revisaré su validez estructural según nuestros protocolos.";
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
+        // --- 4. FINANCIAL QUERIES DELEGATION ---
+        if (interpretation.intent === "FINANCIAL_QUERY" && window._gf_resolverLocalmente) {
+            // Let the local specialized financial resolver handle math securely
+            const localRes = window._gf_resolverLocalmente(message);
+            if (localRes !== null) {
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', localRes, { isGeneratedResponse: true, intent: interpretation.intent });
+                return localRes;
+            }
+        }
+
+        // --- 5. RESEARCH ENGINE ROUTING ---
+        if (interpretation.intent === "RESEARCH_REQUEST" && this.researchEngine) {
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
             const contextData = { user: { data: user } };
             try {
