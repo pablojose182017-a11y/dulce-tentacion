@@ -80,16 +80,35 @@ class ChatBridge {
             const isLegacyResearch = msgLower.startsWith('investiga') || msgLower.startsWith('research') || msgLower.includes('busca información');
             if (isLegacyResearch) interpretation.intent = "RESEARCH_REQUEST";
         }
+        
+        console.log("[DEBUG CHATBRIDGE] Intent detectado:", interpretation.intent, "isClarif:", interpretation.isClarificationNeeded);
 
         // --- 2. CLARIFICATION HANDLING ---
         if (interpretation.isClarificationNeeded && this.understandingEngine) {
             const responseText = this.understandingEngine.generateClarificationMessage(interpretation);
             this.memoryManager.addTurn('user', message);
-            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, isClarification: true });
+            this.memoryManager.addTurn('assistant', responseText, { intent: interpretation.intent, isClarification: true, pendingIntent: interpretation.intent });
             return responseText;
         }
 
         // --- 3. CONVERSATIONAL & DIRECT ROUTING ---
+        if (interpretation.intent === "CORRECTION") {
+            const right = interpretation.topic;
+            // Learn it if we asked a clarification before or it's a direct correction
+            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+            const lastUserTurn = history.slice().reverse().find(m => m.role === 'user' && m.text !== message);
+            if (lastUserTurn) {
+                // simple heuristic: learn the whole last user turn mapped to this right topic if it was short
+                if (lastUserTurn.text.split(' ').length <= 3) {
+                    this.understandingEngine.learnCorrection(lastUserTurn.text.toLowerCase().trim(), right);
+                }
+            }
+            const responseText = `Entendido. Tomo nota de la corrección: "${right}".`;
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { intent: interpretation.intent });
+            return responseText;
+        }
+
         if (interpretation.intent === "SOCIAL_GREETING") {
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
             const isCreator = user && user.email === 'pablojose182017@gmail.com';
@@ -120,6 +139,26 @@ class ChatBridge {
             return responseText;
         }
 
+        if (interpretation.intent === "HELP_REQUEST") {
+            const responseText = `¡Claro! Estoy aquí para ayudarte. ¿Qué necesitas revisar sobre ${interpretation.topic || 'el sistema'}?`;
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
+        if (interpretation.intent === "USER_COMPLAINT") {
+            // Contextual explanation based on conversation history
+            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+            const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
+            let responseText = "Como sistema local, a veces necesito que me especifiques exactamente qué necesitas para poder buscar en mi base de datos sin conectarme a internet. ¿Se trata de costos, recetas o alguna duda de ventas?";
+            if (lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.isClarification) {
+                responseText = "Te lo pregunto porque detecté ambigüedad en tu mensaje anterior y necesito estar completamente seguro de lo que deseas antes de procesar información de tu negocio. ¿En qué tema específico necesitas que te asista?";
+            }
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+            return responseText;
+        }
+
         if (interpretation.intent === "KNOWLEDGE_SHARING") {
             const responseText = "Perfecto. Compárteme la información y la analizaré. Para almacenarla permanentemente, utiliza el formato estricto iniciando tu mensaje con la frase 'Guarda este conocimiento: '. Antes de guardarla, revisaré su validez estructural según nuestros protocolos.";
             this.memoryManager.addTurn('user', message);
@@ -129,8 +168,8 @@ class ChatBridge {
 
         // --- 4. FINANCIAL QUERIES DELEGATION ---
         if (interpretation.intent === "FINANCIAL_QUERY" && window._gf_resolverLocalmente) {
-            // Let the local specialized financial resolver handle math securely
-            const localRes = window._gf_resolverLocalmente(message);
+            // Let the local specialized financial resolver handle math securely, using the typo-corrected text
+            const localRes = window._gf_resolverLocalmente(interpretation.normalizedText);
             if (localRes !== null) {
                 this.memoryManager.addTurn('user', message);
                 this.memoryManager.addTurn('assistant', localRes, { isGeneratedResponse: true, intent: interpretation.intent });
@@ -139,38 +178,31 @@ class ChatBridge {
         }
 
         // --- 5. RESEARCH ENGINE ROUTING ---
-        if (interpretation.intent === "RESEARCH_REQUEST" && this.researchEngine) {
+        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION") {
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
-            const contextData = { user: { data: user } };
-            try {
-                const report = await this.researchEngine.investigate(message, contextData);
-                
-                let responseText = '';
-                if (report.status === 'COMPLETED' || report.status === 'LOCAL_SUFFICIENT' || report.status === 'OFFLINE_ONLY') {
-                    responseText = `[INVESTIGACIÓN COMPLETA]\nConclusión: ${report.conclusion}\n` +
-                                   `Confianza: ${(report.confidence * 100).toFixed(0)}%\n` +
-                                   (report.contradictions.length > 0 ? `Contradicciones: ${report.contradictions.join(', ')}\n` : '') +
-                                   `Fuentes: Locales(${report.localResultsUsed.length}), Web(${report.webResultsUsed.length})\n` +
-                                   (report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}` : '');
-                } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
-                    responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${report.limitations.join(', ')}`;
-                } else {
-                    responseText = `[INVESTIGACIÓN] Estado inesperado: ${report.status}`;
-                }
+            const contextData = { user: { data: user }, webSearchApproved: false };
+            return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
+        }
 
+        if (interpretation.intent === "AUTHORIZATION_GRANTED") {
+            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+            const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
+            if (lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.researchStatus === 'REQUIRES_WEB_APPROVAL') {
+                const pendingTask = lastAssistantMsg.metadata.researchTask;
+                const user = this.identityManager.getCurrentUser(currentUserGlobal);
+                const contextData = { user: { data: user }, webSearchApproved: true };
+                return await this._executeResearch(pendingTask, contextData, message);
+            }
+        }
+
+        if (interpretation.intent === "AUTHORIZATION_DENIED") {
+            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+            const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
+            if (lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.researchStatus === 'REQUIRES_WEB_APPROVAL') {
+                const responseText = "Entendido. He cancelado la búsqueda en internet. Me limitaré a la información que ya tengo almacenada localmente. ¿Hay algo más en lo que te pueda ayudar?";
                 this.memoryManager.addTurn('user', message);
-                this.memoryManager.addTurn('assistant', responseText, {
-                    isGeneratedResponse: true,
-                    isResearchReport: true,
-                    researchStatus: report.status
-                });
-
+                this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
                 return responseText;
-            } catch (e) {
-                const errText = `[ERROR DE INVESTIGACIÓN] Hubo un problema al investigar: ${e.message}`;
-                this.memoryManager.addTurn('user', message);
-                this.memoryManager.addTurn('assistant', errText, { isGeneratedResponse: true, isError: true });
-                return errText;
             }
         }
 
@@ -253,7 +285,11 @@ class ChatBridge {
                 responseText = `[FAIL_CLOSED] Subsistema de ejecución/seguridad no disponible.`;
             }
         } else {
-            responseText = await this.provider.generate(message, context);
+            // FASE 13: Local reasoning generation instead of Mock Provider
+            responseText = `[RAZONAMIENTO LOCAL]\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
+            if (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL") && analysis.uncertainty.missingInformation && analysis.uncertainty.missingInformation.length > 0) {
+                responseText += `\nFalta información: ${analysis.uncertainty.missingInformation.join(', ')}`;
+            }
         }
 
         this.memoryManager.addTurn('assistant', responseText, {
@@ -278,9 +314,6 @@ class ChatBridge {
         let authRecord;
         try {
             authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
-            // Eliminación segura: la solicitud solo se consume formalmente cuando 
-            // SecurityEngine emite satisfactoriamente el ApprovalRecord (autoridad confirmada).
-            // Esto evita doble aprobación y previene pérdida en caso de fallo intermedio.
             this._pendingApprovals.delete(requestId);
         } catch (e) {
             throw new Error(`FAIL_CLOSED: ${e.message}`);
@@ -306,6 +339,54 @@ class ChatBridge {
                 isGeneratedResponse: true
             });
             throw new Error(`FAIL_CLOSED: ${e.message}`);
+        }
+    }
+
+    async _executeResearch(taskQuery, contextData, originalMessage) {
+        if (!this.researchEngine) {
+            return "El motor de investigación no está disponible.";
+        }
+        try {
+            const report = await this.researchEngine.investigate(taskQuery, contextData);
+            let responseText = '';
+            
+            if (report.status === 'REQUIRES_WEB_APPROVAL') {
+                responseText = "He revisado mi conocimiento local y no tengo información suficiente sobre esto. Necesito tu autorización explícita para buscar esta información en internet. ¿Me permites investigar en la web?";
+                this.memoryManager.addTurn('user', originalMessage);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    intent: "RESEARCH_REQUEST",
+                    isResearchReport: true,
+                    researchStatus: report.status,
+                    researchTask: taskQuery
+                });
+                return responseText;
+            }
+            
+            if (report.status === 'COMPLETED' || report.status === 'LOCAL_SUFFICIENT' || report.status === 'OFFLINE_ONLY') {
+                responseText = `[INVESTIGACIÓN COMPLETA]\nConclusión: ${report.conclusion}\n` +
+                               `Confianza: ${(report.confidence * 100).toFixed(0)}%\n` +
+                               (report.contradictions && report.contradictions.length > 0 ? `Contradicciones: ${report.contradictions.join(', ')}\n` : '') +
+                               `Fuentes: Locales(${report.localResultsUsed ? report.localResultsUsed.length : 0}), Web(${report.webResultsUsed ? report.webResultsUsed.length : 0})\n` +
+                               (report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}` : '');
+            } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
+                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${(report.limitations||[]).join(', ')}`;
+            } else {
+                responseText = `[INVESTIGACIÓN] Estado inesperado: ${report.status}`;
+            }
+
+            this.memoryManager.addTurn('user', originalMessage);
+            this.memoryManager.addTurn('assistant', responseText, {
+                intent: "RESEARCH_REQUEST",
+                isResearchReport: true,
+                researchStatus: report.status
+            });
+
+            return responseText;
+        } catch (e) {
+            const errText = `[ERROR DE INVESTIGACIÓN] Hubo un problema al investigar: ${e.message}`;
+            this.memoryManager.addTurn('user', originalMessage);
+            this.memoryManager.addTurn('assistant', errText, { isGeneratedResponse: true, isError: true });
+            return errText;
         }
     }
 

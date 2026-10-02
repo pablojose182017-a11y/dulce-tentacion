@@ -83,14 +83,25 @@ class ResearchEngine {
         // 2. WEB FETCH (si es necesario y permitido)
         let webFindings = [];
         const user = contextData && contextData.user ? contextData.user.data : null;
-        const canWebSearch = this.permissionManager ? this._checkPermission(user, 'WEB_SEARCH') : true; // Por defecto permitimos si no hay PM estricto en test
+        const explicitApproval = contextData && contextData.webSearchApproved;
+        const canWebSearch = this.permissionManager ? this._checkPermission(user, 'WEB_SEARCH') : true;
 
         if (needsWeb) {
             if (!canWebSearch) {
                 log('Permiso WEB_SEARCH denegado o no disponible. Fallback a modo OFFLINE_ONLY.');
                 needsWeb = false;
+            } else if (!explicitApproval) {
+                log('Permiso WEB_SEARCH requiere autorización explícita del usuario.');
+                return Object.freeze({
+                    taskId: 'res_' + Date.now(),
+                    query: task,
+                    status: 'REQUIRES_WEB_APPROVAL',
+                    conclusion: 'La evidencia local es insuficiente. Necesito buscar en internet para darte una respuesta precisa.',
+                    missingInformation: ['autorización del usuario para búsqueda web'],
+                    auditTrail: auditTrail
+                });
             } else {
-                log('Permiso WEB_SEARCH confirmado. Ejecutando busqueda web...');
+                log('Permiso WEB_SEARCH confirmado y autorizado explícitamente. Ejecutando...');
                 try {
                     const searchResults = await this.webFetcher.search(task, 3);
                     for (const res of searchResults) {

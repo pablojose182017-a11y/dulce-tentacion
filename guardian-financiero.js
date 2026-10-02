@@ -222,7 +222,7 @@ window.cargarMemoriaGuardian = function() {
 
 window.reiniciarChatGuardian = function() {
     if(confirm('¿Seguro que deseas iniciar una nueva charla y borrar el historial del chat de esta sesión?')) {
-        const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') === 'true';
+        const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') !== 'false';
         if (useNewAiCore) {
             if (window.AI_CORE && window.AI_CORE.chatBridgeInstance) {
                 window.AI_CORE.chatBridgeInstance.clearSession();
@@ -250,7 +250,7 @@ window.enviarMensajeGuardian = async function(textoPredefinido = null) {
 
     window.appendMensajeGuardian(msgTexto, 'user', true);
 
-    const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') === 'true';
+    const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') !== 'false';
 
     if (useNewAiCore) {
         if (window.AI_CORE && window.AI_CORE.chatBridgeInstance) {
