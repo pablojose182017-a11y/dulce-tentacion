@@ -102,6 +102,12 @@ class ChatBridge {
             interpretation.isClarificationNeeded = false;
         }
 
+        // FASE 14 - Explicit instruction to search resumes pending
+        if (interpretation.intent === "RESEARCH_REQUEST" && interpretation.isClarificationNeeded && hasPendingApproval) {
+            interpretation.intent = "AUTHORIZATION_GRANTED";
+            interpretation.isClarificationNeeded = false;
+        }
+
         // --- 2. CLARIFICATION HANDLING ---
         if (interpretation.isClarificationNeeded && this.understandingEngine) {
             const responseText = this.understandingEngine.generateClarificationMessage(interpretation);

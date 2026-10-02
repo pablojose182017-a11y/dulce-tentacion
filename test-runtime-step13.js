@@ -16,6 +16,7 @@ global.alert = () => {};
 global.currentUser = { email: "usuario_normal@gmail.com" }; 
 
 let fetchUrls = [];
+let queryPassedToFetch = "";
 global.fetch = async (url) => {
     fetchUrls.push(url);
     if (url.includes('nominatim')) {
@@ -26,6 +27,10 @@ global.fetch = async (url) => {
     if (url.includes('descubrio')) keywords = 'descubrio america';
     else if (url.includes('mona+lisa')) keywords = 'pinto mona lisa';
     else if (url.includes('guerra')) keywords = 'acabo segunda guerra';
+    else if (url.includes('programacion')) {
+        keywords = 'programacion basica y avanzada';
+        queryPassedToFetch = url;
+    }
     else keywords = 'invento el pan';
 
     if (url.includes('duckduckgo') || url.includes('html') || url.includes('mock.com')) {
@@ -123,7 +128,7 @@ async function runTests() {
 
     // 2. Explicit authorization with spelling errors resumes the correct pending query
     // and The original research topic, not the approval text, reaches WebFetcher
-    let queryPassedToFetch = "";
+    queryPassedToFetch = "";
     const originalFetch = global.fetch;
     global.fetch = async (url) => {
         fetchUrls.push(url);
@@ -234,11 +239,30 @@ async function runTests() {
         console.error(`❌ [FAIL] T9.3: WebFetcher WAS called`);
         failed++;
     }
+    
+    global.fetch = originalFetch;
 
     // 10. No external AI
     const noExternal = !fetchUrls.some(u => u.includes('generative'));
     if (noExternal) { console.log(`✅ [PASS] T10: No external AI calls made`); passed++; }
     else { console.error(`❌ [FAIL] T10: Gemini invoked`); failed++; }
+
+    // 11. Improved Web Research Intent Parsing (Typos, Accents, Prefixes)
+    window.AI_CORE.chatBridgeInstance.clearSession();
+    // This string contains typos: iternet (internet), bucar (buscar), informavion (informacion)
+    // It also contains multiple qualifiers "programacion basica y avanzada"
+    if (await checkIntent("T11.1: Typo-heavy research request creates pending request", "sal a iternet a bucar informavion de programacion basica y avanzada", "Necesito tu autorización explícita")) passed++; else failed++;
+    
+    queryPassedToFetch = "";
+    if (await checkIntent("T11.2: Proceeds with the exact preserved topic", "si procede", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
+    
+    if (queryPassedToFetch.includes("programacion+basica+y+avanzada") || queryPassedToFetch.includes("programacion%20basica%20y%20avanzada")) {
+        console.log(`✅ [PASS] T11.3: Complex preserved topic reached WebFetcher`);
+        passed++;
+    } else {
+        console.error(`❌ [FAIL] T11.3: Topic did not reach WebFetcher properly. URL: ${queryPassedToFetch}`);
+        failed++;
+    }
 
     console.log(`\n--- Resultados ---\nPASS: ${passed}   FAIL: ${failed}`);
     process.exit(failed > 0 ? 1 : 0);

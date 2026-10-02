@@ -19,7 +19,7 @@ class LanguageUnderstandingEngine {
             FINANCIAL_INGREDIENTS: ['ingredientes', 'receta', 'insumos', 'que lleva', 'que contiene'],
             FINANCIAL_LOSS: ['perdida', 'perder', 'por debajo', 'poca ganancia'],
             ANALYSIS_REQUEST: ['analiza', 'compara', 'revisa', 'evalua', 'analizar'],
-            RESEARCH_REQUEST: ['investiga', 'research', 'busca informacion', 'averigua', 'busca en internet', 'buscalo en internet', 'indaga', 'busca', 'buscalo'],
+            RESEARCH_REQUEST: ['investiga', 'research', 'busca informacion', 'averigua', 'busca en internet', 'buscalo en internet', 'indaga', 'busca', 'buscalo', 'buscar', 'buscar informacion', 'sal a internet', 'busca en la web', 'averigua en internet', 'buscame'],
             USER_COMPLAINT: ['no me respondes', 'no entiendes', 'por que no respondes', 'que te pasa', 'estas mal', 'responde bien', 'no sabes', 'error', 'que necesitas', 'por que preguntas'],
             AUTHORIZATION_GRANTED: ['si', 'autorizado', 'procede', 'adelante', 'hazlo', 'de acuerdo', 'claro', 'por supuesto', 'dale'],
             AUTHORIZATION_DENIED: ['no', 'denegado', 'cancela', 'no lo hagas', 'detente', 'espera', 'omite', 'ignora']
@@ -235,10 +235,50 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
-        if (this._containsPhrase(normalized, this.dictionaries.RESEARCH_REQUEST)) {
+        if (this._containsPhrase(normalized, this.dictionaries.RESEARCH_REQUEST) || normalized.includes("sal a internet") || normalized.includes("busca en la web")) {
             interpretation.intent = "RESEARCH_REQUEST";
-            const researchStops = new Set([...this.dictionaries.RESEARCH_REQUEST.flatMap(p => p.split(' ')), 'sobre']);
-            interpretation.topic = tokens.filter(t => !researchStops.has(t) && !/necesito|ayuda|ayudame|auxilio|quiero|alludes|ayudes/.test(t)).join(' ');
+            
+            // Extract topic by removing known research prefixes/phrases
+            let extractedTopic = normalized;
+            const removePhrases = [
+                "sal a internet a buscar informacion sobre",
+                "sal a internet a buscar informacion de",
+                "sal a internet a buscar informacion",
+                "sal a internet",
+                "busca en la web",
+                "busca en internet",
+                "buscalo en internet",
+                "buscame informacion de",
+                "buscame informacion",
+                "quiero que investigues sobre",
+                "quiero que investigues",
+                "averigua en internet",
+                "investiga sobre",
+                "investiga",
+                "busca informacion sobre",
+                "busca informacion de",
+                "busca informacion",
+                "indaga sobre",
+                "indaga",
+                "averigua",
+                "buscalo",
+                "busca"
+            ];
+            
+            for (const p of removePhrases) {
+                if (extractedTopic.includes(p)) {
+                    extractedTopic = extractedTopic.replace(p, '');
+                }
+            }
+            
+            // Also remove words like "sobre", "de", "que" at the beginning or scattered stop words if they are just prefix
+            extractedTopic = extractedTopic.trim();
+            extractedTopic = extractedTopic.replace(/^(sobre|de|que|para)\s+/g, '');
+            
+            // If the regex replacement left some junk, clean it, but keep the core entities intact
+            const finalTokens = extractedTopic.split(/\s+/).filter(t => t.length > 0 && !this.stopWords.has(t));
+            interpretation.topic = finalTokens.join(' ');
+            
             interpretation.confidence = 0.85;
 
             if (interpretation.topic.trim() === '') {
