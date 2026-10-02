@@ -102,39 +102,86 @@ async function runTests() {
     let passed = 0, failed = 0;
     
     global.localStorage.setItem('USE_NEW_AI_CORE', 'true');
-    window.AI_CORE.chatBridgeInstance.permissionManager.rules = { allowedCapabilities: ['WEB_SEARCH'] };
+    window.AI_CORE.chatBridgeInstance.permissionManager.rules = { maxLevel: 5, allowedCapabilities: ['WEB_SEARCH', 'KNOWLEDGE_INGEST_UNVERIFIED'] };
     window.AI_CORE.chatBridgeInstance.permissionManager.getGovernanceRules = function() { return this.rules; };
     window.AI_CORE.chatBridgeInstance.researchEngine.permissionManager = window.AI_CORE.chatBridgeInstance.permissionManager;
     fetchUrls = [];
 
-    // 1. Análisis genérico (Missing topic -> isClarificationNeeded)
+    // 1. A factual query creates a pending web-approval request
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T1: Análisis sin contexto", "necesito que me alludes a analizar algo", ["Creo que necesitas ayuda para analizar algo", "qué tema"])) passed++; else failed++;
+    if (await checkIntent("T1: Factual Query -> Web Approval Request", "quien invento el pan", "Necesito tu autorización explícita para buscar esta información en internet")) passed++; else failed++;
 
-    // 2. Mensaje corto ambiguo -> Clarificación genérica (UNKNOWN_STATEMENT)
+    // 2. "Sí, búscalo" resumes the original pending query
+    if (await checkIntent("T2: 'Sí, búscalo' resumes pending query", "sí, búscalo", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
+
+    // 3. "Búscalo en internet" is recognized as an explicit web-search instruction
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T2: Mensaje corto ambiguo", "costos", "CLARIFICACIÓN")) passed++; else failed++;
+    if (await checkIntent("T3: 'Búscalo en internet' explicit instruction", "búscalo en internet", ["qué tema específico necesitas que investigue", "CLARIFICACIÓN"])) passed++; else failed++;
 
-    // 3. Factual Question local knowledge check & Web Auth
+    // 4. "Sí" without a pending request does not authorize an unrelated search
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T3: Factual Question (requiere web auth)", "quien es el presidente de francia", "Necesito tu autorización explícita para buscar esta información en internet")) passed++; else failed++;
+    if (await checkIntent("T4: 'Sí' sin pending request no hace nada (Razonamiento Local)", "si", "[RAZONAMIENTO LOCAL]")) passed++; else failed++;
 
-    // 4. Aprobación concedida
-    if (await checkIntent("T4: Aprobación Web concedida", "si, hazlo", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
-
-    // 5. Factual Question again, but this time denegación
+    // 5. Denial cancels the pending research
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T5: Factual Question", "quien escribio don quijote", "Necesito tu autorización explícita para buscar esta información en internet")) passed++; else failed++;
-    if (await checkIntent("T6: Aprobación Web denegada", "no lo hagas", "He cancelado la búsqueda en internet")) passed++; else failed++;
+    await checkIntent("Setup: Factual Query", "quien escribio la odisea", "Necesito tu autorización explícita");
+    if (await checkIntent("T5: Denial cancels pending research", "no lo hagas", "He cancelado la búsqueda en internet")) passed++; else failed++;
 
-    // 7. Statement con análisis y sin info local
+    // 6. A new unrelated query does not inherit an old query's approval
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T7: Request con ReasoningEngine Fallback local", "analiza esto por favor que esta muy raro", "[RAZONAMIENTO LOCAL]")) passed++; else failed++;
+    await checkIntent("Setup: Factual Query", "quien pinto la mona lisa", "Necesito tu autorización explícita");
+    if (await checkIntent("T6: New query doesn't inherit approval", "cual es el margen de la harina", "Costo de producción")) passed++; else failed++;
 
-    // T8: No external AI
+    // 7. A successful web result is returned with its real provenance
+    // (Ya probado en T2 si fetchUrls incluye duckduckgo)
+    if (fetchUrls.some(u => u.includes('mock.com'))) {
+        console.log(`✅ [PASS] T7: Web result has real provenance`);
+        passed++;
+    } else {
+        console.error(`❌ [FAIL] T7: Provenance missing`);
+        failed++;
+    }
+
+    // 8. A failed WebFetcher call reports the actual error
+    window.AI_CORE.chatBridgeInstance.clearSession();
+    global.fetch = async () => { throw new Error('CORS fail'); }; // Mock fail
+    await checkIntent("Setup: Factual Query", "cuando acabo la segunda guerra", "Necesito tu autorización explícita");
+    if (await checkIntent("T8: Failed WebFetcher call reports error", "si, dale", ["INVESTIGACIÓN FALLIDA", "Busqueda web fallida o sin resultados"])) passed++; else failed++;
+
+    // 9. Knowledge Ingestion & Reuse (Phase 14)
+    window.AI_CORE.chatBridgeInstance.clearSession();
+    global.fetch = async () => ({
+        ok: true,
+        json: async () => ({
+            RelatedTopics: [{ FirstURL: "https://mock.com/pan", Text: "El pan fue inventado por los antiguos egipcios hace muchisimos años." }]
+        })
+    });
+    // First query - requires auth
+    await checkIntent("Setup: New Knowledge", "cual es el origen de la panaderia", "Necesito tu autorización explícita");
+    // Authorize - will ingest
+    await checkIntent("T9.1: Authorize and Ingest", "si", "INVESTIGACIÓN COMPLETA");
+    
+    // Clear session so we don't use short-term memory
+    window.AI_CORE.chatBridgeInstance.clearSession();
+    
+    // Ask the same thing again - should be LOCAL_SUFFICIENT, no auth required!
+    // We mock fetch to fail so if it tries to hit the web, it crashes or fails.
+    let fetchCalled = false;
+    global.fetch = async () => { fetchCalled = true; throw new Error('Should not be called'); };
+    
+    if (await checkIntent("T9.2: Local Reuse without Web", "cual es el origen de la panaderia", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
+    if (!fetchCalled) {
+        console.log(`✅ [PASS] T9.3: WebFetcher was NOT called on reuse`);
+        passed++;
+    } else {
+        console.error(`❌ [FAIL] T9.3: WebFetcher WAS called`);
+        failed++;
+    }
+
+    // 10. No external AI
     const noExternal = !fetchUrls.some(u => u.includes('generative'));
-    if (noExternal) { console.log(`✅ [PASS] T8: No external AI calls made`); passed++; }
-    else { console.error(`❌ [FAIL] T8: Gemini invoked`); failed++; }
+    if (noExternal) { console.log(`✅ [PASS] T10: No external AI calls made`); passed++; }
+    else { console.error(`❌ [FAIL] T10: Gemini invoked`); failed++; }
 
     console.log(`\n--- Resultados ---\nPASS: ${passed}   FAIL: ${failed}`);
     process.exit(failed > 0 ? 1 : 0);

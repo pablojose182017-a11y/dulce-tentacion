@@ -19,9 +19,9 @@ class LanguageUnderstandingEngine {
             FINANCIAL_INGREDIENTS: ['ingredientes', 'receta', 'insumos', 'que lleva', 'que contiene'],
             FINANCIAL_LOSS: ['perdida', 'perder', 'por debajo', 'poca ganancia'],
             ANALYSIS_REQUEST: ['analiza', 'compara', 'revisa', 'evalua', 'analizar'],
-            RESEARCH_REQUEST: ['investiga', 'research', 'busca informacion', 'averigua', 'busca en internet', 'indaga', 'busca'],
+            RESEARCH_REQUEST: ['investiga', 'research', 'busca informacion', 'averigua', 'busca en internet', 'buscalo en internet', 'indaga', 'busca', 'buscalo'],
             USER_COMPLAINT: ['no me respondes', 'no entiendes', 'por que no respondes', 'que te pasa', 'estas mal', 'responde bien', 'no sabes', 'error', 'que necesitas', 'por que preguntas'],
-            AUTHORIZATION_GRANTED: ['si', 'autorizado', 'procede', 'adelante', 'hazlo', 'de acuerdo', 'claro', 'por supuesto', 'investiga', 'buscalo'],
+            AUTHORIZATION_GRANTED: ['si', 'autorizado', 'procede', 'adelante', 'hazlo', 'de acuerdo', 'claro', 'por supuesto', 'dale'],
             AUTHORIZATION_DENIED: ['no', 'denegado', 'cancela', 'no lo hagas', 'detente', 'espera', 'omite', 'ignora']
         };
     }

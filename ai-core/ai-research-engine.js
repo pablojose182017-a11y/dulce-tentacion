@@ -28,11 +28,9 @@ class ResearchEngine {
 
     _checkPermission(user, requiredPerm) {
         if (!this.permissionManager || !user) return false;
-        // Mock simple de verificacion de permisos basado en el rol/reglas
         const rules = this.permissionManager.getGovernanceRules ? this.permissionManager.getGovernanceRules(user) : null;
         if (!rules) return false;
-        if (rules.maxGovernance >= 3 && user.roles.includes('creator')) return true;
-        // Fallback: si rules tiene allowedCapabilities
+        if (rules.maxLevel >= 1) return true; // INVESTIGACIÓN is level 1
         if (rules.allowedCapabilities && rules.allowedCapabilities.includes(requiredPerm)) return true;
         return false;
     }
@@ -173,8 +171,14 @@ class ResearchEngine {
                 log('Iniciando ingestion de conocimiento...');
                 try {
                     // Sintetizamos un texto a ingestar
-                    const rawToIngest = "Guarda este conocimiento: " + conclusion;
-                    const job = await this.ingestionEngine.ingest(rawToIngest, 'research_engine_v1');
+                    const rawToIngest = "[RESEARCH_RESULTS]" + JSON.stringify({
+                        topic: task,
+                        conclusion: conclusion,
+                        confidence: finalConfidence,
+                        sources: webFindings.map(w => ({ url: w.url }))
+                    });
+                    const sourceString = webFindings.length > 0 ? webFindings[0].url : 'research_engine_v1';
+                    const job = await this.ingestionEngine.ingest(rawToIngest, sourceString);
                     if (job && job.status === 'STORED') {
                         ingestStatus = 'STORED_UNVERIFIED';
                         log('Ingestion completada. Estado: UNVERIFIED.');

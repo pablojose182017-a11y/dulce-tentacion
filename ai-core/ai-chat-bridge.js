@@ -83,6 +83,16 @@ class ChatBridge {
         
         console.log("[DEBUG CHATBRIDGE] Intent detectado:", interpretation.intent, "isClarif:", interpretation.isClarificationNeeded);
 
+        const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+        const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
+        const hasPendingApproval = lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.researchStatus === 'REQUIRES_WEB_APPROVAL';
+
+        if (interpretation.intent === "AUTHORIZATION_GRANTED" || 
+           (interpretation.intent === "RESEARCH_REQUEST" && interpretation.topic.trim() === '' && hasPendingApproval)) {
+            interpretation.isClarificationNeeded = false;
+            interpretation.intent = "AUTHORIZATION_GRANTED";
+        }
+
         // --- 2. CLARIFICATION HANDLING ---
         if (interpretation.isClarificationNeeded && this.understandingEngine) {
             const responseText = this.understandingEngine.generateClarificationMessage(interpretation);
@@ -178,16 +188,8 @@ class ChatBridge {
         }
 
         // --- 5. RESEARCH ENGINE ROUTING ---
-        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION") {
-            const user = this.identityManager.getCurrentUser(currentUserGlobal);
-            const contextData = { user: { data: user }, webSearchApproved: false };
-            return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
-        }
-
         if (interpretation.intent === "AUTHORIZATION_GRANTED") {
-            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
-            const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
-            if (lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.researchStatus === 'REQUIRES_WEB_APPROVAL') {
+            if (hasPendingApproval) {
                 const pendingTask = lastAssistantMsg.metadata.researchTask;
                 const user = this.identityManager.getCurrentUser(currentUserGlobal);
                 const contextData = { user: { data: user }, webSearchApproved: true };
@@ -195,10 +197,14 @@ class ChatBridge {
             }
         }
 
+        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION") {
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const contextData = { user: { data: user }, webSearchApproved: false };
+            return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
+        }
+
         if (interpretation.intent === "AUTHORIZATION_DENIED") {
-            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
-            const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
-            if (lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.researchStatus === 'REQUIRES_WEB_APPROVAL') {
+            if (hasPendingApproval) {
                 const responseText = "Entendido. He cancelado la búsqueda en internet. Me limitaré a la información que ya tengo almacenada localmente. ¿Hay algo más en lo que te pueda ayudar?";
                 this.memoryManager.addTurn('user', message);
                 this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });

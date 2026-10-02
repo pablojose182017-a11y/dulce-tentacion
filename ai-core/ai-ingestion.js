@@ -25,11 +25,38 @@ class KnowledgeIngestionEngine {
      * Falso AI Parser: Simula el comportamiento del AIProvider para las pruebas
      * sin hacer peticiones externas. Extrae una propuesta de forma determinista.
      */
-    async _callAIParser(rawText) {
+    async _callAIParser(rawText, source) {
         let intent = "INFORMATIONAL";
         let domain = "General";
         let entities = [];
         let coreKnowledge = rawText;
+        if (rawText.startsWith("[RESEARCH_RESULTS]")) {
+            try {
+                const data = JSON.parse(rawText.replace("[RESEARCH_RESULTS]", ""));
+                return {
+                    intent: "EXPLICIT_KNOWLEDGE",
+                    domain: "RESEARCH",
+                    entities: data.topic.split(' '),
+                    coreKnowledge: data.conclusion,
+                    confidence: data.confidence,
+                    extractedFields: {
+                        title: `Investigación: ${data.topic}`,
+                        category: "RESEARCH",
+                        tags: ["research", "auto"],
+                        knowledgeType: "FACT",
+                        provenance: {
+                            sourceType: "WEB_RESEARCH",
+                            sourceId: source,
+                            extractionMethod: "RESEARCH_ENGINE",
+                            ingestedAt: new Date().toISOString(),
+                            sources: data.sources || []
+                        }
+                    }
+                };
+            } catch (e) {
+                // Fallback si falla el parseo
+            }
+        }
 
         const lower = rawText.toLowerCase();
         
@@ -45,7 +72,6 @@ class KnowledgeIngestionEngine {
         } else if (lower.includes("investiga sobre")) {
             intent = "RESEARCH_TASK";
         } else if (lower.includes("datos inválidos de prueba")) {
-            // Caso especial para testear validación estructural fallida
             return { intent: "EXPLICIT_KNOWLEDGE", invalidStructure: true };
         }
 
@@ -195,7 +221,7 @@ class KnowledgeIngestionEngine {
         try {
             // 1. ANALYZING
             this._transition(job, "ANALYZING");
-            const proposal = await this._callAIParser(rawText);
+            const proposal = await this._callAIParser(rawText, sourceString);
             job.proposal = proposal;
             
             // 2. STRUCTURAL_VALIDATION
