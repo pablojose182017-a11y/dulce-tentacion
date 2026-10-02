@@ -1876,7 +1876,7 @@ window.abrirModalEdicionProducto = function (pId = null) {
         isOferta = window.dtOfertasActivas[pId];
         actualBasePrice = isOferta ? isOferta.precioOriginal : p.price;
         actualName = p.originalName || p.name;
-        actualImg = p.originalImg || p.img;
+        actualImg = p.img || p.originalImg;
         catSelect = p.cat;
         actualPoints = p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : '');
     }
@@ -2023,112 +2023,210 @@ window.guardarEdicionProducto = function (pId) {
     let isNew = !pId;
     let targetId = isNew ? Date.now() : pId;
 
-    // Guardar en catálogo personalizado
+    // Guardar en catálogo personalizado (preparación)
     let localCatalog = {};
     try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
 
     const existingCatalogEntry = localCatalog[targetId] || {};
-    localCatalog[targetId] = {
-        ...existingCatalogEntry,
+    
+    // 1. Crear el entry exclusivo para Firestore (Whitelist estricta - Zero Leakage)
+    const firestorePayload = {
         name: nuevoNombre,
         price: nuevoPrecio,
-        img: nuevaImg,
-        image: nuevaImg,
         category: nuevaCategoria,
+        cat: nuevaCategoria,
         points: nuevosPuntos,
         puntos: nuevosPuntos
     };
+    
+    // Si la imagen actual es un Base64 enorme pero el administrador no subió una foto nueva,
+    // OMITIMOS enviarla a Firestore. Al usar { merge: true }, el servidor conservará el Base64 que ya tiene.
+    // Esto ahorra cientos de KBs de ancho de banda y mitiga el problema del tamaño al editar precios.
+    const isOldBase64 = nuevaImg.startsWith('data:image/') && !window.tempProductImg;
+    if (!isOldBase64) {
+        firestorePayload.img = nuevaImg;
+        firestorePayload.image = nuevaImg;
+    }
+    
+    // Preservar metadatos requeridos para UI si existen
+    const allowedFields = ['permiteRelleno', 'unidades', 'tag', 'oldPrice', 'originalName', 'originalCat', 'originalImg', 'enOferta', 'desc'];
+    allowedFields.forEach(key => {
+        if (existingCatalogEntry[key] !== undefined) {
+            firestorePayload[key] = existingCatalogEntry[key];
+        }
+    });
 
     // Preservar explícitamente el estado de disponibilidad / agotado existente
     if (existingCatalogEntry.agotado !== undefined) {
-        localCatalog[targetId].agotado = existingCatalogEntry.agotado;
+        firestorePayload.agotado = existingCatalogEntry.agotado;
     } else if (typeof stockConfig !== 'undefined' && stockConfig[targetId] !== undefined) {
-        localCatalog[targetId].agotado = stockConfig[targetId];
+        firestorePayload.agotado = stockConfig[targetId];
     } else if (typeof window !== 'undefined' && window.stockConfig && window.stockConfig[targetId] !== undefined) {
-        localCatalog[targetId].agotado = window.stockConfig[targetId];
+        firestorePayload.agotado = window.stockConfig[targetId];
     }
 
     if (isNew) {
-        localCatalog[targetId].id = targetId;
-        localCatalog[targetId].isCustom = true;
-    }
-    localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
-
-    // Aplicar en memoria (products)
-    if (isNew) {
-        products.push({
-            id: targetId,
-            name: nuevoNombre,
-            price: nuevoPrecio,
-            cat: nuevaCategoria,
-            img: nuevaImg,
-            image: nuevaImg,
-            points: nuevosPuntos,
-            puntos: nuevosPuntos,
-            desc: 'Producto fresco del día',
-            isCustom: true
-        });
-    } else {
-        const p = products.find(x => x.id === pId);
-        if (p) {
-            if (!p.originalName) p.originalName = p.name;
-            if (!p.originalImg) p.originalImg = p.img;
-            if (!p.originalCat) p.originalCat = p.cat;
-
-            // Mantener badge de promo si existe en el nombre actual inyectado
-            const hasBadge = p.name.includes('[Promo:');
-            const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
-            p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
-
-            p.img = nuevaImg;
-            p.image = nuevaImg;
-            p.cat = nuevaCategoria;
-            p.points = nuevosPuntos;
-            p.puntos = nuevosPuntos;
-
-            const isOferta = window.dtOfertasActivas ? window.dtOfertasActivas[pId] : null;
-            if (isOferta) {
-                p.oldPrice = nuevoPrecio;
-                isOferta.precioOriginal = nuevoPrecio;
-
-                if (isOferta.porcentaje && isOferta.porcentaje > 0) {
-                    const nuevoPrecioOferta = Math.round(nuevoPrecio * (1 - (isOferta.porcentaje / 100)));
-                    isOferta.precioOferta = nuevoPrecioOferta;
-                    p.price = nuevoPrecioOferta;
-                }
-
-                if (typeof window.saveOfertas === 'function') window.saveOfertas();
-            } else {
-                p.price = nuevoPrecio;
-            }
-        }
+        firestorePayload.id = targetId;
+        firestorePayload.isCustom = true;
     }
 
-    // Guardar en localStorage('dt_products')
-    try {
-        localStorage.setItem('dt_products', JSON.stringify(products));
-    } catch (e) {
-        console.warn("No se pudo guardar dt_products:", e);
-    }
+    // 2. Crear el entry completo para localStorage (conserva costos y data local privada)
+    const fullLocalEntry = {
+        ...existingCatalogEntry,
+        ...firestorePayload
+    };
 
-    // Guardar en Firestore
+    // Asignar al catálogo temporalmente para validación de tamaño local
+    localCatalog[targetId] = fullLocalEntry;
+
+    // Conexión a la Base de Datos
     const firestoreDb = (typeof window !== 'undefined' && window.db) || (typeof db !== 'undefined' ? db : null);
-    if (firestoreDb && typeof firestoreDb.collection === 'function') {
-        firestoreDb.collection('config').doc('catalogo_personalizado').set({
-            [targetId]: localCatalog[targetId]
-        }, { merge: true }).catch(e => console.error("Error guardando producto en Firestore:", e));
+    
+    const saveBtn = document.querySelector('#modal-editar-producto button[onclick^="window.guardarEdicionProducto"]');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'Guardando...';
     }
 
-    window.tempProductImg = null;
-    const modalEdit = document.getElementById('modal-editar-producto');
-    if (modalEdit) modalEdit.style.display = 'none';
+    if (!firestoreDb || typeof firestoreDb.collection !== 'function') {
+        alert("🚨 ERROR: No hay conexión con la base de datos (Firestore no está disponible). No se puede guardar en el servidor.");
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = isNew ? '💾 Crear Producto' : '💾 Guardar Cambios';
+        }
+        if (typeof showToast === 'function') showToast('Error de conexión', '❌');
+        return;
+    }
 
-    if (typeof showToast === 'function') showToast(isNew ? 'Producto creado' : 'Producto actualizado', '✅');
+    const guardarEnFirestore = (finalUrl) => {
+        if (finalUrl) {
+            firestorePayload.img = finalUrl;
+            firestorePayload.image = finalUrl;
+            fullLocalEntry.img = finalUrl;
+            fullLocalEntry.image = finalUrl;
+            localCatalog[targetId] = fullLocalEntry;
+        }
 
-    // Refrescar el catálogo inmediatamente
-    if (typeof renderProducts === 'function') renderProducts();
-    if (typeof renderStockAdmin === 'function') renderStockAdmin();
-    if (typeof renderFeatured === 'function') renderFeatured();
+        const sizeKB = JSON.stringify(localCatalog).length / 1024;
+        if (sizeKB > 900) {
+            console.warn("⚠️ Estimación: El catálogo personalizado está consumiendo " + sizeKB.toFixed(2) + " KB (Límite 1024 KB).");
+        }
+
+        firestoreDb.collection('config').doc('catalogo_personalizado').set({
+            [targetId]: firestorePayload
+        }, { merge: true })
+        .then(() => {
+            // 1. Confirmado por el servidor, ahora sí aplicamos localmente
+            try {
+                localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
+            } catch (e) {
+                console.warn("El catálogo se guardó en Firestore, pero falló al guardar en localStorage (caché local):", e);
+            }
+
+            // 2. Aplicar en memoria (products)
+            if (isNew) {
+                products.push({
+                    id: targetId,
+                    name: nuevoNombre,
+                    price: nuevoPrecio,
+                    cat: nuevaCategoria,
+                    img: firestorePayload.img,
+                    image: firestorePayload.image,
+                    points: nuevosPuntos,
+                    puntos: nuevosPuntos,
+                    desc: 'Producto fresco del día',
+                    isCustom: true
+                });
+            } else {
+                const p = products.find(x => x.id === pId);
+                if (p) {
+                    if (!p.originalName) p.originalName = p.name;
+                    if (!p.originalImg) p.originalImg = p.img;
+                    if (!p.originalCat) p.originalCat = p.cat;
+
+                    const hasBadge = p.name.includes('[Promo:');
+                    const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
+                    p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
+
+                    p.img = firestorePayload.img;
+                    p.image = firestorePayload.image;
+                    p.cat = nuevaCategoria;
+                    p.points = nuevosPuntos;
+                    p.puntos = nuevosPuntos;
+
+                    const isOferta = window.dtOfertasActivas ? window.dtOfertasActivas[pId] : null;
+                    if (isOferta) {
+                        p.oldPrice = nuevoPrecio;
+                        isOferta.precioOriginal = nuevoPrecio;
+
+                        if (isOferta.porcentaje && isOferta.porcentaje > 0) {
+                            const nuevoPrecioOferta = Math.round(nuevoPrecio * (1 - (isOferta.porcentaje / 100)));
+                            isOferta.precioOferta = nuevoPrecioOferta;
+                            p.price = nuevoPrecioOferta;
+                        }
+
+                        if (typeof window.saveOfertas === 'function') window.saveOfertas();
+                    } else {
+                        p.price = nuevoPrecio;
+                    }
+                }
+            }
+
+            try {
+                localStorage.setItem('dt_products', JSON.stringify(products));
+            } catch (e) {
+                console.warn("No se pudo guardar dt_products:", e);
+            }
+
+            // 3. Cerrar UI y limpiar
+            window.tempProductImg = null;
+            const modalEdit = document.getElementById('modal-editar-producto');
+            if (modalEdit) modalEdit.style.display = 'none';
+
+            if (typeof showToast === 'function') showToast(isNew ? 'Producto creado' : 'Producto actualizado', '✅');
+
+            // 4. Refrescar el catálogo
+            if (typeof renderProducts === 'function') renderProducts();
+            if (typeof renderStockAdmin === 'function') renderStockAdmin();
+            if (typeof renderFeatured === 'function') renderFeatured();
+        })
+        .catch(e => {
+            console.error("Error guardando producto en Firestore:", e);
+            alert("🚨 ERROR CRÍTICO: Firestore rechazó la escritura. Revisa el tamaño de la imagen. Motivo: " + (e.message || "Desconocido"));
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerText = isNew ? '💾 Crear Producto' : '💾 Guardar Cambios';
+            }
+            if (typeof showToast === 'function') showToast('Error al guardar en el servidor', '❌');
+        });
+    };
+
+    // 3. Flujo de subida a Firebase Storage
+    if (window.tempProductImg && window.tempProductImg.startsWith('data:image/') && typeof firebase !== 'undefined' && firebase.storage) {
+        fetch(window.tempProductImg)
+            .then(res => res.blob())
+            .then(blob => {
+                const extMatch = blob.type.match(/^image\/(png|jpeg|webp|gif)/);
+                const ext = extMatch ? (extMatch[1] === 'jpeg' ? 'jpg' : extMatch[1]) : 'jpg';
+                const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+                const uniqueName = 'productos/' + targetId + '_' + uuid + '.' + ext;
+                const storageRef = firebase.storage().ref(uniqueName);
+                return storageRef.put(blob).then(snapshot => snapshot.ref.getDownloadURL());
+            })
+            .then(downloadURL => {
+                guardarEnFirestore(downloadURL);
+            })
+            .catch(e => {
+                console.error("Error subiendo imagen a Storage:", e);
+                alert("🚨 ERROR: Falló la subida de la imagen. Verifica tu conexión a internet o intenta subir un archivo más pequeño.");
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = isNew ? '💾 Crear Producto' : '💾 Guardar Cambios';
+                }
+            });
+    } else {
+        guardarEnFirestore(null);
+    }
 };
 
 window.saveProduct = window.guardarEdicionProducto;
