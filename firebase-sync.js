@@ -1206,8 +1206,8 @@ window.addEventListener('DOMContentLoaded', () => {
             // 2. Modificar existentes y procesar eliminaciones (iterando en reversa)
             for (let i = products.length - 1; i >= 0; i--) {
                 const p = products[i];
-                if (customCatalog[p.id] !== undefined) {
-                    const customData = customCatalog[p.id];
+                const customData = customCatalog[p.id] !== undefined ? customCatalog[p.id] : customCatalog[String(p.id)];
+                if (customData !== undefined) {
                     
                     if (customData.eliminado) {
                         products.splice(i, 1);
@@ -1255,9 +1255,19 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
+
+            // Sincronizar window.stockConfig y persistir en dt_stock_config (operación local exclusiva, sin bucle con Firestore)
+            if (typeof stockConfig !== 'undefined') {
+                if (typeof window !== 'undefined') window.stockConfig = stockConfig;
+                try {
+                    localStorage.setItem('dt_stock_config', JSON.stringify(stockConfig));
+                } catch (e) { }
+            }
+
             if (typeof renderProducts === 'function') renderProducts();
             if (typeof renderFeatured === 'function') renderFeatured();
             if (typeof renderStockAdmin === 'function') renderStockAdmin();
+            if (typeof renderKitchenStock === 'function') renderKitchenStock();
         }
     };
 

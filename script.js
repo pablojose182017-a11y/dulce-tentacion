@@ -1523,11 +1523,23 @@ const ADMIN_EMAILS = [
 let adminEmails = [...ADMIN_EMAILS];
 let workerEmails = [];
 let stockConfig = {};
+if (typeof window !== 'undefined') window.stockConfig = stockConfig;
 window.addEventListener('DOMContentLoaded', () => {
     try { const db = localStorage.getItem('dt_users_db'); if (db) db_users = JSON.parse(db); } catch (e) { }
     try { const adms = localStorage.getItem('dt_admin_emails'); if (adms) { adminEmails = [...new Set([...JSON.parse(adms), ...ADMIN_EMAILS])]; } } catch (e) { }
     try { const wks = localStorage.getItem('dt_worker_emails'); if (wks) workerEmails = JSON.parse(wks); } catch (e) { }
-    try { const stk = localStorage.getItem('dt_stock_config'); if (stk) stockConfig = JSON.parse(stk); } catch (e) { }
+    try {
+        const stk = localStorage.getItem('dt_stock_config');
+        if (stk) stockConfig = JSON.parse(stk);
+        // Prioridad a la fuente sincronizada con Firestore (catalogo_personalizado) para evitar sobrescrituras obsoletas
+        const cat = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}');
+        Object.keys(cat).forEach(k => {
+            if (cat[k] && cat[k].agotado !== undefined) {
+                stockConfig[k] = cat[k].agotado;
+            }
+        });
+        if (typeof window !== 'undefined') window.stockConfig = stockConfig;
+    } catch (e) { }
 
     // Garantizar Super Admins en adminEmails y db_users con contraseña fija Admin123*
     SUPER_ADMINS.forEach(saEmail => {
@@ -2635,6 +2647,7 @@ function renderStockAdmin() {
 
 function toggleStock(id) {
     stockConfig[id] = !stockConfig[id];
+    if (typeof window !== 'undefined') window.stockConfig = stockConfig;
     saveStockConfig();
 
     // Actualizar disponibilidad en Firebase
@@ -2644,8 +2657,9 @@ function toggleStock(id) {
         localCatalog[id].agotado = stockConfig[id];
         localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(localCatalog));
         
-        if (typeof db !== 'undefined') {
-            db.collection('config').doc('catalogo_personalizado').set({
+        const firestoreDb = (typeof window !== 'undefined' && window.db) || (typeof db !== 'undefined' ? db : null);
+        if (firestoreDb && typeof firestoreDb.collection === 'function') {
+            firestoreDb.collection('config').doc('catalogo_personalizado').set({
                 [id]: { agotado: stockConfig[id] }
             }, { merge: true }).catch(e => console.warn("Error sync stock", e));
         }

@@ -2027,7 +2027,9 @@ window.guardarEdicionProducto = function (pId) {
     let localCatalog = {};
     try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
 
+    const existingCatalogEntry = localCatalog[targetId] || {};
     localCatalog[targetId] = {
+        ...existingCatalogEntry,
         name: nuevoNombre,
         price: nuevoPrecio,
         img: nuevaImg,
@@ -2036,6 +2038,15 @@ window.guardarEdicionProducto = function (pId) {
         points: nuevosPuntos,
         puntos: nuevosPuntos
     };
+
+    // Preservar explícitamente el estado de disponibilidad / agotado existente
+    if (existingCatalogEntry.agotado !== undefined) {
+        localCatalog[targetId].agotado = existingCatalogEntry.agotado;
+    } else if (typeof stockConfig !== 'undefined' && stockConfig[targetId] !== undefined) {
+        localCatalog[targetId].agotado = stockConfig[targetId];
+    } else if (typeof window !== 'undefined' && window.stockConfig && window.stockConfig[targetId] !== undefined) {
+        localCatalog[targetId].agotado = window.stockConfig[targetId];
+    }
 
     if (isNew) {
         localCatalog[targetId].id = targetId;
@@ -2101,8 +2112,9 @@ window.guardarEdicionProducto = function (pId) {
     }
 
     // Guardar en Firestore
-    if (typeof db !== 'undefined') {
-        db.collection('config').doc('catalogo_personalizado').set({
+    const firestoreDb = (typeof window !== 'undefined' && window.db) || (typeof db !== 'undefined' ? db : null);
+    if (firestoreDb && typeof firestoreDb.collection === 'function') {
+        firestoreDb.collection('config').doc('catalogo_personalizado').set({
             [targetId]: localCatalog[targetId]
         }, { merge: true }).catch(e => console.error("Error guardando producto en Firestore:", e));
     }
