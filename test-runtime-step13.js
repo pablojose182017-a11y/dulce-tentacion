@@ -18,14 +18,24 @@ global.currentUser = { email: "usuario_normal@gmail.com" };
 let fetchUrls = [];
 global.fetch = async (url) => {
     fetchUrls.push(url);
-    if (url.includes('duckduckgo') || url.includes('html')) {
+    if (url.includes('nominatim')) {
+        return { ok: true, json: async () => ([]) };
+    }
+    
+    let keywords = '';
+    if (url.includes('descubrio')) keywords = 'descubrio america';
+    else if (url.includes('mona+lisa')) keywords = 'pinto mona lisa';
+    else if (url.includes('guerra')) keywords = 'acabo segunda guerra';
+    else keywords = 'invento el pan';
+
+    if (url.includes('duckduckgo') || url.includes('html') || url.includes('mock.com')) {
         return { 
             ok: true, 
             headers: new Map([['content-type', 'text/html']]),
-            text: async () => '<html><title>Mock</title><body>Contenido mockeado suficientemente largo para pasar la validacion. Esto debe ser mayor a 50 caracteres para ser considerado util.</body></html>', 
+            text: async () => '<html><title>Mock</title><body>Contenido mockeado suficientemente largo para pasar la validacion. Esto debe ser mayor a 50 caracteres para ser considerado util. ' + keywords + '</body></html>', 
             json: async () => ({ 
-                Abstract: 'Mock web research result. Contenido lo suficientemente largo para ser considerado un buen snippet de busqueda web.', 
-                AbstractURL: 'https://mock.com',
+                Abstract: 'Mock web research result. Contenido lo suficientemente largo para ser considerado un buen snippet de busqueda web. ' + keywords, 
+                AbstractURL: 'https://mock.com/' + encodeURIComponent(keywords),
                 Heading: 'Mock title'
             }) 
         };
@@ -114,6 +124,7 @@ async function runTests() {
     // 2. Explicit authorization with spelling errors resumes the correct pending query
     // and The original research topic, not the approval text, reaches WebFetcher
     let queryPassedToFetch = "";
+    const originalFetch = global.fetch;
     global.fetch = async (url) => {
         fetchUrls.push(url);
         if (url.includes('duckduckgo')) {
@@ -134,9 +145,11 @@ async function runTests() {
         console.error(`❌ [FAIL] T2.1: Original research topic did not reach WebFetcher. URL: ${queryPassedToFetch}`);
         failed++;
     }
+    global.fetch = originalFetch;
 
     // 3. "Búscalo en internet" is recognized as an explicit web-search instruction (and authorization)
     window.AI_CORE.chatBridgeInstance.clearSession();
+    // removed T3 fetch override
     await checkIntent("Setup: Factual Query", "cuando se descubrio america", "Necesito tu autorización explícita");
     if (await checkIntent("T3: 'Búscalo en internet' explicit instruction resumes pending", "búscalo en internet", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
 
@@ -191,12 +204,15 @@ async function runTests() {
 
     // 9. Knowledge Ingestion & Reuse (Phase 14)
     window.AI_CORE.chatBridgeInstance.clearSession();
-    global.fetch = async () => ({
-        ok: true,
-        json: async () => ({
-            RelatedTopics: [{ FirstURL: "https://mock.com/pan", Text: "El pan fue inventado por los antiguos egipcios hace muchisimos años." }]
-        })
-    });
+    global.fetch = async (url) => {
+        if (url && url.includes('nominatim')) return { ok: true, json: async () => ([]) };
+        return {
+            ok: true,
+            json: async () => ({
+                RelatedTopics: [{ FirstURL: "https://mock.com/pan", Text: "El origen de la panaderia se remonta a los antiguos egipcios hace muchisimos años." }]
+            })
+        };
+    };
     // First query - requires auth
     await checkIntent("Setup: New Knowledge", "cual es el origen de la panaderia", "Necesito tu autorización explícita");
     // Authorize - will ingest

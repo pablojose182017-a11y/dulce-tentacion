@@ -212,6 +212,50 @@ class DdgWebFetcher extends WebFetcher {
     async search(query, maxResults) {
         if (maxResults === undefined) maxResults = 5;
         if (!query || !query.trim()) return [];
+        const results = [];
+        const at = new Date().toISOString();
+
+        // FASE 14 - BUSINESS DISCOVERY FIX
+        const isBusinessQuery = /panader[ií]as?|negocios?|restaurantes?|empresas?|tiendas?/i.test(query);
+        if (isBusinessQuery) {
+            try {
+                const stopwords = new Set(['busca', 'internet', 'sobre', 'para', 'como', 'cual', 'que', 'quien', 'las', 'los', 'del', 'en']);
+                const queryTokens = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(t => !stopwords.has(t));
+                const nomQuery = queryTokens.join(' ');
+                
+                const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(nomQuery)}&format=json&addressdetails=1&extratags=1`;
+                // Add a small delay/timeout specifically for Nominatim to prevent rate limiting, though our wrapper handles timeouts
+                const nomRes = await this._fetchWithTimeout(nomUrl, this._timeoutMs);
+                if (nomRes.ok) {
+                    const nomData = await nomRes.json();
+                    for (const item of nomData) {
+                        if (results.length >= maxResults) break;
+                        let snippet = `Negocio: ${item.name || 'Desconocido'}. `;
+                        if (item.address) {
+                            const addr = [];
+                            if (item.address.road) addr.push(item.address.road);
+                            if (item.address.neighbourhood) addr.push(item.address.neighbourhood);
+                            if (item.address.city || item.address.county) addr.push(item.address.city || item.address.county);
+                            snippet += `Ubicación: ${addr.join(', ')}.`;
+                        }
+                        // Solo incluimos si el snippet provee algo más que "Desconocido"
+                        if (item.name) {
+                            results.push({
+                                url: `https://www.openstreetmap.org/${item.osm_type}/${item.osm_id}`,
+                                title: item.name || item.display_name.split(',')[0],
+                                snippet: snippet,
+                                retrievedAt: at,
+                                trustLevel: 'WEB_UNVERIFIED'
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Nominatim fallback failed:", e.message);
+            }
+            if (results.length > 0) return results; // Return early if we got business results
+        }
+
         const url = this._buildSearchUrl(query.trim());
         let response;
         try {
@@ -227,8 +271,6 @@ class DdgWebFetcher extends WebFetcher {
         try { data = await response.json(); }
         catch (err) { throw new Error('DDG_PARSE_ERROR: JSON invalido.'); }
 
-        const results = [];
-        const at = new Date().toISOString();
         if (data.Abstract && data.AbstractURL) {
             results.push({
                 url: data.AbstractURL, title: data.Heading || query,
@@ -253,6 +295,34 @@ class DdgWebFetcher extends WebFetcher {
                 }
             }
         }
+
+        // FASE 14 - BROWSER RETRIEVAL FIX:
+        // DDG Instant Answer fails for complex queries. Wikipedia API is a free, CORS-enabled fallback.
+        if (results.length === 0) {
+            try {
+                const wikiUrl = `https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query.trim())}&utf8=&format=json&origin=*`;
+                const wikiRes = await this._fetchWithTimeout(wikiUrl, this._timeoutMs);
+                if (wikiRes.ok) {
+                    const wikiData = await wikiRes.json();
+                    if (wikiData.query && wikiData.query.search) {
+                        for (const item of wikiData.query.search) {
+                            if (results.length >= maxResults) break;
+                            const plainSnippet = HtmlSanitizer.strip(item.snippet, 1024).text;
+                            results.push({
+                                url: `https://es.wikipedia.org/?curid=${item.pageid}`,
+                                title: item.title,
+                                snippet: plainSnippet,
+                                retrievedAt: at,
+                                trustLevel: 'WEB_UNVERIFIED'
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Wikipedia fallback failed:", e.message);
+            }
+        }
+
         return results.slice(0, maxResults);
     }
 
