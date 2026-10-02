@@ -162,7 +162,7 @@ class ResearchEngine {
                 log('Iniciando ingestion de conocimiento...');
                 try {
                     // Sintetizamos un texto a ingestar
-                    const rawToIngest = "Aprendizaje de investigacion: " + conclusion;
+                    const rawToIngest = "Guarda este conocimiento: " + conclusion;
                     const job = await this.ingestionEngine.ingest(rawToIngest, 'research_engine_v1');
                     if (job && job.status === 'STORED') {
                         ingestStatus = 'STORED_UNVERIFIED';

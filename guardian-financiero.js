@@ -238,19 +238,7 @@ window.reiniciarChatGuardian = function() {
 };
 
 window.configurarGeminiKey = function() {
-    const currentKey = localStorage.getItem('pd_gemini_api_key') || '';
-    const newKey = prompt('Configuración del Guardián IA\nIngresa tu API Key de Google Gemini (inicia con AIzaSy o AQ.):', currentKey);
-    if (newKey !== null) {
-        const keyTrimmed = newKey.trim();
-        if (keyTrimmed.startsWith('AIzaSy') || keyTrimmed.startsWith('AQ.')) {
-            localStorage.setItem('pd_gemini_api_key', keyTrimmed);
-            localStorage.removeItem('pd_gemini_model_name');
-            if(typeof showToast === 'function') showToast('API Key de Gemini guardada.', '⚙️');
-            else alert('API Key de Gemini guardada exitosamente.');
-        } else {
-            alert('La clave ingresada no parece ser válida. Debe iniciar con AIzaSy o AQ.');
-        }
-    }
+    alert("⚠️ Configuración bloqueada: El Guardián tiene estrictamente prohibido utilizar APIs externas de IA (como Gemini o ChatGPT) de acuerdo con su directiva central de Independencia y Autonomía. Todas las operaciones deben ejecutarse en la arquitectura AI_CORE local.");
 };
 
 window.enviarMensajeGuardian = async function(textoPredefinido = null) {
@@ -288,7 +276,7 @@ window.enviarMensajeGuardian = async function(textoPredefinido = null) {
         return;
     }
 
-    // ── Interceptor local: 0ms para consultas de datos directos ──
+    // ── Interceptor local: 0ms para saludos, conversacional y datos financieros (Legacy) ──
     const respuestaLocal = window._gf_resolverLocalmente ? window._gf_resolverLocalmente(msgTexto) : null;
     if (respuestaLocal !== null) {
         window.appendMensajeGuardian(respuestaLocal, 'bot', true);
@@ -312,7 +300,8 @@ window.enviarMensajeGuardian = async function(textoPredefinido = null) {
         const apiKey = localStorage.getItem('pd_gemini_api_key');
         let respuesta;
 
-        if (apiKey) {
+        if (apiKey && !window.AI_CORE) {
+            // If they had an API key but no local AI core, inform them it's disabled.
             respuesta = await window.enviarMensajeIA(msgTexto.toLowerCase(), contexto, memoria);
         } else {
             // ── FASE 3: Enrutamiento General hacia AI_CORE (Offline / Local-First) ──
@@ -408,22 +397,43 @@ window.obtenerContextoPanaderia = function() {
 // ==========================================
 
 window._gf_resolverLocalmente = function(prompt) {
-    if (!window.costosState) return null;
-    const { insumos = [], recetas = [] } = window.costosState;
-    if (recetas.length === 0) return null;
-
     const p = prompt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // ── Fase 3: Soporte de Saludos en Local (0ms) ──
+    // ── Fase 3: Soporte de Saludos y Conversacional en Local (0ms) ──
     const esSaludo = /^(hola|buenas|buenos dias|buenas tardes|buenas noches|que tal|saludos|hey)[\s]*$/.test(p);
     if (esSaludo) {
         const _emailSesion = ((typeof window.currentUser !== 'undefined' && window.currentUser?.email) || (typeof currentUser !== 'undefined' && currentUser?.email) || '').toLowerCase().trim();
         if (_emailSesion === 'pablojose182017@gmail.com') {
             return "¡Hola, Pablo! 😄 Todo listo por aquí. ¿Qué revisamos hoy en el sistema, costos o código?";
         } else {
-            return "¡Hola! 👋 Soy el Guardián Financiero. ¿En qué te puedo ayudar hoy?";
+            return "¡Hola! 👋 Soy el Guardián Financiero. Estoy aquí para ayudarte. ¿Qué necesitas revisar hoy?";
         }
     }
+
+    const esSocial = /^(como estas|como te va|que tal estas|todo bien|como andamos)[\s]*$/.test(p) || p.includes('como estas') || p.includes('como te va');
+    if (esSocial) {
+        return "¡Estoy listo y operando al 100%! 🚀 ¿Qué vamos a resolver hoy?";
+    }
+
+    const esAgradecimiento = /^(gracias|muchas gracias|te lo agradezco|mil gracias|excelente gracias)[\s]*$/.test(p) || p === 'gracias';
+    if (esAgradecimiento) {
+        return "¡De nada! Es mi deber como tu Guardián. Cuenta conmigo para lo que necesites.";
+    }
+
+    const esDespedida = /^(adios|hasta luego|nos vemos|chao|hasta pronto|bye)[\s]*$/.test(p);
+    if (esDespedida) {
+        return "¡Hasta luego! 👋 Estaré aquí vigilando los números y la seguridad del sistema mientras no estás.";
+    }
+
+    const esCompartirInfo = /compartir conocimiento|enseñarte algo|guarda esta informacion|guarda esta info|aprende esto/i.test(p);
+    if (esCompartirInfo) {
+        return "Perfecto. Compárteme la información y la analizaré. Para almacenarla permanentemente, utiliza el formato estricto iniciando tu mensaje con la frase 'Guarda este conocimiento: '. Antes de guardarla, revisaré su validez estructural.";
+    }
+
+    // ── Operaciones dependientes de estado financiero ──
+    if (!window.costosState) return null;
+    const { insumos = [], recetas = [] } = window.costosState;
+    if (recetas.length === 0) return null;
 
     // ── Detectar tipo de consulta ──
     const esCosto    = /cuanto\s*cuesta|costo\s*de|costo\s*produccion|cuanto\s*vale|precio\s*de\s*produccion/.test(p);
@@ -845,55 +855,12 @@ window.enviarMensajeIA = async function(prompt, contexto, memoria) {
                 "  3. Espera la aprobación del plan antes de modificar cualquier código.\n" +
                 "Esta regla aplica a cualquier decisión que necesite autorización del creador (Niveles 3, 4 y 5 de la gobernanza).";
 
-            
-            const geminiContents = memoria.map(msg => ({
-                role: msg.rol === 'bot' ? 'model' : 'user',
-                parts: [{ text: msg.texto }]
-            }));
-
-            const payload = {
-                system_instruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-                contents: geminiContents,
-                tools: [{ googleSearch: {} }]
-            };
-
-            const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + apiKey.trim();
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.candidates && data.candidates.length > 0 && data.candidates[0].content && data.candidates[0].content.parts.length > 0) {
-                    let text = data.candidates[0].content.parts[0].text;
-                    // Renderizado Avanzado: Parsear Markdown a HTML con soporte para Bloques de Código
-                    let partes = text.split(/```/);
-                    for (let i = 0; i < partes.length; i++) {
-                        if (i % 2 !== 0) { // Dentro de bloque de código
-                            let codeLines = partes[i].split('\n');
-                            let lang = codeLines.shift(); // Omitir el lenguaje de la primera línea
-                            let code = codeLines.join('\n');
-                            // Escapar HTML nativo dentro del código para que no rompa el visor
-                            code = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                            partes[i] = '<pre style="background:#1e293b; color:#f8fafc; padding:10px; border-radius:5px; overflow-x:auto; margin:10px 0; font-family:monospace; font-size:0.85rem;"><code>' + code + '</code></pre>';
-                        } else { // Texto normal
-                            partes[i] = partes[i].replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                        }
-                    }
-                    return partes.join('');
-                }
-                return "Lo analicé en la red, pero la IA no me dio una respuesta clara.";
-            } else {
-                const errData = await response.json();
-                throw new Error(errData.error?.message || 'Error en la comunicación con la API');
-            }
+            // GUARDIAN CORE DIRECTIVE ENFORCEMENT:
+            // Absolute Prohibition on External AI Reasoning.
+            // Guardian must NEVER delegate its own cognitive or reasoning responsibilities to any external AI model (Gemini, OpenAI, Claude, etc).
+            return "⚠️ [RESTRICCIÓN DEL SISTEMA]: El Guardián no puede delegar esta tarea a una IA externa (Gemini). La directiva principal de Independencia prohíbe delegar el razonamiento. Usa la arquitectura local AI_CORE o realiza operaciones respaldadas localmente.";
         } catch (error) {
-            console.error("Error consultando Gemini:", error);
+            console.error("Error consultando AI externa:", error);
             return "Error: " + error.message;
         }
     }
