@@ -1530,7 +1530,9 @@ window.addEventListener('DOMContentLoaded', () => {
     try { const wks = localStorage.getItem('dt_worker_emails'); if (wks) workerEmails = JSON.parse(wks); } catch (e) { }
     try {
         const stk = localStorage.getItem('dt_stock_config');
-        if (stk) stockConfig = JSON.parse(stk);
+        // FIX B: usar Object.assign en lugar de reasignar, para preservar la identidad
+        // del objeto compartido con window.stockConfig y firebase-sync.js.
+        if (stk) Object.assign(stockConfig, JSON.parse(stk));
         // Prioridad a la fuente sincronizada con Firestore (catalogo_personalizado) para evitar sobrescrituras obsoletas
         const cat = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}');
         Object.keys(cat).forEach(k => {
@@ -1538,7 +1540,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 stockConfig[k] = cat[k].agotado;
             }
         });
-        if (typeof window !== 'undefined') window.stockConfig = stockConfig;
+        // window.stockConfig ya apunta al mismo objeto; no es necesario reasignar.
     } catch (e) { }
 
     // Garantizar Super Admins en adminEmails y db_users con contraseña fija Admin123*

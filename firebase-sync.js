@@ -65,6 +65,151 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
     console.warn("No se pudo escuchar configuración VIP:", error);
 });
 
+// --- CATÁLOGO PERSONALIZADO — TIEMPO REAL (top-level, igual que vipConfig) ---
+// Definido aquí, fuera de DOMContentLoaded, para garantizar que el listener
+// siempre se registre independientemente de lo que ocurra más tarde en el DOM.
+(function initCatalogListener() {
+    /**
+     * Aplica un mapa de personalización de Firestore sobre el array global `products`.
+     * Actualiza precios, nombres, imágenes, disponibilidad e inyecta productos custom.
+     * Después de aplicar los cambios, solicita un re-render de los componentes afectados.
+     * Si el DOM aún no está listo, difiere el render hasta DOMContentLoaded.
+     *
+     * @param {Object} customCatalog  - Mapa { [productId]: { price, name, img, agotado, ... } }
+     */
+    function applyCustomCatalog(customCatalog) {
+        if (typeof products === 'undefined' || !customCatalog) return;
+
+        // 1. Inyectar productos nuevos personalizados (isCustom)
+        Object.keys(customCatalog).forEach(k => {
+            const data = customCatalog[k];
+            if (data.isCustom && !data.eliminado) {
+                if (!products.find(x => String(x.id) === String(k))) {
+                    const pPts = data.points !== undefined ? Number(data.points) : (data.puntos !== undefined ? Number(data.puntos) : 0);
+                    products.push({
+                        id: data.id || k,
+                        name: data.name,
+                        price: data.price,
+                        cat: data.category,
+                        img: data.img,
+                        points: pPts,
+                        puntos: pPts,
+                        desc: data.desc || 'Producto fresco del día',
+                        isCustom: true
+                    });
+                }
+            }
+        });
+
+        // 2. Modificar existentes y procesar eliminaciones (iterando en reversa)
+        for (let i = products.length - 1; i >= 0; i--) {
+            const p = products[i];
+            const customData = customCatalog[p.id] !== undefined ? customCatalog[p.id] : customCatalog[String(p.id)];
+            if (customData !== undefined) {
+
+                if (customData.eliminado) {
+                    products.splice(i, 1);
+                    continue;
+                }
+
+                if (!p.originalName) p.originalName = p.name;
+                if (!p.originalImg)  p.originalImg  = p.img;
+
+                if (customData.name) {
+                    // Respetar badges de oferta en el nombre si los hay
+                    const hasBadge = p.name.includes('[Promo:');
+                    const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
+                    p.name = customData.name + (badgePart ? ' ' + badgePart : '');
+                }
+                if (customData.img) p.img = customData.img;
+                if (customData.category) {
+                    if (!p.originalCat) p.originalCat = p.cat;
+                    p.cat = customData.category;
+                }
+
+                if (customData.price !== undefined) {
+                    const newPrice = Number(customData.price);
+                    if (p.enOferta) {
+                        p.oldPrice = newPrice;
+                        if (window.dtOfertasActivas && window.dtOfertasActivas[p.id]) {
+                            window.dtOfertasActivas[p.id].precioOriginal = newPrice;
+                            if (typeof window.saveOfertas === 'function') window.saveOfertas();
+                        }
+                    } else {
+                        p.price = newPrice;
+                    }
+                }
+
+                if (customData.points !== undefined || customData.puntos !== undefined) {
+                    const pts = Number(customData.points !== undefined ? customData.points : customData.puntos);
+                    p.points = pts;
+                    p.puntos = pts;
+                }
+
+                // FIX B companion: write directly into window.stockConfig so
+                // createCardHTML (script.js) always reads the correct object.
+                if (customData.agotado !== undefined) {
+                    if (typeof window.stockConfig !== 'undefined') {
+                        window.stockConfig[p.id] = customData.agotado;
+                    }
+                }
+            }
+        }
+
+        // Sincronizar localStorage (local-only — sin disparar escritura a Firestore)
+        try {
+            if (typeof window.stockConfig !== 'undefined') {
+                localStorage.setItem('dt_stock_config', JSON.stringify(window.stockConfig));
+            }
+        } catch (e) { /* cuota de almacenamiento */ }
+
+        // Re-renderizar — diferir si el DOM aún no está listo
+        function doRender() {
+            if (typeof renderProducts   === 'function') renderProducts();
+            if (typeof renderFeatured   === 'function') renderFeatured();
+            if (typeof renderStockAdmin === 'function') renderStockAdmin();
+            if (typeof renderKitchenStock === 'function') renderKitchenStock();
+        }
+
+        if (document.readyState === 'loading') {
+            // DOM no listo: diferir hasta DOMContentLoaded para evitar errores de render
+            document.addEventListener('DOMContentLoaded', doRender, { once: true });
+        } else {
+            doRender();
+        }
+    }
+
+    // Exponer para uso externo (tests, diagnóstico)
+    window._applyCustomCatalog = applyCustomCatalog;
+
+    // Aplicar inmediatamente desde localStorage (Offline First / instantáneo)
+    try {
+        const localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado'));
+        if (localCatalog) applyCustomCatalog(localCatalog);
+    } catch (e) { /* JSON malformado en localStorage */ }
+
+    // Registrar onSnapshot exactamente una vez (cancelar suscripción previa si existía)
+    if (typeof window.unsubCatalogo === 'function') {
+        window.unsubCatalogo();
+    }
+    window.unsubCatalogo = db.collection('config').doc('catalogo_personalizado').onSnapshot(
+        function(doc) {
+            if (doc.exists) {
+                const remoteCatalog = doc.data();
+                try {
+                    localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(remoteCatalog));
+                } catch (e) { /* cuota */ }
+                applyCustomCatalog(remoteCatalog);
+            }
+        },
+        function(err) {
+            // El error se registra pero no se vuelve a suscribir automáticamente.
+            // Firestore reconecta por sí solo en la mayoría de casos de red.
+            console.warn('[catalogo_personalizado] onSnapshot error — code:', err.code, '|', err.message);
+        }
+    );
+})();
+
 // Función global para sincronizar el usuario activo de forma atómica en Cloud Firestore
 // FIX: Lee Firestore primero para preservar el rol asignado por el admin.
 // Solo asigna 'cliente' si el documento no existe aún (primera vez).
@@ -1178,118 +1323,10 @@ window.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- 9. SINCRONIZACIÓN DE CATÁLOGO PERSONALIZADO (NOMBRE, PRECIO E IMAGEN) ---
-    const applyCustomCatalog = (customCatalog) => {
-        if (typeof products !== 'undefined' && customCatalog) {
-            
-            // 1. Inyectar productos nuevos personalizados (isCustom)
-            Object.keys(customCatalog).forEach(k => {
-                const data = customCatalog[k];
-                if (data.isCustom && !data.eliminado) {
-                    if (!products.find(x => String(x.id) === String(k))) {
-                        const pPts = data.points !== undefined ? Number(data.points) : (data.puntos !== undefined ? Number(data.puntos) : 0);
-                        products.push({
-                            id: data.id || k,
-                            name: data.name,
-                            price: data.price,
-                            cat: data.category,
-                            img: data.img,
-                            points: pPts,
-                            puntos: pPts,
-                            desc: data.desc || 'Producto fresco del día',
-                            isCustom: true
-                        });
-                    }
-                }
-            });
-
-            // 2. Modificar existentes y procesar eliminaciones (iterando en reversa)
-            for (let i = products.length - 1; i >= 0; i--) {
-                const p = products[i];
-                const customData = customCatalog[p.id] !== undefined ? customCatalog[p.id] : customCatalog[String(p.id)];
-                if (customData !== undefined) {
-                    
-                    if (customData.eliminado) {
-                        products.splice(i, 1);
-                        continue;
-                    }
-                    
-                    if (!p.originalName) p.originalName = p.name;
-                    if (!p.originalImg) p.originalImg = p.img;
-                    
-                    if (customData.name) {
-                        // Respetar badges de oferta en el nombre si los hay
-                        const hasBadge = p.name.includes('[Promo:');
-                        const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
-                        p.name = customData.name + (badgePart ? ' ' + badgePart : '');
-                    }
-                    if (customData.img) p.img = customData.img;
-                    if (customData.category) {
-                        if (!p.originalCat) p.originalCat = p.cat;
-                        p.cat = customData.category;
-                    }
-                    
-                    if (customData.price !== undefined) {
-                        const newPrice = Number(customData.price);
-                        if (p.enOferta) {
-                            p.oldPrice = newPrice;
-                            if (window.dtOfertasActivas && window.dtOfertasActivas[p.id]) {
-                                window.dtOfertasActivas[p.id].precioOriginal = newPrice;
-                                window.saveOfertas();
-                            }
-                        } else {
-                            p.price = newPrice;
-                        }
-                    }
-
-                    if (customData.points !== undefined || customData.puntos !== undefined) {
-                        const pts = Number(customData.points !== undefined ? customData.points : customData.puntos);
-                        p.points = pts;
-                        p.puntos = pts;
-                    }
-
-                    if (customData.agotado !== undefined) {
-                        if (typeof stockConfig !== 'undefined') {
-                            stockConfig[p.id] = customData.agotado;
-                        }
-                    }
-                }
-            }
-
-            // Sincronizar window.stockConfig y persistir en dt_stock_config (operación local exclusiva, sin bucle con Firestore)
-            if (typeof stockConfig !== 'undefined') {
-                if (typeof window !== 'undefined') window.stockConfig = stockConfig;
-                try {
-                    localStorage.setItem('dt_stock_config', JSON.stringify(stockConfig));
-                } catch (e) { }
-            }
-
-            if (typeof renderProducts === 'function') renderProducts();
-            if (typeof renderFeatured === 'function') renderFeatured();
-            if (typeof renderStockAdmin === 'function') renderStockAdmin();
-            if (typeof renderKitchenStock === 'function') renderKitchenStock();
-        }
-    };
-
-    // Leer primero de localStorage para ser instantáneo (Offline First)
-    try {
-        const localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado'));
-        if (localCatalog) applyCustomCatalog(localCatalog);
-    } catch(e) {}
-
-    // Luego suscribirse a Firestore (Tiempo Real)
-    if (window.unsubCatalogo) {
-        window.unsubCatalogo();
-    }
-    window.unsubCatalogo = db.collection('config').doc('catalogo_personalizado').onSnapshot(doc => {
-        if (doc.exists) {
-            const remoteCatalog = doc.data();
-            localStorage.setItem('dt_catalogo_personalizado', JSON.stringify(remoteCatalog));
-            applyCustomCatalog(remoteCatalog);
-        }
-    }, err => {
-        console.warn("No se pudo cargar el catálogo personalizado de Firestore o se perdió la conexión", err);
-    });
+    // --- 9. SINCRONIZACIÓN DE CATÁLOGO PERSONALIZADO ---
+    // NOTA: applyCustomCatalog y onSnapshot han sido movidos al ámbito global (top-level)
+    // justo después del listener de vipConfig, para garantizar que siempre se registren.
+    // Ver la función initCatalogListener() definida más arriba en este mismo archivo.
 
     // --- SINCRONIZACIÓN DE RECOMPENSAS CLUB VIP & PUNTOS ---
     try {
