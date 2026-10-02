@@ -87,10 +87,19 @@ class ChatBridge {
         const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
         const hasPendingApproval = lastAssistantMsg && lastAssistantMsg.metadata && lastAssistantMsg.metadata.researchStatus === 'REQUIRES_WEB_APPROVAL';
 
-        if (interpretation.intent === "AUTHORIZATION_GRANTED" || 
-           (interpretation.intent === "RESEARCH_REQUEST" && interpretation.topic.trim() === '' && hasPendingApproval)) {
+        if (interpretation.intent === "RESEARCH_REQUEST" && hasPendingApproval) {
+            // Check if it's just an authorization phrase like "búscalo en internet" or "investiga a fondo"
+            const weakTopicWords = new Set(["en", "internet", "a", "fondo", "sobre", "eso", "la", "informacion", "información", "mas", "más", "sal", "busca", "buscalo"]);
+            const topicWords = interpretation.topic.trim().toLowerCase().split(/\s+/);
+            const isWeak = topicWords.every(w => weakTopicWords.has(w) || w.length <= 2);
+            if (interpretation.topic.trim() === '' || isWeak) {
+                interpretation.isClarificationNeeded = false;
+                interpretation.intent = "AUTHORIZATION_GRANTED";
+            }
+        }
+
+        if (interpretation.intent === "AUTHORIZATION_GRANTED") {
             interpretation.isClarificationNeeded = false;
-            interpretation.intent = "AUTHORIZATION_GRANTED";
         }
 
         // --- 2. CLARIFICATION HANDLING ---
@@ -194,6 +203,14 @@ class ChatBridge {
                 const user = this.identityManager.getCurrentUser(currentUserGlobal);
                 const contextData = { user: { data: user }, webSearchApproved: true };
                 return await this._executeResearch(pendingTask, contextData, message);
+            } else {
+                const responseText = "[CLARIFICACIÓN] Me autorizaste o afirmaste algo, pero no tengo ninguna consulta pendiente. ¿En qué deseas que te ayude exactamente?";
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    intent: "AUTHORIZATION_GRANTED",
+                    isClarification: true
+                });
+                return responseText;
             }
         }
 
@@ -208,6 +225,14 @@ class ChatBridge {
                 const responseText = "Entendido. He cancelado la búsqueda en internet. Me limitaré a la información que ya tengo almacenada localmente. ¿Hay algo más en lo que te pueda ayudar?";
                 this.memoryManager.addTurn('user', message);
                 this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
+                return responseText;
+            } else {
+                const responseText = "[CLARIFICACIÓN] De acuerdo, no lo haré. Pero no estoy seguro a qué te refieres, ya que no tenía nada pendiente. ¿Hay algo en lo que te pueda ayudar?";
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    intent: "AUTHORIZATION_DENIED",
+                    isClarification: true
+                });
                 return responseText;
             }
         }
@@ -375,7 +400,15 @@ class ChatBridge {
                                `Fuentes: Locales(${report.localResultsUsed ? report.localResultsUsed.length : 0}), Web(${report.webResultsUsed ? report.webResultsUsed.length : 0})\n` +
                                (report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}` : '');
             } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
-                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${(report.limitations||[]).join(', ')}`;
+                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${(report.limitations||[]).join(', ')}\n¿Deseas que intente buscar de nuevo en la web?`;
+                this.memoryManager.addTurn('user', originalMessage);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    intent: "RESEARCH_REQUEST",
+                    isResearchReport: true,
+                    researchStatus: 'REQUIRES_WEB_APPROVAL',
+                    researchTask: taskQuery
+                });
+                return responseText;
             } else {
                 responseText = `[INVESTIGACIÓN] Estado inesperado: ${report.status}`;
             }
@@ -389,9 +422,14 @@ class ChatBridge {
 
             return responseText;
         } catch (e) {
-            const errText = `[ERROR DE INVESTIGACIÓN] Hubo un problema al investigar: ${e.message}`;
+            const errText = `[ERROR DE INVESTIGACIÓN] Hubo un problema al investigar: ${e.message}\n¿Deseas que intente buscar de nuevo en la web?`;
             this.memoryManager.addTurn('user', originalMessage);
-            this.memoryManager.addTurn('assistant', errText, { isGeneratedResponse: true, isError: true });
+            this.memoryManager.addTurn('assistant', errText, { 
+                isGeneratedResponse: true, 
+                isError: true,
+                researchStatus: 'REQUIRES_WEB_APPROVAL',
+                researchTask: taskQuery
+            });
             return errText;
         }
     }

@@ -111,21 +111,52 @@ async function runTests() {
     window.AI_CORE.chatBridgeInstance.clearSession();
     if (await checkIntent("T1: Factual Query -> Web Approval Request", "quien invento el pan", "Necesito tu autorización explícita para buscar esta información en internet")) passed++; else failed++;
 
-    // 2. "Sí, búscalo" resumes the original pending query
-    if (await checkIntent("T2: 'Sí, búscalo' resumes pending query", "sí, búscalo", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
+    // 2. Explicit authorization with spelling errors resumes the correct pending query
+    // and The original research topic, not the approval text, reaches WebFetcher
+    let queryPassedToFetch = "";
+    global.fetch = async (url) => {
+        fetchUrls.push(url);
+        if (url.includes('duckduckgo')) {
+            queryPassedToFetch = url;
+        }
+        return { 
+            ok: true, 
+            json: async () => ({
+                RelatedTopics: [{ FirstURL: "https://mock.com", Text: "El pan fue inventado por los egipcios hace miles de años." }]
+            }) 
+        };
+    };
+    if (await checkIntent("T2: Explicit authorization with spelling errors resumes pending query", "si sal y investigas a fonto", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
+    if (queryPassedToFetch.includes("quien+invento+pan") || queryPassedToFetch.includes("quien%20invento%20pan")) {
+        console.log(`✅ [PASS] T2.1: Original research topic reached WebFetcher`);
+        passed++;
+    } else {
+        console.error(`❌ [FAIL] T2.1: Original research topic did not reach WebFetcher. URL: ${queryPassedToFetch}`);
+        failed++;
+    }
 
-    // 3. "Búscalo en internet" is recognized as an explicit web-search instruction
+    // 3. "Búscalo en internet" is recognized as an explicit web-search instruction (and authorization)
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T3: 'Búscalo en internet' explicit instruction", "búscalo en internet", ["qué tema específico necesitas que investigue", "CLARIFICACIÓN"])) passed++; else failed++;
+    await checkIntent("Setup: Factual Query", "cuando se descubrio america", "Necesito tu autorización explícita");
+    if (await checkIntent("T3: 'Búscalo en internet' explicit instruction resumes pending", "búscalo en internet", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
 
-    // 4. "Sí" without a pending request does not authorize an unrelated search
+    // 4. A standalone "sí" with no pending task asks for clarification
     window.AI_CORE.chatBridgeInstance.clearSession();
-    if (await checkIntent("T4: 'Sí' sin pending request no hace nada (Razonamiento Local)", "si", "[RAZONAMIENTO LOCAL]")) passed++; else failed++;
+    if (await checkIntent("T4: Standalone 'sí' asks for clarification", "si", "[CLARIFICACIÓN] Me autorizaste o afirmaste algo, pero no tengo ninguna consulta pendiente.")) passed++; else failed++;
 
     // 5. Denial cancels the pending research
     window.AI_CORE.chatBridgeInstance.clearSession();
     await checkIntent("Setup: Factual Query", "quien escribio la odisea", "Necesito tu autorización explícita");
-    if (await checkIntent("T5: Denial cancels pending research", "no lo hagas", "He cancelado la búsqueda en internet")) passed++; else failed++;
+    let fetchCalled = false;
+    global.fetch = async () => { fetchCalled = true; throw new Error(); };
+    if (await checkIntent("T5.1: Denial cancels pending research", "no lo hagas", "He cancelado la búsqueda en internet")) passed++; else failed++;
+    if (!fetchCalled) {
+        console.log(`✅ [PASS] T5.2: Denied request does not invoke WebFetcher`);
+        passed++;
+    } else {
+        console.error(`❌ [FAIL] T5.2: Denied request invoked WebFetcher!`);
+        failed++;
+    }
 
     // 6. A new unrelated query does not inherit an old query's approval
     window.AI_CORE.chatBridgeInstance.clearSession();
@@ -133,7 +164,6 @@ async function runTests() {
     if (await checkIntent("T6: New query doesn't inherit approval", "cual es el margen de la harina", "Costo de producción")) passed++; else failed++;
 
     // 7. A successful web result is returned with its real provenance
-    // (Ya probado en T2 si fetchUrls incluye duckduckgo)
     if (fetchUrls.some(u => u.includes('mock.com'))) {
         console.log(`✅ [PASS] T7: Web result has real provenance`);
         passed++;
@@ -142,11 +172,22 @@ async function runTests() {
         failed++;
     }
 
-    // 8. A failed WebFetcher call reports the actual error
+    // 8. A failed search produces a truthful failure and a safe retry option
     window.AI_CORE.chatBridgeInstance.clearSession();
     global.fetch = async () => { throw new Error('CORS fail'); }; // Mock fail
     await checkIntent("Setup: Factual Query", "cuando acabo la segunda guerra", "Necesito tu autorización explícita");
-    if (await checkIntent("T8: Failed WebFetcher call reports error", "si, dale", ["INVESTIGACIÓN FALLIDA", "Busqueda web fallida o sin resultados"])) passed++; else failed++;
+    if (await checkIntent("T8.1: Failed WebFetcher call reports error and offers retry", "si, dale", ["INVESTIGACIÓN FALLIDA", "¿Deseas que intente buscar de nuevo en la web?"])) passed++; else failed++;
+    
+    // Test that the retry works!
+    global.fetch = async (url) => {
+        return { 
+            ok: true, 
+            json: async () => ({
+                RelatedTopics: [{ FirstURL: "https://mock.com", Text: "La segunda guerra acabo en 1945 con la rendicion." }]
+            }) 
+        };
+    };
+    if (await checkIntent("T8.2: Safe retry works from failure state", "si sal y busca", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
 
     // 9. Knowledge Ingestion & Reuse (Phase 14)
     window.AI_CORE.chatBridgeInstance.clearSession();
@@ -166,7 +207,7 @@ async function runTests() {
     
     // Ask the same thing again - should be LOCAL_SUFFICIENT, no auth required!
     // We mock fetch to fail so if it tries to hit the web, it crashes or fails.
-    let fetchCalled = false;
+    fetchCalled = false;
     global.fetch = async () => { fetchCalled = true; throw new Error('Should not be called'); };
     
     if (await checkIntent("T9.2: Local Reuse without Web", "cual es el origen de la panaderia", "INVESTIGACIÓN COMPLETA")) passed++; else failed++;
