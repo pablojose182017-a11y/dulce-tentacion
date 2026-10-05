@@ -22,7 +22,9 @@ class LanguageUnderstandingEngine {
             RESEARCH_REQUEST: ['investiga', 'research', 'busca informacion', 'averigua', 'busca en internet', 'buscalo en internet', 'indaga', 'busca', 'buscalo', 'buscar', 'buscar informacion', 'sal a internet', 'busca en la web', 'averigua en internet', 'buscame'],
             USER_COMPLAINT: ['no me respondes', 'no entiendes', 'por que no respondes', 'que te pasa', 'estas mal', 'responde bien', 'no sabes', 'error', 'que necesitas', 'por que preguntas'],
             AUTHORIZATION_GRANTED: ['si', 'autorizado', 'procede', 'adelante', 'hazlo', 'de acuerdo', 'claro', 'por supuesto', 'dale'],
-            AUTHORIZATION_DENIED: ['no', 'denegado', 'cancela', 'no lo hagas', 'detente', 'espera', 'omite', 'ignora']
+            AUTHORIZATION_DENIED: ['no', 'denegado', 'cancela', 'no lo hagas', 'detente', 'espera', 'omite', 'ignora'],
+            PRODUCT_INFORMATION: ['especificaciones', 'informacion de', 'procesador', 'caracteristicas', 'detalles de', 'informacion sobre'],
+            PRODUCT_RECOMMENDATION: ['recomiendame', 'recomiendas', 'recomiendes', 'que tal es', 'vale la pena', 'sirve para', 'que opinas', 'es bueno', 'recomendacion', 'recomendar']
         };
     }
 
@@ -120,9 +122,10 @@ class LanguageUnderstandingEngine {
     }
 
     _extractTokens(normalized) {
+        const allowedShort = new Set(['pc', 'tv', 'os', 'vr', 'hp']);
         return normalized.replace(/[^a-z0-9\s]/g, ' ')
                          .split(/\s+/)
-                         .filter(t => t.length > 2 && !this.stopWords.has(t));
+                         .filter(t => (t.length > 2 || allowedShort.has(t)) && !this.stopWords.has(t));
     }
 
     learnCorrection(wrongWord, correctWord) {
@@ -174,6 +177,38 @@ class LanguageUnderstandingEngine {
             interpretation.intent = lastClarification;
             interpretation.topic = tokens.join(' ');
             interpretation.confidence = 0.9;
+            return interpretation;
+        }
+
+        const isProductInfo = this._containsPhrase(normalized, this.dictionaries.PRODUCT_INFORMATION);
+        const isProductRec = this._containsPhrase(normalized, this.dictionaries.PRODUCT_RECOMMENDATION);
+        
+        const techModelRegex = /\b([a-z]+[\s-]?[0-9]{2,}[a-z]*|[0-9]{2,}[\s-]?[a-z]+)\b/i;
+        const brandKeywords = ['moto', 'motorola', 'lenovo', 'samsung', 'apple', 'iphone', 'macbook', 'pc', 'laptop', 'celular', 'telefono'];
+        const hasBrand = brandKeywords.some(b => normalized.includes(b));
+        const hasModel = techModelRegex.test(normalized);
+        const isGenericProduct = (hasBrand && hasModel) || (hasBrand && tokens.length <= 4) || (hasModel && tokens.length <= 3);
+
+        if (isProductInfo || isProductRec || isGenericProduct) {
+            interpretation.intent = isProductRec ? "PRODUCT_RECOMMENDATION" : "PRODUCT_INFORMATION";
+            const prodStops = new Set([...this.dictionaries.PRODUCT_INFORMATION, ...this.dictionaries.PRODUCT_RECOMMENDATION].flatMap(p => p.split(' ')));
+            interpretation.topic = tokens.filter(t => !prodStops.has(t) && !this.stopWords.has(t) && t !== 'necesito' && t !== 'quiero').join(' ');
+            interpretation.confidence = 0.9;
+            
+            let hasContextProduct = false;
+            if (conversationContext && conversationContext.length > 0) {
+                for (let msg of conversationContext) {
+                    if (msg.text && (msg.text.includes('http') || msg.text.includes('www.'))) hasContextProduct = true;
+                    if (msg.metadata && msg.metadata.topic && msg.metadata.topic.length > 3) hasContextProduct = true;
+                }
+            }
+
+            if (interpretation.topic.trim() === '' && !hasContextProduct) {
+                interpretation.confidence = 0.4;
+                interpretation.ambiguity.push("no se menciona el producto específico");
+                interpretation.missingInformation.push("el modelo exacto, una foto de las especificaciones o el enlace del producto");
+                interpretation.isClarificationNeeded = true;
+            }
             return interpretation;
         }
 
@@ -309,7 +344,7 @@ class LanguageUnderstandingEngine {
             }
             return interpretation;
         }
-
+        
         if (this._containsPhrase(normalized, this.dictionaries.ANALYSIS_REQUEST)) {
             interpretation.intent = "ANALYSIS_REQUEST";
             const analysisStops = new Set(this.dictionaries.ANALYSIS_REQUEST);
@@ -356,6 +391,10 @@ class LanguageUnderstandingEngine {
     generateClarificationMessage(interpretation) {
         if (interpretation.intent === "ANALYSIS_REQUEST" && interpretation.topic === "") {
             return "Creo que necesitas ayuda para analizar algo, pero todavía no sé qué tema. ¿Qué quieres que revisemos?";
+        }
+        
+        if ((interpretation.intent === "PRODUCT_RECOMMENDATION" || interpretation.intent === "PRODUCT_INFORMATION") && interpretation.topic === "") {
+            return "Pásame el modelo exacto, una foto de las especificaciones o el enlace y te digo qué tal es.";
         }
         
         const missing = interpretation.missingInformation[0] || 'más detalles';

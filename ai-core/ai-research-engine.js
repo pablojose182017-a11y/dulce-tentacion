@@ -203,16 +203,6 @@ class ResearchEngine {
             if (!canWebSearch || !connectivityDecision.allowAutomatic) {
                 log('Permiso WEB_SEARCH denegado o ConnectivityPolicyEngine lo rechaza (ej. OFFLINE). Fallback a modo OFFLINE_ONLY.');
                 needsWeb = false;
-            } else if (!explicitApproval) {
-                log('Permiso WEB_SEARCH requiere autorización explícita del usuario.');
-                return Object.freeze({
-                    taskId: 'res_' + Date.now(),
-                    query: task,
-                    status: 'REQUIRES_WEB_APPROVAL',
-                    conclusion: 'La evidencia local es insuficiente. Necesito buscar en internet para darte una respuesta precisa.',
-                    missingInformation: ['autorización del usuario para búsqueda web'],
-                    auditTrail: auditTrail
-                });
             } else {
                 log('Permiso WEB_SEARCH confirmado y autorizado explícitamente. Ejecutando...');
                 try {

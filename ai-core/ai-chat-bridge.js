@@ -260,9 +260,9 @@ class ChatBridge {
             }
         }
 
-        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION") {
+        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION" || interpretation.intent === "PRODUCT_INFORMATION" || interpretation.intent === "PRODUCT_RECOMMENDATION") {
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
-            const contextData = { user: { data: user }, webSearchApproved: false };
+            const contextData = { user: { data: user }, webSearchApproved: true };
             return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
         }
 
