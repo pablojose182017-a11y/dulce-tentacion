@@ -58,6 +58,11 @@ class ChatBridge {
                 }
             }
         }
+        // FASE 4: Provenance Graph (observational lineage, no authority)
+        if (window.AI_CORE.ProvenanceGraph) {
+            this.provenanceGraph = new window.AI_CORE.ProvenanceGraph();
+        }
+
         // FASE 7 - Research Integration
         if (window.AI_CORE.ResearchEngine && window.AI_CORE.OfflineResolver && window.AI_CORE.WebFetcher) {
             const offlineResolver = new window.AI_CORE.OfflineResolver(this.knowledgeManager);
@@ -71,7 +76,8 @@ class ChatBridge {
                 reasoningEngine: this.reasoningEngine,
                 webFetcher,
                 ingestionEngine,
-                permissionManager: this.permissionManager
+                permissionManager: this.permissionManager,
+                provenanceGraph: this.provenanceGraph
             });
         }
         

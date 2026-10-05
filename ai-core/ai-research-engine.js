@@ -20,6 +20,7 @@ class ResearchEngine {
         this.webFetcher = deps.webFetcher;
         this.ingestionEngine = deps.ingestionEngine;
         this.permissionManager = deps.permissionManager;
+        this.provenanceGraph = deps.provenanceGraph || null;
 
         if (!this.offlineResolver || !this.reasoningEngine || !this.webFetcher) {
             throw new Error("ResearchEngine requiere dependencias minimas (offlineResolver, reasoningEngine, webFetcher)");
@@ -260,6 +261,32 @@ class ResearchEngine {
             // Only keep relevant findings for ingestion
             webFindings = webFindings.filter(wf => relevantFindings.includes(wf));
             localFindings = localFindings.filter(lf => relevantFindings.includes(lf));
+        }
+
+        // FASE 4: Lineage and Provenance Recording (Observational only)
+        if (this.provenanceGraph && webFindings.length > 0) {
+            for (const wf of webFindings) {
+                try {
+                    const src = this.provenanceGraph.registerSource({
+                        sourceId: wf.url || `web_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+                        sourceType: 'EXTERNAL_WEB',
+                        origin: wf.url || 'web',
+                        content: wf.snippet || wf.title || '',
+                        observedAt: new Date().toISOString(),
+                        confidence: 0.7
+                    });
+                    if (conclusion) {
+                        this.provenanceGraph.registerClaim({
+                            subject: task,
+                            predicate: 'research_finding',
+                            objectValue: conclusion,
+                            knowledgeType: 'FACT'
+                        }, src, { url: wf.url });
+                    }
+                } catch (e) {
+                    // Lineage recording failure must never break research
+                }
+            }
         }
 
         // 4. KNOWLEDGE INGESTION (opcional)

@@ -2,7 +2,7 @@ window.AI_CORE = window.AI_CORE || {};
 
 class SourceProvenance {
     constructor(data) {
-        this.sourceId = data.sourceId || window.crypto.randomUUID();
+        this.sourceId = data.sourceId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : `src_${Date.now()}_${Math.random().toString(36).substring(2)}`));
         this.sourceType = data.sourceType || 'UNKNOWN';
         this.origin = data.origin || 'UNKNOWN';
         this.author = data.author || 'UNKNOWN';
@@ -178,10 +178,11 @@ class ProvenanceGraph {
         for (let [existingClaimId, existingRecord] of this.claims.entries()) {
             if (existingClaimId === newClaimRecord.claimId) continue;
             
-            let rel = window.AI_CORE.SemanticComparator.compare(
+            let comparator = window.AI_CORE && window.AI_CORE.SemanticComparator;
+            let rel = comparator ? comparator.compare(
                 { detectedIntent: newClaimRecord.claimProposal.intent || 'UNKNOWN', claimProposal: newClaimRecord.claimProposal },
                 { detectedIntent: existingRecord.claimProposal.intent || 'UNKNOWN', claimProposal: existingRecord.claimProposal }
-            );
+            ) : 'DISTINCT_COEXISTING';
 
             if (rel === 'SEMANTICALLY_INCOMPATIBLE') {
                 this._registerConflict(newClaimRecord, existingRecord, this._classifyConflictType(newClaimRecord, existingRecord));
