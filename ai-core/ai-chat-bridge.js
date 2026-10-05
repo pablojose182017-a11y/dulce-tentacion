@@ -108,7 +108,7 @@ class ChatBridge {
         }
     }
 
-    async receiveMessage(message, currentUserGlobal, costosStateGlobal) {
+    async receiveMessage(message, currentUserGlobal, costosStateGlobal, fileAttachment = null) {
         // --- 1. NATURAL LANGUAGE UNDERSTANDING ---
         let interpretation = { intent: "UNKNOWN_FACTUAL", isClarificationNeeded: false };
         if (this.understandingEngine) {
@@ -122,6 +122,7 @@ class ChatBridge {
         }
         
         console.log("[DEBUG CHATBRIDGE] Intent detectado:", interpretation.intent, "isClarif:", interpretation.isClarificationNeeded);
+        console.log("[DEBUG CHATBRIDGE] Topic final:", interpretation.topic);
 
         const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
         const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
@@ -293,9 +294,10 @@ class ChatBridge {
         await contextManager.assembleContext(currentUserGlobal);
 
         // Buscar documentos relevantes genéricos para la pregunta actual
+        const activeTopic = interpretation.topic || message;
         let relevantDocs = [];
         try {
-            const searchResults = await this.knowledgeManager.search(message);
+            const searchResults = await this.knowledgeManager.search(activeTopic);
             relevantDocs = searchResults.map(r => r.document);
         } catch (e) {
             relevantDocs = [];
@@ -326,8 +328,9 @@ class ChatBridge {
 
         // Reason about the message using full context (incluyendo knowledge)
         const inputContext = {
-            problemStatement: message,
-            assembledContext: context
+            problemStatement: activeTopic,
+            assembledContext: context,
+            fileAttachment: fileAttachment
         };
         const analysis = await this.reasoningEngine.reason(inputContext);
 
@@ -498,7 +501,9 @@ class ChatBridge {
             this.memoryManager.addTurn('assistant', responseText, {
                 intent: "RESEARCH_REQUEST",
                 isResearchReport: true,
-                researchStatus: report.status
+                researchStatus: report.status,
+                researchTask: taskQuery,
+                topic: taskQuery
             });
 
             return responseText;

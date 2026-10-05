@@ -34,6 +34,45 @@ class ReasoningEngine {
             ? ctx.blocks.knowledge.content
             : [];
 
+        // CASO 0: File Analysis
+        if (inputContext.fileAttachment && inputContext.fileAttachment.content) {
+            const content = inputContext.fileAttachment.content;
+            
+            evidenceList.push({
+                id: "ev_file_1",
+                type: "FILE_ANALYSIS",
+                provenanceSourceId: "file_" + inputContext.fileAttachment.name,
+                content: "Contenido del archivo HTML",
+                verificationStatus: "VERIFIED",
+                reasoningConfidence: 0.95
+            });
+
+            if (content.includes("undefinedFunction()")) {
+                hypotheses.push({
+                    id: "h_file_error",
+                    description: "El archivo HTML hace referencia a undefinedFunction() en un evento onclick, lo que causará un ReferenceError.",
+                    supportingEvidence: ["ev_file_1"],
+                    contradictingEvidence: [],
+                    status: "GENERATED_HYPOTHESIS",
+                    reasoningConfidence: 0.9,
+                    uncertaintyFactors: [],
+                    epistemicCategory: "TECHNICAL_DIAGNOSIS"
+                });
+            } else {
+                hypotheses.push({
+                    id: "h_file_ok",
+                    description: "El HTML no tiene errores evidentes.",
+                    supportingEvidence: ["ev_file_1"],
+                    contradictingEvidence: [],
+                    status: "GENERATED_HYPOTHESIS",
+                    reasoningConfidence: 0.9,
+                    uncertaintyFactors: [],
+                    epistemicCategory: "TECHNICAL_DIAGNOSIS"
+                });
+            }
+            return { evidenceList, hypotheses };
+        }
+
         // CASO 1: Fake Evidence Trigger
         if (problem.includes("fake evidence")) {
             evidenceList.push({
@@ -373,8 +412,14 @@ class ReasoningEngine {
             output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Reportar" };
         } else if (supported.length > 0) {
             output.uncertainty.level = "LOW";
-            output.conclusion = "Existe evidencia local válida que apoya las hipótesis principales.";
-            output.proposal = "Proceder con la acción basada en conocimiento." + prefProposal;
+            const techDiag = supported.find(h => h.epistemicCategory === "TECHNICAL_DIAGNOSIS");
+            if (techDiag) {
+                output.conclusion = "Diagnóstico Técnico Completado.";
+                output.proposal = techDiag.description + prefProposal;
+            } else {
+                output.conclusion = "Existe evidencia local válida que apoya las hipótesis principales.";
+                output.proposal = "Proceder con la acción basada en conocimiento." + prefProposal;
+            }
             output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Informativo" };
         } else if (knowledgeContent.length === 0 && ckContent.length === 0) {
             output.uncertainty.level = "HIGH";

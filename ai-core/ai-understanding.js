@@ -133,6 +133,24 @@ class LanguageUnderstandingEngine {
         localStorage.setItem(this.correctionsKey, JSON.stringify(this.learnedCorrections));
     }
 
+    _inheritContextTopic(interpretation, conversationContext) {
+        if (interpretation.topic && interpretation.topic.trim() !== '') return;
+        if (!conversationContext || conversationContext.length === 0) return;
+        for (let i = conversationContext.length - 1; i >= 0; i--) {
+            const msg = conversationContext[i];
+            if (msg.metadata) {
+                const ctxTopic = msg.metadata.topic || msg.metadata.researchTask;
+                if (ctxTopic && ctxTopic.length > 2) {
+                    interpretation.topic = ctxTopic;
+                    interpretation.isClarificationNeeded = false;
+                    interpretation.missingInformation = [];
+                    interpretation.ambiguity = [];
+                    break;
+                }
+            }
+        }
+    }
+
     analyze(text, conversationContext = []) {
         const normalized = this._normalize(text);
         const tokens = this._extractTokens(normalized);
@@ -209,6 +227,7 @@ class LanguageUnderstandingEngine {
                 interpretation.missingInformation.push("el modelo exacto, una foto de las especificaciones o el enlace del producto");
                 interpretation.isClarificationNeeded = true;
             }
+            this._inheritContextTopic(interpretation, conversationContext);
             return interpretation;
         }
 
@@ -342,6 +361,7 @@ class LanguageUnderstandingEngine {
                 interpretation.missingInformation.push("el nombre del producto o insumo");
                 interpretation.isClarificationNeeded = true;
             }
+            this._inheritContextTopic(interpretation, conversationContext);
             return interpretation;
         }
         
@@ -356,6 +376,7 @@ class LanguageUnderstandingEngine {
                 interpretation.ambiguity.push("falta contexto de análisis");
                 interpretation.missingInformation.push("qué situación o datos debo analizar");
             }
+            this._inheritContextTopic(interpretation, conversationContext);
             return interpretation;
         }
 
@@ -372,6 +393,10 @@ class LanguageUnderstandingEngine {
             interpretation.intent = "FACTUAL_QUESTION";
             interpretation.confidence = 0.8;
             interpretation.topic = tokens.join(' ');
+        } else if (tokens.length >= 3) {
+            interpretation.intent = "RESEARCH_REQUEST";
+            interpretation.confidence = 0.6;
+            interpretation.topic = tokens.join(' ');
         } else {
             interpretation.intent = "UNKNOWN_STATEMENT";
             interpretation.confidence = 0.4;
@@ -383,6 +408,22 @@ class LanguageUnderstandingEngine {
         
         if (tokens.length <= 1 && interpretation.intent === "UNKNOWN_STATEMENT") {
             interpretation.ambiguity.push("el mensaje es demasiado corto y ambiguo aisladamente");
+        }
+
+        if (interpretation.topic.trim() === '' && conversationContext && conversationContext.length > 0) {
+            for (let i = conversationContext.length - 1; i >= 0; i--) {
+                const msg = conversationContext[i];
+                if (msg.metadata) {
+                    const ctxTopic = msg.metadata.topic || msg.metadata.researchTask;
+                    if (ctxTopic && ctxTopic.length > 2) {
+                        interpretation.topic = ctxTopic;
+                        interpretation.isClarificationNeeded = false;
+                        interpretation.missingInformation = [];
+                        interpretation.ambiguity = [];
+                        break;
+                    }
+                }
+            }
         }
 
         return interpretation;
