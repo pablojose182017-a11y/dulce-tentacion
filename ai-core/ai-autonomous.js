@@ -147,12 +147,13 @@ class ExecutionHistory {
 
 // ─── AutonomousPolicyEngine ────────────────────────────────────────────────────
 class AutonomousPolicyEngine {
-    constructor(policyRegistry, securityEngine, inventoryAuthority, executionHistory, adapterRegistry) {
+    constructor(policyRegistry, securityEngine, inventoryAuthority, executionHistory, adapterRegistry, ownerAuthority) {
         this.policyRegistry    = policyRegistry;
         this.securityEngine    = securityEngine;
         this.inventoryAuthority = inventoryAuthority;
         this.executionHistory  = executionHistory;
         this.adapterRegistry   = adapterRegistry;
+        this.ownerAuthority    = ownerAuthority;
         this._auditLog         = [];
     }
 
@@ -207,9 +208,29 @@ class AutonomousPolicyEngine {
             }
         }
 
-        // ── 5. Capability Check ──
+        // ── 5. Capability & Privileged Check ──
         if (tool.capabilities && !tool.capabilities.some(c => policy.allowedCapabilities.includes(c))) {
             throw new Error("CAPABILITY_NOT_AUTHORIZED");
+        }
+        
+        let adapter = this.adapterRegistry ? this.adapterRegistry.getAdapter(tool.toolId, tool.version) : null;
+        if (window.AI_CORE.isPrivileged && window.AI_CORE.isPrivileged(tool, adapter)) {
+            if (!proposal.ownerAuthorization) throw new Error("OWNER_AUTHORIZATION_REQUIRED");
+            if (!this.ownerAuthority) throw new Error("OWNER_AUTHORITY_NOT_CONFIGURED");
+            
+            await this.ownerAuthority.verifyAuthorizationRequest(
+                proposal.ownerAuthorization.request, 
+                proposal.ownerAuthorization.signature
+            );
+            
+            // Bind the owner intent tightly to the parameters
+            if (proposal.ownerAuthorization.request.action !== tool.toolId) throw new Error("OWNER_AUTHORIZATION_TOOL_MISMATCH");
+            // Check that the target matches if present
+            if (proposal.ownerAuthorization.request.target && tool.targetDescriptor && tool.targetDescriptor.parameter) {
+                if (proposal.parameters[tool.targetDescriptor.parameter] !== proposal.ownerAuthorization.request.target) {
+                    throw new Error("OWNER_AUTHORIZATION_TARGET_MISMATCH");
+                }
+            }
         }
 
         // ── 6. Rollback Scope Check (recursive offensive check on rollback tool) ──
@@ -252,7 +273,7 @@ class AutonomousPolicyEngine {
         const fingerprint     = await this.securityEngine.generateFingerprint(effectiveParams);
 
         // Fetch Adapter Definition
-        let adapter = this.adapterRegistry ? this.adapterRegistry.getAdapter(tool.toolId, tool.version) : null;
+        adapter = this.adapterRegistry ? this.adapterRegistry.getAdapter(tool.toolId, tool.version) : null;
         let adapterId = adapter ? adapter.adapterId : "default_adapter";
         let adapterVersion = adapter ? adapter.adapterVersion : "1.0";
         

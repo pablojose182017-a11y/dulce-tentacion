@@ -180,6 +180,26 @@ function effectiveCapabilities(payload, toolDef, adapterDef) {
 window.AI_CORE.effectiveCapabilities = effectiveCapabilities;
 window.AI_CORE.STATIC_OFFENSIVE_DENY_LIST = STATIC_OFFENSIVE_DENY_LIST;
 
+const PRIVILEGED_CAPABILITIES = new Set([
+    "QUARANTINE_ARTIFACT", "ISOLATE_NETWORK", "TERMINATE_PROCESS", "DELETE_FILE", 
+    "MODIFY_FIREWALL", "DISABLE_ACCOUNT", "ROTATE_CREDENTIALS", "CHANGE_SECURITY_POLICY",
+    "EXECUTE_REMEDIATION", "RESTORE_NETWORK"
+]);
+
+function isPrivileged(tool, adapter) {
+    const caps = effectiveCapabilities({ capabilities: [] }, tool, adapter);
+    for (let c of caps) {
+        if (PRIVILEGED_CAPABILITIES.has(c)) return true;
+    }
+    // Also check sideEffects directly just in case
+    if (tool && tool.sideEffects) {
+        const se = Array.isArray(tool.sideEffects) ? tool.sideEffects : [tool.sideEffects];
+        if (se.includes("DESTRUCTIVE") || se.includes("IRREVERSIBLE") || se.includes("STATE_MODIFICATION")) return true;
+    }
+    return false;
+}
+window.AI_CORE.isPrivileged = isPrivileged;
+
 class ExecutionGateway {
     constructor(securityEngine, adapterRegistry, slotManager, verificationLayer, history, auditTrail, inventoryAuthority) {
         if (!inventoryAuthority || typeof inventoryAuthority.verifyIdentity !== 'function') {
