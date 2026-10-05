@@ -69,6 +69,16 @@ class ChatBridge {
             this.connectivityPolicyEngine = new window.AI_CORE.ConnectivityPolicyEngine();
         }
 
+        // FASE 9 - Defensive Cybersecurity Infrastructure
+        if (window.AI_CORE.CyberDefenseEngine) {
+            this.cyberDefenseEngine = new window.AI_CORE.CyberDefenseEngine({
+                knowledgeManager: this.knowledgeManager,
+                provenanceGraph: this.provenanceGraph,
+                retentionEngine: this.retentionEngine, // Note: might not be initialized yet, check order if needed, but we pass what we have
+                autonomousPolicyEngine: this.autonomousPolicyEngine
+            });
+        }
+
         // FASE 7 - Research Integration
         if (window.AI_CORE.ResearchEngine && window.AI_CORE.OfflineResolver && window.AI_CORE.WebFetcher) {
             const offlineResolver = new window.AI_CORE.OfflineResolver(this.knowledgeManager);
