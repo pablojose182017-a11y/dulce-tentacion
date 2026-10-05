@@ -64,6 +64,11 @@ class ChatBridge {
             this.provenanceGraph = new window.AI_CORE.ProvenanceGraph();
         }
 
+        // FASE 7 & 8 - Connectivity Policy Integration
+        if (window.AI_CORE.ConnectivityPolicyEngine) {
+            this.connectivityPolicyEngine = new window.AI_CORE.ConnectivityPolicyEngine();
+        }
+
         // FASE 7 - Research Integration
         if (window.AI_CORE.ResearchEngine && window.AI_CORE.OfflineResolver && window.AI_CORE.WebFetcher) {
             const offlineResolver = new window.AI_CORE.OfflineResolver(this.knowledgeManager);
@@ -78,7 +83,8 @@ class ChatBridge {
                 webFetcher,
                 ingestionEngine,
                 permissionManager: this.permissionManager,
-                provenanceGraph: this.provenanceGraph
+                provenanceGraph: this.provenanceGraph,
+                connectivityPolicyEngine: this.connectivityPolicyEngine
             });
         }
         

@@ -21,6 +21,7 @@ class ResearchEngine {
         this.ingestionEngine = deps.ingestionEngine;
         this.permissionManager = deps.permissionManager;
         this.provenanceGraph = deps.provenanceGraph || null;
+        this.connectivityPolicyEngine = deps.connectivityPolicyEngine || null;
 
         if (!this.offlineResolver || !this.reasoningEngine || !this.webFetcher) {
             throw new Error("ResearchEngine requiere dependencias minimas (offlineResolver, reasoningEngine, webFetcher)");
@@ -171,7 +172,7 @@ class ResearchEngine {
                 content: r.document.content,
                 confidence: r.document.confidence * 0.8, // penalizacion leve por obsolescencia
                 trustLevel: 'LOCAL_UNVERIFIED',
-                warning: r.freshnessWarnings[0].warning
+                warning: (offlineRes.freshnessWarnings.find(fw => fw.docId === r.document.id) || {}).warning || 'Obsoleto'
             });
         }
 
@@ -185,13 +186,22 @@ class ResearchEngine {
 
         // 2. WEB FETCH (si es necesario y permitido)
         let webFindings = [];
+        let networkFailed = false;
         const user = contextData && contextData.user ? contextData.user.data : null;
         const explicitApproval = contextData && contextData.webSearchApproved;
         const canWebSearch = this.permissionManager ? this._checkPermission(user, 'WEB_SEARCH') : true;
 
         if (needsWeb) {
-            if (!canWebSearch) {
-                log('Permiso WEB_SEARCH denegado o no disponible. Fallback a modo OFFLINE_ONLY.');
+            let connectivityDecision = { allowAutomatic: true };
+            if (this.connectivityPolicyEngine) {
+                connectivityDecision = this.connectivityPolicyEngine.evaluateRequest({
+                    type: 'RESEARCH',
+                    destination: 'web'
+                });
+            }
+
+            if (!canWebSearch || !connectivityDecision.allowAutomatic) {
+                log('Permiso WEB_SEARCH denegado o ConnectivityPolicyEngine lo rechaza (ej. OFFLINE). Fallback a modo OFFLINE_ONLY.');
                 needsWeb = false;
             } else if (!explicitApproval) {
                 log('Permiso WEB_SEARCH requiere autorización explícita del usuario.');
@@ -233,6 +243,7 @@ class ResearchEngine {
                     }
                 } catch (e) {
                     log('Error en busqueda web: ' + e.message);
+                    networkFailed = true;
                 }
             }
         }
@@ -323,9 +334,19 @@ class ResearchEngine {
 
         // 5. ENSAMBLAR REPORTE
         let finalStatus = 'COMPLETED';
-        if (allFindings.length === 0 || relevantFindings.length === 0) finalStatus = 'INSUFFICIENT_EVIDENCE';
+        if (networkFailed) finalStatus = 'EXTERNAL_UNAVAILABLE';
+        else if (allFindings.length === 0 || relevantFindings.length === 0) finalStatus = 'INSUFFICIENT_EVIDENCE';
         else if (offlineRes.status === 'SUFFICIENT') finalStatus = 'LOCAL_SUFFICIENT';
         else if (!needsWeb && offlineRes.status !== 'SUFFICIENT') finalStatus = 'OFFLINE_ONLY';
+
+        let finalConclusion = conclusion;
+        if ((networkFailed || !needsWeb) && offlineRes.status !== 'SUFFICIENT') {
+            if (localFindings.length > 0) {
+                finalConclusion = "[Verificación actual no disponible] " + finalConclusion;
+            } else {
+                finalConclusion = "No fue posible verificar la información externamente por falta de conectividad.";
+            }
+        }
 
         return Object.freeze({
             taskId: 'res_' + Date.now(),
@@ -335,9 +356,9 @@ class ResearchEngine {
             staleDocsFound: offlineRes.staleDocs.map(d => d.document.id),
             webResultsUsed: webFindings,
             contradictions: contradictions,
-            conclusion: conclusion,
+            conclusion: finalConclusion,
             confidence: finalConfidence,
-            limitations: needsWeb && webFindings.length === 0 ? ['Busqueda web fallida o sin resultados'] : [],
+            limitations: (needsWeb && webFindings.length === 0) || networkFailed ? ['Busqueda web fallida, sin resultados o inalcanzable'] : limitations,
             ingestStatus: ingestStatus,
             auditTrail: auditTrail
         });
