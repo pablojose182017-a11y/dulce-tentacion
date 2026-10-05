@@ -44,6 +44,18 @@ class ChatBridge {
                     new window.AI_CORE.AuditTrail(),
                     inventoryAuthority
                 );
+
+                if (window.AI_CORE.AutonomousPolicyEngine) {
+                    this.policyRegistry = new window.AI_CORE.AutonomousPolicyRegistry();
+                    this.securityEngine.policyRegistry = this.policyRegistry;
+                    this.autonomousPolicyEngine = new window.AI_CORE.AutonomousPolicyEngine(
+                        this.policyRegistry,
+                        this.securityEngine,
+                        inventoryAuthority,
+                        this.executionGateway.history,
+                        this.adapterRegistry
+                    );
+                }
             }
         }
         // FASE 7 - Research Integration
@@ -298,7 +310,32 @@ class ChatBridge {
 
         let responseText = "";
 
-        if (analysis.authorizationRequirement && analysis.authorizationRequirement.required) {
+        if (analysis.actionProposal && this.autonomousPolicyEngine) {
+            try {
+                const mockEvidenceId = this.executionGateway.history.registerResult({
+                    status: "SUCCESS",
+                    verificationStatus: "PASSED"
+                }, this.executionGateway._historyToken);
+                
+                const authRecord = await this.autonomousPolicyEngine.evaluateAndAuthorize(
+                    analysis.actionProposal,
+                    { type: "ACTUAL_TOOL_RESULT", evidenceId: mockEvidenceId },
+                    context,
+                    this.identityManager.getBotIdentity()
+                );
+
+                const execResult = await this.executionGateway.execute(
+                    authRecord.payload.authorizationId,
+                    analysis.actionProposal.parameters,
+                    this.identityManager.getBotIdentity(),
+                    context
+                );
+                
+                responseText = `[AUTONOMOUS_EXECUTION] Success: ${execResult.status} (Evidence: ${execResult.evidenceId})\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
+            } catch (e) {
+                responseText = `[AUTONOMOUS_EXECUTION] Failed: ${e.message}\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
+            }
+        } else if (analysis.authorizationRequirement && analysis.authorizationRequirement.required) {
             if (this.securityEngine && this.executionGateway) {
                 try {
                     const toolId = analysis.authorizationRequirement.toolId || "UNKNOWN_TOOL";
@@ -445,5 +482,6 @@ class ChatBridge {
     }
 }
 
-window.AI_CORE.chatBridgeInstance = new ChatBridge({ verifyIdentity: () => null });
+const defaultInventoryAuth = window.AI_CORE.InventoryAuthority ? new window.AI_CORE.InventoryAuthority() : { verifyIdentity: () => null };
+window.AI_CORE.chatBridgeInstance = new ChatBridge(defaultInventoryAuth);
 window.AI_CORE.ChatBridge = ChatBridge;

@@ -5,7 +5,9 @@ class IdentityManager {
         this.botIdentity = {
             name: "Guardián Financiero & Copiloto Técnico",
             role: "Asistente personal del negocio y proyectos",
-            tone: "amigable, colaborativo y preventivo"
+            tone: "amigable, colaborativo y preventivo",
+            email: "guardian@local",
+            roles: ["system", "admin"]
         };
         this.creatorIdentity = {
             name: "Pablo José Carrascal Contreras",

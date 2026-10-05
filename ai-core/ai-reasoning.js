@@ -399,6 +399,16 @@ class ReasoningEngine {
             output.proposal = "Solicitar información adicional al usuario." + prefProposal;
             output.authorizationRequirement = { required: !(onlySubjective || !hasHypotheses), governanceLevel: (onlySubjective || !hasHypotheses) ? 0 : 1, reason: "Información insuficiente" };
         }
+
+        if (inputContext.problemStatement.startsWith("/mock-action")) {
+            output.actionProposal = {
+                targetPolicyId: "pol_test",
+                toolId: "TestTool",
+                toolVersion: "1.0",
+                parameters: { target: "192.168.1.100" },
+                rollbackPlan: null
+            };
+        }
     }
 
     /**
