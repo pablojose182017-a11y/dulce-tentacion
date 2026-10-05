@@ -78,6 +78,11 @@ class ChatBridge {
         if (window.AI_CORE.LanguageUnderstandingEngine) {
             this.understandingEngine = new window.AI_CORE.LanguageUnderstandingEngine();
         }
+
+        // FASE 3: Semantic Structural Validator (validation layer, not a second brain)
+        if (window.AI_CORE.SemanticStructuralValidator) {
+            this.semanticValidator = new window.AI_CORE.SemanticStructuralValidator();
+        }
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal) {
@@ -309,6 +314,16 @@ class ChatBridge {
         this.memoryManager.addTurn('user', message);
 
         let responseText = "";
+
+        // FASE 3: Semantic Structural Validation Layer
+        if (analysis.actionProposal && this.semanticValidator) {
+            const structuralCheck = this.semanticValidator.validateActionProposal(analysis.actionProposal);
+            if (!structuralCheck.valid) {
+                console.warn("[SEMANTIC_VALIDATOR] Action proposal rejected structurally:", structuralCheck.errors);
+                analysis.actionProposal = null;
+                responseText = `[SEMANTIC_VALIDATION_REJECTED] Action proposal failed structural validation: ${structuralCheck.errors.join(", ")}`;
+            }
+        }
 
         if (analysis.actionProposal && this.autonomousPolicyEngine) {
             try {

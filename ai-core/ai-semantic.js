@@ -24,7 +24,7 @@ class EvidenceCandidate {
 
 class EvidenceSpan {
     constructor(inputId, startOffset, endOffset, originalText, alignmentMethod, alignmentStatus) {
-        this.evidenceId = crypto.randomUUID();
+        this.evidenceId = (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : (window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : `ev_${Date.now()}_${Math.random()}`));
         this.inputId = inputId;
         this.startOffset = startOffset;
         this.endOffset = endOffset;
@@ -79,6 +79,147 @@ class SemanticStructuralValidator {
             }
         }
         return clean;
+    }
+
+    /**
+     * Validates whether structured information conforms to expected schema/fields.
+     * Rejects malformed structures, missing required semantic fields, or unexpected data types.
+     * Ensures external data remains DATA and cannot claim authority attributes.
+     */
+    validateStructure(data, schema = {}) {
+        if (!data || typeof data !== "object") {
+            return { valid: false, errors: ["Data must be a non-null object"] };
+        }
+        const errors = [];
+        const requiredFields = schema.requiredFields || [];
+        for (const field of requiredFields) {
+            if (data[field] === undefined || data[field] === null || data[field] === "") {
+                errors.push(`Missing required semantic field: ${field}`);
+            }
+        }
+        if (schema.fieldTypes) {
+            for (const [field, expectedType] of Object.entries(schema.fieldTypes)) {
+                if (data[field] !== undefined) {
+                    const actualType = Array.isArray(data[field]) ? "array" : typeof data[field];
+                    if (actualType !== expectedType) {
+                        errors.push(`Field '${field}' expected type '${expectedType}' but got '${actualType}'`);
+                    }
+                }
+            }
+        }
+        // Poison / authority escalation check: Information obtained remains DATA, never AUTHORITY.
+        const forbiddenAuthorityKeys = ["authorized", "isAuthorized", "role", "permissions", "executeImmediately", "bypassSecurity", "adminOverride"];
+        for (const key of forbiddenAuthorityKeys) {
+            if (data[key] !== undefined) {
+                errors.push(`Security violation: external structured data cannot claim authority attribute '${key}'`);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors,
+            sanitizedData: errors.length === 0 ? this._sanitizeData(data) : null
+        };
+    }
+
+    _sanitizeData(data) {
+        if (typeof data !== "object" || data === null) return data;
+        const copy = Array.isArray(data) ? [] : {};
+        for (const [k, v] of Object.entries(data)) {
+            if (!k.startsWith("__") && typeof v !== "function") {
+                copy[k] = typeof v === "object" ? this._sanitizeData(v) : v;
+            }
+        }
+        return copy;
+    }
+
+    /**
+     * Checks whether structured information is internally consistent.
+     */
+    validateInternalConsistency(structuredInfo) {
+        if (!structuredInfo || typeof structuredInfo !== "object") {
+            return { isConsistent: false, violations: ["Structured information must be a valid object"] };
+        }
+        const violations = [];
+        // Numeric range consistency (e.g. min <= max, confidence in [0, 1])
+        if (structuredInfo.confidence !== undefined) {
+            if (typeof structuredInfo.confidence !== "number" || structuredInfo.confidence < 0 || structuredInfo.confidence > 1) {
+                violations.push("Confidence must be a number between 0 and 1");
+            }
+        }
+        if (structuredInfo.startOffset !== undefined && structuredInfo.endOffset !== undefined) {
+            if (structuredInfo.startOffset > structuredInfo.endOffset) {
+                violations.push(`Start offset (${structuredInfo.startOffset}) cannot exceed end offset (${structuredInfo.endOffset})`);
+            }
+        }
+        if (structuredInfo.minValue !== undefined && structuredInfo.maxValue !== undefined) {
+            if (structuredInfo.minValue > structuredInfo.maxValue) {
+                violations.push(`minValue (${structuredInfo.minValue}) cannot exceed maxValue (${structuredInfo.maxValue})`);
+            }
+        }
+        // Logical consistency: cannot be simultaneously affirmed and negated with certainty
+        if (structuredInfo.isNegated === true && structuredInfo.epistemicStatus === "DIRECT_ASSERTION" && structuredInfo.oppositeAffirmed === true) {
+            violations.push("Logical contradiction: assertion cannot be simultaneously affirmed and negated");
+        }
+        return {
+            isConsistent: violations.length === 0,
+            violations
+        };
+    }
+
+    /**
+     * Detects semantic conflict between two pieces of structured information or interpretations.
+     */
+    detectConflict(itemA, itemB) {
+        if (!itemA || !itemB) {
+            return { hasConflict: false, reason: "Insufficient items to compare" };
+        }
+        // If comparator is available
+        if (typeof SemanticComparator !== "undefined" && SemanticComparator.compare) {
+            const compA = itemA.detectedIntent ? itemA : { detectedIntent: itemA.intent || "REPORT", claimProposal: itemA };
+            const compB = itemB.detectedIntent ? itemB : { detectedIntent: itemB.intent || "REPORT", claimProposal: itemB };
+            const rel = SemanticComparator.compare(compA, compB);
+            if (rel === "SEMANTICALLY_INCOMPATIBLE") {
+                return { hasConflict: true, relation: rel, reason: "Incompatible semantic properties between items" };
+            }
+        }
+        // Direct field conflict check (subject/predicate match but opposing value or negation)
+        const subjA = itemA.subject || itemA.topic;
+        const subjB = itemB.subject || itemB.topic;
+        const valA = itemA.objectValue !== undefined ? itemA.objectValue : itemA.value;
+        const valB = itemB.objectValue !== undefined ? itemB.objectValue : itemB.value;
+        if (subjA && subjB && subjA.toLowerCase() === subjB.toLowerCase()) {
+            if (itemA.isNegated !== undefined && itemB.isNegated !== undefined && itemA.isNegated !== itemB.isNegated) {
+                return { hasConflict: true, reason: `Direct polarity contradiction on subject '${subjA}'` };
+            }
+            if (valA !== undefined && valB !== undefined && valA !== valB) {
+                return { hasConflict: true, reason: `Value contradiction on subject '${subjA}': '${valA}' vs '${valB}'` };
+            }
+        }
+        return { hasConflict: false, reason: "No conflict detected" };
+    }
+
+    /**
+     * Validates an action proposal produced by reasoning before it can reach policy/execution layers.
+     */
+    validateActionProposal(proposal) {
+        if (!proposal || typeof proposal !== "object") {
+            return { valid: false, errors: ["Action proposal must be an object"] };
+        }
+        const errors = [];
+        if (!proposal.toolId || typeof proposal.toolId !== "string") {
+            errors.push("Action proposal missing valid toolId");
+        }
+        if (!proposal.targetPolicyId || typeof proposal.targetPolicyId !== "string") {
+            errors.push("Action proposal missing valid targetPolicyId");
+        }
+        if (!proposal.parameters || typeof proposal.parameters !== "object") {
+            errors.push("Action proposal missing parameters object");
+        }
+        return {
+            valid: errors.length === 0,
+            errors
+        };
     }
 }
 
