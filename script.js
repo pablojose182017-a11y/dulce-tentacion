@@ -97,6 +97,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const savedProds = JSON.parse(localStorage.getItem('dt_products'));
         if (savedProds && Array.isArray(savedProds) && savedProds.length > 0) {
             savedProds.forEach(sp => {
+                if (sp.oldPrice !== undefined) sp.price = sp.oldPrice;
+                if (sp.originalName !== undefined) sp.name = sp.originalName;
+                delete sp.enOferta;
+                delete sp.oldPrice;
+                delete sp.tag;
+                
                 const idx = products.findIndex(p => p.id === sp.id);
                 if (idx > -1) {
                     products[idx] = { ...products[idx], ...sp };

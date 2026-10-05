@@ -2172,7 +2172,16 @@ window.guardarEdicionProducto = function (pId) {
             }
 
             try {
-                localStorage.setItem('dt_products', JSON.stringify(products));
+                const cleanProducts = products.map(p => {
+                    const cleanP = { ...p };
+                    if (cleanP.oldPrice !== undefined) cleanP.price = cleanP.oldPrice;
+                    if (cleanP.originalName !== undefined) cleanP.name = cleanP.originalName;
+                    delete cleanP.enOferta;
+                    delete cleanP.oldPrice;
+                    delete cleanP.tag;
+                    return cleanP;
+                });
+                localStorage.setItem('dt_products', JSON.stringify(cleanProducts));
             } catch (e) {
                 console.warn("No se pudo guardar dt_products:", e);
             }
