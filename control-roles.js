@@ -2045,14 +2045,17 @@ window.guardarEdicionProducto = function (pId) {
     const isOldBase64 = nuevaImg.startsWith('data:image/') && !window.tempProductImg;
     if (!isOldBase64) {
         firestorePayload.img = nuevaImg;
-        firestorePayload.image = nuevaImg;
     }
     
     // Preservar metadatos requeridos para UI si existen
     const allowedFields = ['permiteRelleno', 'unidades', 'tag', 'oldPrice', 'originalName', 'originalCat', 'originalImg', 'enOferta', 'desc'];
     allowedFields.forEach(key => {
         if (existingCatalogEntry[key] !== undefined) {
-            firestorePayload[key] = existingCatalogEntry[key];
+            if (key === 'originalImg' && typeof existingCatalogEntry[key] === 'string' && existingCatalogEntry[key].startsWith('data:image/')) {
+                // Prevenir migración de Base64 al campo originalImg
+            } else {
+                firestorePayload[key] = existingCatalogEntry[key];
+            }
         }
     });
 
@@ -2101,9 +2104,7 @@ window.guardarEdicionProducto = function (pId) {
     const guardarEnFirestore = (finalUrl) => {
         if (finalUrl) {
             firestorePayload.img = finalUrl;
-            firestorePayload.image = finalUrl;
             fullLocalEntry.img = finalUrl;
-            fullLocalEntry.image = finalUrl;
             localCatalog[targetId] = fullLocalEntry;
         }
 
@@ -2131,7 +2132,6 @@ window.guardarEdicionProducto = function (pId) {
                     price: nuevoPrecio,
                     cat: nuevaCategoria,
                     img: firestorePayload.img,
-                    image: firestorePayload.image,
                     points: nuevosPuntos,
                     puntos: nuevosPuntos,
                     desc: 'Producto fresco del día',
@@ -2141,7 +2141,7 @@ window.guardarEdicionProducto = function (pId) {
                 const p = products.find(x => x.id === pId);
                 if (p) {
                     if (!p.originalName) p.originalName = p.name;
-                    if (!p.originalImg) p.originalImg = p.img;
+                    if (!p.originalImg && p.img && !p.img.startsWith('data:image/')) p.originalImg = p.img;
                     if (!p.originalCat) p.originalCat = p.cat;
 
                     const hasBadge = p.name.includes('[Promo:');
@@ -2149,7 +2149,6 @@ window.guardarEdicionProducto = function (pId) {
                     p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
 
                     p.img = firestorePayload.img;
-                    p.image = firestorePayload.image;
                     p.cat = nuevaCategoria;
                     p.points = nuevosPuntos;
                     p.puntos = nuevosPuntos;
@@ -2201,29 +2200,9 @@ window.guardarEdicionProducto = function (pId) {
         });
     };
 
-    // 3. Flujo de subida a Firebase Storage
-    if (window.tempProductImg && window.tempProductImg.startsWith('data:image/') && typeof firebase !== 'undefined' && firebase.storage) {
-        fetch(window.tempProductImg)
-            .then(res => res.blob())
-            .then(blob => {
-                const extMatch = blob.type.match(/^image\/(png|jpeg|webp|gif)/);
-                const ext = extMatch ? (extMatch[1] === 'jpeg' ? 'jpg' : extMatch[1]) : 'jpg';
-                const uuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
-                const uniqueName = 'productos/' + targetId + '_' + uuid + '.' + ext;
-                const storageRef = firebase.storage().ref(uniqueName);
-                return storageRef.put(blob).then(snapshot => snapshot.ref.getDownloadURL());
-            })
-            .then(downloadURL => {
-                guardarEnFirestore(downloadURL);
-            })
-            .catch(e => {
-                console.error("Error subiendo imagen a Storage:", e);
-                alert("🚨 ERROR: Falló la subida de la imagen. Verifica tu conexión a internet o intenta subir un archivo más pequeño.");
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.innerText = isNew ? '💾 Crear Producto' : '💾 Guardar Cambios';
-                }
-            });
+    // 3. Guardar directamente usando Base64 (sin Storage)
+    if (window.tempProductImg && window.tempProductImg.startsWith('data:image/')) {
+        guardarEnFirestore(window.tempProductImg);
     } else {
         guardarEnFirestore(null);
     }

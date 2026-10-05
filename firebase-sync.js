@@ -113,7 +113,7 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
                 }
 
                 if (!p.originalName) p.originalName = p.name;
-                if (!p.originalImg)  p.originalImg  = p.img;
+                if (!p.originalImg && p.img && !p.img.startsWith('data:image/')) p.originalImg = p.img;
 
                 if (customData.name) {
                     // Respetar badges de oferta en el nombre si los hay
