@@ -4,7 +4,8 @@ class ChatBridge {
     constructor(inventoryAuthority = null) {
         this.identityManager = new window.AI_CORE.IdentityManager();
         this.permissionManager = new window.AI_CORE.PermissionManager();
-        this.store = new window.AI_CORE.LocalStorageKnowledgeStore('pd_ai_core_');
+        const localStore = new window.AI_CORE.LocalStorageKnowledgeStore('pd_ai_core_');
+        this.store = window.AI_CORE.PersistenceManager ? new window.AI_CORE.PersistenceManager(localStore) : localStore;
         this.memoryManager = new window.AI_CORE.MemoryManager(this.store, 'pd_memory');
         this.knowledgeManager = new window.AI_CORE.KnowledgeManager(this.store);
         
