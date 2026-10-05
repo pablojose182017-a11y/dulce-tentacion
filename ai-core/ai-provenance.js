@@ -1,9 +1,8 @@
-const crypto = require('crypto');
-const { SemanticComparator } = require('./ai-semantic.js');
+window.AI_CORE = window.AI_CORE || {};
 
 class SourceProvenance {
     constructor(data) {
-        this.sourceId = data.sourceId || crypto.randomUUID();
+        this.sourceId = data.sourceId || window.crypto.randomUUID();
         this.sourceType = data.sourceType || 'UNKNOWN';
         this.origin = data.origin || 'UNKNOWN';
         this.author = data.author || 'UNKNOWN';
@@ -11,14 +10,14 @@ class SourceProvenance {
         this.observedAt = data.observedAt || new Date().toISOString();
         
         // Canonical Content Fingerprint Fix
-        let computed = data.content ? crypto.createHash('sha256').update(data.content).digest('hex') : null;
+        let computed = data.content ? window.AI_CORE.hash.sha256(data.content) : null;
         this.declaredContentFingerprint = data.contentFingerprint || null;
         this.fingerprintMismatch = (computed && this.declaredContentFingerprint && computed !== this.declaredContentFingerprint) || false;
         
         // computed ALWAYS wins if available
         this.contentFingerprint = computed || this.declaredContentFingerprint;
         
-        this.sourceFingerprint = crypto.createHash('sha256').update(this.sourceId + (this.contentFingerprint || '')).digest('hex');
+        this.sourceFingerprint = window.AI_CORE.hash.sha256(this.sourceId + (this.contentFingerprint || ''));
         
         this.parentSourceId = data.parentSourceId || null;
         this.derivedFrom = data.derivedFrom || null;
@@ -67,7 +66,7 @@ class ClaimIdentity {
             knowledgeType: claimProposal.knowledgeType || ''
         };
         let str = JSON.stringify(clean, Object.keys(clean).sort());
-        return crypto.createHash('sha256').update(str).digest('hex');
+        return window.AI_CORE.hash.sha256(str);
     }
 }
 
@@ -179,7 +178,7 @@ class ProvenanceGraph {
         for (let [existingClaimId, existingRecord] of this.claims.entries()) {
             if (existingClaimId === newClaimRecord.claimId) continue;
             
-            let rel = SemanticComparator.compare(
+            let rel = window.AI_CORE.SemanticComparator.compare(
                 { detectedIntent: newClaimRecord.claimProposal.intent || 'UNKNOWN', claimProposal: newClaimRecord.claimProposal },
                 { detectedIntent: existingRecord.claimProposal.intent || 'UNKNOWN', claimProposal: existingRecord.claimProposal }
             );
@@ -200,7 +199,7 @@ class ProvenanceGraph {
 
     _registerConflict(claimA, claimB, conflictType) {
         let ids = [claimA.claimId, claimB.claimId].sort();
-        let conflictId = crypto.createHash('sha256').update(ids[0] + ids[1]).digest('hex');
+        let conflictId = window.AI_CORE.hash.sha256(ids[0] + ids[1]);
         if (this.conflicts.has(conflictId)) return this.conflicts.get(conflictId);
         
         // Clone claims to prevent freezing the shared objects in this.claims map
@@ -342,7 +341,7 @@ class ProvenanceGraph {
     }
 
     createKnowledgeGap(description, relatedClaims, priority = 'USEFUL') {
-        let gapId = crypto.createHash('sha256').update(description).digest('hex');
+        let gapId = window.AI_CORE.hash.sha256(description);
         
         let newRelatedClaims = [...relatedClaims];
         if (this.knowledgeGaps.has(gapId)) {
@@ -509,8 +508,6 @@ class ProvenanceGraph {
     }
 }
 
-module.exports = {
-    SourceProvenance,
-    ClaimIdentity,
-    ProvenanceGraph
-};
+window.AI_CORE.SourceProvenance = SourceProvenance;
+window.AI_CORE.ClaimIdentity = ClaimIdentity;
+window.AI_CORE.ProvenanceGraph = ProvenanceGraph;

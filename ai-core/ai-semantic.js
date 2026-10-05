@@ -1,12 +1,12 @@
-const crypto = require('crypto');
+window.AI_CORE = window.AI_CORE || {};
 
 // 1. INPUT IDENTITY
 class InputIdentity {
     constructor(originalText) {
-        this.inputId = crypto.randomUUID();
+        this.inputId = window.crypto.randomUUID();
         this.originalText = originalText;
         this.originalLength = originalText.length; // UTF-16 code units
-        this.inputFingerprint = crypto.createHash('sha256').update(originalText).digest('hex');
+        this.inputFingerprint = window.AI_CORE.hash.sha256(originalText);
         this.offsetConvention = 'UTF-16 CODE UNITS';
         this.schemaVersion = '1.1';
     }
@@ -274,7 +274,7 @@ class SemanticOrchestrator {
                 let clean = this.validator.validateInterpretation(rawResult);
                 
                 let candidateResult = {
-                    interpretationId: crypto.randomUUID(),
+                    interpretationId: window.crypto.randomUUID(),
                     inputIdentity: inputIdentity,
                     language: clean.language || 'UNKNOWN',
                     detectedIntent: clean.intent || 'UNKNOWN',
@@ -357,7 +357,7 @@ class SemanticOrchestrator {
 
     _buildResult(inputIdentity, provider, status) {
         return {
-            interpretationId: crypto.randomUUID(),
+            interpretationId: window.crypto.randomUUID(),
             interpretationStatus: status,
             inputIdentity: inputIdentity,
             providerProvenance: {
@@ -382,14 +382,12 @@ class SemanticOrchestrator {
     }
 }
 
-module.exports = {
-    InputIdentity,
-    EvidenceCandidate,
-    EvidenceSpan,
-    SemanticStructuralValidator,
-    SemanticProviderRegistry,
-    SemanticOrchestrator,
-    SemanticComparator,
-    Level0Provider,
-    Level1Provider
-};
+window.AI_CORE.InputIdentity = InputIdentity;
+window.AI_CORE.EvidenceCandidate = EvidenceCandidate;
+window.AI_CORE.EvidenceSpan = EvidenceSpan;
+window.AI_CORE.SemanticStructuralValidator = SemanticStructuralValidator;
+window.AI_CORE.SemanticProviderRegistry = SemanticProviderRegistry;
+window.AI_CORE.SemanticOrchestrator = SemanticOrchestrator;
+window.AI_CORE.SemanticComparator = SemanticComparator;
+window.AI_CORE.Level0Provider = Level0Provider;
+window.AI_CORE.Level1Provider = Level1Provider;

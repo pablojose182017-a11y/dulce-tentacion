@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Test</title>
+</head>
+<body>
+    <script>window.AI_CORE = {};</script>
+    <script src="ai-core/ai-hash.js"></script>
+    <script src="ai-core/ai-semantic.js"></script>
+    <script src="ai-core/ai-provenance.js"></script>
+    <script src="ai-core/ai-execution.js"></script>
+    <script src="ai-core/ai-autonomous.js"></script>
+    <script>
+        try {
+            console.log("All modules loaded in browser.");
+            document.body.innerHTML += "<h1>Modules Loaded Successfully</h1>";
+            
+            const hash = window.AI_CORE.hash.sha256('test');
+            if(hash === '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08') {
+                document.body.innerHTML += "<p id='hash-success'>SHA-256 works: " + hash + "</p>";
+            } else {
+                document.body.innerHTML += "<p id='hash-fail'>SHA-256 failed: " + hash + "</p>";
+            }
+        } catch(e) {
+            document.body.innerHTML += "<p id='error' style='color:red'>" + e.message + "</p>";
+        }
+    </script>
+</body>
+</html>

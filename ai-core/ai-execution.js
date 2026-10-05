@@ -9,8 +9,8 @@ function canonicalize(obj) {
 }
 
 function base64(str) {
-    // Basic mock of base64 for browser-like env in node
-    return Buffer.from(str).toString('base64');
+    // Browser compatible base64 for UTF-8
+    return btoa(unescape(encodeURIComponent(str)));
 }
 
 class AdapterRegistry {
