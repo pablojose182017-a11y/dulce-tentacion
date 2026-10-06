@@ -7072,3 +7072,5 @@ window.setCashAmount = function (amount) {
     }
     window.calculateCashChange();
 };
+
+

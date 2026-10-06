@@ -617,6 +617,7 @@ window.confirmRoleChange = function (email) {
         vip: !!u.vip,
         isVip: !!u.isVip,
         vipStatus: u.vipStatus,
+        vipExpiresAt: u.vipExpiresAt,
         points: u.points !== undefined ? u.points : 0
     };
     if (rIdx !== -1) {
@@ -664,6 +665,7 @@ window.confirmRoleChange = function (email) {
             vip: !!u.vip,
             isVip: !!u.isVip,
             vipStatus: u.vipStatus,
+            vipExpiresAt: u.vipExpiresAt,
             points: u.points !== undefined ? u.points : 0,
             blocked: !!u.blocked,
             updatedAt: new Date().toISOString()
