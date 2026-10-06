@@ -10,7 +10,7 @@ service cloud.firestore {
     // Idealmente se debería usar request.auth.uid == 'UID_DEL_CREADOR' en producción
     // para inmunidad contra cambios de correo.
     function isCreator() {
-      return request.auth != null && request.auth.uid == 'UID_REAL_DEL_CREADOR';
+      return request.auth != null && request.auth.uid == 'JT7c41zATQNrhzvWL4CdQxCAiby1';
     }
 
     // Nivel de Autoridad: 100(Creador), 80(SuperAdmin), 50(Admin), 20(Trabajador), 0(Cliente)
