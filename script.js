@@ -2368,6 +2368,12 @@ function renderLiveOrders() {
         const tagIcon = isEvent ? '🎉 Evento Programado' : '⚡ Entrega Inmediata';
         const depositHtml = isEvent ? `<div style="margin-top:8px; font-size:0.85rem; color:#b45309; font-weight:bold;">Anticipo (50%): $${Math.ceil(p.total / 2).toLocaleString()} COP</div>` : '';
 
+        // Buscar al usuario real en la base de datos para VIP y Email
+        const u = typeof db_users !== 'undefined' ? db_users.find(x => x.email === p.email) : null;
+        const isActivelyVip = !!u && u.vip === true && !!u.vipExpiresAt && new Date(u.vipExpiresAt) > new Date();
+        const vipTagHtml = isActivelyVip ? `<div style="margin-top:5px; margin-bottom:5px; font-size:0.85rem; color:#d97706; font-weight:bold; background:#fef3c7; padding:4px 8px; border-radius:6px; display:inline-block; border: 1px solid #fde68a;">👑 VIP — PRIORIDAD</div>` : '';
+        const emailTagHtml = u ? `<div style="font-size:0.8rem; color:#64748b; margin-top:2px;">✉️ ${escapeHTML(u.email)}</div>` : `<div style="font-size:0.8rem; color:#94a3b8; margin-top:2px; font-style:italic;">👤 Cliente Invitado (Sin Cuenta)</div>`;
+
         return `
                 <div data-order-id="${p.id}" class="pedido-card" style="background:#fff; border-radius:12px; padding:15px; border:1px solid #eee; box-shadow:0 2px 8px rgba(0,0,0,0.05); display:flex; flex-direction:column; gap:10px;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -2378,15 +2384,17 @@ function renderLiveOrders() {
                         <div style="font-size:1.1rem; font-weight:bold; color:var(--brand-pink);">$${p.total.toLocaleString()}</div>
                     </div>
                     
+                    ${vipTagHtml}
+                    
                     <div style="font-size:0.95rem; line-height:1.4;">
-                        <strong>👤 ${escapeHTML(p.customer)}</strong><br>
+                        <strong>👤 ${escapeHTML(p.customer)}</strong>
+                        ${emailTagHtml}
                         📞 <a href="https://wa.me/57${escapeHTML(p.phone).replace(/[^0-9]/g, '')}" target="_blank" style="color:#25D366; text-decoration:none;">${escapeHTML(p.phone)}</a><br>
                         📍 ${escapeHTML(p.address)}
                     </div>
                     
                     ${(() => {
-                // Buscar si es un usuario registrado para revisar su status del premio
-                const u = db_users.find(x => x.email === p.email);
+                // Usamos el 'u' evaluado arriba para revisar status del premio
                 if (u) {
                     if (u.premioRedesReclamado) {
                         return `<div style="margin-top:4px; font-size:0.8rem; color:#64748b; display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Premio Redes Entregado</div>`;
