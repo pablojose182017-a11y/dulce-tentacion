@@ -3387,3 +3387,133 @@ window.guardarConfigDelivery = function () {
         if (typeof showToast === 'function') showToast("No hay conexión a BD", "⚠️");
     }
 };
+
+window.renderAdminClaims = function() {
+    const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
+    if (!db) return;
+    const container = document.getElementById('admin-claims-container');
+    const tbody = document.getElementById('admin-claims-table');
+    if (!container || !tbody) return;
+
+    db.collection('solicitudes_puntos').where('estado', '==', 'Pendiente').onSnapshot(snap => {
+        if (snap.empty) {
+            container.style.display = 'none';
+            tbody.innerHTML = '';
+            return;
+        }
+        container.style.display = 'block';
+        let html = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const pedidoId = doc.id;
+            html += `
+                <tr id="claim-row-${pedidoId}">
+                    <td>${data.userEmail}</td>
+                    <td>${pedidoId}</td>
+                    <td>${new Date(data.timestamp).toLocaleString()}</td>
+                    <td id="claim-pts-${pedidoId}">Calculando...</td>
+                    <td>
+                        <button onclick="window.approveClaim('${pedidoId}', '${data.userEmail}')" style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Aprobar</button>
+                        <button onclick="window.rejectClaim('${pedidoId}')" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Rechazar</button>
+                    </td>
+                </tr>
+            `;
+            
+            db.collection('pedidos').doc(pedidoId).get().then(orderDoc => {
+                const ptsTd = document.getElementById(`claim-pts-${pedidoId}`);
+                if (orderDoc.exists && ptsTd) {
+                    const order = orderDoc.data();
+                    const total = order.total || order.totalDescuento || 0;
+                    const calculatedPts = Math.floor(total / 1000);
+                    ptsTd.innerText = `${calculatedPts} pts`;
+                    ptsTd.dataset.pts = calculatedPts;
+                } else if (ptsTd) {
+                    ptsTd.innerText = 'Pedido no encontrado';
+                }
+            });
+        });
+        tbody.innerHTML = html;
+    });
+};
+
+window.approveClaim = async function(pedidoId, userEmail) {
+    if (!confirm('¿Seguro que deseas aprobar esta solicitud de puntos?')) return;
+    
+    const ptsTd = document.getElementById(`claim-pts-${pedidoId}`);
+    if (!ptsTd || !ptsTd.dataset.pts) {
+        if (typeof showToast === 'function') showToast('Calculando puntos, espera un momento...', '⏳');
+        return;
+    }
+    const delta = parseInt(ptsTd.dataset.pts);
+    if (isNaN(delta) || delta <= 0) {
+        if (typeof showToast === 'function') showToast('Monto de puntos inválido', '❌');
+        return;
+    }
+
+    try {
+        const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
+        const userRef = db.collection('usuarios').doc(userEmail);
+        const claimRef = db.collection('solicitudes_puntos').doc(pedidoId);
+
+        await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            let currentPoints = 0;
+            let currentReclamados = [];
+            let currentHistorial = [];
+            
+            if (userDoc.exists) {
+                const data = userDoc.data();
+                currentPoints = data.points || 0;
+                currentReclamados = data.puntosReclamadosIDs || [];
+                currentHistorial = data.historialPuntos || [];
+            }
+            
+            if (currentReclamados.includes(pedidoId)) {
+                throw new Error('already_claimed');
+            }
+            
+            currentReclamados.push(pedidoId);
+            const newPoints = currentPoints + delta;
+            
+            const movEntry = {
+                id: 'mov_' + Date.now(),
+                tipo: 'ganancia',
+                cantidad: delta,
+                motivo: 'Aprobación manual de compra',
+                fechaISO: new Date().toISOString(),
+                orderId: pedidoId
+            };
+            currentHistorial.push(movEntry);
+            
+            const updatePayload = {
+                points: newPoints,
+                puntosActuales: newPoints,
+                historialPuntos: currentHistorial,
+                puntosReclamadosIDs: currentReclamados
+            };
+
+            if (userDoc.exists) {
+                transaction.update(userRef, updatePayload);
+            } else {
+                updatePayload.email = userEmail;
+                transaction.set(userRef, updatePayload, { merge: true });
+            }
+
+            transaction.update(claimRef, { estado: 'Aprobado' });
+        });
+        
+        if (typeof showToast === 'function') showToast('Puntos otorgados con éxito', '✅');
+    } catch(err) {
+        console.error("Error aprobando puntos:", err);
+        if (typeof showToast === 'function') showToast('Error al aprobar', '❌');
+    }
+};
+
+window.rejectClaim = function(pedidoId) {
+    if (!confirm('¿Seguro que deseas rechazar y eliminar esta solicitud?')) return;
+    const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
+    if (!db) return;
+    db.collection('solicitudes_puntos').doc(pedidoId).update({ estado: 'Rechazado' }).catch(err => {
+        console.error("Error rechazando", err);
+    });
+};

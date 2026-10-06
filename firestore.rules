@@ -67,9 +67,11 @@ service cloud.firestore {
                      request.resource.data.isAdmin == resource.data.isAdmin &&
                      request.resource.data.vip == resource.data.vip &&
                      request.resource.data.isVip == resource.data.isVip &&
-                     request.resource.data.blocked == resource.data.blocked
-                     // Nota: points no se bloquea aquí por la matemática cliente,
-                     // pero la regla de escritura previene tocar puntos ajenos.
+                     request.resource.data.blocked == resource.data.blocked &&
+                     request.resource.data.points == resource.data.points &&
+                     request.resource.data.puntosActuales == resource.data.puntosActuales &&
+                     request.resource.data.historialPuntos == resource.data.historialPuntos &&
+                     request.resource.data.puntosReclamadosIDs == resource.data.puntosReclamadosIDs
                     );
                     
       allow delete: if isCreator();
@@ -107,6 +109,20 @@ service cloud.firestore {
     match /solicitudes_vip/{docId} {
       allow read: if getRol() >= 50;
       allow create: if request.auth != null;
+      allow update, delete: if getRol() >= 50;
+    }
+
+    // =========================================================================
+    // 7. SOLICITUDES PUNTOS VIP (CLAIMS)
+    // =========================================================================
+    match /solicitudes_puntos/{pedidoId} {
+      allow read: if (request.auth != null && request.auth.token.email == resource.data.userEmail) || getRol() >= 50;
+      allow create: if request.auth != null
+                    && !exists(/databases/$(database)/documents/solicitudes_puntos/$(pedidoId))
+                    && request.resource.data.estado == "Pendiente"
+                    && request.resource.data.userEmail == request.auth.token.email
+                    && exists(/databases/$(database)/documents/pedidos/$(pedidoId))
+                    && get(/databases/$(database)/documents/pedidos/$(pedidoId)).data.ownerId == request.auth.uid;
       allow update, delete: if getRol() >= 50;
     }
   }

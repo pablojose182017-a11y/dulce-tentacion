@@ -1599,6 +1599,23 @@ window.registrarMovimientoPuntos = async function(userEmail, { tipo, cantidad, m
         const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
         if (!db) throw new Error('Firestore no disponible');
         
+        const isAdmin = window.currentUser && window.currentUser.isAdmin;
+        
+        if (!isAdmin && tipo === 'ganancia') {
+            if (!orderId) throw new Error('Se requiere orderId para reclamar puntos');
+            const claimRef = db.collection('solicitudes_puntos').doc(orderId);
+            await claimRef.set({
+                userEmail: userEmail,
+                estado: 'Pendiente',
+                timestamp: new Date().toISOString()
+            });
+            console.log(`[Puntos] 📝 Solicitud de puntos creada para el pedido ${orderId}`);
+            if (typeof showToast === 'function') {
+                showToast('Tus puntos han sido solicitados y serán validados por un administrador.', '🕒');
+            }
+            return;
+        }
+        
         const userRef = db.collection('usuarios').doc(userEmail);
         
         await db.runTransaction(async (transaction) => {

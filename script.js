@@ -3225,6 +3225,7 @@ function setRoleFilter(role, el) {
 }
 
 function renderAdminUsers() {
+    if (typeof window.renderAdminClaims === 'function') window.renderAdminClaims();
     const tbody = document.getElementById('admin-users-table');
     if (!tbody) return;
     const q = (document.getElementById('adminUserSearch')?.value || '').toLowerCase();

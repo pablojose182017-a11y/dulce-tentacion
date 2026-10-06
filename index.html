@@ -438,6 +438,27 @@
                 </div>
             </div>
 
+            <!-- TABLA SOLICITUDES PUNTOS -->
+            <div id="admin-claims-container" style="margin-bottom: 25px; display: none;">
+                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1.1rem;">🎫 Solicitudes de Puntos VIP Pendientes</h4>
+                <div class="admin-table-scroll" style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; min-width:600px; font-size:0.9rem;" class="admin-styled-table">
+                        <thead>
+                            <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0; text-align:left;">
+                                <th>Email Cliente</th>
+                                <th>ID Pedido</th>
+                                <th>Fecha Reclamo</th>
+                                <th>Puntos a Otorgar</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-claims-table">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- TABLA CLIENTES -->
             <h4 style="margin-bottom:10px; color:var(--text-dark); font-size:1.1rem;">👥 Control de Usuarios Registrados
             </h4>
