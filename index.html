@@ -25,7 +25,7 @@
 
 <body>
     <!-- Google Identity Services Onload Configuration -->
-    <div id="g_id_onload" data-client_id="463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+
 
 
     <!-- ===== DESKTOP HEADER ===== -->
@@ -911,7 +911,7 @@
 
                 <div style="display:flex; justify-content:center; align-items:center;">
                     
-                    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
+                    <div class="custom_google_btn" data-type="standard" data-size="large" data-theme="outline"
                         data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left">
                     </div>
                 </div>
@@ -970,7 +970,7 @@
 
                 <div style="display:flex; justify-content:center; align-items:center;">
                     <!-- Google sign in button replicates here to keep logic simple -->
-                    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline"
+                    <div class="custom_google_btn" data-type="standard" data-size="large" data-theme="outline"
                         data-text="signup_with" data-shape="rectangular" data-logo_alignment="left">
                     </div>
                 </div>
@@ -1771,13 +1771,7 @@
     
     <!-- Firebase Sync Module -->
     <script src="firebase-sync.js?v=17"></script>
-    <script>
-    window.addEventListener('load', () => {
-        if (typeof window.initGoogleSignIn === 'function') {
-            window.initGoogleSignIn();
-        }
-    });
-    </script>
+
 </body>
 </html>
 

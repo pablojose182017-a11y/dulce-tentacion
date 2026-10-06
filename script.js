@@ -1457,47 +1457,51 @@ function handleCredentialResponse(response) {
 }
 
 window.initGoogleSignIn = function () {
+    // 1. Evitar ejecuciones duplicadas
     if (window.googleGsiInitialized) return;
 
-    if (window.google && window.google.accounts && window.google.accounts.id && typeof window.google.accounts.id.initialize === 'function') {
-        try {
-            window.google.accounts.id.initialize({
-                client_id: "463408522513-9uor2ppoh7vvkcq0vfbtuu3f0jgpei29.apps.googleusercontent.com",
-                callback: handleCredentialResponse,
-                auto_select: false
-            });
-            window.googleGsiInitialized = true;
+    // 2. Garantizar que el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.initGoogleSignIn);
+        return; // Abortar por ahora, se llamará automáticamente luego
+    }
 
-            const gsiDivs = document.querySelectorAll('.g_id_signin');
-            gsiDivs.forEach(div => {
-                try {
-                    window.google.accounts.id.renderButton(div, {
-                        type: "standard",
-                        size: "large",
-                        theme: "outline",
-                        text: div.getAttribute('data-text') || "sign_in_with",
-                        shape: "rectangular",
-                        logo_alignment: "left"
-                    });
-                } catch (btnErr) {
-                    console.warn('GSI renderButton Error:', btnErr);
-                }
-            });
-        } catch (e) {
-            console.warn('GSI initialize Error:', e);
-        }
-    } else {
-        // Wait until Google Identity Services is fully loaded
-        let attempts = 0;
-        const checkTimer = setInterval(() => {
-            attempts++;
-            if (window.google && window.google.accounts && window.google.accounts.id && typeof window.google.accounts.id.initialize === 'function') {
-                clearInterval(checkTimer);
-                window.initGoogleSignIn();
-            } else if (attempts >= 25) {
-                clearInterval(checkTimer);
+    // 3. Garantizar que Google Identity Services esté listo
+    if (typeof window.google === 'undefined' || !window.google.accounts || typeof window.google.accounts.id.initialize !== 'function') {
+        return; // Abortar silenciosamente. El onload del <script> de Google lo llamará después.
+    }
+
+    // 4. Ambos están listos: Inicializar y Renderizar
+    try {
+        window.google.accounts.id.initialize({
+            client_id: "1058887587986-9j8fctlgdvuo39ki733is9ehks5dh1hs.apps.googleusercontent.com",
+            callback: function (response) {
+                return window.handleCredentialResponse(response);
+            },
+            auto_select: false
+        });
+        
+        // Marcar como inicializado para evitar repeticiones
+        window.googleGsiInitialized = true; 
+
+        // Renderizar los botones manualmente
+        const gsiDivs = document.querySelectorAll('.custom_google_btn');
+        gsiDivs.forEach(div => {
+            try {
+                window.google.accounts.id.renderButton(div, {
+                    type: "standard",
+                    size: "large",
+                    theme: "outline",
+                    text: div.getAttribute('data-text') || "sign_in_with",
+                    shape: "rectangular",
+                    logo_alignment: "left"
+                });
+            } catch (btnErr) {
+                console.warn('GSI renderButton Error:', btnErr);
             }
-        }, 150);
+        });
+    } catch (e) {
+        console.warn('GSI initialize Error:', e);
     }
 };
 
