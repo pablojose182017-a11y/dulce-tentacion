@@ -2369,7 +2369,14 @@ function renderLiveOrders() {
         const depositHtml = isEvent ? `<div style="margin-top:8px; font-size:0.85rem; color:#b45309; font-weight:bold;">Anticipo (50%): $${Math.ceil(p.total / 2).toLocaleString()} COP</div>` : '';
 
         // Buscar al usuario real en la base de datos para VIP y Email
-        const u = typeof db_users !== 'undefined' ? db_users.find(x => x.email === p.email) : null;
+        const u = typeof db_users !== 'undefined'
+            ? db_users.find(x =>
+                x.email &&
+                p.email &&
+                p.email !== 'N/A' &&
+                x.email.toLowerCase() === p.email.toLowerCase()
+              )
+            : null;
         const isActivelyVip = !!u && u.vip === true && !!u.vipExpiresAt && new Date(u.vipExpiresAt) > new Date();
         const vipTagHtml = isActivelyVip ? `<div style="margin-top:5px; margin-bottom:5px; font-size:0.85rem; color:#d97706; font-weight:bold; background:#fef3c7; padding:4px 8px; border-radius:6px; display:inline-block; border: 1px solid #fde68a;">👑 VIP — PRIORIDAD</div>` : '';
         const emailTagHtml = u ? `<div style="font-size:0.8rem; color:#64748b; margin-top:2px;">✉️ ${escapeHTML(u.email)}</div>` : `<div style="font-size:0.8rem; color:#94a3b8; margin-top:2px; font-style:italic;">👤 Cliente Invitado (Sin Cuenta)</div>`;

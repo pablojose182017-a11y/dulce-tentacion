@@ -703,6 +703,9 @@ window.addEventListener('DOMContentLoaded', () => {
             if (typeof renderKitchenUsers === 'function') {
                 renderKitchenUsers();
             }
+            if (typeof renderLiveOrders === 'function') {
+                renderLiveOrders();
+            }
         }
     });
 

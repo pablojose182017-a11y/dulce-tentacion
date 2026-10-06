@@ -593,6 +593,19 @@ window.renderLiveOrders = function() {
         const tagTextColor = isEvent ? '#d97706' : '#0369a1';
         const tagIcon = isEvent ? '\uD83C\uDF89 Evento Programado' : '\u26A1 Entrega Inmediata';
 
+        const u = typeof db_users !== 'undefined'
+            ? db_users.find(x =>
+                x.email &&
+                p.email &&
+                p.email !== 'N/A' &&
+                x.email.toLowerCase() === p.email.toLowerCase()
+              )
+            : null;
+        const isActivelyVip = !!u && u.vip === true && !!u.vipExpiresAt && new Date(u.vipExpiresAt) > new Date();
+        const vipTagHtml = isActivelyVip ? `<div style="margin-top:5px; margin-bottom:5px; font-size:0.85rem; color:#d97706; font-weight:bold; background:#fef3c7; padding:4px 8px; border-radius:6px; display:inline-block; border: 1px solid #fde68a;">👑 VIP — PRIORIDAD</div>` : '';
+        const emailTagHtml = u ? `<div style="font-size:0.8rem; color:#64748b; margin-top:2px;">✉️ ${typeof escapeHTML === 'function' ? escapeHTML(u.email) : u.email}</div>` : `<div style="font-size:0.8rem; color:#94a3b8; margin-top:2px; font-style:italic;">👤 Cliente Invitado (Sin Cuenta)</div>`;
+
+
         // ---- COMANDA DE PRODUCCIÓN ----
         let detalleHtml = '';
         if (p.cartItems && Array.isArray(p.cartItems) && p.cartItems.length > 0) {
@@ -720,9 +733,11 @@ window.renderLiveOrders = function() {
                 </div>
                 <div style="font-size:1.1rem; font-weight:700; color:var(--brand-pink);">$${p.total.toLocaleString()}</div>
             </div>
+            ${vipTagHtml}
 
             <div style="font-size:0.95rem; line-height:1.5;">
                 <strong>\uD83D\uDC64 ${p.customer}</strong><br>
+                ${emailTagHtml}
                 \uD83D\uDCDE <a href="https://wa.me/57${p.phone.replace(/[^0-9]/g,'')}" target="_blank" style="color:#25D366; text-decoration:none;">${p.phone}</a><br>
                 \uD83D\uDCCD ${p.address}
             </div>
