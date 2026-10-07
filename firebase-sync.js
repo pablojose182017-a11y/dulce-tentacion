@@ -59,6 +59,93 @@ window.loadPhase2AdminModules = async function() {
     window._adminModulesLoading = false;
 };
 
+// FASE 2.2A: Loader del Fragmento HTML Administrativo
+window._adminFragmentLoaded = false;
+window._adminFragmentLoading = false;
+window.loadAdminHTMLFragment = async function() {
+    if (window._adminFragmentLoaded) return;
+    if (window._adminFragmentLoading) {
+        while (window._adminFragmentLoading) {
+            await new Promise(r => setTimeout(r, 50));
+        }
+        return;
+    }
+    
+    if (document.getElementById('admin-dashboard')) {
+        window._adminFragmentLoaded = true;
+        return;
+    }
+
+    const mountPoint = document.getElementById('admin-mount-point');
+    if (!mountPoint) return;
+
+    window._adminFragmentLoading = true;
+    try {
+        const auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
+        if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
+            console.warn("Intento de cargar fragmento admin sin autenticación. Interrumpido.");
+            return;
+        }
+
+        const response = await fetch('admin-dashboard-fragment.html');
+        if (!response.ok) throw new Error('HTTP error ' + response.status);
+        const html = await response.text();
+        mountPoint.innerHTML = html;
+        // FASE 2.4A: Cargar admin-core.js
+        await new Promise((resolve) => {
+            if (document.querySelector('script[src*="admin-core.js"]')) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = "admin-core.js?v=" + Date.now();
+            script.onload = resolve;
+            script.onerror = () => { console.warn("Fallo al cargar admin-core.js"); resolve(); };
+            document.head.appendChild(script);
+        });
+
+        // FASE 2.2C: Cargar contabilidad.js
+        await new Promise((resolve) => {
+            if (document.querySelector('script[src*="contabilidad.js"]')) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = "contabilidad.js?v=17";
+            script.onload = resolve;
+            script.onerror = () => { console.warn("Fallo al cargar contabilidad.js"); resolve(); };
+            document.head.appendChild(script);
+        });
+
+        window._adminFragmentLoaded = true;
+    } catch (e) {
+        console.error("Fallo al cargar admin-dashboard-fragment.html", e);
+    } finally {
+        window._adminFragmentLoading = false;
+    }
+};
+
+// Interceptar syncUserUI para cargar el HTML antes de renderizar los botones de administración
+const originalSyncUserUI = window.syncUserUI;
+if (originalSyncUserUI) {
+    window.syncUserUI = async function() {
+        if (window.currentUser && window.currentUser.email) {
+            const uEmail = window.currentUser.email.toLowerCase().trim();
+            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
+                ? window.SUPER_ADMINS.includes(uEmail)
+                : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+            const role = window.currentUser.role || window.currentUser.rol;
+            const isAdmin = isSuper || role === 'admin';
+            const isTrabajador = role === 'trabajador';
+            
+            if (isAdmin || isTrabajador) {
+                await window.loadAdminHTMLFragment();
+            }
+        }
+        originalSyncUserUI.apply(this, arguments);
+    };
+}
+
 // 1. Inicialización de Firebase
 let firebaseConfig = {
     apiKey: "AIzaSyAXsUDZeDStUV1oqfBfHre84u4u9TxYr1E",

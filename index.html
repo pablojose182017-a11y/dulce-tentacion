@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Panadería y Repostería Dulce Tentación P y S - Pan fresco, tortas y postres artesanales en Cúcuta. Hecho con amor, endulzamos tu día.">
-    <title>P&S Punto Dulce | Tortas de Celebración en Cúcuta</title>
+        content="PanaderÃ­a y ReposterÃ­a Dulce TentaciÃ³n P y S - Pan fresco, tortas y postres artesanales en CÃºcuta. Hecho con amor, endulzamos tu dÃ­a.">
+    <title>P&S Punto Dulce | Tortas de CelebraciÃ³n en CÃºcuta</title>
     <link rel="icon" type="image/jpeg" href="logo-pys.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,7 @@
             <img src="logo-pys.png" class="nav-logo-img" alt="Logo P&S Punto Dulce">
             <div class="logo-text-block brand-text">
                 <h1 class="brand-title">P&amp;S Punto Dulce</h1>
-                <span class="brand-tagline">Pastelería Artesanal</span>
+                <span class="brand-tagline">PastelerÃ­a Artesanal</span>
             </div>
         </div>
 
@@ -53,7 +53,7 @@
             <button class="nav-link active" onclick="showSection('inicio', this)">Inicio</button>
             <button class="nav-link" onclick="showSection('productos', this)">Productos</button>
             <button class="nav-link" onclick="showSection('nosotros', this)">Nosotros</button>
-            <a href="#club-puntos" id="nav-club-puntos" class="nav-link nav-club-highlight" style="text-decoration:none; display:inline-flex; align-items:center;">🎟️ Club Puntos & VIP</a>
+            <a href="#club-puntos" id="nav-club-puntos" class="nav-link nav-club-highlight" style="text-decoration:none; display:inline-flex; align-items:center;">ðŸŽŸï¸ Club Puntos & VIP</a>
         </nav>
 
         <div class="header-actions">
@@ -76,10 +76,10 @@
                     onclick="toggleUserDropdown(event)">
                     <div id="header-avatar-wrap" style="position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%;">
                         <img id="user-avatar" src="logo-pys.png" alt="Avatar" class="user-avatar-img" onerror="this.onerror=null; this.src='logo-pys.png';">
-                        <span id="desk-vip-crown" class="vip-crown-badge" style="display:none;">👑</span>
+                        <span id="desk-vip-crown" class="vip-crown-badge" style="display:none;">ðŸ‘‘</span>
                     </div>
                     <span id="user-name" class="user-pill-name"></span>
-                    <span class="user-pill-arrow">▼</span>
+                    <span class="user-pill-arrow">â–¼</span>
                     <div id="user-dropdown-menu" class="user-dropdown-menu">
                         <div class="dropdown-profile-header">
                             <img id="dropdown-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
@@ -90,24 +90,24 @@
                         </div>
 
                         <div class="dropdown-points-box">
-                            <span>🌟 Mis Puntos Dulce: <strong id="dropdown-points-val">0</strong></span>
+                            <span>ðŸŒŸ Mis Puntos Dulce: <strong id="dropdown-points-val">0</strong></span>
                             <div class="points-progress">
                                 <div class="points-bar" style="width: 30%"></div>
                             </div>
                             <small>Te faltan 350 pts para un premio</small>
                         </div>
                         <div class="dropdown-points-simulator">
-                            <strong>✨ Gana Puntos Hoy:</strong>
-                            <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
+                            <strong>âœ¨ Gana Puntos Hoy:</strong>
+                            <span id="sim-points-msg">Agrega productos para ver cuÃ¡ntos puntos ganas.</span>
                         </div>
 
-                        <!-- Accesos Rápidos: 2 columnas compactas -->
+                        <!-- Accesos RÃ¡pidos: 2 columnas compactas -->
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:4px;">
                             <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:0;">
-                                📊 Historial
+                                ðŸ“Š Historial
                             </div>
                             <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom:0;">
-                                📦 Pedidos
+                                ðŸ“¦ Pedidos
                             </div>
                         </div>
 
@@ -115,18 +115,18 @@
 
                         <button id="desk-admin-btn" class="dropdown-btn"
                             onclick="showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderAdminOrders();"
-                            style="display:none; color:var(--brand-pink);">⚙️ Panel Administrador</button>
+                            style="display:none; color:var(--brand-pink);">âš™ï¸ Panel Administrador</button>
                         <button id="desk-kitchen-btn" class="dropdown-btn"
                             onclick="openKitchenModal()"
-                            style="display:none; color:#f59e0b;">👨‍🍳 Modo Cocina / Despacho</button>
-                        <button class="dropdown-btn" onclick="openCartFromDropdown(event)">🛒 Ver mi Carrito (<span
+                            style="display:none; color:#f59e0b;">ðŸ‘¨â€ðŸ³ Modo Cocina / Despacho</button>
+                        <button class="dropdown-btn" onclick="openCartFromDropdown(event)">ðŸ›’ Ver mi Carrito (<span
                                 class="dropdown-cart-qty">0</span>)</button>
-                        <button class="dropdown-btn logout" onclick="logoutUser(event)">🚪 Cerrar Sesión</button>
+                        <button class="dropdown-btn logout" onclick="logoutUser(event)">ðŸšª Cerrar SesiÃ³n</button>
                     </div>
                 </div>
             </div>
             <button class="cart-btn" id="headerCartBtn" onclick="toggleCart()">
-                🛒 Carrito <span class="cart-badge" id="cartCount">0</span>
+                ðŸ›’ Carrito <span class="cart-badge" id="cartCount">0</span>
             </button>
         </div>
     </header>
@@ -137,7 +137,7 @@
             <img src="logo-pys.png" class="nav-logo-img" alt="Logo P&S Punto Dulce">
             <div class="mobile-logo-text brand-text">
                 <h1 class="brand-title">P&amp;S Punto Dulce</h1>
-                <span class="brand-tagline">Pastelería Artesanal</span>
+                <span class="brand-tagline">PastelerÃ­a Artesanal</span>
             </div>
         </div>
         <div class="mobile-header-actions">
@@ -162,17 +162,17 @@
                     </svg>
                 </button>
                 <div class="ticket-points-badge" id="mob-ticket-badge" onclick="openPointsModal()" style="padding: 4px 8px; font-size: 0.8rem;">
-                    🎟️ <span id="mob-ticket-val">0</span>
+                    ðŸŽŸï¸ <span id="mob-ticket-val">0</span>
                 </div>
                 <div id="mobile-user-pill" style="display:none; align-items:center; gap:5px; cursor:pointer;"
                     onclick="handleMobilePillClick()">
                     <div id="mobile-avatar-wrap" style="position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%;">
                         <img id="mobile-user-avatar" src="logo-pys.png" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--brand-pink);" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
-                        <span id="mob-vip-crown" class="vip-crown-badge" style="display:none;">👑</span>
+                        <span id="mob-vip-crown" class="vip-crown-badge" style="display:none;">ðŸ‘‘</span>
                     </div>
                 </div>
             </div>
-            <button class="mobile-menu-btn" id="btnMobileMenu" onclick="toggleMobileMenu(event)" title="Menú de navegación" aria-label="Abrir menú de opciones">
+            <button class="mobile-menu-btn" id="btnMobileMenu" onclick="toggleMobileMenu(event)" title="MenÃº de navegaciÃ³n" aria-label="Abrir menÃº de opciones">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="3" y1="12" x2="21" y2="12"></line>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -205,404 +205,131 @@
                     <img src="logo-pys.png" style="width:34px; height:34px; border-radius:50%; border:2px solid var(--brand-pink);" alt="Logo">
                     <div style="text-align:left;">
                         <strong style="color:var(--brand-pink); font-size:0.95rem; display:block;">P&amp;S Punto Dulce</strong>
-                        <small style="color:#64748b; font-size:0.75rem;">Pastelería Artesanal</small>
+                        <small style="color:#64748b; font-size:0.75rem;">PastelerÃ­a Artesanal</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close-modal" onclick="closeMobileMenu()" aria-label="Cerrar menú">&times;</button>
+                <button type="button" class="btn-close-modal" onclick="closeMobileMenu()" aria-label="Cerrar menÃº">&times;</button>
             </div>
             <div class="mobile-menu-links">
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('inicio', document.getElementById('bnInicio'))">
-                    <span class="mmi-icon">🏠</span> <span>Inicio</span>
+                    <span class="mmi-icon">ðŸ </span> <span>Inicio</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('productos', document.getElementById('bnProductos'))">
-                    <span class="mmi-icon">🥐</span> <span>Catálogo de Productos</span>
+                    <span class="mmi-icon">ðŸ¥</span> <span>CatÃ¡logo de Productos</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openPointsModal()">
-                    <span class="mmi-icon">🎟️</span> <span>Club Puntos &amp; Recompensas</span>
+                    <span class="mmi-icon">ðŸŽŸï¸</span> <span>Club Puntos &amp; Recompensas</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); if(typeof openVipTermsModal==='function') openVipTermsModal();">
-                    <span class="mmi-icon">👑</span> <span>Membresía VIP Oro</span>
+                    <span class="mmi-icon">ðŸ‘‘</span> <span>MembresÃ­a VIP Oro</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('nosotros', document.getElementById('bnNosotros'))">
-                    <span class="mmi-icon">❤️</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
+                    <span class="mmi-icon">â¤ï¸</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openDeliveryCoverageModal()">
-                    <span class="mmi-icon">🛵</span> <span>Políticas y Zonas de Entrega</span>
+                    <span class="mmi-icon">ðŸ›µ</span> <span>PolÃ­ticas y Zonas de Entrega</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openOrderHistory()">
-                    <span class="mmi-icon">📦</span> <span>Mis Pedidos</span>
+                    <span class="mmi-icon">ðŸ“¦</span> <span>Mis Pedidos</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openWhatsAppChat()">
-                    <span class="mmi-icon">💬</span> <span>Escríbenos a WhatsApp</span>
+                    <span class="mmi-icon">ðŸ’¬</span> <span>EscrÃ­benos a WhatsApp</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <section id="admin-dashboard" class="section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-            <div class="section-title" id="admin-title-panel" style="margin-bottom: 0;">📊 Panel Administrativo & Financiero</div>
-            
-            <div class="admin-notif-wrapper" style="position: relative; display: inline-block;">
-                <button type="button" id="btnAdminNotifBell" onclick="window.toggleAdminNotifDropdown && window.toggleAdminNotifDropdown()" class="btn-notif-bell" style="background: #fff; border: 1px solid #ffccd5; border-radius: 50%; width: 42px; height: 42px; cursor: pointer; font-size: 1.2rem; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center;">
-                    🔔
-                    <span id="adminNotifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #e91e63; color: #fff; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">0</span>
-                </button>
-                <!-- Bandeja flotante de notificaciones -->
-                <div id="adminNotifDropdown" style="display: none; position: absolute; right: 0; top: 50px; width: 340px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #ffe0e6; z-index: 999999; padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 10px;">
-                        <strong style="color: #b71c1c; font-size: 0.95rem;">🔔 Centro de Notificaciones</strong>
-                        <button type="button" onclick="window.clearAdminNotifs && window.clearAdminNotifs()" style="background: none; border: none; font-size: 0.75rem; color: #888; cursor: pointer;">Limpiar</button>
-                    </div>
-                    <div id="adminNotifList" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-                        <!-- Se renderizan las alertas aquí -->
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- PESTAÑAS (TABS) ADMIN -->
-        <div class="admin-tabs-nav">
-            <button class="admin-tab-btn active" id="admin-tab-btn-pedidos" onclick="cambiarPestanaAdmin('pedidos')">📋 Pedidos en Vivo</button>
-            <button class="admin-tab-btn" id="admin-tab-btn-productos" onclick="cambiarPestanaAdmin('productos')">🥐 Control de Productos y Stock</button>
-            <button class="admin-tab-btn" id="admin-tab-btn-contabilidad" onclick="cambiarPestanaAdmin('contabilidad')">📊 Contabilidad y Finanzas</button>
-            <button class="admin-tab-btn" id="admin-tab-btn-usuarios" onclick="cambiarPestanaAdmin('usuarios')">👥 Usuarios y Personal</button>
-            <button class="admin-tab-btn" id="admin-tab-btn-costos" onclick="cambiarPestanaAdmin('costos')">📊 Costos y Recetas</button>
-        </div>
-
-        <!-- (Aviso local obsoleto eliminado para evitar confusión) -->
-
-        <!-- TAB 2: PRODUCTOS -->
-        <div id="admin-tab-productos" class="admin-tab-container" style="display:none;">
-            <!-- CONTROL DE STOCK DIARIO -->
-        <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-            <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1.1rem;">🥖 Disponibilidad de Productos del Día</h4>
-            
-            <div id="admin-stock-filters-container" style="display:flex; gap:10px; margin-bottom: 20px; overflow-x:auto; padding-bottom:5px; scrollbar-width:thin; white-space:nowrap; flex-wrap:nowrap; align-items:center;">
-                <button class="stock-filter-chip active" style="flex:0 0 auto;" onclick="setStockFilter('todos', this)">🔥 Todos</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('panaderia', this)">🥖 Pan</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('pasteleria', this)">🎂 Tortas & Postres</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('combos', this)">🔥 Ofertas</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('regalos', this)">🎁 Regalos</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('antojos', this)">☕ Antojos</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('paquetes', this)">📦 Paquetes</button>
-                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('eventos', this)">🎉 Eventos & Fiestas</button>
-                <button id="btn-abrir-nuevo-prod" type="button" onclick="window.abrirModalEdicionProducto(null)" style="background:#16a34a; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.15); margin-left: 10px; flex:0 0 auto;">
-                    ➕ Agregar Producto
-                </button>
-                <button id="btn-config-tortas" type="button" onclick="if(window.abrirModalConfigTortas) window.abrirModalConfigTortas()" style="background:#db2777; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
-                    🎂 Diseños y Precios de Tortas
-                </button>
-
-                <button type="button" class="btn-admin-action" id="btnAdminClubPuntos" onclick="window.openAdminPointsModal && window.openAdminPointsModal(event)" style="background: linear-gradient(135deg, #e91e63, #ff5722); color: white;">
-                    ⭐ Configurar Puntos & Club VIP
-                </button>
-                <button type="button" class="btn-admin-action" id="btn-config-delivery" onclick="if(window.abrirModalConfigDelivery) window.abrirModalConfigDelivery()" style="background:#f59e0b; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
-                    🛵 Configurar Domicilio Gratis
-                </button>
-            </div>
-
-            <div id="admin-stock-grid" style="display:flex; flex-wrap:wrap; gap:10px;">
-                <!-- Se llena con JS -->
-            </div>
-        </div>
-            </div>
-        </div>
-
-        <!-- TAB 1: PEDIDOS -->
-        <div id="admin-tab-pedidos" class="admin-tab-container">
-            <!-- MONITOR DE PEDIDOS EN VIVO -->
-        <div style="margin-bottom:20px;">
-            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:15px; gap:10px;">
-                <h4 style="margin:0; color:var(--brand-pink); font-size:1.1rem;">📦 Monitor de Pedidos en Vivo</h4>
-                <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 12px; border-radius:20px; box-shadow:var(--shadow-s); border:1px solid #f1e8e4;">
-                    <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark);">🔔 Sonido Notificaciones:</span>
-                    <label class="switch-sound">
-                        <input type="checkbox" id="soundToggle" checked onchange="toggleOrderSound()">
-                        <span class="slider-sound"></span>
-                    </label>
-                </div>
-            </div>
-            
-            <div style="background:#fff; border-radius:10px; padding:10px 15px; margin-bottom:15px; box-shadow:var(--shadow-s); display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <span style="font-size:0.85rem; font-weight:bold; color:var(--text-dark);">📅 Filtro de Fecha:</span>
-                    <input type="date" id="orderDateFilter" onchange="filterOrdersByDate()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit;">
-                    <button class="btn-gold" style="padding:6px 12px; font-size:0.85rem;" onclick="setOrderDateToToday()">📅 Pedidos de Hoy</button>
-                    <button style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; font-family:inherit;" onclick="clearOrderDateFilter()">🔄 Ver Todos</button>
-                </div>
-                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                    <input type="text" id="orderSearchInput" placeholder="🔍 # Orden (ej: DT-7386)..." onkeydown="if(event.key === 'Enter') buscarPedidoPorId()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit; font-size:0.85rem; width:190px;">
-                    <button type="button" class="btn-primary-custom" onclick="buscarPedidoPorId()" style="background:#db2777; color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;">Buscar</button>
-                    <button type="button" onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;" title="Limpiar búsqueda">✕</button>
-                </div>
-            </div>
-
-            <div class="live-orders-grid" id="live-orders-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:15px;">
-                <!-- Llenado por JS -->
-            </div>
-        </div>
-
-            </div>
-        </div>
-
-        <!-- ADMIN ONLY CONTAINERS (wraps the rest for security, but now divided into tabs) -->
-        <div id="admin-only-sections">
-            <!-- TAB 3: CONTABILIDAD -->
-            <div id="admin-tab-contabilidad" class="admin-tab-container" style="display:none;">
-            <!-- DASHBOARD TARJETAS -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:25px;"
-                id="admin-dashboard-cards">
-                <!-- Llenado por JS -->
-            </div>
-
-            <!-- CONFIGURACIÓN MARGENES -->
-            <div
-                style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-                <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1rem;">⚙️ Control de Márgenes (Descuentos
-                    VIP)</h4>
-                <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end;">
-                    <div style="flex:1; min-width:150px;">
-                        <label style="font-size:0.85rem; font-weight:bold;">Compra Mínima (COP)</label>
-                        <input type="number" id="adminMinPurchase"
-                            style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <div style="flex:1; min-width:150px;">
-                        <label style="font-size:0.85rem; font-weight:bold;">Tope Max Descuento (COP)</label>
-                        <input type="number" id="adminMaxDiscount"
-                            style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
-                    </div>
-                    <div style="flex:1; min-width:150px; display:flex; align-items:center; gap:10px;">
-                        <input type="checkbox" id="adminVipEnabled" style="width:20px; height:20px;">
-                        <label style="font-size:0.85rem; font-weight:bold; cursor:pointer;" for="adminVipEnabled">Habilitar
-                            Descuentos VIP/Base</label>
-                    </div>
-                    <button class="btn-gold" onclick="saveConfigFromAdmin()" style="padding:8px 20px;">Guardar</button>
-                </div>
-            </div>
-                </div>
-            </div>
-            </div> <!-- End Tab Contabilidad -->
-
-            <!-- TAB 4: USUARIOS -->
-            <div id="admin-tab-usuarios" class="admin-tab-container" style="display:none;">
-            <!-- AJUSTES VIP -->
-            <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-                <h4 style="margin-bottom:6px; color:var(--brand-pink); font-size:1rem;">👑 Ajustes de Membresía VIP</h4>
-                <p style="font-size:0.8rem; color:#888; margin:0 0 12px 0;">El precio se actualiza en tiempo real para todos los clientes al guardar.</p>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
-                    <div style="flex:1; min-width:150px;">
-                        <label style="font-size:0.85rem; font-weight:bold; color:#555;">Precio Mensualidad VIP (COP)</label>
-                        <input type="number" id="adminVipPrice"
-                            disabled
-                            style="width:100%; padding:8px; border:1px solid #e2e8f0; border-radius:8px; margin-top:5px; background:#f8fafc; color:#64748b; font-size:1rem; cursor:not-allowed;">
-                    </div>
-                    <button id="btnEditVipPrice" onclick="window.toggleVipPriceEdit()" class="btn-gold"
-                        style="padding:8px 18px; border-radius:8px; height:38px; white-space:nowrap;">
-                        ✏️ Modificar Precio
-                    </button>
-                    <button id="btnSaveVipPrice" onclick="window.saveVipPriceOnly()" class="btn-gold"
-                        style="padding:8px 18px; border-radius:8px; height:38px; white-space:nowrap; display:none; background:linear-gradient(135deg,#16a34a,#22c55e); border-color:#16a34a;">
-                        💾 Guardar Precio
-                    </button>
-                </div>
-            </div>
-
-            <!-- REGISTRAR CLIENTE / PERSONAL -->
-            <div
-                style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">➕ Registrar Nuevo Usuario / Personal
-                </h4>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <input type="text" id="adminNewName" placeholder="Nombre (ej. Juan)"
-                        style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                    <input type="email" id="adminNewEmail" placeholder="Correo Electrónico"
-                        style="flex:1; min-width:140px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                    <input type="password" id="adminNewPassword" placeholder="Contraseña..."
-                        style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                    <select id="adminNewRole" style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer;">
-                        <option value="cliente">Cliente Normal</option>
-                        <option value="trabajador">Trabajador</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                    <button onclick="adminRegisterUser()" class="btn-gold" style="padding:8px 16px; border-radius:8px;">Registrar</button>
-                </div>
-            </div>
-
-            <!-- TOP 5 Y PEDIDOS -->
-            <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:20px;">
-                <div
-                    style="flex:1; min-width:300px; background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s);">
-                    <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">👑 Top 5 Clientes</h4>
-                    <div id="admin-top-clients"></div>
-                </div>
-            </div>
-
-            <!-- TABLA SOLICITUDES PUNTOS -->
-            <div id="admin-claims-container" style="margin-bottom: 25px; display: none;">
-                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1.1rem;">🎫 Solicitudes de Puntos VIP Pendientes</h4>
-                <div class="admin-table-scroll" style="overflow-x:auto;">
-                    <table style="width:100%; border-collapse:collapse; min-width:600px; font-size:0.9rem;" class="admin-styled-table">
-                        <thead>
-                            <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0; text-align:left;">
-                                <th>Email Cliente</th>
-                                <th>ID Pedido</th>
-                                <th>Fecha Reclamo</th>
-                                <th>Puntos a Otorgar</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-claims-table">
-                            <!-- Injected dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TABLA CLIENTES -->
-            <h4 style="margin-bottom:10px; color:var(--text-dark); font-size:1.1rem;">👥 Control de Usuarios Registrados
-            </h4>
-            <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="🔍 Buscar cliente por nombre, correo o teléfono...">
-            
-            <div class="user-filters-tabs" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px;">
-                <button class="cat-chip active" onclick="setRoleFilter('Todos', this)">Todos</button>
-                <button class="cat-chip" onclick="setRoleFilter('Administradores', this)">Administradores</button>
-                <button class="cat-chip" onclick="setRoleFilter('Trabajadores', this)">Trabajadores</button>
-                <button class="cat-chip" onclick="setRoleFilter('VIP', this)">Clientes VIP</button>
-                <button class="cat-chip" onclick="setRoleFilter('Normales', this)">Clientes Normales</button>
-            </div>
-
-            <div class="admin-table-scroll" style="overflow-x:auto;">
-                <table
-                    style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow-m);">
-                    <thead style="background:var(--brand-pink-l); text-align:left;">
-                        <tr>
-                            <th style="padding:12px;">Cliente</th>
-                            <th style="padding:12px;">Teléfono / WhatsApp</th>
-                            <th style="padding:12px;">Correo</th>
-                            <th style="padding:12px; text-align:center;">Nivel</th>
-                            <th style="padding:12px; text-align:center;">Estado</th>
-                            <th style="padding:12px; text-align:center;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-users-table">
-                        <!-- Se llena con JS -->
-                    </tbody>
-                </table>
-            </div>
-        </div> <!-- Fin Tab Usuarios -->
-
-        <!-- TAB COSTOS Y FICHAS TECNICAS -->
-        <div id="admin-tab-costos" class="admin-tab-container" style="display:none;">
-            <div class="costos-subtabs" style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
-                <button class="stock-filter-chip active" onclick="window.cambiarSubtabCostos('insumos')">📦 Materias Primas</button>
-                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('recetas')">🥣 Fichas Técnicas</button>
-                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('informes')">📈 Informes de Rentabilidad</button>
-                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('guardian')" style="background:#fff1f2; color:#be185d; border-color:#fbcfe8;">🛡️ Guardián Financiero</button>
-            </div>
-            
-            <div id="costos-insumos" class="costos-content"></div>
-            <div id="costos-recetas" class="costos-content" style="display:none;"></div>
-            <div id="costos-informes" class="costos-content" style="display:none;"></div>
-            <div id="costos-guardian" class="costos-content" style="display:none;"></div>
-        </div>
-        
-        </div> <!-- Fin admin-only-sections -->
-        
-        <div style="text-align:center; margin-top:20px;">
-            <button class="btn-gold" onclick="showSection('inicio')">⬅ Volver al Inicio</button>
-        </div>
-    </section>
+        <div id="admin-mount-point"></div>
 
     <!-- ===== SECTION: INICIO ===== -->
     <section id="inicio" class="section active">
         <div class="hero">
             <div class="hero-welcome-card">
                 <img src="logo-pys.png" class="hero-logo-img" alt="Logo P&S Punto Dulce">
-                <h2 class="hero-quote">“Hecho con amor, endulzamos tu día” 💖</h2>
-                <p class="hero-desc">Tortas de celebración hechas a la medida & panadería artesanal horneada cada mañana en Cúcuta.</p>
+                <h2 class="hero-quote">â€œHecho con amor, endulzamos tu dÃ­aâ€ ðŸ’–</h2>
+                <p class="hero-desc">Tortas de celebraciÃ³n hechas a la medida & panaderÃ­a artesanal horneada cada maÃ±ana en CÃºcuta.</p>
                 <div class="hero-order-hint">
-                    ✨ Haz tu pedido fácil en línea · ¡Elige tu opción! <span class="bouncing-hand">👇</span>
+                    âœ¨ Haz tu pedido fÃ¡cil en lÃ­nea Â· Â¡Elige tu opciÃ³n! <span class="bouncing-hand">ðŸ‘‡</span>
                 </div>
                 <div class="hero-buttons-group">
                     <button class="btn-hero-primary" onclick="filterCategory('todos', null); goToCatalog(event)">
-                        🍰 ¡Quiero antojarme y pedir! ➔
+                        ðŸ° Â¡Quiero antojarme y pedir! âž”
                     </button>
                     <button class="btn-hero-secondary" onclick="filterCategory('eventos', this); goToCatalog(event)">
-                        🎉 Pasabocas y Bandejas al por mayor ➔
+                        ðŸŽ‰ Pasabocas y Bandejas al por mayor âž”
                     </button>
                 </div>
-                <p class="hero-trust-badge">✨ Domicilios en Cúcuta • Calidad artesanal garantizada</p>
+                <p class="hero-trust-badge">âœ¨ Domicilios en CÃºcuta â€¢ Calidad artesanal garantizada</p>
             </div>
             <div class="hero-love-phrase">
                 "El ingrediente secreto siempre es el amor"
-                <span>Horneamos momentos felices para tu familia todos los días</span>
+                <span>Horneamos momentos felices para tu familia todos los dÃ­as</span>
             </div>
 
             <div class="login-incentive-box" onclick="openAuthModal()" id="hero-login-incentive">
-                <div class="li-icon">🎁</div>
+                <div class="li-icon">ðŸŽ</div>
                 <div class="li-text">
-                    <strong>¡Únete al Club Dulce Tentación!</strong>
-                    <p>Inicia sesión ahora y recibe un <strong>6% de descuento</strong> en tu 1ra compra, y acumula
+                    <strong>Â¡Ãšnete al Club Dulce TentaciÃ³n!</strong>
+                    <p>Inicia sesiÃ³n ahora y recibe un <strong>6% de descuento</strong> en tu 1ra compra, y acumula
                         puntos.</p>
                 </div>
-                <div class="li-arrow">➔</div>
+                <div class="li-arrow">âž”</div>
             </div>
         </div>
 
-        <!-- ===== CLUB DULCE RECOMPENSA (Renderizado Dinámico desde JS) ===== -->
+        <!-- ===== CLUB DULCE RECOMPENSA (Renderizado DinÃ¡mico desde JS) ===== -->
         <div id="rewards-club-container"></div>
 
         <div class="custom-cake-banner" onclick="openWizard()">
             <div style="flex:1;">
-                <h2>🎂 Diseña tu Torta o Pedido Especial (Personalizado)</h2>
-                <p>Elige tamaño, masa, relleno, dedicatoria y fecha de entrega.</p>
+                <h2>ðŸŽ‚ DiseÃ±a tu Torta o Pedido Especial (Personalizado)</h2>
+                <p>Elige tamaÃ±o, masa, relleno, dedicatoria y fecha de entrega.</p>
             </div>
-            <button class="btn-gold">¡Empezar a diseñar!</button>
+            <button class="btn-gold">Â¡Empezar a diseÃ±ar!</button>
         </div>
 
-        <h2 class="section-title">⭐ Los Más Pedidos de Hoy</h2>
+        <h2 class="section-title">â­ Los MÃ¡s Pedidos de Hoy</h2>
 
         <div class="cat-chip-scroll">
-            <button class="cat-chip active" onclick="filterCategory('todos', this)">🔥 Todos</button>
-            <button class="cat-chip" onclick="filterCategory('panaderia', this)">🥖 Pan</button>
-            <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
-            <button class="cat-chip" onclick="filterCategory('combos', this)">🔥 Ofertas</button>
-            <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
-            <button class="cat-chip" onclick="filterCategory('paquetes', this)">📦 Paquetes</button>
-            <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
+            <button class="cat-chip active" onclick="filterCategory('todos', this)">ðŸ”¥ Todos</button>
+            <button class="cat-chip" onclick="filterCategory('panaderia', this)">ðŸ¥– Pan</button>
+            <button class="cat-chip" onclick="filterCategory('pasteleria', this)">ðŸŽ‚ Tortas & Postres</button>
+            <button class="cat-chip" onclick="filterCategory('combos', this)">ðŸ”¥ Ofertas</button>
+            <button class="cat-chip" onclick="filterCategory('antojos', this)">â˜• Antojos</button>
+            <button class="cat-chip" onclick="filterCategory('paquetes', this)">ðŸ“¦ Paquetes</button>
+            <button class="cat-chip" onclick="filterCategory('eventos', this)">ðŸŽ‰ Eventos & Fiestas</button>
         </div>
 
         <div class="grid" id="featuredGrid"></div>
 
         <div class="identity-banner">
-            <h3>❤️ El Secreto Está en Nuestras Manos y Nuestro Amor</h3>
-            <p>En Dulce Tentación P y S seleccionamos harinas de primera calidad, mantequillas premium y horneamos
-                tandas constantes durante todo el día para que siempre disfrutes de panes suaves, doraditos y recién
-                hechos a manos de los artesanos más apasionados de Cúcuta.</p>
-            <div class="identity-tagline">✨ Hecho con amor, endulzamos tu día ✨</div>
+            <h3>â¤ï¸ El Secreto EstÃ¡ en Nuestras Manos y Nuestro Amor</h3>
+            <p>En Dulce TentaciÃ³n P y S seleccionamos harinas de primera calidad, mantequillas premium y horneamos
+                tandas constantes durante todo el dÃ­a para que siempre disfrutes de panes suaves, doraditos y reciÃ©n
+                hechos a manos de los artesanos mÃ¡s apasionados de CÃºcuta.</p>
+            <div class="identity-tagline">âœ¨ Hecho con amor, endulzamos tu dÃ­a âœ¨</div>
         </div>
 
         <div class="features-grid">
             <div class="feature-card">
-                <span class="feature-icon">🥖</span>
+                <span class="feature-icon">ðŸ¥–</span>
                 <div class="feature-text">
-                    <strong>Horneado Fresco Todo el Día</strong>
+                    <strong>Horneado Fresco Todo el DÃ­a</strong>
                     <p>Varios horneados diarios de 6:00 AM a 9:00 PM. Siempre calientico y crocante.</p>
                 </div>
             </div>
             <div class="feature-card delivery-clickable" onclick="openDeliveryCoverageModal()" aria-label="Ver condiciones de entrega" role="button" tabindex="0">
-                <span class="feature-icon">🛵</span>
+                <span class="feature-icon">ðŸ›µ</span>
                 <div class="feature-text">
-                    <strong>Entrega Rápida en Cúcuta</strong>
+                    <strong>Entrega RÃ¡pida en CÃºcuta</strong>
                     <p>Cubrimos todos los barrios. Tu pedido llega empacado y protegido en 25-45 min.</p>
                     <span class="delivery-conditions-link" style="color: #d81b60; font-size: 0.82rem; font-weight: 700; text-decoration: underline; margin-top: 6px; display: inline-block;">
-                        Ver zonas y condiciones ℹ️
+                        Ver zonas y condiciones â„¹ï¸
                     </span>
                 </div>
             </div>
             <div class="feature-card">
-                <span class="feature-icon">⭐</span>
+                <span class="feature-icon">â­</span>
                 <div class="feature-text">
                     <strong>La Mejor Calidad a Solo $500</strong>
                     <p>Mantenemos recetas generosas con queso, bocadillo y mantequilla al mejor precio de la ciudad.</p>
@@ -613,32 +340,32 @@
         <!-- ===== CLUB PUNTOS & VIP ===== -->
         <section id="club-puntos" class="club-puntos-section">
             <div class="club-puntos-header">
-                <span class="club-puntos-tag">🌟 Beneficios Exclusivos</span>
-                <h2 class="club-puntos-title">🎟️ Club Puntos &amp; Recompensas VIP</h2>
+                <span class="club-puntos-tag">ðŸŒŸ Beneficios Exclusivos</span>
+                <h2 class="club-puntos-title">ðŸŽŸï¸ Club Puntos &amp; Recompensas VIP</h2>
                 <div class="club-points-balance-card">
-                    <span class="cp-balance-icon">✨</span>
+                    <span class="cp-balance-icon">âœ¨</span>
                     <div class="cp-balance-text">
                         <span>Puntos Acumulados</span>
                         <p>Tienes <strong id="modal-ticket-val">0</strong> puntos disponibles</p>
                     </div>
                 </div>
-                <p class="club-puntos-subtitle">¡Acumula puntos con cada compra y canjéalos por recompensas exclusivas recién horneadas!</p>
+                <p class="club-puntos-subtitle">Â¡Acumula puntos con cada compra y canjÃ©alos por recompensas exclusivas reciÃ©n horneadas!</p>
             </div>
 
             <div id="rewards-container" class="rewards-grid">
-                <!-- Recompensas inyectadas vía JS con fotos grandes y botones de canje -->
+                <!-- Recompensas inyectadas vÃ­a JS con fotos grandes y botones de canje -->
             </div>
 
             <div class="vip-perks-banner" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
                 <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:250px;">
-                    <div class="vip-perks-icon">👑</div>
+                    <div class="vip-perks-icon">ðŸ‘‘</div>
                     <div class="vip-perks-info">
                         <strong>Beneficios Club VIP:</strong>
-                        <p>Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.</p>
+                        <p>Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaÃ±os.</p>
                     </div>
                 </div>
                 <button type="button" id="btnVipBannerAction" class="btn-vip-action btn-vip-banner-action" onclick="window.openVipTermsModal && window.openVipTermsModal(event)" style="background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-                    👑 Activar Membresía VIP
+                    ðŸ‘‘ Activar MembresÃ­a VIP
                 </button>
             </div>
         </section>
@@ -646,22 +373,22 @@
 
     <!-- ===== SECTION: PRODUCTOS ===== -->
     <section id="productos" class="section">
-        <h2 class="section-title">🍞 Catálogo Completo</h2>
+        <h2 class="section-title">ðŸž CatÃ¡logo Completo</h2>
         <div class="cat-chip-scroll">
-            <button class="cat-chip active" onclick="filterCategory('todos', this)">🔥 Todos</button>
-            <button class="cat-chip" onclick="filterCategory('panaderia', this)">🥖 Pan</button>
-            <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
-            <button class="cat-chip" onclick="filterCategory('combos', this)">🔥 Ofertas</button>
-            <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
-            <button class="cat-chip" onclick="filterCategory('paquetes', this)">📦 Paquetes</button>
-            <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
+            <button class="cat-chip active" onclick="filterCategory('todos', this)">ðŸ”¥ Todos</button>
+            <button class="cat-chip" onclick="filterCategory('panaderia', this)">ðŸ¥– Pan</button>
+            <button class="cat-chip" onclick="filterCategory('pasteleria', this)">ðŸŽ‚ Tortas & Postres</button>
+            <button class="cat-chip" onclick="filterCategory('combos', this)">ðŸ”¥ Ofertas</button>
+            <button class="cat-chip" onclick="filterCategory('antojos', this)">â˜• Antojos</button>
+            <button class="cat-chip" onclick="filterCategory('paquetes', this)">ðŸ“¦ Paquetes</button>
+            <button class="cat-chip" onclick="filterCategory('eventos', this)">ðŸŽ‰ Eventos & Fiestas</button>
         </div>
         
         <!-- BANNER DE TORTAS PERSONALIZADAS -->
         <div style="background: linear-gradient(135deg, #fff0f5, #fde8ef); border: 2px dashed #d81b60; border-radius: var(--r-lg); padding: 20px; text-align: center; margin-bottom: 24px; cursor: pointer; transition: all 0.3s ease;" onclick="openWizard()" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <h3 style="color: #9f1239; font-size: 1.4rem; margin-bottom: 8px;">🎂 Torta para Celebración (Bajo Pedido)</h3>
-            <p style="color: #6d3a1f; font-size: 0.95rem; margin-bottom: 15px;">¡Personaliza el sabor, tamaño y diseño de tu torta ideal!</p>
-            <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta ✨</button>
+            <h3 style="color: #9f1239; font-size: 1.4rem; margin-bottom: 8px;">ðŸŽ‚ Torta para CelebraciÃ³n (Bajo Pedido)</h3>
+            <p style="color: #6d3a1f; font-size: 0.95rem; margin-bottom: 15px;">Â¡Personaliza el sabor, tamaÃ±o y diseÃ±o de tu torta ideal!</p>
+            <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta âœ¨</button>
         </div>
 
         <div class="grid" id="productGrid"></div>
@@ -671,63 +398,63 @@
     <section id="nosotros" class="section">
 
         <div class="info-card">
-            <h2>¿Quiénes somos?</h2>
-            <p class="about-lead">Somos <strong>P&S Punto Dulce</strong>, una panadería y pastelería 100% cucuteña
-                donde la calidez humana, la pasión por la masa y el sabor casero se unen para consentir tu paladar.</p>
+            <h2>Â¿QuiÃ©nes somos?</h2>
+            <p class="about-lead">Somos <strong>P&S Punto Dulce</strong>, una panaderÃ­a y pastelerÃ­a 100% cucuteÃ±a
+                donde la calidez humana, la pasiÃ³n por la masa y el sabor casero se unen para consentir tu paladar.</p>
             <p style="color:#475569;font-size:1rem;margin-bottom:14px;">Nos esforzamos cada madrugada por amasar los
                 mejores ingredientes y garantizar panes frescos, esponjosos y crujientes que lleguen a la mesa de las
-                familias de Cúcuta.</p>
-            <p style="color:#475569;font-size:1rem;">Nuestra meta: ser el punto de encuentro y la panadería predilecta
-                de la región, destacando por precios justos, atención cordial y un sabor memorable.</p>
+                familias de CÃºcuta.</p>
+            <p style="color:#475569;font-size:1rem;">Nuestra meta: ser el punto de encuentro y la panaderÃ­a predilecta
+                de la regiÃ³n, destacando por precios justos, atenciÃ³n cordial y un sabor memorable.</p>
             <div class="mv-grid">
                 <div class="mv-card mission">
-                    <h3>🎯 Nuestra Misión</h3>
-                    <p>Brindar productos de panadería y pastelería de excelencia, horneados con ingredientes de primera
+                    <h3>ðŸŽ¯ Nuestra MisiÃ³n</h3>
+                    <p>Brindar productos de panaderÃ­a y pastelerÃ­a de excelencia, horneados con ingredientes de primera
                         calidad, higiene impecable y el amor que nos caracteriza.</p>
                 </div>
                 <div class="mv-card vision">
-                    <h3>👁️ Nuestra Visión</h3>
-                    <p>Ser reconocidos en toda Cúcuta como líderes en panadería tradicional y repostería artesanal, con
+                    <h3>ðŸ‘ï¸ Nuestra VisiÃ³n</h3>
+                    <p>Ser reconocidos en toda CÃºcuta como lÃ­deres en panaderÃ­a tradicional y reposterÃ­a artesanal, con
                         el sello inconfundible de sabor, frescura y amor.</p>
                 </div>
             </div>
             <div class="values-grid">
                 <div class="value-card">
-                    <h4>✨ Calidad Innegociable</h4>
-                    <p>Cuidamos cada receta y tiempo de fermentación para panes perfectos.</p>
+                    <h4>âœ¨ Calidad Innegociable</h4>
+                    <p>Cuidamos cada receta y tiempo de fermentaciÃ³n para panes perfectos.</p>
                 </div>
                 <div class="value-card">
-                    <h4>📍 Orgullo Cucuteño</h4>
-                    <p>Orgullosos de servir a nuestra gente con alegría y precios accesibles.</p>
+                    <h4>ðŸ“ Orgullo CucuteÃ±o</h4>
+                    <p>Orgullosos de servir a nuestra gente con alegrÃ­a y precios accesibles.</p>
                 </div>
                 <div class="value-card">
-                    <h4>🤝 Honestidad y Servicio</h4>
-                    <p>Garantizamos productos del día, porciones generosas y atención sincera.</p>
+                    <h4>ðŸ¤ Honestidad y Servicio</h4>
+                    <p>Garantizamos productos del dÃ­a, porciones generosas y atenciÃ³n sincera.</p>
                 </div>
             </div>
         </div>
 
             <div class="info-card" style="margin-top: 24px;">
-                <h2>📍 Visítanos o Pide Domicilio</h2>
-            <p style="color:var(--text-soft);font-size:1rem;">Disfruta de nuestros panes en nuestro punto físico o
-                recíbelos directamente en tu hogar en cualquier barrio de Cúcuta.</p>
+                <h2>ðŸ“ VisÃ­tanos o Pide Domicilio</h2>
+            <p style="color:var(--text-soft);font-size:1rem;">Disfruta de nuestros panes en nuestro punto fÃ­sico o
+                recÃ­belos directamente en tu hogar en cualquier barrio de CÃºcuta.</p>
             <div class="info-grid">
                 <div class="contact-box">
-                    <h4>🕒 Horarios</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;"><strong>Lun – Sáb:</strong> 6:00 AM – 9:00
-                        PM<br><strong>Dom y Festivos:</strong> 6:30 AM – 8:30 PM<br><em>¡Varios horneados en el
-                            día!</em></p>
+                    <h4>ðŸ•’ Horarios</h4>
+                    <p style="color:var(--text-soft);line-height:1.6;"><strong>Lun â€“ SÃ¡b:</strong> 6:00 AM â€“ 9:00
+                        PM<br><strong>Dom y Festivos:</strong> 6:30 AM â€“ 8:30 PM<br><em>Â¡Varios horneados en el
+                            dÃ­a!</em></p>
                 </div>
                 <div class="contact-box">
-                    <h4>📞 Contacto / Pedidos</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 322 951 2693<br><strong>Cobertura:</strong> Toda Cúcuta, Los Patios y Villa del Rosario.<br><strong>Tiempo estimado:</strong> 25 a 45 minutos.</p>
+                    <h4>ðŸ“ž Contacto / Pedidos</h4>
+                    <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 322 951 2693<br><strong>Cobertura:</strong> Toda CÃºcuta, Los Patios y Villa del Rosario.<br><strong>Tiempo estimado:</strong> 25 a 45 minutos.</p>
                     <span class="delivery-conditions-link" onclick="openDeliveryCoverageModal()" style="color: #d81b60; font-size: 0.82rem; font-weight: 700; text-decoration: underline; margin-top: 6px; display: inline-block; cursor: pointer;">
-                        Ver zonas y condiciones ℹ️
+                        Ver zonas y condiciones â„¹ï¸
                     </span>
                 </div>
                 <div class="contact-box">
-                    <h4>📍 Dirección Sede Principal</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;">Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta.<br>Punto de despacho central con atención en mostrador.</p>
+                    <h4>ðŸ“ DirecciÃ³n Sede Principal</h4>
+                    <p style="color:var(--text-soft);line-height:1.6;">Calle 10 con Avenida 7 # 10 - 30, Barrio DoÃ±a Nidia, CÃºcuta.<br>Punto de despacho central con atenciÃ³n en mostrador.</p>
                     <a href="https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6"
                        target="_blank"
                        rel="noopener noreferrer"
@@ -749,7 +476,7 @@
                        "
                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(245,158,11,0.25)'"
                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 10px rgba(245,158,11,0.15)'">
-                        📍 Ver ubicación en Google Maps
+                        ðŸ“ Ver ubicaciÃ³n en Google Maps
                     </a>
                 </div>
             </div>
@@ -764,7 +491,7 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="#E1306C">
                         <path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.64.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.64-.07-4.85s.01-3.58.07-4.85C2.38 3.85 3.92 2.31 7.15 2.16c1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 2.77.27.27 2.77.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.2 4.28 2.7 6.78 6.98 6.98 1.28.06 1.69.07 4.95.07s3.67-.01 4.95-.07c4.28-.2 6.78-2.7 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.2-4.28-2.7-6.78-6.98-6.98C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm5.23-10.7a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z"/>
                     </svg>
-                    Síguenos en Instagram
+                    SÃ­guenos en Instagram
                 </h3>
                 <a href="javascript:void(0)" onclick="window.openInstagram(event)" style="color: var(--brand-pink); font-weight: bold; text-decoration: none; font-size: 1.1rem; display: inline-block;">@panaderiapuntodulce</a>
             </div>
@@ -793,7 +520,7 @@
     <!-- ===== MOBILE PROFILE MODAL ===== -->
     <div class="auth-modal" id="mobileProfileModal" style="display:none;" onclick="handleMobileProfileBdrop(event)">
         <div class="auth-card" style="padding: 24px 16px; margin: auto 12px 12px 12px; align-self: flex-end;">
-            <button class="auth-close-btn" onclick="closeMobileProfile()">✕</button>
+            <button class="auth-close-btn" onclick="closeMobileProfile()">âœ•</button>
             <div class="dropdown-profile-header">
                 <img id="mp-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                 <div class="dropdown-profile-info">
@@ -803,24 +530,24 @@
             </div>
 
             <div class="dropdown-points-box">
-                <span>🌟 Mis Puntos Dulce: <strong id="mp-points-val">0</strong></span>
+                <span>ðŸŒŸ Mis Puntos Dulce: <strong id="mp-points-val">0</strong></span>
                 <div class="points-progress">
                     <div class="points-bar" style="width: 30%"></div>
                 </div>
                 <small>Te faltan 350 pts para un premio</small>
             </div>
             <div class="dropdown-points-simulator">
-                <strong>✨ Gana Puntos Hoy:</strong>
-                <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
+                <strong>âœ¨ Gana Puntos Hoy:</strong>
+                <span id="mp-sim-points-msg">Agrega productos para ver cuÃ¡ntos puntos ganas.</span>
             </div>
 
-            <!-- Accesos Rápidos: 2 columnas compactas (móvil) -->
+            <!-- Accesos RÃ¡pidos: 2 columnas compactas (mÃ³vil) -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; margin-bottom:4px;">
                 <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:0;">
-                    📊 Historial
+                    ðŸ“Š Historial
                 </div>
                 <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom:0;">
-                    📦 Pedidos
+                    ðŸ“¦ Pedidos
                 </div>
             </div>
 
@@ -828,33 +555,33 @@
 
             <button id="mob-admin-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); showSection('admin-dashboard'); renderAdminUsers();"
-                style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:8px 0;">⚙️
+                style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:8px 0;">âš™ï¸
                 Panel Administrador</button>
             <button id="mob-kitchen-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); openKitchenModal();"
-                style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:8px 0;">👨‍🍳
+                style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:8px 0;">ðŸ‘¨â€ðŸ³
                 Modo Cocina / Despacho</button>
 
             <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();"
-                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:6px;">🛒 Ver mi Carrito
+                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:6px;">ðŸ›’ Ver mi Carrito
                 (<span class="dropdown-cart-qty">0</span>)</button>
-            <button class="dropdown-btn logout" onclick="closeMobileProfile(); logoutUser(event)">🚪 Cerrar Sesión</button>
+            <button class="dropdown-btn logout" onclick="closeMobileProfile(); logoutUser(event)">ðŸšª Cerrar SesiÃ³n</button>
         </div>
     </div>
 
     <!-- ===== PASSWORD RESET MODAL (ADMIN) ===== -->
     <div class="modal-overlay" id="adminPasswordModal" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;" onclick="if(event.target===this) this.style.display='none'">
         <div style="background:#fff; border-radius:12px; padding:24px; width:90%; max-width:400px; text-align:center;">
-            <h3 style="color:var(--brand-pink); margin-bottom:15px;">🔑 Cambiar Contraseña</h3>
+            <h3 style="color:var(--brand-pink); margin-bottom:15px;">ðŸ”‘ Cambiar ContraseÃ±a</h3>
             <p id="adminPasswordModalUser" style="font-size:0.9rem; color:#555; margin-bottom:15px;"></p>
             <div class="custom-form-group" style="text-align:left;">
-                <label>Nueva Contraseña</label>
+                <label>Nueva ContraseÃ±a</label>
                 <div class="input-wrap">
-                    <span class="field-icon">🔒</span>
-                    <input type="password" id="adminNewPasswordInput" placeholder="Escribe la nueva contraseña..." style="width:100%; padding:10px 10px 10px 40px; border-radius:8px; border:1px solid #ddd; outline:none;">
+                    <span class="field-icon">ðŸ”’</span>
+                    <input type="password" id="adminNewPasswordInput" placeholder="Escribe la nueva contraseÃ±a..." style="width:100%; padding:10px 10px 10px 40px; border-radius:8px; border:1px solid #ddd; outline:none;">
                 </div>
             </div>
-            <button onclick="confirmAdminPasswordChange()" class="btn-primary" style="width:100%; border-radius:30px; margin-top:15px; padding:12px;">Guardar Nueva Contraseña</button>
+            <button onclick="confirmAdminPasswordChange()" class="btn-primary" style="width:100%; border-radius:30px; margin-top:15px; padding:12px;">Guardar Nueva ContraseÃ±a</button>
             <button onclick="document.getElementById('adminPasswordModal').style.display='none'" style="width:100%; background:transparent; border:none; color:#666; margin-top:10px; padding:10px; cursor:pointer;">Cancelar</button>
         </div>
     </div>
@@ -863,21 +590,21 @@
     <div class="modal-overlay" id="adminEditUserModal" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;" onclick="if(event.target===this) window.cerrarModalEdicionUsuarioAdmin && window.cerrarModalEdicionUsuarioAdmin()">
         <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:420px; text-align:center; box-shadow:0 12px 36px rgba(0,0,0,0.22); border:1px solid #fed7aa; position:relative;">
             <h3 style="color:#b45309; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                <span>✏️</span> Editar Datos de Usuario
+                <span>âœï¸</span> Editar Datos de Usuario
             </h3>
             <p style="font-size:0.85rem; color:#64748b; margin-bottom:18px;">Actualiza el nombre completo o corrige errores en el correo del cliente.</p>
             <input type="hidden" id="adminEditUserOriginalEmail">
             <div class="custom-form-group" style="text-align:left; margin-bottom:14px;">
                 <label style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px; display:block;">Nombre Completo</label>
                 <div class="input-wrap" style="position:relative;">
-                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">👤</span>
+                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">ðŸ‘¤</span>
                     <input type="text" id="adminEditUserName" placeholder="Nombre completo del cliente..." style="width:100%; padding:10px 12px 10px 38px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; font-size:0.95rem; box-sizing:border-box;">
                 </div>
             </div>
             <div class="custom-form-group" style="text-align:left; margin-bottom:20px;">
-                <label style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px; display:block;">Correo Electrónico</label>
+                <label style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px; display:block;">Correo ElectrÃ³nico</label>
                 <div class="input-wrap" style="position:relative;">
-                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">✉️</span>
+                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">âœ‰ï¸</span>
                     <input type="email" id="adminEditUserEmail" placeholder="correo@ejemplo.com..." style="width:100%; padding:10px 12px 10px 38px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; font-size:0.95rem; box-sizing:border-box;">
                 </div>
             </div>
@@ -889,18 +616,18 @@
     <!-- ===== AUTH MODAL ===== -->
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
         <div class="auth-card" style="padding:24px; text-align:center;">
-            <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
+            <button class="auth-close-btn" onclick="closeAuthModal()">âœ•</button>
             <img src="logo-pys.png" alt="Logo P&S Punto Dulce"
                 style="width:80px; height:80px; border-radius:50%; margin-bottom:15px; border:2px solid var(--brand-pink);">
 
             <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar Sesión</button>
+                <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar SesiÃ³n</button>
                 <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
             </div>
 
             <div class="auth-incentive-banner">
-                <span style="font-size: 1.4rem;">🥐</span>
-                <span>¡Únete al Club P&S Punto Dulce y acumula puntos en tus pedidos favoritos! 🍰</span>
+                <span style="font-size: 1.4rem;">ðŸ¥</span>
+                <span>Â¡Ãšnete al Club P&S Punto Dulce y acumula puntos en tus pedidos favoritos! ðŸ°</span>
             </div>
 
             <div id="authMsg" class="auth-msg"></div>
@@ -908,27 +635,27 @@
             <div id="paneLogin" class="auth-pane active">
                 <form class="custom-form" onsubmit="loginCustomUser(event)">
                     <div class="form-group">
-                        <label>Correo Electrónico o Usuario</label>
+                        <label>Correo ElectrÃ³nico o Usuario</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon">âœ‰ï¸</span>
                             <input type="text" id="loginEmail" placeholder="ejemplo@correo.com">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Contraseña</label>
+                        <label>ContraseÃ±a</label>
                         <div class="input-wrap">
-                            <span class="field-icon">🔒</span>
+                            <span class="field-icon">ðŸ”’</span>
                             <div class="password-wrapper">
-                                <input type="password" id="loginPassword" placeholder="••••••••">
-                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar contraseña">👁️</button>
+                                <input type="password" id="loginPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar contraseÃ±a">ðŸ‘ï¸</button>
                             </div>
                         </div>
-                        <a href="#" onclick="showRecoveryForm(event)" style="font-size: 0.8rem; color: var(--brand-pink); text-decoration: none; display: block; margin-top: 5px; text-align: right;">¿Olvidaste tu contraseña?</a>
+                        <a href="#" onclick="showRecoveryForm(event)" style="font-size: 0.8rem; color: var(--brand-pink); text-decoration: none; display: block; margin-top: 5px; text-align: right;">Â¿Olvidaste tu contraseÃ±a?</a>
                     </div>
-                    <button type="submit" class="btn-auth-submit">Iniciar Sesión</button>
+                    <button type="submit" class="btn-auth-submit">Iniciar SesiÃ³n</button>
                 </form>
 
-                <div class="auth-divider"><span>o accede rápidamente con</span></div>
+                <div class="auth-divider"><span>o accede rÃ¡pidamente con</span></div>
 
                 <div style="display:flex; justify-content:center; align-items:center;">
                     
@@ -943,51 +670,51 @@
                     <div class="form-group">
                         <label>Nombre Completo</label>
                         <div class="input-wrap">
-                            <span class="field-icon">👤</span>
-                            <input type="text" id="regName" placeholder="Juan Pérez">
+                            <span class="field-icon">ðŸ‘¤</span>
+                            <input type="text" id="regName" placeholder="Juan PÃ©rez">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Teléfono / WhatsApp</label>
+                        <label>TelÃ©fono / WhatsApp</label>
                         <div class="input-wrap">
-                            <span class="field-icon">📱</span>
+                            <span class="field-icon">ðŸ“±</span>
                             <input type="tel" id="regPhone" placeholder="313 000 0000">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Correo Electrónico</label>
+                        <label>Correo ElectrÃ³nico</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon">âœ‰ï¸</span>
                             <input type="email" id="regEmail" placeholder="ejemplo@correo.com">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Contraseña</label>
+                        <label>ContraseÃ±a</label>
                         <div class="input-wrap">
-                            <span class="field-icon">🔒</span>
+                            <span class="field-icon">ðŸ”’</span>
                             <div class="password-wrapper">
-                                <input type="password" id="regPassword" placeholder="••••••••">
-                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Mostrar contraseña">👁️</button>
+                                <input type="password" id="regPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Mostrar contraseÃ±a">ðŸ‘ï¸</button>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>🎂 Fecha de Cumpleaños (Descuento especial en tu día)</label>
+                        <label>ðŸŽ‚ Fecha de CumpleaÃ±os (Descuento especial en tu dÃ­a)</label>
                         <div class="input-wrap">
-                            <span class="field-icon">🎁</span>
+                            <span class="field-icon">ðŸŽ</span>
                             <input type="text" id="reg-birthday" placeholder="Selecciona tu fecha">
                         </div>
                     </div>
                     <div class="form-group" style="display: flex; align-items: start; gap: 8px; margin-top: 10px; margin-bottom: 15px;">
                         <input type="checkbox" id="reg-terms" required style="margin-top: 4px; accent-color: var(--brand-pink);">
                         <label for="reg-terms" style="font-size: 0.75rem; color: #555; line-height: 1.3; font-weight: 500;">
-                            Acepto los Términos y Condiciones y la autorización de uso de datos para gestión de pedidos y beneficios exclusivos.
+                            Acepto los TÃ©rminos y Condiciones y la autorizaciÃ³n de uso de datos para gestiÃ³n de pedidos y beneficios exclusivos.
                         </label>
                     </div>
                     <button type="submit" class="btn-auth-submit">Crear Cuenta</button>
                 </form>
 
-                <div class="auth-divider"><span>o regístrate con</span></div>
+                <div class="auth-divider"><span>o regÃ­strate con</span></div>
 
                 <div style="display:flex; justify-content:center; align-items:center;">
                     <!-- Google sign in button replicates here to keep logic simple -->
@@ -997,26 +724,26 @@
                 </div>
             </div>
 
-            <!-- RECUPERAR CONTRASEÑA -->
+            <!-- RECUPERAR CONTRASEÃ‘A -->
             <div class="auth-pane" id="paneRecovery" style="display: none;">
-                <h3 style="text-align: center; color: var(--brand-pink); margin-bottom: 15px;">Recuperar Contraseña</h3>
+                <h3 style="text-align: center; color: var(--brand-pink); margin-bottom: 15px;">Recuperar ContraseÃ±a</h3>
                 <div class="custom-form">
                     <div class="form-group">
-                        <label>Correo Electrónico Registrado</label>
+                        <label>Correo ElectrÃ³nico Registrado</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon">âœ‰ï¸</span>
                             <input type="email" id="recoveryEmail" placeholder="tucorreo@ejemplo.com">
                         </div>
                     </div>
                     <button onclick="requestPasswordRecovery()" class="btn-auth-submit" style="margin-top:10px;">Verificar Cuenta</button>
                     
                     <div id="recoveryWhatsAppContainer" style="display:none; margin-top: 15px; text-align: center;">
-                        <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:10px;">Hemos verificado tu cuenta. Solicita el restablecimiento contactándonos por WhatsApp:</p>
-                        <a id="recoveryWhatsAppLink" href="#" target="_blank" class="btn-whatsapp" style="width:100%; border-radius:30px; justify-content:center;">📱 Solicitar por WhatsApp</a>
+                        <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:10px;">Hemos verificado tu cuenta. Solicita el restablecimiento contactÃ¡ndonos por WhatsApp:</p>
+                        <a id="recoveryWhatsAppLink" href="#" target="_blank" class="btn-whatsapp" style="width:100%; border-radius:30px; justify-content:center;">ðŸ“± Solicitar por WhatsApp</a>
                     </div>
                     
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: var(--text-dark); text-decoration: none;">⬅ Volver a Iniciar Sesión</a>
+                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: var(--text-dark); text-decoration: none;">â¬… Volver a Iniciar SesiÃ³n</a>
                     </div>
                 </div>
             </div>
@@ -1027,15 +754,15 @@
     <div class="cart-modal" id="cartModal" onclick="handleCartBdrop(event)">
         <div class="cart-content">
             <div class="cart-header">
-                <h3>🛒 Tu Carrito</h3>
-                <button class="auth-close-btn" style="position:static;" onclick="toggleCart()">✕</button>
+                <h3>ðŸ›’ Tu Carrito</h3>
+                <button class="auth-close-btn" style="position:static;" onclick="toggleCart()">âœ•</button>
             </div>
             <div id="cart-user-greeting"></div>
 
             <div id="cart-step-1" style="display:flex; flex-direction:column; flex-grow:1;">
                 <!-- Barra de progreso de domicilio gratis -->
                 <div id="freeShippingBanner" class="free-shipping-container" style="display: none;">
-                    <div class="shipping-text" id="shippingProgressText">🛵 Te faltan $1.500 COP para Domicilio GRATIS</div>
+                    <div class="shipping-text" id="shippingProgressText">ðŸ›µ Te faltan $1.500 COP para Domicilio GRATIS</div>
                     <div class="shipping-progress-bar-bg">
                         <div class="shipping-progress-bar-fill" id="shippingProgressFill" style="width: 0%;"></div>
                     </div>
@@ -1043,8 +770,8 @@
 
                 <div class="cart-list" id="cartItems" style="flex-grow:1; overflow-y:auto;"></div>
                 <div class="cart-login-incentive" id="cartLoginIncentive" onclick="openAuthModal()">
-                    <span style="font-size:1.4rem;">🌟</span>
-                    <span><strong>¡No pierdas tu descuento!</strong> Inicia sesión con Google para ganar 6% de descuento y
+                    <span style="font-size:1.4rem;">ðŸŒŸ</span>
+                    <span><strong>Â¡No pierdas tu descuento!</strong> Inicia sesiÃ³n con Google para ganar 6% de descuento y
                         "Puntos Dulce".</span>
                 </div>
                 <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
@@ -1055,7 +782,7 @@
                             <span id="discountLabel">Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
                         </div>
                         <div class="sum-row" id="deliveryRow" style="color:#059669; font-weight:700;">
-                            <span>Domicilio:</span><span id="sumDelivery">¡GRATIS!</span>
+                            <span>Domicilio:</span><span id="sumDelivery">Â¡GRATIS!</span>
                         </div>
                         <div class="sum-row total"><span>Total a Pagar:</span><span>$<span id="sumTotal">0</span> COP</span>
                         </div>
@@ -1066,9 +793,9 @@
                             <span>Saldo contra entrega (50%):</span><span id="sumBalance">$0 COP</span>
                         </div>
                     </div>
-                    <button class="btn-gold" id="btnContinueCheckout" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega →</button>
+                    <button class="btn-gold" id="btnContinueCheckout" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega â†’</button>
                     <button type="button" id="btnContinueShopping" class="btn-continue-shopping" onclick="closeCartModal()">
-                        ← Seguir comprando / Agregar más productos
+                        â† Seguir comprando / Agregar mÃ¡s productos
                     </button>
                 </div>
             </div>
@@ -1076,21 +803,21 @@
             <div id="cart-step-2" style="display:none; flex-direction:column; flex-grow:1;">
                 <div class="checkout-form-card" id="checkoutCard" style="margin-top: 5px;">
                     <div class="checkout-form-title">
-                        <span>🛵 Datos para la Entrega en Cúcuta</span>
-                        <small style="color:var(--brand-pink);font-weight:700;">→ WhatsApp</small>
+                        <span>ðŸ›µ Datos para la Entrega en CÃºcuta</span>
+                        <small style="color:var(--brand-pink);font-weight:700;">â†’ WhatsApp</small>
                     </div>
-                    <input type="text" id="orderName" class="checkout-input" placeholder="👤 Nombre de quien recibe">
+                    <input type="text" id="orderName" class="checkout-input" placeholder="ðŸ‘¤ Nombre de quien recibe">
 
-                    <!-- Selector de Método de Entrega -->
+                    <!-- Selector de MÃ©todo de Entrega -->
                     <div class="delivery-method-section" style="margin-bottom: 8px;">
-                        <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:6px;">Método de Entrega:</label>
+                        <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:6px;">MÃ©todo de Entrega:</label>
                         <div class="delivery-toggle-grid">
                             <button type="button" class="delivery-toggle-btn active" id="btn-delivery-home" onclick="setDeliveryType('delivery')">
-                                <span class="delivery-icon">🛵</span>
-                                <span class="delivery-label">Domicilio en Cúcuta</span>
+                                <span class="delivery-icon">ðŸ›µ</span>
+                                <span class="delivery-label">Domicilio en CÃºcuta</span>
                             </button>
                             <button type="button" class="delivery-toggle-btn" id="btn-delivery-pickup" onclick="setDeliveryType('pickup')">
-                                <span class="delivery-icon">🏪</span>
+                                <span class="delivery-icon">ðŸª</span>
                                 <span class="delivery-label">Recoger en Tienda <small class="free-badge">Gratis</small></span>
                             </button>
                         </div>
@@ -1099,7 +826,7 @@
                     <!-- Contenedor condicional para Domicilio -->
                     <div id="deliveryAddressContainer" class="delivery-conditional-block">
                         <input type="text" id="orderAddress" class="checkout-input"
-                            placeholder="📍 Barrio y Dirección en Cúcuta">
+                            placeholder="ðŸ“ Barrio y DirecciÃ³n en CÃºcuta">
                         <div id="deliveryFeeBadge" class="delivery-fee-badge"></div>
                     </div>
 
@@ -1107,22 +834,22 @@
                     <div id="pickupStoreContainer" class="delivery-conditional-block" style="display: none;">
                         <div class="pickup-store-card" id="cartPickupDetails">
                             <div class="pickup-store-header">
-                                <span class="pickup-store-icon">🏪</span>
+                                <span class="pickup-store-icon">ðŸª</span>
                                 <div>
-                                    <strong class="pickup-store-name">Panadería & Pastelería Punto Dulce</strong>
-                                    <p class="pickup-address">📍 Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta</p>
+                                    <strong class="pickup-store-name">PanaderÃ­a & PastelerÃ­a Punto Dulce</strong>
+                                    <p class="pickup-address">ðŸ“ Calle 10 con Avenida 7 # 10 - 30, Barrio DoÃ±a Nidia, CÃºcuta</p>
                                 </div>
                             </div>
-                            <p class="pickup-store-note">🕒 Pasa por tu pedido fresco y sin filas una vez confirmemos la preparación.</p>
-                            <a id="btnStoreMapsLink" href="https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6" target="_blank" rel="noopener noreferrer" class="btn-maps-link" onclick="window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');">📍 ¿Cómo llegar? (Ver en Google Maps)</a>
+                            <p class="pickup-store-note">ðŸ•’ Pasa por tu pedido fresco y sin filas una vez confirmemos la preparaciÃ³n.</p>
+                            <a id="btnStoreMapsLink" href="https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6" target="_blank" rel="noopener noreferrer" class="btn-maps-link" onclick="window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');">ðŸ“ Â¿CÃ³mo llegar? (Ver en Google Maps)</a>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 15px;">
                         <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Tipo de Pedido:</label>
                         <div class="payment-grid" style="grid-template-columns: 1fr 1fr;">
-                            <div class="payment-chip active" id="btn-order-immediate" onclick="toggleOrderType('inmediato')">⚡ Inmediato</div>
-                            <div class="payment-chip" id="btn-order-event" onclick="toggleOrderType('evento')">📅 Programado (Evento)</div>
+                            <div class="payment-chip active" id="btn-order-immediate" onclick="toggleOrderType('inmediato')">âš¡ Inmediato</div>
+                            <div class="payment-chip" id="btn-order-event" onclick="toggleOrderType('evento')">ðŸ“… Programado (Evento)</div>
                         </div>
                     </div>
 
@@ -1136,11 +863,11 @@
                             <input type="text" id="eventTime" class="checkout-input" style="margin-bottom:0;" readonly placeholder="Selecciona la hora">
                         </div>
                         <div class="event-alert">
-                            ⚠️ Para pedidos de eventos se requiere un anticipo del 50% para reservar la producción.
+                            âš ï¸ Para pedidos de eventos se requiere un anticipo del 50% para reservar la producciÃ³n.
                         </div>
                     </div>
 
-                    <!-- Bloque de carrito mixto (torta + vitrina) — gestionado por sincronizarCheckoutConTortas() -->
+                    <!-- Bloque de carrito mixto (torta + vitrina) â€” gestionado por sincronizarCheckoutConTortas() -->
                     <div id="mixedCartBlock" class="mixed-cart-block" style="display:none;" role="group" aria-label="Opciones de despacho para pedido mixto"></div>
 
                     <div>
@@ -1148,16 +875,16 @@
                             style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Forma
                             de Pago:</label>
                         <div class="payment-grid">
-                            <div class="payment-chip active" onclick="selectPay(this,'Nequi / Daviplata')">📱 Nequi/Davi
+                            <div class="payment-chip active" onclick="selectPay(this,'Nequi / Daviplata')">ðŸ“± Nequi/Davi
                             </div>
-                            <div class="payment-chip" onclick="selectPay(this,'Efectivo contra entrega')">💵 Efectivo</div>
-                            <div class="payment-chip" onclick="selectPay(this,'Bancolombia')">🔵 Bancolombia</div>
+                            <div class="payment-chip" onclick="selectPay(this,'Efectivo contra entrega')">ðŸ’µ Efectivo</div>
+                            <div class="payment-chip" onclick="selectPay(this,'Bancolombia')">ðŸ”µ Bancolombia</div>
                         </div>
                     </div>
 
                     <!-- Calculadora de Efectivo (Oculta por defecto) -->
                     <div id="cash-calculator-container" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
-                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">💵 ¿Con cuánto vas a pagar?</label>
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">ðŸ’µ Â¿Con cuÃ¡nto vas a pagar?</label>
                         
                         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
                             <button type="button" class="cash-quick-btn" onclick="setCashAmount('exacto')">Exacto</button>
@@ -1176,21 +903,21 @@
                             Vuelto / Cambio: <span id="changeReturnAmount">$0</span>
                         </div>
                         <div id="cashShortageDisplay" style="display: none; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: #dc2626; text-align: center;">
-                            ⚠️ El monto ingresado es menor al total.
+                            âš ï¸ El monto ingresado es menor al total.
                         </div>
                     </div>
 
                     <input type="text" id="orderNotes" class="checkout-input" autocomplete="off"
-                        placeholder="📝 Notas (Ej: bien tostado, cambio para $50k)">
+                        placeholder="ðŸ“ Notas (Ej: bien tostado, cambio para $50k)">
 
-                    <!-- Resumen rápido en el Paso 2 -->
+                    <!-- Resumen rÃ¡pido en el Paso 2 -->
                     <div class="checkout-quick-summary" id="checkoutQuickSummary" style="margin-top: 6px; background: #fff; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 10px 12px;">
                         <div class="sum-row" style="font-size:0.83rem; margin-bottom:2px; color:#64748b;"><span>Subtotal:</span><span id="cqsSubtotal">$0 COP</span></div>
                         <div class="sum-row" id="cqsDiscountRow" style="display:none; font-size:0.83rem; margin-bottom:2px; color:var(--brand-pink); font-weight:700;">
                             <span>Descuento:</span><span id="cqsDiscount">- $0 COP</span>
                         </div>
                         <div class="sum-row" style="font-size:0.83rem; margin-bottom:3px; font-weight:700;">
-                            <span>Envío / Domicilio:</span><span id="cqsDelivery" style="color:#059669;">¡GRATIS!</span>
+                            <span>EnvÃ­o / Domicilio:</span><span id="cqsDelivery" style="color:#059669;">Â¡GRATIS!</span>
                         </div>
                         <div class="sum-row total" style="margin-top:3px; padding-top:5px; font-size:1rem; border-top: 1px dashed #e2e8f0;">
                             <span>Total a Pagar:</span><span id="cqsTotal">$0 COP</span>
@@ -1198,8 +925,8 @@
                     </div>
                 </div>
                 <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
-                    <button class="btn-whatsapp" onclick="sendOrder()">📲 Confirmar y Enviar Pedido</button>
-                    <button style="width:100%; background: #f1f5f9; color: #475569; border: none; border-radius: 12px; padding: 12px; margin-top: 10px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" onclick="goToCartStep1()">← Volver a la canasta</button>
+                    <button class="btn-whatsapp" onclick="sendOrder()">ðŸ“² Confirmar y Enviar Pedido</button>
+                    <button style="width:100%; background: #f1f5f9; color: #475569; border: none; border-radius: 12px; padding: 12px; margin-top: 10px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" onclick="goToCartStep1()">â† Volver a la canasta</button>
                 </div>
             </div>
         </div>
@@ -1207,16 +934,16 @@
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">
-        <span id="toastIcon">🥐</span>
-        <span id="toastMsg">¡Agregado al carrito!</span>
+        <span id="toastIcon">ðŸ¥</span>
+        <span id="toastMsg">Â¡Agregado al carrito!</span>
     </div>
 
     <!-- ORDER NOTIFICATION TOAST -->
     <div id="orderToast" class="order-toast">
         <div class="order-toast-content">
-            <span class="order-toast-icon">🔔</span>
+            <span class="order-toast-icon">ðŸ””</span>
             <div class="order-toast-text">
-                <strong id="orderToastTitle">¡Nuevo Pedido Recibido!</strong>
+                <strong id="orderToastTitle">Â¡Nuevo Pedido Recibido!</strong>
                 <p id="orderToastBody"></p>
             </div>
         </div>
@@ -1228,10 +955,10 @@
         <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px; width:100%; max-width:480px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f0e2e5; padding-bottom: 10px; margin-bottom: 15px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <button id="btn-back-order-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromOrderHistory()" title="Volver al Perfil">←</button>
-                    <h3 style="color:var(--brand-pink); margin:0;">📦 Mis Pedidos</h3>
+                    <button id="btn-back-order-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromOrderHistory()" title="Volver al Perfil">â†</button>
+                    <h3 style="color:var(--brand-pink); margin:0;">ðŸ“¦ Mis Pedidos</h3>
                 </div>
-                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()" title="Cerrar">✕</button>
+                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()" title="Cerrar">âœ•</button>
             </div>
             <div id="order-history-content" style="display:flex; flex-direction:column; gap:12px;"></div>
         </div>
@@ -1242,10 +969,10 @@
         <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px; width:100%; max-width:480px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f0e2e5; padding-bottom: 10px; margin-bottom: 15px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <button id="btn-back-points-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromPointsHistory()" title="Volver al Perfil">←</button>
-                    <h3 style="color:var(--brand-pink); margin:0;">📊 Historial de Puntos</h3>
+                    <button id="btn-back-points-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromPointsHistory()" title="Volver al Perfil">â†</button>
+                    <h3 style="color:var(--brand-pink); margin:0;">ðŸ“Š Historial de Puntos</h3>
                 </div>
-                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closePointsHistoryModal()" title="Cerrar">✕</button>
+                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closePointsHistoryModal()" title="Cerrar">âœ•</button>
             </div>
             <div id="points-history-summary" style="background:#fff5f8; border-radius:12px; padding:10px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; border:1px solid #fce7f3;">
                 <span style="color:#64748b; font-size:0.88rem; font-weight:600;">Saldo disponible actual:</span>
@@ -1257,7 +984,7 @@
 
     <!-- Floating WhatsApp FAB -->
     <a href="javascript:void(0)" class="fab-whatsapp" onclick="openWhatsAppChat()"
-        title="Consultas rápidas por WhatsApp">
+        title="Consultas rÃ¡pidas por WhatsApp">
         <svg viewBox="0 0 24 24">
             <path
                 d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.09 2.53.73 2.99.69.45-.04 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.3" />
@@ -1269,14 +996,14 @@
         style="display:none; align-items:center; justify-content:center; z-index:2000;"
         onclick="if(event.target===this) closeVipModal()">
         <div class="vip-modal-content">
-            <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">✕</button>
-            <h3>👑 Membresía VIP Oro</h3>
-            <p style="color:#64748b; margin-bottom:20px; font-size:0.95rem;">Accede al club exclusivo de Dulce Tentación
+            <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">âœ•</button>
+            <h3>ðŸ‘‘ MembresÃ­a VIP Oro</h3>
+            <p style="color:#64748b; margin-bottom:20px; font-size:0.95rem;">Accede al club exclusivo de Dulce TentaciÃ³n
                 y disfruta de beneficios de por vida por solo <strong id="uiVipPricePromo" style="color:#d81b60;">$20.000 COP</strong> al mes.</p>
             <ul>
-                <li><span>✅</span> 10% de descuento automático en TODAS tus compras.</li>
-                <li><span>🎁</span> Una muestra sorpresa artesanal en cada pedido.</li>
-                <li><span>⏱️</span> Atención y horneado prioritario (tu pedido sale primero).</li>
+                <li><span>âœ…</span> 10% de descuento automÃ¡tico en TODAS tus compras.</li>
+                <li><span>ðŸŽ</span> Una muestra sorpresa artesanal en cada pedido.</li>
+                <li><span>â±ï¸</span> AtenciÃ³n y horneado prioritario (tu pedido sale primero).</li>
             </ul>
             <button class="btn-gold-shimmer" style="width:100%; padding:12px; font-size:1rem;"
                 onclick="requestVipWhatsApp()">
@@ -1290,27 +1017,27 @@
         <div class="bottom-nav-items">
             <button class="bottom-nav-btn active" id="bnInicio" onclick="showSection('inicio', this)"
                 data-section="inicio">
-                <span class="bn-icon">🏠</span>
+                <span class="bn-icon">ðŸ </span>
                 <span class="bn-label">Inicio</span>
             </button>
             <button class="bottom-nav-btn" id="bnProductos" onclick="showSection('productos', this)"
                 data-section="productos">
-                <span class="bn-icon">🥖</span>
-                <span class="bn-label">Catálogo</span>
+                <span class="bn-icon">ðŸ¥–</span>
+                <span class="bn-label">CatÃ¡logo</span>
             </button>
             <button class="bottom-nav-btn cart-nav-btn" id="bnCarrito" onclick="toggleCart()">
-                <span class="bn-icon">🛒</span>
+                <span class="bn-icon">ðŸ›’</span>
                 <span class="bn-label">Carrito</span>
                 <span class="cart-mobile-badge" id="cartCountMobile">0</span>
             </button>
             <button class="bottom-nav-btn" id="bnClubPuntos" onclick="if(typeof openPointsModal === 'function') openPointsModal(); else showSection('club-puntos', this);"
                 data-section="club-puntos">
-                <span class="bn-icon">🎟️</span>
+                <span class="bn-icon">ðŸŽŸï¸</span>
                 <span class="bn-label">Club VIP</span>
             </button>
             <button class="bottom-nav-btn" id="bnNosotros" onclick="showSection('nosotros', this)"
                 data-section="nosotros">
-                <span class="bn-icon">❤️</span>
+                <span class="bn-icon">â¤ï¸</span>
                 <span class="bn-label">Nosotros</span>
             </button>
         </div>
@@ -1320,8 +1047,8 @@
     <div class="auth-modal" id="modal-mis-pedidos">
         <div class="auth-modal-content orders-modal-content">
             <div class="cart-header" style="border-bottom: 1px solid #f0ece6; padding-bottom: 12px; margin-bottom: 16px;">
-                <h3 style="color: var(--brand-pink);">📦 Mis Pedidos</h3>
-                <button class="auth-close-btn" style="position:static;" onclick="document.getElementById('modal-mis-pedidos').style.display = 'none';">✕</button>
+                <h3 style="color: var(--brand-pink);">ðŸ“¦ Mis Pedidos</h3>
+                <button class="auth-close-btn" style="position:static;" onclick="document.getElementById('modal-mis-pedidos').style.display = 'none';">âœ•</button>
             </div>
             
             <div class="orders-tabs">
@@ -1331,15 +1058,15 @@
             </div>
 
             <div class="orders-tab-content active" id="tab-curso">
-                <!-- Se inyecta vía JS -->
+                <!-- Se inyecta vÃ­a JS -->
             </div>
             
             <div class="orders-tab-content" id="tab-eventos">
-                <!-- Se inyecta vía JS -->
+                <!-- Se inyecta vÃ­a JS -->
             </div>
             
             <div class="orders-tab-content" id="tab-historial">
-                <!-- Se inyecta vía JS -->
+                <!-- Se inyecta vÃ­a JS -->
             </div>
         </div>
     </div>
@@ -1348,15 +1075,15 @@
     <div class="auth-modal" id="kitchen-modal">
         <div class="kitchen-modal-content">
             <div class="kitchen-header">
-                <h2>👨‍🍳 Panel Operativo de Cocina y Despacho</h2>
+                <h2>ðŸ‘¨â€ðŸ³ Panel Operativo de Cocina y Despacho</h2>
                 <button class="kitchen-close-btn" onclick="closeKitchenModal()">Cerrar Vista</button>
             </div>
             
             <div class="kitchen-tabs">
                 <button class="kitchen-tab-btn active" onclick="switchKitchenTab('activos')" id="k-tab-btn-activos">Pedidos Activos</button>
                 <button class="kitchen-tab-btn" onclick="switchKitchenTab('despachados')" id="k-tab-btn-despachados">Despachados Hoy</button>
-                <button class="kitchen-tab-btn" onclick="switchKitchenTab('stock')" id="k-tab-btn-stock">🥖 Disponibilidad del Día</button>
-                <button class="kitchen-tab-btn" onclick="switchKitchenTab('clientes')" id="k-tab-btn-clientes">👥 Clientes & Roles</button>
+                <button class="kitchen-tab-btn" onclick="switchKitchenTab('stock')" id="k-tab-btn-stock">ðŸ¥– Disponibilidad del DÃ­a</button>
+                <button class="kitchen-tab-btn" onclick="switchKitchenTab('clientes')" id="k-tab-btn-clientes">ðŸ‘¥ Clientes & Roles</button>
             </div>
 
             <div class="kitchen-tab-content active" id="k-tab-activos">
@@ -1373,12 +1100,12 @@
 
             <div class="kitchen-tab-content" id="k-tab-clientes" style="flex-direction:column; gap:16px;">
                 <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; background:#334155; padding:12px; border-radius:12px;">
-                    <input type="search" id="k-user-search" placeholder="Buscar por nombre, email o teléfono..." oninput="renderKitchenUsers()" style="flex:1; min-width:250px; padding:10px; border-radius:8px; border:none; outline:none;">
+                    <input type="search" id="k-user-search" placeholder="Buscar por nombre, email o telÃ©fono..." oninput="renderKitchenUsers()" style="flex:1; min-width:250px; padding:10px; border-radius:8px; border:none; outline:none;">
                     <select id="k-user-filter" onchange="renderKitchenUsers()" style="padding:10px; border-radius:8px; border:none; outline:none; background:#f8fafc; cursor:pointer;">
                         <option value="todos">Todos los Clientes</option>
-                        <option value="vip">Solo ⭐ VIPs</option>
-                        <option value="cocina">👨‍🍳 Equipo Cocina</option>
-                        <option value="admin">🛡️ Administradores</option>
+                        <option value="vip">Solo â­ VIPs</option>
+                        <option value="cocina">ðŸ‘¨â€ðŸ³ Equipo Cocina</option>
+                        <option value="admin">ðŸ›¡ï¸ Administradores</option>
                     </select>
                 </div>
                 <div id="k-users-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px;">
@@ -1395,13 +1122,13 @@
             <!-- HEADER -->
             <div class="wizard-header" style="background: linear-gradient(135deg, #fffbf7, #fff1f2); border-bottom: 1px solid #ffe4e6; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.6rem;">🎂</span>
+                    <span style="font-size: 1.6rem;">ðŸŽ‚</span>
                     <div>
-                        <h2 style="font-size: 1.25rem; font-weight: 800; color: #881337; margin: 0;">Diseña tu Torta Especial</h2>
-                        <span style="font-size: 0.8rem; color: #9f1239; font-weight: 500;">P&amp;S Punto Dulce • Horneado para ti</span>
+                        <h2 style="font-size: 1.25rem; font-weight: 800; color: #881337; margin: 0;">DiseÃ±a tu Torta Especial</h2>
+                        <span style="font-size: 0.8rem; color: #9f1239; font-weight: 500;">P&amp;S Punto Dulce â€¢ Horneado para ti</span>
                     </div>
                 </div>
-                <button type="button" class="kitchen-close-btn" onclick="closeWizard()" style="background: #fff; border: 1px solid #fecdd3; border-radius: 50%; width: 34px; height: 34px; font-size: 1rem; color: #9f1239; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: all 0.2s;">✕</button>
+                <button type="button" class="kitchen-close-btn" onclick="closeWizard()" style="background: #fff; border: 1px solid #fecdd3; border-radius: 50%; width: 34px; height: 34px; font-size: 1rem; color: #9f1239; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: all 0.2s;">âœ•</button>
             </div>
 
             <!-- INDICADOR DE PROGRESO (STEPPER) -->
@@ -1413,12 +1140,12 @@
                 <div class="stepper-connector" id="step-conn-1"></div>
                 <div class="stepper-step" id="step-nav-2" onclick="goToWizardStep(2)">
                     <div class="step-badge">2</div>
-                    <span>Tamaño</span>
+                    <span>TamaÃ±o</span>
                 </div>
                 <div class="stepper-connector" id="step-conn-2"></div>
                 <div class="stepper-step" id="step-nav-3" onclick="goToWizardStep(3)">
                     <div class="step-badge">3</div>
-                    <span>Diseño</span>
+                    <span>DiseÃ±o</span>
                 </div>
                 <div class="stepper-connector" id="step-conn-3"></div>
                 <div class="stepper-step" id="step-nav-4" onclick="goToWizardStep(4)">
@@ -1439,88 +1166,88 @@
                     </div>
 
                     <div class="wizard-flavor-grid">
-                        <div class="flavor-card selected" onclick="selectSaborCard('Clásica Tres Leches', this)" data-flavor="Clásica Tres Leches">
-                            <div class="card-check-icon">✓</div>
-                            <span class="flavor-icon">🥛</span>
+                        <div class="flavor-card selected" onclick="selectSaborCard('ClÃ¡sica Tres Leches', this)" data-flavor="ClÃ¡sica Tres Leches">
+                            <div class="card-check-icon">âœ“</div>
+                            <span class="flavor-icon">ðŸ¥›</span>
                             <div class="flavor-info">
-                                <strong>Clásica Tres Leches</strong>
-                                <span class="flavor-badge-tag">La Favorita ⭐</span>
-                                <p>Bizcocho suave bañado en infusión de tres leches y cubierta en chantilly artesanal.</p>
+                                <strong>ClÃ¡sica Tres Leches</strong>
+                                <span class="flavor-badge-tag">La Favorita â­</span>
+                                <p>Bizcocho suave baÃ±ado en infusiÃ³n de tres leches y cubierta en chantilly artesanal.</p>
                             </div>
                         </div>
 
                         <div class="flavor-card" onclick="selectSaborCard('Chocoarequipe', this)" data-flavor="Chocoarequipe">
-                            <div class="card-check-icon">✓</div>
-                            <span class="flavor-icon">🍫</span>
+                            <div class="card-check-icon">âœ“</div>
+                            <span class="flavor-icon">ðŸ«</span>
                             <div class="flavor-info">
                                 <strong>Chocoarequipe</strong>
-                                <span class="flavor-badge-tag">Más Pedida 🔥</span>
+                                <span class="flavor-badge-tag">MÃ¡s Pedida ðŸ”¥</span>
                                 <p>Capas de bizcocho de chocolate oscuro rellenas de arequipe suave y ganache.</p>
                             </div>
                         </div>
 
-                        <div class="flavor-card" onclick="selectSaborCard('Ponqué Clásico', this)" data-flavor="Ponqué Clásico">
-                            <div class="card-check-icon">✓</div>
-                            <span class="flavor-icon">🍰</span>
+                        <div class="flavor-card" onclick="selectSaborCard('PonquÃ© ClÃ¡sico', this)" data-flavor="PonquÃ© ClÃ¡sico">
+                            <div class="card-check-icon">âœ“</div>
+                            <span class="flavor-icon">ðŸ°</span>
                             <div class="flavor-info">
-                                <strong>Ponqué Tradicional</strong>
-                                <span class="flavor-badge-tag">Clásico 🎂</span>
-                                <p>Masa tradicional esponjosa con notas cítricas y vainilla de primera calidad.</p>
+                                <strong>PonquÃ© Tradicional</strong>
+                                <span class="flavor-badge-tag">ClÃ¡sico ðŸŽ‚</span>
+                                <p>Masa tradicional esponjosa con notas cÃ­tricas y vainilla de primera calidad.</p>
                             </div>
                         </div>
 
                         <div class="flavor-card" onclick="selectSaborCard('Frutos Rojos', this)" data-flavor="Frutos Rojos">
-                            <div class="card-check-icon">✓</div>
-                            <span class="flavor-icon">🍓</span>
+                            <div class="card-check-icon">âœ“</div>
+                            <span class="flavor-icon">ðŸ“</span>
                             <div class="flavor-info">
                                 <strong>Frutos Rojos &amp; Vainilla</strong>
-                                <span class="flavor-badge-tag">Fresco &amp; Frutal 🍒</span>
-                                <p>Bizcocho con reducción artesanal de moras, fresas y arándanos silvestres.</p>
+                                <span class="flavor-badge-tag">Fresco &amp; Frutal ðŸ’</span>
+                                <p>Bizcocho con reducciÃ³n artesanal de moras, fresas y arÃ¡ndanos silvestres.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PASO 2: TAMAÑO Y PORCIONES -->
+                <!-- PASO 2: TAMAÃ‘O Y PORCIONES -->
                 <div class="wizard-panel" id="wizard-panel-2" style="display: none;">
                     <div style="text-align: center; margin-bottom: 16px;">
                         <span style="display: inline-block; background: #fef3c7; color: #b45309; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 6px;">PASO 2 DE 4</span>
-                        <h3 style="margin: 0; color: #1e293b; font-size: 1.15rem; font-weight: 800;">Selecciona el Tamaño</h3>
-                        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Precios actualizados en tiempo real según el sabor elegido.</p>
+                        <h3 style="margin: 0; color: #1e293b; font-size: 1.15rem; font-weight: 800;">Selecciona el TamaÃ±o</h3>
+                        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Precios actualizados en tiempo real segÃºn el sabor elegido.</p>
                     </div>
 
                     <div class="wizard-size-grid" id="cake-size-grid">
                         <div class="size-card selected" onclick="selectTamanoCard('1/4 (10 porciones)', this)" data-size="1/4 (10 porciones)">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <div class="size-header">
-                                <span class="size-icon">🎂</span>
+                                <span class="size-icon">ðŸŽ‚</span>
                                 <div class="size-title-block">
                                     <strong>1/4 de Libra</strong>
                                     <small>Rinde ~10 porciones</small>
                                 </div>
                             </div>
-                            <p class="size-desc">Ideal para reuniones familiares íntimas o compartir entre amigos.</p>
+                            <p class="size-desc">Ideal para reuniones familiares Ã­ntimas o compartir entre amigos.</p>
                             <div class="size-price-tag size-price" id="torta-precio-1-4">$45.000 COP</div>
                         </div>
 
                         <div class="size-card" onclick="selectTamanoCard('1/2 (20 porciones)', this)" data-size="1/2 (20 porciones)">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <div class="size-header">
-                                <span class="size-icon">🎂🎂</span>
+                                <span class="size-icon">ðŸŽ‚ðŸŽ‚</span>
                                 <div class="size-title-block">
                                     <strong>1/2 Libra</strong>
                                     <small>Rinde ~20 porciones</small>
                                 </div>
                             </div>
-                            <span class="size-featured-tag">Recomendado ✨</span>
-                            <p class="size-desc">El tamaño favorito para cumpleaños, aniversarios y fiestas medianas.</p>
+                            <span class="size-featured-tag">Recomendado âœ¨</span>
+                            <p class="size-desc">El tamaÃ±o favorito para cumpleaÃ±os, aniversarios y fiestas medianas.</p>
                             <div class="size-price-tag size-price" id="torta-precio-1-2">$75.000 COP</div>
                         </div>
 
                         <div class="size-card" onclick="selectTamanoCard('1 Libra (30 porciones)', this)" data-size="1 Libra (30 porciones)">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <div class="size-header">
-                                <span class="size-icon">👑🎂</span>
+                                <span class="size-icon">ðŸ‘‘ðŸŽ‚</span>
                                 <div class="size-title-block">
                                     <strong>1 Libra Completa</strong>
                                     <small>Rinde ~30 porciones</small>
@@ -1532,29 +1259,29 @@
                     </div>
                 </div>
 
-                <!-- PASO 3: DISEÑO Y DECORACIÓN -->
+                <!-- PASO 3: DISEÃ‘O Y DECORACIÃ“N -->
                 <div class="wizard-panel" id="wizard-panel-3" style="display: none;">
                     <div style="text-align: center; margin-bottom: 16px;">
                         <span style="display: inline-block; background: #e0e7ff; color: #4338ca; font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 6px;">PASO 3 DE 4</span>
-                        <h3 style="margin: 0; color: #1e293b; font-size: 1.15rem; font-weight: 800;">Diseño y Decoración</h3>
-                        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Escoge de nuestro catálogo o sube tu propia foto de referencia.</p>
+                        <h3 style="margin: 0; color: #1e293b; font-size: 1.15rem; font-weight: 800;">DiseÃ±o y DecoraciÃ³n</h3>
+                        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Escoge de nuestro catÃ¡logo o sube tu propia foto de referencia.</p>
                     </div>
 
-                    <!-- OPCIÓN SUBIR FOTO PROPIA -->
+                    <!-- OPCIÃ“N SUBIR FOTO PROPIA -->
                     <div class="upload-custom-design-card" id="cardUploadCustomDesign" onclick="document.getElementById('wizard-photo-input').click()">
                         <input type="file" id="wizard-photo-input" accept="image/*" style="display:none;" onchange="handleWizardCustomPhoto(this)">
                         <div id="upload-placeholder" style="display: flex; align-items: center; gap: 14px;">
-                            <div style="background: #fdf2f8; border: 2px dashed #f43f5e; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📷</div>
+                            <div style="background: #fdf2f8; border: 2px dashed #f43f5e; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">ðŸ“·</div>
                             <div style="text-align: left; flex: 1;">
-                                <strong style="color: #9f1239; font-size: 0.95rem; display: block;">¿Tienes tu propio diseño o foto?</strong>
-                                <span style="color: #64748b; font-size: 0.8rem;">Toca aquí para subir una imagen de referencia de internet o Instagram</span>
+                                <strong style="color: #9f1239; font-size: 0.95rem; display: block;">Â¿Tienes tu propio diseÃ±o o foto?</strong>
+                                <span style="color: #64748b; font-size: 0.8rem;">Toca aquÃ­ para subir una imagen de referencia de internet o Instagram</span>
                             </div>
                             <span style="background: #f43f5e; color: #fff; font-size: 0.8rem; font-weight: bold; padding: 6px 14px; border-radius: 20px; white-space: nowrap;">Subir Foto</span>
                         </div>
                         <div id="upload-preview-block" style="display: none; align-items: center; gap: 12px;">
-                            <img id="upload-preview-img" src="" alt="Diseño Personalizado" style="width: 55px; height: 55px; object-fit: cover; border-radius: 10px; border: 2px solid #d81b60;">
+                            <img id="upload-preview-img" src="" alt="DiseÃ±o Personalizado" style="width: 55px; height: 55px; object-fit: cover; border-radius: 10px; border: 2px solid #d81b60;">
                             <div style="flex: 1; text-align: left;">
-                                <strong style="color: #15803d; font-size: 0.9rem; display: block;">✓ Foto cargada exitosamente</strong>
+                                <strong style="color: #15803d; font-size: 0.9rem; display: block;">âœ“ Foto cargada exitosamente</strong>
                                 <span id="upload-file-name" style="color: #64748b; font-size: 0.78rem; word-break: break-all;">imagen.jpg</span>
                             </div>
                             <button type="button" onclick="event.stopPropagation(); document.getElementById('wizard-photo-input').click();" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 15px; padding: 4px 10px; font-size: 0.75rem; color: #475569; cursor: pointer;">Cambiar</button>
@@ -1562,12 +1289,12 @@
                     </div>
 
                     <div style="margin: 16px 0 10px 0; font-weight: 700; color: #475569; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
-                        <span>🎨 Galería de Diseños</span>
+                        <span>ðŸŽ¨ GalerÃ­a de DiseÃ±os</span>
                         <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
                     </div>
 
                     <div id="cake-design-grid" class="wizard-design-grid">
-                        <!-- Dinámicamente poblado con renderConfigTortasPublica -->
+                        <!-- DinÃ¡micamente poblado con renderConfigTortasPublica -->
                     </div>
                 </div>
 
@@ -1579,49 +1306,49 @@
                         <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Personaliza tu mensaje y agenda la fecha de entrega.</p>
                     </div>
 
-                    <!-- BANNER CORTESÍA -->
+                    <!-- BANNER CORTESÃA -->
                     <div style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px 14px; border-radius: 14px; margin-bottom: 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 1.5rem;">🎁</span>
+                        <span style="font-size: 1.5rem;">ðŸŽ</span>
                         <div>
-                            <strong>¡Cortesía Dulce Tentación!</strong>
-                            <p style="margin: 2px 0 0 0;">Tu torta incluye GRATIS: Platos, tenedores, servilletas y vela volcán.</p>
+                            <strong>Â¡CortesÃ­a Dulce TentaciÃ³n!</strong>
+                            <p style="margin: 2px 0 0 0;">Tu torta incluye GRATIS: Platos, tenedores, servilletas y vela volcÃ¡n.</p>
                         </div>
                     </div>
 
                     <!-- DEDICATORIA -->
                     <div style="background: #fdfaf6; border: 1px solid #f3e8d8; border-radius: 16px; padding: 15px; margin-bottom: 16px;">
-                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 6px; display: block;">✍️ Mensaje o Dedicatoria en la Torta:</label>
-                        <input type="text" id="w-message" placeholder="Ej: ¡Feliz Cumpleaños Mamá! Te amamos 🎂" oninput="saveWizardField('mensaje', this.value)" style="width: 100%; border-radius: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.95rem; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#d81b60'; this.style.boxShadow='0 0 0 3px rgba(216,27,96,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
+                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 6px; display: block;">âœï¸ Mensaje o Dedicatoria en la Torta:</label>
+                        <input type="text" id="w-message" placeholder="Ej: Â¡Feliz CumpleaÃ±os MamÃ¡! Te amamos ðŸŽ‚" oninput="saveWizardField('mensaje', this.value)" style="width: 100%; border-radius: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.95rem; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#d81b60'; this.style.boxShadow='0 0 0 3px rgba(216,27,96,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
                         <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">Lo escribiremos con glaseado artesanal sobre tu torta.</small>
                     </div>
 
-                    <!-- COMPLEMENTOS EXTRAS (dinámico desde Firestore/tortas_config) -->
+                    <!-- COMPLEMENTOS EXTRAS (dinÃ¡mico desde Firestore/tortas_config) -->
                     <div style="background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 15px; margin-bottom: 16px;">
-                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 10px; display: block;">✨ ¿Deseas agregar algún detalle extra?</label>
+                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 10px; display: block;">âœ¨ Â¿Deseas agregar algÃºn detalle extra?</label>
                         <div id="container-extras-wizard" style="display: flex; flex-direction: column; gap: 8px;">
-                            <!-- Poblado dinámicamente por renderConfigTortasPublica() -->
+                            <!-- Poblado dinÃ¡micamente por renderConfigTortasPublica() -->
                             <p style="color:#94a3b8; font-size:0.82rem; margin:0;">Cargando extras disponibles...</p>
                         </div>
                     </div>
 
                     <!-- FECHA Y HORA -->
                     <div style="background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 15px; margin-bottom: 10px;">
-                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 8px; display: block;">📅 Fecha y Horario de Entrega:</label>
+                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 8px; display: block;">ðŸ“… Fecha y Horario de Entrega:</label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div>
-                                <label style="font-size: 0.78rem; color: #64748b; display: block; margin-bottom: 4px;">Día (mínimo 24h):</label>
+                                <label style="font-size: 0.78rem; color: #64748b; display: block; margin-bottom: 4px;">DÃ­a (mÃ­nimo 24h):</label>
                                 <input type="date" id="w-date" onchange="validateWizardDateNew(this.value)" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem;">
                             </div>
                             <div>
                                 <label style="font-size: 0.78rem; color: #64748b; display: block; margin-bottom: 4px;">Horario:</label>
                                 <select id="w-time" onchange="saveWizardField('time', this.value)" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; font-size: 0.85rem; cursor: pointer; background: #fff;">
                                     <option value="">Selecciona horario...</option>
-                                    <option value="Mañana (9:00 AM - 12:00 PM)">Mañana (9am - 12pm)</option>
+                                    <option value="MaÃ±ana (9:00 AM - 12:00 PM)">MaÃ±ana (9am - 12pm)</option>
                                     <option value="Tarde (2:00 PM - 6:00 PM)">Tarde (2pm - 6pm)</option>
                                 </select>
                             </div>
                         </div>
-                        <small style="color: #b45309; font-size: 0.75rem; display: block; margin-top: 6px;">⏱️ Horneado fresco el mismo día de tu evento.</small>
+                        <small style="color: #b45309; font-size: 0.75rem; display: block; margin-top: 6px;">â±ï¸ Horneado fresco el mismo dÃ­a de tu evento.</small>
                     </div>
 
                     <div id="w-error" style="display:none; color:#ef4444; background:#fef2f2; border:1px solid #f87171; padding:10px; border-radius:10px; margin-top:10px; text-align:center; font-weight:bold; font-size:0.85rem;"></div>
@@ -1629,22 +1356,22 @@
 
             </div>
 
-            <!-- FOOTER STICKY FIJO CON RESUMEN Y NAVEGACIÓN -->
+            <!-- FOOTER STICKY FIJO CON RESUMEN Y NAVEGACIÃ“N -->
             <div class="wizard-footer-sticky">
                 <div class="wizard-footer-summary">
-                    <span id="wizard-summary-badge">1/4 • Tres Leches</span>
+                    <span id="wizard-summary-badge">1/4 â€¢ Tres Leches</span>
                     <strong id="wizard-summary-total">$45.000 COP</strong>
                 </div>
 
                 <div class="wizard-footer-actions">
                     <button type="button" id="btnWizardPrev" onclick="navWizardStep(-1)">
-                        ← Atrás
+                        â† AtrÃ¡s
                     </button>
                     <button type="button" id="btnWizardNext" onclick="navWizardStep(1)">
-                        Continuar →
+                        Continuar â†’
                     </button>
                     <button type="button" id="btnWizardSubmit" onclick="addCustomCakeToCartNew()">
-                        🛒 Agregar al Carrito
+                        ðŸ›’ Agregar al Carrito
                     </button>
                 </div>
             </div>
@@ -1652,75 +1379,75 @@
         </div>
     </div>
 
-    <!-- ===== MODAL GESTIÓN DE PUNTOS Y RECOMPENSAS CLUB VIP ===== -->
+    <!-- ===== MODAL GESTIÃ“N DE PUNTOS Y RECOMPENSAS CLUB VIP ===== -->
     <div class="auth-modal" id="adminPointsModal" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeAdminPointsModal()">
-        <!-- Se llena dinámicamente con renderAdminPointsModalContent() -->
+        <!-- Se llena dinÃ¡micamente con renderAdminPointsModalContent() -->
     </div>
 
-    <!-- ===== MODAL TÉRMINOS Y BENEFICIOS VIP ===== -->
+    <!-- ===== MODAL TÃ‰RMINOS Y BENEFICIOS VIP ===== -->
     <div class="auth-modal" id="modalVipTerms" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeVipTermsModal && window.closeVipTermsModal()">
        <div class="auth-modal-content" style="max-width: 520px; width: 92%; padding: 25px; text-align: center; border-radius: 20px; background: #fff; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
-         <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">×</button>
-         <span style="font-size: 2.2rem;">👑</span>
-         <h3 style="color: #b71c1c; margin: 10px 0; font-size: 1.3rem; font-weight: 800;">Membresía Club VIP Oro</h3>
-         <p style="font-size: 0.9rem; color: #555; margin: 0 0 4px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes más dulces por solo <strong id="uiVipPriceTerms" style="color:#d81b60;">$20.000 COP</strong> mensual.</p>
-         <p style="font-size: 0.8rem; color: #888; margin: 0 0 12px 0; font-style: italic;">(Vigencia de 30 días continuos a partir del momento de activación)</p>
+         <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">Ã—</button>
+         <span style="font-size: 2.2rem;">ðŸ‘‘</span>
+         <h3 style="color: #b71c1c; margin: 10px 0; font-size: 1.3rem; font-weight: 800;">MembresÃ­a Club VIP Oro</h3>
+         <p style="font-size: 0.9rem; color: #555; margin: 0 0 4px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes mÃ¡s dulces por solo <strong id="uiVipPriceTerms" style="color:#d81b60;">$20.000 COP</strong> mensual.</p>
+         <p style="font-size: 0.8rem; color: #888; margin: 0 0 12px 0; font-style: italic;">(Vigencia de 30 dÃ­as continuos a partir del momento de activaciÃ³n)</p>
 
          <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 15px; text-align: left; font-size: 0.88rem; margin: 0 0 12px 0; color: #5d4037;">
-           <strong>✨ Beneficios Exclusivos:</strong>
+           <strong>âœ¨ Beneficios Exclusivos:</strong>
            <ul style="margin: 8px 0 0 18px; padding: 0;">
-             <li>Acumulación de 10 Pts por cada $1.000 COP en compras.</li>
+             <li>AcumulaciÃ³n de 10 Pts por cada $1.000 COP en compras.</li>
              <li>Descuentos exclusivos aplicados directamente en tus compras.</li>
-             <li>Bono y detalle sorpresa en el mes de tu cumpleaños.</li>
+             <li>Bono y detalle sorpresa en el mes de tu cumpleaÃ±os.</li>
              <li>Acceso a promociones flash, canjes especiales y lanzamientos anticipados.</li>
            </ul>
          </div>
 
-         <p style="font-size: 0.78rem; color: #888; text-align: left; margin: 0 0 14px 0; line-height: 1.4;">📌 Pago único mensual por transferencia o en tienda. Sin cargos automáticos recurrentes ni cláusulas de permanencia.</p>
+         <p style="font-size: 0.78rem; color: #888; text-align: left; margin: 0 0 14px 0; line-height: 1.4;">ðŸ“Œ Pago Ãºnico mensual por transferencia o en tienda. Sin cargos automÃ¡ticos recurrentes ni clÃ¡usulas de permanencia.</p>
 
          <div style="text-align: left; font-size: 0.85rem; margin: 0 0 15px 0; color: #666;">
            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
              <input type="checkbox" id="checkAcceptVipTerms" style="margin-top: 3px;">
-             <span>He leído y acepto los Términos y Condiciones y la política de beneficios del Club VIP de P&S Punto Dulce.</span>
+             <span>He leÃ­do y acepto los TÃ©rminos y Condiciones y la polÃ­tica de beneficios del Club VIP de P&S Punto Dulce.</span>
            </label>
          </div>
 
          <button type="button" id="btnConfirmVipMembership" onclick="window.confirmVipMembership && window.confirmVipMembership()" class="btn-vip-action" style="width: 100%; padding: 12px; font-weight: bold; background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: all 0.2s;">
-           👑 Aceptar y Solicitar Activación VIP
+           ðŸ‘‘ Aceptar y Solicitar ActivaciÃ³n VIP
          </button>
        </div>
     </div>
 
-    <!-- ===== MODAL COBERTURA Y POLÍTICAS DE DOMICILIO ===== -->
+    <!-- ===== MODAL COBERTURA Y POLÃTICAS DE DOMICILIO ===== -->
     <div id="deliveryCoverageModal" class="modal-backdrop-generic" style="display:none;" onclick="closeDeliveryCoverageModal(event)">
        <div class="modal-content-card" onclick="event.stopPropagation()">
          <div class="modal-header-custom">
-           <h3>🛵 Políticas y Zonas de Entrega</h3>
+           <h3>ðŸ›µ PolÃ­ticas y Zonas de Entrega</h3>
            <button type="button" class="btn-close-modal" onclick="closeDeliveryCoverageModal()">&times;</button>
          </div>
          <div class="modal-body-custom">
            <div class="coverage-alert-box" style="background:#fff3cd; border-left:4px solid #ffc107; padding:10px 12px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; color:#664d03;">
-             <strong>Nota importante:</strong> Los domicilios gratis aplican únicamente para la zona urbana de Cúcuta en pedidos a partir de $10.000 COP en productos.
+             <strong>Nota importante:</strong> Los domicilios gratis aplican Ãºnicamente para la zona urbana de CÃºcuta en pedidos a partir de $10.000 COP en productos.
            </div>
            
            <div class="coverage-zone-item" style="margin-bottom:12px;">
-             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">📍 Cúcuta (Zona Urbana Habitual)</h4>
-             <p style="margin:0; font-size:0.87rem; color:#555;">• Pedidos menores a $10.000 COP: <strong>$5.000 COP</strong>.<br>• Pedidos de $10.000 COP o más: <strong>¡GRATIS!</strong></p>
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">ðŸ“ CÃºcuta (Zona Urbana Habitual)</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">â€¢ Pedidos menores a $10.000 COP: <strong>$5.000 COP</strong>.<br>â€¢ Pedidos de $10.000 COP o mÃ¡s: <strong>Â¡GRATIS!</strong></p>
            </div>
 
            <div class="coverage-zone-item" style="margin-bottom:12px;">
-             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">🛣️ Sectores Periféricos / Salidas de Cúcuta</h4>
-             <p style="margin:0; font-size:0.87rem; color:#555;">Barrios o conjuntos en límites lejanos de la ciudad o anillo vial apartado pueden requerir un excedente convenido con el repartidor según la distancia.</p>
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">ðŸ›£ï¸ Sectores PerifÃ©ricos / Salidas de CÃºcuta</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">Barrios o conjuntos en lÃ­mites lejanos de la ciudad o anillo vial apartado pueden requerir un excedente convenido con el repartidor segÃºn la distancia.</p>
            </div>
 
            <div class="coverage-zone-item" style="margin-bottom:12px;">
-             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">🏙️ Los Patios y Villa del Rosario</h4>
-             <p style="margin:0; font-size:0.87rem; color:#555;">Para municipios vecinos de Los Patios y Villa del Rosario <strong>no aplica domicilio gratis</strong>. La tarifa se liquida directamente vía WhatsApp según la distancia exacta del trayecto.</p>
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">ðŸ™ï¸ Los Patios y Villa del Rosario</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">Para municipios vecinos de Los Patios y Villa del Rosario <strong>no aplica domicilio gratis</strong>. La tarifa se liquida directamente vÃ­a WhatsApp segÃºn la distancia exacta del trayecto.</p>
            </div>
 
            <div class="coverage-zone-item">
-             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">🏬 Recogida en Tienda (Pick-Up)</h4>
-             <p style="margin:0; font-size:0.87rem; color:#555;">Siempre <strong>100% GRATIS</strong> en nuestro local del Barrio Doña Nidia.</p>
+             <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">ðŸ¬ Recogida en Tienda (Pick-Up)</h4>
+             <p style="margin:0; font-size:0.87rem; color:#555;">Siempre <strong>100% GRATIS</strong> en nuestro local del Barrio DoÃ±a Nidia.</p>
            </div>
          </div>
          <div class="modal-footer-custom" style="text-align:center; padding-top:12px;">
@@ -1738,7 +1465,7 @@
                 <img id="productLightboxImg" src="" alt="Producto" class="product-lightbox-image">
                 <div id="productLightboxCaption" class="product-lightbox-caption"></div>
                 <div id="lightboxActionContainer" style="display:none; text-align:center; margin-top:15px;">
-                    <button type="button" id="btnLightboxSelect" style="background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 0.92rem; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);" onclick="if(window._lightboxCallback) { window._lightboxCallback(); window.closeProductImageModal(); }">✓ Seleccionar este diseño</button>
+                    <button type="button" id="btnLightboxSelect" style="background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 0.92rem; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);" onclick="if(window._lightboxCallback) { window._lightboxCallback(); window.closeProductImageModal(); }">âœ“ Seleccionar este diseÃ±o</button>
                 </div>
             </div>
         </div>
@@ -1754,7 +1481,6 @@
     
     <script src="script.js?v=17"></script>
     <script src="control-roles.js?v=17"></script>
-    <script src="contabilidad.js?v=17"></script>
     <!-- Phase 2.1: Admin modules deferred (Chart, Costos, AI, Guardian) -->
     
     <!-- Firebase Sync Module -->
@@ -1762,4 +1488,6 @@
 
 </body>
 </html>
+
+
 

@@ -1180,35 +1180,7 @@ function renderKitchenUsers() {
     }).join('');
 }
 
-async function updateUserRole(email, role) {
-    const targetEmail = (email || '').toLowerCase().trim();
-    if (typeof SUPER_ADMINS !== 'undefined' && SUPER_ADMINS.includes(targetEmail)) {
-        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
-        return;
-    }
 
-    if (typeof db === 'undefined') {
-        alert("Error de conexión con la base de datos.");
-        return;
-    }
-
-    try {
-        if (typeof showToast === 'function') showToast("Guardando cambios en la nube...", "⏳", 1500);
-
-        // Dispara la orden directamente a Firestore como única fuente de verdad
-        await db.collection("usuarios").doc(targetEmail).set({
-            role: role,
-            rol: role,
-            vip: (role === 'vip'),
-            isAdmin: (role === 'admin')
-        }, { merge: true });
-
-        if (typeof showToast === 'function') showToast("Rol actualizado exitosamente", "✅", 2000);
-    } catch (e) {
-        console.error("Error al actualizar rol en Firebase", e);
-        alert("Hubo un error al actualizar el rol en la base de datos. Verifica tu conexión.");
-    }
-}
 
 function updateUserPoints(email, change) {
     const u = db_users.find(x => x.email === email);
@@ -1678,37 +1650,9 @@ function loginUserObj(userObj) {
 
 
 
-function adminRegisterUser() {
-    const name = document.getElementById('adminNewName').value.trim();
-    const email = document.getElementById('adminNewEmail').value.trim().toLowerCase();
-    if (!name || !email) return alert('Por favor, completa ambos campos.');
-    if (db_users.find(u => u.email === email)) return alert('Este correo ya está registrado.');
 
-    db_users.push({
-        name, email,
-        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-        blocked: false,
-        points: 15
-    });
-    saveUsersDB();
-    document.getElementById('adminNewName').value = '';
-    document.getElementById('adminNewEmail').value = '';
-    renderAdminUsers();
-    showToast('Cliente registrado exitosamente', '✅');
-}
 
-function adminDeleteUser(email) {
-    const targetEmail = (email || '').toLowerCase().trim();
-    if (SUPER_ADMINS.includes(targetEmail)) {
-        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
-        return;
-    }
-    if (!confirm(`¿Estás seguro de que deseas eliminar el correo ${email}?`)) return;
-    db_users = db_users.filter(u => (u.email || '').toLowerCase().trim() !== targetEmail);
-    saveUsersDB();
-    renderAdminUsers();
-    showToast('Cliente eliminado', '🗑️');
-}
+
 
 function adminToggleVIP(email) {
     const targetEmail = (email || '').toLowerCase().trim();
@@ -1744,33 +1688,9 @@ function adminToggleVIP(email) {
     showToast(u.vip ? 'Membresía VIP activada' : 'Membresía VIP retirada', '👑');
 }
 
-function adminToggleBlock(email) {
-    const targetEmail = (email || '').toLowerCase().trim();
-    if (SUPER_ADMINS.includes(targetEmail)) {
-        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
-        return;
-    }
-    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
-    if (!u) return;
-    u.blocked = !u.blocked;
-    saveUsersDB(); renderAdminUsers();
-    if (currentUser && currentUser.email === email && u.blocked) { logoutUser(new Event('click')); }
-    showToast(u.blocked ? 'Usuario bloqueado' : 'Usuario desbloqueado', '⛔');
-}
 
-function saveConfigFromAdmin() {
-    const min = parseInt(document.getElementById('adminMinPurchase').value) || 0;
-    const max = parseInt(document.getElementById('adminMaxDiscount').value) || 0;
-    const en = document.getElementById('adminVipEnabled').checked;
 
-    adminConfig.minPurchase = min;
-    adminConfig.maxDiscount = max;
-    adminConfig.vipEnabled = en;
-    saveAdminConfig();
-    updateCart();
 
-    showToast('Configuración guardada', '✅');
-}
 
 window.toggleVipPriceEdit = function () {
     const input = document.getElementById('adminVipPrice');
@@ -2874,40 +2794,7 @@ function getAdminPointsModal() {
     return modal;
 }
 
-window.openAdminPointsModal = function (e) {
-    if (e) {
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        if (typeof e.stopPropagation === 'function') e.stopPropagation();
-    }
-    console.log("-> Abriendo modal de puntos y club VIP...");
 
-    const modal = document.getElementById('adminPointsModal') || document.getElementById('modal-admin-points');
-    if (!modal) {
-        console.error("No se encontró el elemento #adminPointsModal en el DOM");
-        alert("Error: El modal de configuración de puntos no existe en la página.");
-        return;
-    }
-
-    const currentList = (window.pointRewards && Array.isArray(window.pointRewards) && window.pointRewards.length > 0)
-        ? window.pointRewards
-        : ((typeof pointRewards !== 'undefined' && Array.isArray(pointRewards) && pointRewards.length > 0) ? pointRewards : defaultPointRewards);
-
-    window.tempAdminRewards = JSON.parse(JSON.stringify(currentList));
-
-    if (typeof renderAdminRewardsTable === 'function') {
-        renderAdminRewardsTable();
-    } else if (typeof renderAdminPointsRewards === 'function') {
-        renderAdminPointsRewards();
-    } else if (typeof renderAdminPointsModalContent === 'function') {
-        renderAdminPointsModalContent();
-    }
-
-    modal.classList.add('active');
-    modal.style.display = 'flex';
-    modal.style.zIndex = '999999';
-    modal.style.visibility = 'visible';
-    modal.style.opacity = '1';
-};
 const openAdminPointsModal = window.openAdminPointsModal;
 
 window.closeAdminPointsModal = function (e) {
@@ -3239,99 +3126,9 @@ function setRoleFilter(role, el) {
     renderAdminUsers();
 }
 
-function renderAdminUsers() {
-    if (typeof window.renderAdminClaims === 'function') window.renderAdminClaims();
-    const tbody = document.getElementById('admin-users-table');
-    if (!tbody) return;
-    const q = (document.getElementById('adminUserSearch')?.value || '').toLowerCase();
 
-    const filteredUsers = db_users.filter(u => {
-        const matchSearch = (u.name || '').toLowerCase().includes(q) ||
-            (u.email || '').toLowerCase().includes(q) ||
-            (u.phone || '').toLowerCase().includes(q);
-        if (!matchSearch) return false;
 
-        const isAdm = adminEmails.includes(u.email);
-        const isWork = workerEmails.includes(u.email);
 
-        if (currentRoleFilter === 'Administradores') return isAdm;
-        if (currentRoleFilter === 'Trabajadores') return isWork;
-        if (currentRoleFilter === 'VIP') return u.vip;
-        if (currentRoleFilter === 'Normales') return !isAdm && !isWork && !u.vip;
-        return true;
-    });
-
-    if (filteredUsers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:15px;text-align:center;">No se encontraron clientes.</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = filteredUsers.map(u => {
-        const userEmailNorm = (u.email || '').toLowerCase().trim();
-        const isSuper = SUPER_ADMINS.includes(userEmailNorm);
-        const isUserAdmin = isSuper || adminEmails.includes(u.email);
-        const isUserWorker = !isSuper && workerEmails.includes(u.email);
-
-        let levelHtml = '';
-        if (isSuper) {
-            levelHtml = '<span style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; font-weight:800; padding:4px 10px; border-radius:20px; font-size:0.8rem; box-shadow:0 2px 6px rgba(217,119,6,0.3); display:inline-flex; align-items:center; gap:4px;">👑 Super Admin (Dueño)</span>';
-        } else if (isUserAdmin) {
-            levelHtml = '<span style="color:#1d4ed8;font-weight:bold;">Administrador</span>';
-        } else if (isUserWorker) {
-            levelHtml = '<span style="color:#8b5cf6;font-weight:bold;">Trabajador</span>';
-        } else if (u.vip) {
-            if (u.vipExpiresAt) {
-                const fechaExp = new Date(u.vipExpiresAt);
-                const diasRestantes = Math.ceil((fechaExp - new Date()) / (1000 * 60 * 60 * 24));
-                const fechaFormateada = fechaExp.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                levelHtml = `<span style="color:#d97706;font-weight:bold;">👑 VIP Oro</span><br><small style="color:#888;">Vence: ${fechaFormateada}<br>(${diasRestantes > 0 ? diasRestantes + ' días' : 'Vencido'})</small>`;
-            } else {
-                levelHtml = '<span style="color:#d97706;font-weight:bold;">👑 VIP Oro</span>';
-            }
-        } else {
-            levelHtml = '<span style="color:#64748b;font-weight:bold;">Cliente Normal</span>';
-        }
-
-        return `
-            <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
-                <td style="padding:10px; display:flex; align-items:center; gap:10px;">
-                    <img src="${safeImg(u.picture)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:30px;height:30px;border-radius:50%;">
-                    <strong>${escapeHTML(u.name)}</strong>
-                </td>
-                <td style="padding:10px; font-size:0.85rem; color:#555;">${escapeHTML(u.phone || '-')}</td>
-                <td style="padding:10px; font-size:0.85rem; color:#555;">${escapeHTML(u.email)}</td>
-                <td style="padding:10px; text-align:center;">${levelHtml}</td>
-                <td style="padding:10px; text-align:center; font-weight:bold; color:${isSuper ? '#10b981' : (u.blocked ? '#e11d48' : '#10b981')};">${isSuper ? 'Inmutable (Activo)' : (u.blocked ? 'Bloqueado' : 'Activo')}</td>
-                <td style="padding:10px; text-align:center;">
-                    ${isSuper ? `
-                    <div style="display:inline-flex; align-items:center; gap:5px; background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:bold;">
-                        <span>🛡️ Cuenta Inmutable</span>
-                    </div>` : `
-                    <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-                        <div style="display:flex; gap:4px; width:100%; align-items:center;">
-                            <select id="roleSel_${(u.email || '').replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
-                                <option value="normal" ${!isUserAdmin && !isUserWorker && !u.vip ? 'selected' : ''}>Normal</option>
-                                <option value="vip" ${u.vip && !isUserAdmin && !isUserWorker ? 'selected' : ''}>VIP</option>
-                                <option value="trabajador" ${isUserWorker ? 'selected' : ''}>Trabajador</option>
-                                <option value="admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
-                            </select>
-                            <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
-                        </div>
-                        <div style="display:flex; gap:4px; width:100%;">
-                            <button onclick="window.abrirModalEditarUsuarioAdmin('${u.email}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1; font-weight:600;">✏️ Editar</button>
-                            ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1;">🔑 Cambiar Clave</button>` : ''}
-                        </div>
-                        <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
-                        <button onclick="adminDeleteUser('${u.email}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">Eliminar</button>
-                    </div>`}
-                </td>
-            </tr>
-            `;
-    }).join('');
-}
-
-function filterAdminUsers() {
-    renderAdminUsers();
-}
 
 function confirmRoleChange(email) {
     const targetEmail = (email || '').toLowerCase().trim();
@@ -5884,105 +5681,9 @@ window.adjustNotifDropdownPosition = function () {
     }
 };
 
-window.toggleAdminNotifDropdown = function () {
-    const dd = document.getElementById('adminNotifDropdown');
-    if (!dd) return;
-    const isOpen = dd.style.display === 'block';
-    if (isOpen) {
-        dd.style.display = 'none';
-    } else {
-        dd.style.display = 'block';
-        if (typeof window.adjustNotifDropdownPosition === 'function') {
-            window.adjustNotifDropdownPosition();
-        }
-        // Marcar todas las notificaciones como leídas al abrir la bandeja
-        try {
-            let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
-            let changed = false;
-            notifs.forEach(n => {
-                if (!n.read) {
-                    n.read = true;
-                    changed = true;
-                }
-            });
-            if (changed) {
-                localStorage.setItem('dt_notifications', JSON.stringify(notifs));
-            }
-        } catch (e) { }
-        if (window.renderAdminNotifList) window.renderAdminNotifList();
-    }
-};
 
-window.renderAdminNotifList = function () {
-    const listEl = document.getElementById('adminNotifList');
-    const badgeEl = document.getElementById('adminNotifBadge');
 
-    let notifications = [];
-    try {
-        notifications = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
-    } catch (e) {
-        notifications = [];
-    }
 
-    // Fallback a dt_live_alerts si dt_notifications está vacío
-    if (notifications.length === 0) {
-        try {
-            const alerts = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
-            if (alerts.length > 0) {
-                notifications = alerts.map((a, idx) => ({
-                    id: 'alert_' + idx,
-                    title: a.title || 'Notificación',
-                    message: (a.user ? `${a.user} - ` : '') + (a.email || ''),
-                    time: a.date || 'Hace un momento',
-                    read: false,
-                    timestamp: Date.now()
-                }));
-            }
-        } catch (e) { }
-    }
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-
-    // Actualizar badge rojo sobre la campana
-    if (badgeEl) {
-        if (unreadCount > 0) {
-            badgeEl.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            badgeEl.style.display = 'inline-block';
-        } else {
-            badgeEl.style.display = 'none';
-        }
-    }
-
-    if (!listEl) return;
-
-    if (notifications.length === 0) {
-        listEl.innerHTML = '<p style="font-size: 0.82rem; color: #999; text-align: center; margin: 15px 0;">No hay notificaciones nuevas</p>';
-        return;
-    }
-
-    listEl.innerHTML = notifications.map(item => {
-        const isUnread = !item.read;
-        let timeDisplay = item.time || 'Hace un momento';
-        if (item.timestamp) {
-            const diffSec = Math.max(0, Math.floor((Date.now() - item.timestamp) / 1000));
-            if (diffSec < 60) timeDisplay = 'Hace unos segundos';
-            else if (diffSec < 3600) timeDisplay = `Hace ${Math.floor(diffSec / 60)} min`;
-            else if (diffSec < 86400) timeDisplay = `Hace ${Math.floor(diffSec / 3600)} h`;
-            else timeDisplay = new Date(item.timestamp).toLocaleDateString('es-CO');
-        }
-
-        const payloadStr = encodeURIComponent(JSON.stringify(item));
-        return `
-            <div onclick="window.handleNotifClick(event, '${payloadStr}')" style="cursor: pointer; background: ${isUnread ? '#fff5f7' : '#fafafa'}; border-left: 3px solid ${isUnread ? '#e91e63' : '#cbd5e1'}; border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.2s ease;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
-                    <div style="font-weight: 700; color: #1e293b;">${item.title || '🔔 Notificación'}</div>
-                    <span style="font-size: 0.68rem; color: #94a3b8; white-space: nowrap;">${timeDisplay}</span>
-                </div>
-                <div style="color: #475569; font-size: 0.78rem; margin-top: 3px; word-break: break-word;">${item.message || ''}</div>
-            </div>
-        `;
-    }).join('');
-};
 
 window.handleNotifClick = function (event, payloadStr) {
     console.log("=== DIAGNOSTICO FALLO B ===");
@@ -6092,11 +5793,7 @@ window.handleNotifClick = function (event, payloadStr) {
     }
 };
 
-window.clearAdminNotifs = function () {
-    localStorage.setItem('dt_notifications', '[]');
-    localStorage.setItem('dt_live_alerts', '[]');
-    if (window.renderAdminNotifList) window.renderAdminNotifList();
-};
+
 
 document.addEventListener('click', function (e) {
     const wrapper = document.querySelector('.admin-notif-wrapper');

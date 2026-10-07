@@ -1,0 +1,276 @@
+﻿<section id="admin-dashboard" class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div class="section-title" id="admin-title-panel" style="margin-bottom: 0;">ðŸ“Š Panel Administrativo & Financiero</div>
+            
+            <div class="admin-notif-wrapper" style="position: relative; display: inline-block;">
+                <button type="button" id="btnAdminNotifBell" onclick="window.toggleAdminNotifDropdown && window.toggleAdminNotifDropdown()" class="btn-notif-bell" style="background: #fff; border: 1px solid #ffccd5; border-radius: 50%; width: 42px; height: 42px; cursor: pointer; font-size: 1.2rem; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center;">
+                    ðŸ””
+                    <span id="adminNotifBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #e91e63; color: #fff; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">0</span>
+                </button>
+                <!-- Bandeja flotante de notificaciones -->
+                <div id="adminNotifDropdown" style="display: none; position: absolute; right: 0; top: 50px; width: 340px; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #ffe0e6; z-index: 999999; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 10px;">
+                        <strong style="color: #b71c1c; font-size: 0.95rem;">ðŸ”” Centro de Notificaciones</strong>
+                        <button type="button" onclick="window.clearAdminNotifs && window.clearAdminNotifs()" style="background: none; border: none; font-size: 0.75rem; color: #888; cursor: pointer;">Limpiar</button>
+                    </div>
+                    <div id="adminNotifList" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Se renderizan las alertas aquÃ­ -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PESTAÃ‘AS (TABS) ADMIN -->
+        <div class="admin-tabs-nav">
+            <button class="admin-tab-btn active" id="admin-tab-btn-pedidos" onclick="cambiarPestanaAdmin('pedidos')">ðŸ“‹ Pedidos en Vivo</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-productos" onclick="cambiarPestanaAdmin('productos')">ðŸ¥ Control de Productos y Stock</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-contabilidad" onclick="cambiarPestanaAdmin('contabilidad')">ðŸ“Š Contabilidad y Finanzas</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-usuarios" onclick="cambiarPestanaAdmin('usuarios')">ðŸ‘¥ Usuarios y Personal</button>
+            <button class="admin-tab-btn" id="admin-tab-btn-costos" onclick="cambiarPestanaAdmin('costos')">ðŸ“Š Costos y Recetas</button>
+        </div>
+
+        <!-- (Aviso local obsoleto eliminado para evitar confusiÃ³n) -->
+
+        <!-- TAB 2: PRODUCTOS -->
+        <div id="admin-tab-productos" class="admin-tab-container" style="display:none;">
+            <!-- CONTROL DE STOCK DIARIO -->
+        <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+            <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1.1rem;">ðŸ¥– Disponibilidad de Productos del DÃ­a</h4>
+            
+            <div id="admin-stock-filters-container" style="display:flex; gap:10px; margin-bottom: 20px; overflow-x:auto; padding-bottom:5px; scrollbar-width:thin; white-space:nowrap; flex-wrap:nowrap; align-items:center;">
+                <button class="stock-filter-chip active" style="flex:0 0 auto;" onclick="setStockFilter('todos', this)">ðŸ”¥ Todos</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('panaderia', this)">ðŸ¥– Pan</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('pasteleria', this)">ðŸŽ‚ Tortas & Postres</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('combos', this)">ðŸ”¥ Ofertas</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('regalos', this)">ðŸŽ Regalos</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('antojos', this)">â˜• Antojos</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('paquetes', this)">ðŸ“¦ Paquetes</button>
+                <button class="stock-filter-chip" style="flex:0 0 auto;" onclick="setStockFilter('eventos', this)">ðŸŽ‰ Eventos & Fiestas</button>
+                <button id="btn-abrir-nuevo-prod" type="button" onclick="window.abrirModalEdicionProducto(null)" style="background:#16a34a; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.15); margin-left: 10px; flex:0 0 auto;">
+                    âž• Agregar Producto
+                </button>
+                <button id="btn-config-tortas" type="button" onclick="if(window.abrirModalConfigTortas) window.abrirModalConfigTortas()" style="background:#db2777; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
+                    ðŸŽ‚ DiseÃ±os y Precios de Tortas
+                </button>
+
+                <button type="button" class="btn-admin-action" id="btnAdminClubPuntos" onclick="window.openAdminPointsModal && window.openAdminPointsModal(event)" style="background: linear-gradient(135deg, #e91e63, #ff5722); color: white;">
+                    â­ Configurar Puntos & Club VIP
+                </button>
+                <button type="button" class="btn-admin-action" id="btn-config-delivery" onclick="if(window.abrirModalConfigDelivery) window.abrirModalConfigDelivery()" style="background:#f59e0b; color:white; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
+                    ðŸ›µ Configurar Domicilio Gratis
+                </button>
+            </div>
+
+            <div id="admin-stock-grid" style="display:flex; flex-wrap:wrap; gap:10px;">
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: PEDIDOS -->
+        <div id="admin-tab-pedidos" class="admin-tab-container">
+            <!-- MONITOR DE PEDIDOS EN VIVO -->
+        <div style="margin-bottom:20px;">
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:15px; gap:10px;">
+                <h4 style="margin:0; color:var(--brand-pink); font-size:1.1rem;">ðŸ“¦ Monitor de Pedidos en Vivo</h4>
+                <div style="display:flex; align-items:center; gap:8px; background:#fff; padding:6px 12px; border-radius:20px; box-shadow:var(--shadow-s); border:1px solid #f1e8e4;">
+                    <span style="font-size:0.85rem; font-weight:600; color:var(--text-dark);">ðŸ”” Sonido Notificaciones:</span>
+                    <label class="switch-sound">
+                        <input type="checkbox" id="soundToggle" checked onchange="toggleOrderSound()">
+                        <span class="slider-sound"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="background:#fff; border-radius:10px; padding:10px 15px; margin-bottom:15px; box-shadow:var(--shadow-s); display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:0.85rem; font-weight:bold; color:var(--text-dark);">ðŸ“… Filtro de Fecha:</span>
+                    <input type="date" id="orderDateFilter" onchange="filterOrdersByDate()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit;">
+                    <button class="btn-gold" style="padding:6px 12px; font-size:0.85rem;" onclick="setOrderDateToToday()">ðŸ“… Pedidos de Hoy</button>
+                    <button style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; font-family:inherit;" onclick="clearOrderDateFilter()">ðŸ”„ Ver Todos</button>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="orderSearchInput" placeholder="ðŸ” # Orden (ej: DT-7386)..." onkeydown="if(event.key === 'Enter') buscarPedidoPorId()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit; font-size:0.85rem; width:190px;">
+                    <button type="button" class="btn-primary-custom" onclick="buscarPedidoPorId()" style="background:#db2777; color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;">Buscar</button>
+                    <button type="button" onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;" title="Limpiar bÃºsqueda">âœ•</button>
+                </div>
+            </div>
+
+            <div class="live-orders-grid" id="live-orders-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:15px;">
+                <!-- Llenado por JS -->
+            </div>
+        </div>
+
+            </div>
+        </div>
+
+        <!-- ADMIN ONLY CONTAINERS (wraps the rest for security, but now divided into tabs) -->
+        <div id="admin-only-sections">
+            <!-- TAB 3: CONTABILIDAD -->
+            <div id="admin-tab-contabilidad" class="admin-tab-container" style="display:none;">
+            <!-- DASHBOARD TARJETAS -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:25px;"
+                id="admin-dashboard-cards">
+                <!-- Llenado por JS -->
+            </div>
+
+            <!-- CONFIGURACIÃ“N MARGENES -->
+            <div
+                style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+                <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1rem;">âš™ï¸ Control de MÃ¡rgenes (Descuentos
+                    VIP)</h4>
+                <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end;">
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:0.85rem; font-weight:bold;">Compra MÃ­nima (COP)</label>
+                        <input type="number" id="adminMinPurchase"
+                            style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:0.85rem; font-weight:bold;">Tope Max Descuento (COP)</label>
+                        <input type="number" id="adminMaxDiscount"
+                            style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+                    </div>
+                    <div style="flex:1; min-width:150px; display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="adminVipEnabled" style="width:20px; height:20px;">
+                        <label style="font-size:0.85rem; font-weight:bold; cursor:pointer;" for="adminVipEnabled">Habilitar
+                            Descuentos VIP/Base</label>
+                    </div>
+                    <button class="btn-gold" onclick="saveConfigFromAdmin()" style="padding:8px 20px;">Guardar</button>
+                </div>
+            </div>
+                </div>
+            </div>
+            </div> <!-- End Tab Contabilidad -->
+
+            <!-- TAB 4: USUARIOS -->
+            <div id="admin-tab-usuarios" class="admin-tab-container" style="display:none;">
+            <!-- AJUSTES VIP -->
+            <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+                <h4 style="margin-bottom:6px; color:var(--brand-pink); font-size:1rem;">ðŸ‘‘ Ajustes de MembresÃ­a VIP</h4>
+                <p style="font-size:0.8rem; color:#888; margin:0 0 12px 0;">El precio se actualiza en tiempo real para todos los clientes al guardar.</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:0.85rem; font-weight:bold; color:#555;">Precio Mensualidad VIP (COP)</label>
+                        <input type="number" id="adminVipPrice"
+                            disabled
+                            style="width:100%; padding:8px; border:1px solid #e2e8f0; border-radius:8px; margin-top:5px; background:#f8fafc; color:#64748b; font-size:1rem; cursor:not-allowed;">
+                    </div>
+                    <button id="btnEditVipPrice" onclick="window.toggleVipPriceEdit()" class="btn-gold"
+                        style="padding:8px 18px; border-radius:8px; height:38px; white-space:nowrap;">
+                        âœï¸ Modificar Precio
+                    </button>
+                    <button id="btnSaveVipPrice" onclick="window.saveVipPriceOnly()" class="btn-gold"
+                        style="padding:8px 18px; border-radius:8px; height:38px; white-space:nowrap; display:none; background:linear-gradient(135deg,#16a34a,#22c55e); border-color:#16a34a;">
+                        ðŸ’¾ Guardar Precio
+                    </button>
+                </div>
+            </div>
+
+            <!-- REGISTRAR CLIENTE / PERSONAL -->
+            <div
+                style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
+                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">âž• Registrar Nuevo Usuario / Personal
+                </h4>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <input type="text" id="adminNewName" placeholder="Nombre (ej. Juan)"
+                        style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <input type="email" id="adminNewEmail" placeholder="Correo ElectrÃ³nico"
+                        style="flex:1; min-width:140px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <input type="password" id="adminNewPassword" placeholder="ContraseÃ±a..."
+                        style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                    <select id="adminNewRole" style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer;">
+                        <option value="cliente">Cliente Normal</option>
+                        <option value="trabajador">Trabajador</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <button onclick="adminRegisterUser()" class="btn-gold" style="padding:8px 16px; border-radius:8px;">Registrar</button>
+                </div>
+            </div>
+
+            <!-- TOP 5 Y PEDIDOS -->
+            <div style="display:flex; flex-wrap:wrap; gap:20px; margin-bottom:20px;">
+                <div
+                    style="flex:1; min-width:300px; background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s);">
+                    <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1rem;">ðŸ‘‘ Top 5 Clientes</h4>
+                    <div id="admin-top-clients"></div>
+                </div>
+            </div>
+
+            <!-- TABLA SOLICITUDES PUNTOS -->
+            <div id="admin-claims-container" style="margin-bottom: 25px; display: none;">
+                <h4 style="margin-bottom:10px; color:var(--brand-pink); font-size:1.1rem;">ðŸŽ« Solicitudes de Puntos VIP Pendientes</h4>
+                <div class="admin-table-scroll" style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; min-width:600px; font-size:0.9rem;" class="admin-styled-table">
+                        <thead>
+                            <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0; text-align:left;">
+                                <th>Email Cliente</th>
+                                <th>ID Pedido</th>
+                                <th>Fecha Reclamo</th>
+                                <th>Puntos a Otorgar</th>
+                                <th>AcciÃ³n</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-claims-table">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TABLA CLIENTES -->
+            <h4 style="margin-bottom:10px; color:var(--text-dark); font-size:1.1rem;">ðŸ‘¥ Control de Usuarios Registrados
+            </h4>
+            <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="ðŸ” Buscar cliente por nombre, correo o telÃ©fono...">
+            
+            <div class="user-filters-tabs" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px;">
+                <button class="cat-chip active" onclick="setRoleFilter('Todos', this)">Todos</button>
+                <button class="cat-chip" onclick="setRoleFilter('Administradores', this)">Administradores</button>
+                <button class="cat-chip" onclick="setRoleFilter('Trabajadores', this)">Trabajadores</button>
+                <button class="cat-chip" onclick="setRoleFilter('VIP', this)">Clientes VIP</button>
+                <button class="cat-chip" onclick="setRoleFilter('Normales', this)">Clientes Normales</button>
+            </div>
+
+            <div class="admin-table-scroll" style="overflow-x:auto;">
+                <table
+                    style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:var(--shadow-m);">
+                    <thead style="background:var(--brand-pink-l); text-align:left;">
+                        <tr>
+                            <th style="padding:12px;">Cliente</th>
+                            <th style="padding:12px;">TelÃ©fono / WhatsApp</th>
+                            <th style="padding:12px;">Correo</th>
+                            <th style="padding:12px; text-align:center;">Nivel</th>
+                            <th style="padding:12px; text-align:center;">Estado</th>
+                            <th style="padding:12px; text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-table">
+                        <!-- Se llena con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div> <!-- Fin Tab Usuarios -->
+
+        <!-- TAB COSTOS Y FICHAS TECNICAS -->
+        <div id="admin-tab-costos" class="admin-tab-container" style="display:none;">
+            <div class="costos-subtabs" style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
+                <button class="stock-filter-chip active" onclick="window.cambiarSubtabCostos('insumos')">ðŸ“¦ Materias Primas</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('recetas')">ðŸ¥£ Fichas TÃ©cnicas</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('informes')">ðŸ“ˆ Informes de Rentabilidad</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('guardian')" style="background:#fff1f2; color:#be185d; border-color:#fbcfe8;">ðŸ›¡ï¸ GuardiÃ¡n Financiero</button>
+            </div>
+            
+            <div id="costos-insumos" class="costos-content"></div>
+            <div id="costos-recetas" class="costos-content" style="display:none;"></div>
+            <div id="costos-informes" class="costos-content" style="display:none;"></div>
+            <div id="costos-guardian" class="costos-content" style="display:none;"></div>
+        </div>
+        
+        </div> <!-- Fin admin-only-sections -->
+        
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn-gold" onclick="showSection('inicio')">â¬… Volver al Inicio</button>
+        </div>
+    </section>
+
+    
