@@ -1,0 +1,16 @@
+﻿{
+    "index.html":  {
+                       "emoji_ðŸ":  139,
+                       "replacement_chars":  0,
+                       "lines_affected":  204,
+                       "other_mojibake":  0,
+                       "emoji_â":  98
+                   },
+    "admin-dashboard-fragment.html":  {
+                                          "emoji_ðŸ":  34,
+                                          "replacement_chars":  0,
+                                          "lines_affected":  42,
+                                          "other_mojibake":  0,
+                                          "emoji_â":  8
+                                      }
+}
