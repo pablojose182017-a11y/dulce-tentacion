@@ -38,76 +38,6 @@ try {
     }
 } catch (e) { }
 
-// Semilla de Super Admins locales ('dt_registered_users' y 'dt_users_db')
-try {
-    const superAdminSeeds = [
-        {
-            name: "Pablo Carrascal",
-            email: "pablojose182017@gmail.com",
-            password: "Admin123*",
-            role: "admin",
-            isAdmin: true,
-            blocked: false,
-            points: 500,
-            picture: "https://ui-avatars.com/api/?name=Pablo+Carrascal&background=e11d48&color=fff&bold=true"
-        },
-        {
-            name: "Dulce Tentación",
-            email: "dulcestentaciones2004@gmail.com",
-            password: "Admin123*",
-            role: "admin",
-            isAdmin: true,
-            blocked: false,
-            points: 500,
-            picture: "https://ui-avatars.com/api/?name=Dulce+Tentacion&background=e11d48&color=fff&bold=true"
-        }
-    ];
-
-    let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-    if (!Array.isArray(regUsers)) regUsers = [];
-    let updatedReg = false;
-    superAdminSeeds.forEach(seed => {
-        const idx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === seed.email.toLowerCase().trim());
-        if (idx === -1) {
-            regUsers.push({ ...seed });
-            updatedReg = true;
-        } else if (!regUsers[idx].password || regUsers[idx].password !== seed.password) {
-            regUsers[idx].name = regUsers[idx].name || seed.name;
-            regUsers[idx].password = seed.password;
-            regUsers[idx].role = 'admin';
-            regUsers[idx].isAdmin = true;
-            regUsers[idx].blocked = false;
-            regUsers[idx].points = regUsers[idx].points || seed.points;
-            updatedReg = true;
-        }
-    });
-    if (updatedReg) {
-        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-    }
-
-    let dbUsersLocal = JSON.parse(localStorage.getItem('dt_users_db') || '[]');
-    if (!Array.isArray(dbUsersLocal)) dbUsersLocal = [];
-    let updatedDbLocal = false;
-    superAdminSeeds.forEach(seed => {
-        const idx = dbUsersLocal.findIndex(u => u && u.email && u.email.toLowerCase().trim() === seed.email.toLowerCase().trim());
-        if (idx === -1) {
-            dbUsersLocal.push({ ...seed });
-            updatedDbLocal = true;
-        } else if (!dbUsersLocal[idx].password || dbUsersLocal[idx].password !== seed.password) {
-            dbUsersLocal[idx].name = dbUsersLocal[idx].name || seed.name;
-            dbUsersLocal[idx].password = seed.password;
-            dbUsersLocal[idx].role = 'admin';
-            dbUsersLocal[idx].isAdmin = true;
-            dbUsersLocal[idx].blocked = false;
-            dbUsersLocal[idx].points = dbUsersLocal[idx].points || seed.points;
-            updatedDbLocal = true;
-        }
-    });
-    if (updatedDbLocal) {
-        localStorage.setItem('dt_users_db', JSON.stringify(dbUsersLocal));
-    }
-} catch (e) { }
-
 window.SUPER_ADMINS = window.SUPER_ADMINS || Object.freeze([
     'pablojose182017@gmail.com',
     'dulcestentaciones2004@gmail.com'
@@ -325,47 +255,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
             // Validación de credenciales maestras para Super Admins en local
             if (isSuperAdmin(email) && pass === 'Admin123*') {
-                const adminName = (email === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
-                const superAdminObj = {
-                    name: adminName,
-                    email: email,
-                    password: 'Admin123*',
-                    role: 'admin',
-                    isAdmin: true,
-                    blocked: false,
-                    points: 500,
-                    picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
-                };
-
-                if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
-                    const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
-                    if (uidx !== -1) {
-                        db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
-                    } else {
-                        db_users.push({ ...superAdminObj });
-                    }
-                    if (typeof saveUsersDB === 'function') saveUsersDB();
-                }
-
-                if (typeof adminEmails !== 'undefined' && !adminEmails.includes(email)) {
-                    adminEmails.push(email);
-                    if (typeof saveAdminEmails === 'function') saveAdminEmails();
-                }
-                if (typeof workerEmails !== 'undefined') {
-                    workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== email);
-                    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
-                }
-
-                if (typeof loginUserObj === 'function') {
-                    loginUserObj(superAdminObj);
-                } else {
-                    currentUser = superAdminObj;
-                    localStorage.setItem('dt_user', JSON.stringify(superAdminObj));
-                    localStorage.setItem('dt_logged_user', JSON.stringify(superAdminObj));
-                    if (typeof syncUserUI === 'function') syncUserUI();
-                    if (typeof closeAuthModal === 'function') closeAuthModal();
-                    if (typeof showToast === 'function') showToast(`¡Bienvenido Administrador ${adminName}!`, '👑');
-                }
+                const errMsg = '🔐 Legacy authentication has been discontinued. Please use Google Sign-In or Firebase authentication.';
+                if (typeof showAuthMessage === 'function') showAuthMessage(errMsg, 'error');
+                else if (typeof showToast === 'function') showToast(errMsg, '🔐');
                 return;
             }
 
@@ -948,83 +840,11 @@ window.loginCustomUser = function (e) {
 
     const isSuper = isSuperAdmin(correoInput);
 
-    // Acceso inmediato offline/online para Super Admins con credenciales maestras fijas
+    // Legacy local admin authentication is disabled. Admins must use Firebase Auth.
     if (isSuper && passInput === 'Admin123*') {
-        const adminName = (correoInput === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
-        const superAdminObj = {
-            name: adminName,
-            nombre: adminName,
-            email: correoInput,
-            password: 'Admin123*',
-            role: 'admin',
-            rol: 'admin',
-            isAdmin: true,
-            blocked: false,
-            estado: 'activo',
-            vip: true,
-            isVip: true,
-            vipStatus: 'activo',
-            points: 500,
-            picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
-        };
-
-        if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
-            const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
-            if (uidx !== -1) {
-                db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
-            } else {
-                db_users.push({ ...superAdminObj });
-            }
-            if (typeof saveUsersDB === 'function') saveUsersDB();
-        }
-
-        try {
-            let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-            if (!Array.isArray(regUsers)) regUsers = [];
-            const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
-            if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...superAdminObj };
-            else regUsers.push({ ...superAdminObj });
-            localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-        } catch (e) { }
-
-        if (typeof adminEmails !== 'undefined' && !adminEmails.includes(correoInput)) {
-            adminEmails.push(correoInput);
-            if (typeof saveAdminEmails === 'function') saveAdminEmails();
-        }
-        if (typeof workerEmails !== 'undefined') {
-            workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== correoInput);
-            try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
-        }
-
-        localStorage.setItem('dt_logged_user', JSON.stringify(superAdminObj));
-        localStorage.setItem('dt_user', JSON.stringify(superAdminObj));
-        currentUser = superAdminObj;
-
-        if (typeof db !== 'undefined' && db && db.collection) {
-            db.collection('usuarios').doc(correoInput).set({
-                nombre: adminName,
-                name: adminName,
-                email: correoInput,
-                rol: 'admin',
-                role: 'admin',
-                estado: 'activo',
-                blocked: false,
-                password: 'Admin123*'
-            }, { merge: true }).catch(() => { });
-        }
-
-        if (typeof loginUserObj === 'function') {
-            loginUserObj(superAdminObj);
-        } else {
-            if (typeof actualizarInterfazSesion === 'function') {
-                actualizarInterfazSesion(superAdminObj);
-            } else if (typeof syncUserUI === 'function') {
-                syncUserUI();
-            }
-            if (typeof closeAuthModal === 'function') closeAuthModal();
-            if (typeof closeMobileProfile === 'function') closeMobileProfile();
-            if (typeof showToast === 'function') showToast(`¡Bienvenido Administrador ${adminName}!`, '👑');
-        }
+        const errMsg = '🔐 Legacy authentication has been discontinued. Please use Google Sign-In or Firebase authentication.';
+        if (typeof showAuthMessage === 'function') showAuthMessage(errMsg, 'error');
+        else if (typeof showToast === 'function') showToast(errMsg, '🔐');
         return;
     }
 

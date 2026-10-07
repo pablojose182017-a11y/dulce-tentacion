@@ -437,20 +437,11 @@ async function loginCustomUser(e) {
         return showAuthMessage('Por favor, completa todos los campos.', 'error');
     }
 
-    // Mantener la verificación de super admin por compatibilidad estricta
+    // Legacy local admin authentication is disabled. Admins must use Firebase Auth.
     if (SUPER_ADMINS.includes(email) && pass === 'Admin123*') {
-        const adminName = (email === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
-        const superAdminObj = {
-            name: adminName, nombre: adminName, email: email,
-            role: 'admin', rol: 'admin', isAdmin: true, blocked: false,
-            points: 500, vip: true, isVip: true, vipStatus: 'activo',
-            picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
-        };
-        const uidx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
-        if (uidx !== -1) db_users[uidx] = { ...db_users[uidx], ...superAdminObj };
-        else db_users.push({ ...superAdminObj });
-        saveUsersDB();
-        return loginUserObj(superAdminObj);
+        const errMsg = '🔐 Legacy authentication has been discontinued. Please use Google Sign-In or Firebase authentication.';
+        showAuthMessage(errMsg, 'error');
+        return;
     }
 
     if (typeof firebase !== 'undefined' && firebase.auth) {
@@ -1553,7 +1544,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // window.stockConfig ya apunta al mismo objeto; no es necesario reasignar.
     } catch (e) { }
 
-    // Garantizar Super Admins en adminEmails y db_users con contraseña fija Admin123*
+    // Ensure super admin emails have admin role (Firebase Auth required, no local password seeding)
     SUPER_ADMINS.forEach(saEmail => {
         const normSa = saEmail.toLowerCase().trim();
         if (!adminEmails.includes(normSa)) adminEmails.push(normSa);
@@ -1565,18 +1556,18 @@ window.addEventListener('DOMContentLoaded', () => {
             saUser.role = 'admin';
             saUser.isAdmin = true;
             saUser.blocked = false;
-            if (!saUser.password) saUser.password = 'Admin123*';
             if (!saUser.points) saUser.points = 500;
+            // Password field removed (Firebase Auth required)
         } else {
             db_users.push({
                 name: adminName,
                 email: normSa,
-                password: 'Admin123*',
                 role: 'admin',
                 isAdmin: true,
                 blocked: false,
                 points: 500,
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=e11d48&color=fff&bold=true`
+                // Password field removed (Firebase Auth required)
             });
         }
     });
