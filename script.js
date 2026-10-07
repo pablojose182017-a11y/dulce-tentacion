@@ -3711,8 +3711,8 @@ function syncUserUI() {
         const mobBtn = document.getElementById('mob-admin-btn');
 
         // Onclicks diferenciados: Admin accede al dashboard completo; Trabajador solo a funciones operativas
-        const adminOnclick = "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
-        const workerOnclick = "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+        const adminOnclick = "openAdminPanelFlow(this);";
+        const workerOnclick = "openAdminPanelFlow(this);";
         const adminOnclickMob = "closeMobileProfile(); " + adminOnclick;
         const workerOnclickMob = "closeMobileProfile(); " + workerOnclick;
 
@@ -6723,4 +6723,19 @@ window.setCashAmount = function (amount) {
     window.calculateCashChange();
 };
 
+
+
+
+window.openAdminPanelFlow = async function(el) {
+    if (typeof loadAdminHTMLFragment === 'function') {
+        await loadAdminHTMLFragment();
+    }
+    if (typeof showSection === 'function') showSection('admin-dashboard', el);
+    
+    if (typeof renderAdminUsers === 'function') renderAdminUsers();
+    if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+    if (typeof renderLiveOrders === 'function') renderLiveOrders();
+    if (typeof renderStockAdmin === 'function') renderStockAdmin();
+    if (typeof cambiarPestanaAdmin === 'function') cambiarPestanaAdmin('pedidos');
+};
 

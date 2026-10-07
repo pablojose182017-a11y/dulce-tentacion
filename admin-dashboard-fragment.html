@@ -14,13 +14,13 @@
                         <button type="button" onclick="window.clearAdminNotifs && window.clearAdminNotifs()" style="background: none; border: none; font-size: 0.75rem; color: #888; cursor: pointer;">Limpiar</button>
                     </div>
                     <div id="adminNotifList" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-                        <!-- Se renderizan las alertas aquÃ­ -->
+                        <!-- Se renderizan las alertas aquí -->
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- PESTAÃ‘AS (TABS) ADMIN -->
+        <!-- PESTAÑAS (TABS) ADMIN -->
         <div class="admin-tabs-nav">
             <button class="admin-tab-btn active" id="admin-tab-btn-pedidos" onclick="cambiarPestanaAdmin('pedidos')">ðŸ“‹ Pedidos en Vivo</button>
             <button class="admin-tab-btn" id="admin-tab-btn-productos" onclick="cambiarPestanaAdmin('productos')">ðŸ¥ Control de Productos y Stock</button>
@@ -29,13 +29,13 @@
             <button class="admin-tab-btn" id="admin-tab-btn-costos" onclick="cambiarPestanaAdmin('costos')">ðŸ“Š Costos y Recetas</button>
         </div>
 
-        <!-- (Aviso local obsoleto eliminado para evitar confusiÃ³n) -->
+        <!-- (Aviso local obsoleto eliminado para evitar confusión) -->
 
         <!-- TAB 2: PRODUCTOS -->
         <div id="admin-tab-productos" class="admin-tab-container" style="display:none;">
             <!-- CONTROL DE STOCK DIARIO -->
         <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-            <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1.1rem;">ðŸ¥– Disponibilidad de Productos del DÃ­a</h4>
+            <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1.1rem;">ðŸ¥– Disponibilidad de Productos del Día</h4>
             
             <div id="admin-stock-filters-container" style="display:flex; gap:10px; margin-bottom: 20px; overflow-x:auto; padding-bottom:5px; scrollbar-width:thin; white-space:nowrap; flex-wrap:nowrap; align-items:center;">
                 <button class="stock-filter-chip active" style="flex:0 0 auto;" onclick="setStockFilter('todos', this)">ðŸ”¥ Todos</button>
@@ -50,7 +50,7 @@
                     âž• Agregar Producto
                 </button>
                 <button id="btn-config-tortas" type="button" onclick="if(window.abrirModalConfigTortas) window.abrirModalConfigTortas()" style="background:#db2777; color:#fff; border:none; padding:8px 16px; border-radius:20px; font-weight:700; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.12); flex:0 0 auto;">
-                    ðŸŽ‚ DiseÃ±os y Precios de Tortas
+                    ðŸŽ‚ Diseños y Precios de Tortas
                 </button>
 
                 <button type="button" class="btn-admin-action" id="btnAdminClubPuntos" onclick="window.openAdminPointsModal && window.openAdminPointsModal(event)" style="background: linear-gradient(135deg, #e91e63, #ff5722); color: white;">
@@ -93,7 +93,7 @@
                 <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                     <input type="text" id="orderSearchInput" placeholder="ðŸ” # Orden (ej: DT-7386)..." onkeydown="if(event.key === 'Enter') buscarPedidoPorId()" style="padding:6px 10px; border-radius:6px; border:1px solid #ddd; outline:none; font-family:inherit; font-size:0.85rem; width:190px;">
                     <button type="button" class="btn-primary-custom" onclick="buscarPedidoPorId()" style="background:#db2777; color:#fff; border:none; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;">Buscar</button>
-                    <button type="button" onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;" title="Limpiar bÃºsqueda">âœ•</button>
+                    <button type="button" onclick="limpiarBusquedaPedido()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;" title="Limpiar búsqueda">âœ•</button>
                 </div>
             </div>
 
@@ -115,14 +115,14 @@
                 <!-- Llenado por JS -->
             </div>
 
-            <!-- CONFIGURACIÃ“N MARGENES -->
+            <!-- CONFIGURACIÓN MARGENES -->
             <div
                 style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-                <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1rem;">âš™ï¸ Control de MÃ¡rgenes (Descuentos
+                <h4 style="margin-bottom:15px; color:var(--brand-pink); font-size:1rem;">âš™ï¸ Control de Márgenes (Descuentos
                     VIP)</h4>
                 <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:flex-end;">
                     <div style="flex:1; min-width:150px;">
-                        <label style="font-size:0.85rem; font-weight:bold;">Compra MÃ­nima (COP)</label>
+                        <label style="font-size:0.85rem; font-weight:bold;">Compra Mínima (COP)</label>
                         <input type="number" id="adminMinPurchase"
                             style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
                     </div>
@@ -147,7 +147,7 @@
             <div id="admin-tab-usuarios" class="admin-tab-container" style="display:none;">
             <!-- AJUSTES VIP -->
             <div style="background:#fff; border-radius:12px; padding:15px; box-shadow:var(--shadow-s); margin-bottom:20px; border:1px solid #f1e8e4;">
-                <h4 style="margin-bottom:6px; color:var(--brand-pink); font-size:1rem;">ðŸ‘‘ Ajustes de MembresÃ­a VIP</h4>
+                <h4 style="margin-bottom:6px; color:var(--brand-pink); font-size:1rem;">ðŸ‘‘ Ajustes de Membresía VIP</h4>
                 <p style="font-size:0.8rem; color:#888; margin:0 0 12px 0;">El precio se actualiza en tiempo real para todos los clientes al guardar.</p>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
                     <div style="flex:1; min-width:150px;">
@@ -175,9 +175,9 @@
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                     <input type="text" id="adminNewName" placeholder="Nombre (ej. Juan)"
                         style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                    <input type="email" id="adminNewEmail" placeholder="Correo ElectrÃ³nico"
+                    <input type="email" id="adminNewEmail" placeholder="Correo Electrónico"
                         style="flex:1; min-width:140px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                    <input type="password" id="adminNewPassword" placeholder="ContraseÃ±a..."
+                    <input type="password" id="adminNewPassword" placeholder="Contraseña..."
                         style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
                     <select id="adminNewRole" style="flex:1; min-width:120px; padding:8px 12px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer;">
                         <option value="cliente">Cliente Normal</option>
@@ -208,7 +208,7 @@
                                 <th>ID Pedido</th>
                                 <th>Fecha Reclamo</th>
                                 <th>Puntos a Otorgar</th>
-                                <th>AcciÃ³n</th>
+                                <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody id="admin-claims-table">
@@ -221,7 +221,7 @@
             <!-- TABLA CLIENTES -->
             <h4 style="margin-bottom:10px; color:var(--text-dark); font-size:1.1rem;">ðŸ‘¥ Control de Usuarios Registrados
             </h4>
-            <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="ðŸ” Buscar cliente por nombre, correo o telÃ©fono...">
+            <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="ðŸ” Buscar cliente por nombre, correo o teléfono...">
             
             <div class="user-filters-tabs" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px;">
                 <button class="cat-chip active" onclick="setRoleFilter('Todos', this)">Todos</button>
@@ -237,7 +237,7 @@
                     <thead style="background:var(--brand-pink-l); text-align:left;">
                         <tr>
                             <th style="padding:12px;">Cliente</th>
-                            <th style="padding:12px;">TelÃ©fono / WhatsApp</th>
+                            <th style="padding:12px;">Teléfono / WhatsApp</th>
                             <th style="padding:12px;">Correo</th>
                             <th style="padding:12px; text-align:center;">Nivel</th>
                             <th style="padding:12px; text-align:center;">Estado</th>
@@ -255,9 +255,9 @@
         <div id="admin-tab-costos" class="admin-tab-container" style="display:none;">
             <div class="costos-subtabs" style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
                 <button class="stock-filter-chip active" onclick="window.cambiarSubtabCostos('insumos')">ðŸ“¦ Materias Primas</button>
-                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('recetas')">ðŸ¥£ Fichas TÃ©cnicas</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('recetas')">ðŸ¥£ Fichas Técnicas</button>
                 <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('informes')">ðŸ“ˆ Informes de Rentabilidad</button>
-                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('guardian')" style="background:#fff1f2; color:#be185d; border-color:#fbcfe8;">ðŸ›¡ï¸ GuardiÃ¡n Financiero</button>
+                <button class="stock-filter-chip" onclick="window.cambiarSubtabCostos('guardian')" style="background:#fff1f2; color:#be185d; border-color:#fbcfe8;">ðŸ›¡ï¸ Guardián Financiero</button>
             </div>
             
             <div id="costos-insumos" class="costos-content"></div>

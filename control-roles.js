@@ -90,8 +90,8 @@ window.addEventListener('DOMContentLoaded', () => {
     //   Admin/SuperAdmin → acceso completo (métricas, usuarios, contabilidad)
     //   Trabajador       → solo funciones operativas (pedidos, stock, cocina)
 
-    const _ADMIN_ONCLICK = "showSection('admin-dashboard'); renderAdminUsers(); renderAdminDashboard(); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
-    const _WORKER_ONCLICK = "showSection('admin-dashboard'); renderLiveOrders(); renderStockAdmin(); cambiarPestanaAdmin('pedidos');";
+    const _ADMIN_ONCLICK = "openAdminPanelFlow(this);";
+    const _WORKER_ONCLICK = "openAdminPanelFlow(this);";
     const _ADMIN_ONCLICK_MOB = "closeMobileProfile(); " + _ADMIN_ONCLICK;
     const _WORKER_ONCLICK_MOB = "closeMobileProfile(); " + _WORKER_ONCLICK;
 
