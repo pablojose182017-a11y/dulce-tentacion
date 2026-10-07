@@ -4,6 +4,60 @@
  * Sobreescribe funciones de script.js para agregar la persistencia en la nube
  * y sincronización en tiempo real sin modificar el código legacy directamente.
  */
+window._adminModulesLoaded = false;
+window._adminModulesLoading = false;
+window.loadPhase2AdminModules = async function() {
+    if (window._adminModulesLoaded || window._adminModulesLoading) return;
+    window._adminModulesLoading = true;
+    
+    const scripts = [
+        "https://cdn.jsdelivr.net/npm/chart.js",
+        "costos-recetas.js?v=1",
+        "ai-core/ai-store.js",
+        "ai-core/ai-persistence.js",
+        "ai-core/ai-hash.js",
+        "ai-core/ai-knowledge.js",
+        "ai-core/ai-security.js",
+        "ai-core/ai-execution.js",
+        "ai-core/ai-autonomous.js",
+        "ai-core/ai-identity.js",
+        "ai-core/ai-memory.js",
+        "ai-core/ai-context.js",
+        "ai-core/ai-provider.js",
+        "ai-core/ai-legacy-rag-adapter.js",
+        "ai-core/ai-reasoning.js",
+        "ai-core/ai-personality.js",
+        "ai-core/ai-offline-resolver.js",
+        "ai-core/ai-web-fetcher.js",
+        "ai-core/ai-ingestion.js",
+        "ai-core/ai-investigation.js",
+        "ai-core/ai-research-engine.js",
+        "ai-core/ai-understanding.js",
+        "ai-core/ai-semantic.js",
+        "ai-core/ai-provenance.js",
+        "ai-core/ai-retention.js",
+        "ai-core/ai-connectivity.js",
+        "ai-core/ai-cyber-defense.js",
+        "ai-core/ai-owner-authority.js",
+        "ai-core/ai-controlled-execution.js",
+        "ai-core/ai-tests.js",
+        "ai-core/ai-chat-bridge.js",
+        "guardian-financiero.js?v=1"
+    ];
+
+    for (const src of scripts) {
+        await new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = () => { console.warn("Fallo al cargar", src); resolve(); };
+            document.head.appendChild(script);
+        });
+    }
+    
+    window._adminModulesLoaded = true;
+    window._adminModulesLoading = false;
+};
 
 // 1. Inicialización de Firebase
 let firebaseConfig = {
@@ -1305,7 +1359,18 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- 8. AUTO-CARGA DE "PEDIDOS DE HOY" AL ENTRAR AL MONITOR ---
     const originalCambiarPestana = window.cambiarPestanaAdmin;
     if (originalCambiarPestana) {
-        window.cambiarPestanaAdmin = function(tabId) {
+        window.cambiarPestanaAdmin = async function(tabId) {
+            if (tabId === 'costos' && typeof window.loadPhase2AdminModules === 'function') {
+                const btnCostos = document.getElementById('admin-tab-btn-costos');
+                const origText = btnCostos ? btnCostos.innerText : '';
+                if (btnCostos) btnCostos.innerText = '⏳ Cargando...';
+                await window.loadPhase2AdminModules();
+                if (btnCostos) btnCostos.innerText = origText;
+                
+                if (typeof window.cambiarSubtabCostos === 'function') {
+                    window.cambiarSubtabCostos('insumos');
+                }
+            }
             originalCambiarPestana.apply(this, arguments);
             if (tabId === 'pedidos') {
                 const dateInput = document.getElementById('orderDateFilter');
