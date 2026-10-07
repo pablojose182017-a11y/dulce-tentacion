@@ -253,14 +253,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             const user = users.find(u => u && u.email && u.email.trim().toLowerCase() === emailInput.trim().toLowerCase());
 
-            // Validación de credenciales maestras para Super Admins en local
-            if (isSuperAdmin(email) && pass === 'Admin123*') {
-                const errMsg = '🔐 Legacy authentication has been discontinued. Please use Google Sign-In or Firebase authentication.';
-                if (typeof showAuthMessage === 'function') showAuthMessage(errMsg, 'error');
-                else if (typeof showToast === 'function') showToast(errMsg, '🔐');
-                return;
-            }
-
+            // For admins: force Firebase auth path (no local bypass)
             if (isSuperAdmin(email)) {
                 if (user) {
                     user.blocked = false;
@@ -839,29 +832,26 @@ window.loginCustomUser = function (e) {
     }
 
     const isSuper = isSuperAdmin(correoInput);
+    const isAdminEmail = (typeof adminEmails !== 'undefined' && adminEmails.includes(correoInput)) || isSuper;
 
-    // Legacy local admin authentication is disabled. Admins must use Firebase Auth.
-    if (isSuper && passInput === 'Admin123*') {
-        const errMsg = '🔐 Legacy authentication has been discontinued. Please use Google Sign-In or Firebase authentication.';
-        if (typeof showAuthMessage === 'function') showAuthMessage(errMsg, 'error');
-        else if (typeof showToast === 'function') showToast(errMsg, '🔐');
-        return;
-    }
+    // 1. Admin/Super users must use Firebase authentication - skip localStorage password search
+    let foundUser = null;
+    if (!isAdminEmail) {
+        // 1. For non-admin users, verify in localStorage: dt_registered_users y dt_users_db
+        let regUsers = [];
+        try { regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]'); } catch (e) { }
+        if (!Array.isArray(regUsers)) regUsers = [];
 
-    // 1. Verificar primero en almacenamiento local: dt_registered_users y dt_users_db
-    let regUsers = [];
-    try { regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]'); } catch (e) { }
-    if (!Array.isArray(regUsers)) regUsers = [];
+        let dbUsers = [];
+        try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch (e) { }
+        if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
+            dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
+        }
 
-    let dbUsers = [];
-    try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch (e) { }
-    if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
-        dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
-    }
-
-    let foundUser = regUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)) && u.password === passInput));
-    if (!foundUser) {
-        foundUser = dbUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)) && u.password === passInput));
+        foundUser = regUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)) && u.password === passInput));
+        if (!foundUser) {
+            foundUser = dbUsers.find(u => u && u.email && ((u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)) && u.password === passInput));
+        }
     }
 
     if (foundUser) {
@@ -933,12 +923,12 @@ window.loginCustomUser = function (e) {
         }
     }
 
-    // 2. Si no se encontró localmente pero Firestore está disponible, consultar en la nube
-    if (typeof db !== 'undefined' && db && db.collection) {
+    // 2. If not found locally and not admin, check Firestore; Admin users must use Firebase Auth
+    if (!foundUser && !isAdminEmail && typeof db !== 'undefined' && db && db.collection) {
         db.collection('usuarios').doc(correoInput).get().then((doc) => {
             if (!doc.exists) {
-                const userExistsWrongPass = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
-                    dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
+                const userExistsWrongPass = !isAdminEmail && (regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
+                    dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))));
                 if (userExistsWrongPass) {
                     if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
                     return alert('Contraseña incorrecta.');
@@ -1007,7 +997,22 @@ window.loginCustomUser = function (e) {
             if (typeof showAuthMessage === 'function') showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');
             else alert('El usuario no existe o la contraseña es incorrecta.');
         });
-    } else {
+    } else if (!foundUser) {
+        // Admin users cannot use password login, must use Firebase Auth
+        if (isAdminEmail) {
+            if (typeof showAuthMessage === 'function') return showAuthMessage('Los usuarios administrativos deben usar Google Sign-In para acceder.', 'error');
+            return alert('Los usuarios administrativos deben usar Google Sign-In para acceder.');
+        }
+        
+        // For non-admin users, check if user exists but wrong password
+        let regUsers = [];
+        try { regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]'); } catch (e) { }
+        let dbUsers = [];
+        try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch (e) { }
+        if (!Array.isArray(dbUsers) || dbUsers.length === 0) {
+            dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
+        }
+        
         const userExistsWrongPass = regUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput))) ||
             dbUsers.some(u => u && u.email && (u.email.trim().toLowerCase() === correoInput || (u.username && u.username.trim().toLowerCase() === correoInput)));
         if (userExistsWrongPass) {

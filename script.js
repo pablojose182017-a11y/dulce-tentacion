@@ -437,13 +437,6 @@ async function loginCustomUser(e) {
         return showAuthMessage('Por favor, completa todos los campos.', 'error');
     }
 
-    // Legacy local admin authentication is disabled. Admins must use Firebase Auth.
-    if (SUPER_ADMINS.includes(email) && pass === 'Admin123*') {
-        const errMsg = '🔐 Legacy authentication has been discontinued. Please use Google Sign-In or Firebase authentication.';
-        showAuthMessage(errMsg, 'error');
-        return;
-    }
-
     if (typeof firebase !== 'undefined' && firebase.auth) {
         try {
             await firebase.auth().signInWithEmailAndPassword(email, pass);
@@ -1636,20 +1629,36 @@ function loginUserObj(userObj) {
             if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== uEmail);
             saveAdminEmails();
         } else {
-            // Cruzar con dt_registered_users o dt_users_db
-            const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-            const dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : JSON.parse(localStorage.getItem('dt_users_db') || '[]');
-            const reg = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail) ||
-                dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
-            if (reg) {
-                userObj.role = reg.role || reg.rol || userObj.role || 'cliente';
-                userObj.rol = userObj.role;
-                userObj.isAdmin = (userObj.role === 'admin');
-                userObj.isVip = !!(reg.isVip || reg.vip || (userObj.role === 'vip'));
-                userObj.vip = userObj.isVip;
-                userObj.vipStatus = reg.vipStatus || (userObj.isVip ? 'activo' : (userObj.vipStatus || 'inactivo'));
-                userObj.points = (reg.points !== undefined && reg.points !== null) ? reg.points : (userObj.points || 0);
-                if (reg.blocked !== undefined) userObj.blocked = !!reg.blocked;
+            // For non-super users, check if they should be admin based on adminEmails
+            const isInAdminEmails = (typeof adminEmails !== 'undefined' && adminEmails.includes(uEmail));
+            
+            if (isInAdminEmails) {
+                // Admin users must come from Firebase auth, not localStorage fallback
+                // If this is a localStorage-sourced login, it should have been blocked earlier
+                // But ensure admin role assignment only for Firebase-authenticated users
+                userObj.role = 'admin';
+                userObj.rol = 'admin';
+                userObj.isAdmin = true;
+                userObj.blocked = false;
+                userObj.vip = true;
+                userObj.isVip = true;
+                userObj.vipStatus = 'activo';
+            } else {
+                // Regular customer - use localStorage data for role assignment
+                const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                const dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : JSON.parse(localStorage.getItem('dt_users_db') || '[]');
+                const reg = regUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail) ||
+                    dbUsers.find(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
+                if (reg) {
+                    userObj.role = reg.role || reg.rol || userObj.role || 'cliente';
+                    userObj.rol = userObj.role;
+                    userObj.isAdmin = (userObj.role === 'admin');
+                    userObj.isVip = !!(reg.isVip || reg.vip || (userObj.role === 'vip'));
+                    userObj.vip = userObj.isVip;
+                    userObj.vipStatus = reg.vipStatus || (userObj.isVip ? 'activo' : (userObj.vipStatus || 'inactivo'));
+                    userObj.points = (reg.points !== undefined && reg.points !== null) ? reg.points : (userObj.points || 0);
+                    if (reg.blocked !== undefined) userObj.blocked = !!reg.blocked;
+                }
             }
         }
     }
@@ -3443,6 +3452,7 @@ function adminRegisterUser() {
     }
 
     const isVip = (role === 'vip');
+    const isAdminRole = (role === 'admin');
     const newUser = {
         name: name,
         nombre: name,
@@ -3452,7 +3462,7 @@ function adminRegisterUser() {
         address: '',
         role: role || 'cliente',
         rol: role || 'cliente',
-        isAdmin: (role === 'admin'),
+        isAdmin: isAdminRole,
         isVip: isVip,
         vip: isVip,
         vipStatus: isVip ? 'activo' : 'inactivo',
@@ -3465,28 +3475,39 @@ function adminRegisterUser() {
     db_users.push(newUser);
     saveUsersDB();
 
-    try {
-        let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-        if (!Array.isArray(regUsers)) regUsers = [];
-        const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
-        if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...newUser };
-        else regUsers.push({ ...newUser });
-        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-    } catch (e) { }
+    // Only save to localStorage dt_registered_users for non-admin users
+    // Admin users must authenticate via Firebase, so no password storage
+    if (!isAdminRole) {
+        try {
+            let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            if (!Array.isArray(regUsers)) regUsers = [];
+            const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+            if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...newUser };
+            else regUsers.push({ ...newUser });
+            localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+        } catch (e) { }
+    }
 
     if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
-        db.collection('usuarios').doc(email).set({
+        const firestoreData = {
             nombre: name,
             name: name,
             email: email,
-            password: pass,
             rol: role || 'cliente',
             role: role || 'cliente',
             estado: 'activo',
             blocked: false,
             points: 15,
             puntos: 15
-        }, { merge: true }).catch(() => { });
+        };
+        
+        // Only include password in Firestore for non-admin users
+        // Admin users authenticate via Firebase, no password needed
+        if (!isAdminRole) {
+            firestoreData.password = pass;
+        }
+        
+        db.collection('usuarios').doc(email).set(firestoreData, { merge: true }).catch(() => { });
     }
 
     if (role === 'trabajador' && !workerEmails.includes(email)) {
@@ -3697,6 +3718,31 @@ function logoutUser(e) {
         localStorage.removeItem('dt_logged_user');
         localStorage.removeItem('dt_last_section');
         localStorage.removeItem('dt_last_admin_tab');
+        
+        // Clean admin credentials from dt_registered_users while preserving customer data
+        try {
+            const regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+            if (Array.isArray(regUsers)) {
+                // Remove users with admin role or users in SUPER_ADMINS/adminEmails
+                const cleanedUsers = regUsers.filter(u => {
+                    if (!u || !u.email) return false;
+                    const userEmail = u.email.toLowerCase().trim();
+                    const isSuper = (typeof SUPER_ADMINS !== 'undefined' && SUPER_ADMINS.includes(userEmail));
+                    const isInAdminEmails = (typeof adminEmails !== 'undefined' && adminEmails.includes(userEmail));
+                    const hasAdminRole = (u.role === 'admin' || u.rol === 'admin' || u.isAdmin === true);
+                    
+                    // Keep user if they are NOT admin/super admin
+                    return !isSuper && !isInAdminEmails && !hasAdminRole;
+                });
+                
+                if (cleanedUsers.length !== regUsers.length) {
+                    localStorage.setItem('dt_registered_users', JSON.stringify(cleanedUsers));
+                }
+            }
+        } catch (e) {
+            // If cleaning fails, don't break logout - just log the error
+            console.warn('Error cleaning admin credentials from localStorage:', e);
+        }
     } catch (err) { }
     currentUser = null;
     saveUser();
