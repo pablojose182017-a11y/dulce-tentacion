@@ -12,37 +12,7 @@ window.loadPhase2AdminModules = async function() {
     
     const scripts = [
         "https://cdn.jsdelivr.net/npm/chart.js",
-        "costos-recetas.js?v=1",
-        "ai-core/ai-store.js",
-        "ai-core/ai-persistence.js",
-        "ai-core/ai-hash.js",
-        "ai-core/ai-knowledge.js",
-        "ai-core/ai-security.js",
-        "ai-core/ai-execution.js",
-        "ai-core/ai-autonomous.js",
-        "ai-core/ai-identity.js",
-        "ai-core/ai-memory.js",
-        "ai-core/ai-context.js",
-        "ai-core/ai-provider.js",
-        "ai-core/ai-legacy-rag-adapter.js",
-        "ai-core/ai-reasoning.js",
-        "ai-core/ai-personality.js",
-        "ai-core/ai-offline-resolver.js",
-        "ai-core/ai-web-fetcher.js",
-        "ai-core/ai-ingestion.js",
-        "ai-core/ai-investigation.js",
-        "ai-core/ai-research-engine.js",
-        "ai-core/ai-understanding.js",
-        "ai-core/ai-semantic.js",
-        "ai-core/ai-provenance.js",
-        "ai-core/ai-retention.js",
-        "ai-core/ai-connectivity.js",
-        "ai-core/ai-cyber-defense.js",
-        "ai-core/ai-owner-authority.js",
-        "ai-core/ai-controlled-execution.js",
-        "ai-core/ai-tests.js",
-        "ai-core/ai-chat-bridge.js",
-        "guardian-financiero.js?v=1"
+        "ai-guardian-bundle.min.js"
     ];
 
     for (const src of scripts) {

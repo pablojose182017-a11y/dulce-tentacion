@@ -303,6 +303,13 @@ window.adminToggleBlock = function (email) {
     const u = db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail);
     if (!u) return;
     u.blocked = !u.blocked;
+    // Firestore sync added from control-roles.js extraction
+    if (typeof db !== 'undefined') {
+        const nuevoEstado = u.blocked ? 'bloqueado' : 'activo';
+        db.collection('usuarios').doc(targetEmail).update({ estado: nuevoEstado, blocked: u.blocked })
+            .catch(err => console.warn('No se pudo guardar el estado en Firestore:', err));
+    }
+
     if (typeof saveUsersDB === 'function') saveUsersDB();
     renderAdminUsers();
 
@@ -1040,3 +1047,209 @@ window.eliminarOfertaDesdeModal = function () {
         document.getElementById('modal-ofertas').style.display = 'none';
     }
 };
+
+
+// Extracted from script.js
+window.renderAdminDashboard = function() {
+    document.getElementById('adminMinPurchase').value = adminConfig.minPurchase;
+    document.getElementById('adminMaxDiscount').value = adminConfig.maxDiscount;
+    document.getElementById('adminVipEnabled').checked = adminConfig.vipEnabled;
+
+    let totalNet = 0, totalDisc = 0;
+    const totalOrders = pedidosHistorial.length;
+    let cTotals = {};
+
+    // Métricas de ventas de hoy y mejor día
+    let todayVentas = 0;
+    let daySalesMap = {};
+    const todayStr = new Date().toLocaleDateString('es-CO');
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    pedidosHistorial.forEach(p => {
+        if (p.status !== 'Cancelado') {
+            totalNet += p.total;
+            totalDisc += p.discount;
+            if (p.email !== 'N/A') { cTotals[p.email] = (cTotals[p.email] || 0) + p.total; }
+
+            const pDateObj = p.timestamp ? new Date(p.timestamp) : new Date(); // Fallback si no tiene
+            const pDateStr = pDateObj.toLocaleDateString('es-CO');
+
+            if (pDateStr === todayStr) {
+                todayVentas += p.total;
+            }
+            if (pDateObj.getMonth() === currentMonth && pDateObj.getFullYear() === currentYear) {
+                daySalesMap[pDateStr] = (daySalesMap[pDateStr] || 0) + p.total;
+            }
+        }
+    });
+
+    let bestDay = null;
+    let bestDayTotal = 0;
+    for (let day in daySalesMap) {
+        if (daySalesMap[day] > bestDayTotal) {
+            bestDayTotal = daySalesMap[day];
+            bestDay = day;
+        }
+    }
+    const bestDayText = bestDay ? `${bestDay} ($${bestDayTotal.toLocaleString()})` : 'Aún no hay ventas este mes';
+
+    let topClients = Object.keys(cTotals).map(k => ({ email: k, total: cTotals[k] })).sort((a, b) => b.total - a.total);
+    let estrella = topClients.length > 0 ? topClients[0] : null;
+    let estrellaName = estrella ? (db_users.find(u => u.email === estrella.email)?.name || estrella.email) : 'Nadie aún';
+
+    document.getElementById('admin-dashboard-cards').innerHTML = `
+                <div style="background:#fdf4ff; padding:15px; border-radius:10px; border:1px solid #fbcfe8;">
+                    <div style="font-size:0.85rem; color:#831843;">💵 Ventas de Hoy</div>
+                    <div style="font-size:1.3rem; font-weight:bold; color:#be185d;">$${todayVentas.toLocaleString()}</div>
+                </div>
+                <div style="background:#f0fdfa; padding:15px; border-radius:10px; border:1px solid #ccfbf1;">
+                    <div style="font-size:0.85rem; color:#134e4a;">🏆 Día más Rentable del Mes</div>
+                    <div style="font-size:0.9rem; font-weight:bold; color:#0f766e;">${bestDayText}</div>
+                </div>
+                <div style="background:#f0fdf4; padding:15px; border-radius:10px; border:1px solid #bbf7d0;">
+                    <div style="font-size:0.85rem; color:#166534;">💵 Ventas Netas (Histórico)</div>
+                    <div style="font-size:1.3rem; font-weight:bold; color:#15803d;">$${totalNet.toLocaleString()}</div>
+                </div>
+                <div style="background:#fefce8; padding:15px; border-radius:10px; border:1px solid #fef08a;">
+                    <div style="font-size:0.85rem; color:#854d0e;">🏷️ Total Ahorrado (Dcto)</div>
+                    <div style="font-size:1.3rem; font-weight:bold; color:#a16207;">$${totalDisc.toLocaleString()}</div>
+                </div>
+                <div style="background:#eff6ff; padding:15px; border-radius:10px; border:1px solid #bfdbfe;">
+                    <div style="font-size:0.85rem; color:#1e40af;">📦 Pedidos Recibidos</div>
+                    <div style="font-size:1.3rem; font-weight:bold; color:#1d4ed8;">${totalOrders}</div>
+                </div>
+                <div style="background:#fff1f2; padding:15px; border-radius:10px; border:1px solid #fecdd3;">
+                    <div style="font-size:0.85rem; color:#be123c;">👑 Cliente Estrella</div>
+                    <div style="font-size:1.1rem; font-weight:bold; color:#e11d48; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${estrellaName}</div>
+                </div>
+            `;
+
+    let top5Html = '';
+    topClients.slice(0, 5).forEach((c, idx) => {
+        const uName = db_users.find(u => u.email === c.email)?.name || c.email;
+        top5Html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
+                    <span><strong>#${idx + 1}</strong> ${uName}</span>
+                    <strong style="color:var(--brand-pink);">$${c.total.toLocaleString()}</strong>
+                </div>`;
+    });
+    document.getElementById('admin-top-clients').innerHTML = top5Html || '<p style="color:#888;">No hay compras registradas.</p>';
+}
+
+
+// Extracted from control-roles.js (Offers/Promo Regalo)
+window.eliminarPromoRegalo = function () {
+    if (!confirm('¿Estás seguro de eliminar y desactivar esta promoción?')) return;
+    window.dt_promo_regalo = { activa: false, montoMinimo: 0, productoId: null, cantidad: 1, nombrePromo: '' };
+    localStorage.removeItem('dt_promo_regalo');
+
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
+            .then(() => {
+                if (typeof showToast === 'function') showToast("Promoción eliminada", "🗑️");
+            })
+            .catch(e => console.error("Error eliminando promo:", e));
+    }
+
+    document.getElementById('modal-promo-regalo').style.display = 'none';
+    if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
+    window.renderAdminPromoCard();
+    if (typeof updateCart === 'function') updateCart();
+};
+
+window.abrirModalPromoRegalo = function () {
+    if (!document.getElementById('modal-promo-regalo')) {
+        const modal = document.createElement('div');
+        modal.className = 'auth-modal';
+        modal.id = 'modal-promo-regalo';
+        modal.style.display = 'none';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.zIndex = '999999';
+        document.body.appendChild(modal);
+    }
+
+    const m = document.getElementById('modal-promo-regalo');
+    const conf = window.dt_promo_regalo;
+
+    // Opciones de productos para el regalo
+    const prodOptions = typeof products !== 'undefined'
+        ? products.map(p => `<option value="${p.id}" ${conf.productoId == p.id ? 'selected' : ''}>${p.name}</option>`).join('')
+        : '';
+
+    m.innerHTML = `
+        <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-promo-regalo').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
+            <h3 style="margin-top:0; color:#8b5cf6; text-align:center;">🎁 Configurar Regalo</h3>
+            
+            <div style="margin-bottom:12px; text-align:left;">
+                <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:5px;">Nombre o Mensaje de la Promoción:</label>
+                <input type="text" id="promo-regalo-nombre" value="${conf.nombrePromo || ''}" placeholder="Ej: ❤️ Especial Amor y Amistad" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Monto mínimo de compra (COP)</label>
+                <input type="number" id="promo-regalo-monto" value="${conf.montoMinimo || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 50000">
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Producto de Regalo</label>
+                <select id="promo-regalo-producto" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;">
+                    <option value="">-- Elige un producto --</option>
+                    ${prodOptions}
+                </select>
+            </div>
+            
+            <div style="margin-bottom:15px; text-align:left;">
+                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Cantidad a regalar</label>
+                <input type="number" id="promo-regalo-qty" value="${conf.cantidad || 1}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" min="1">
+            </div>
+            
+            <div style="margin-bottom:20px; text-align:left;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#475569;">
+                    <input type="checkbox" id="promo-regalo-activa" ${conf.activa ? 'checked' : ''} style="width:18px; height:18px;">
+                    Activar Promoción
+                </label>
+            </div>
+            
+            <button onclick="window.guardarPromoRegalo()" style="width:100%; padding:12px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer; margin-bottom:10px;">💾 Guardar Configuración</button>
+            <button onclick="window.eliminarPromoRegalo()" style="width:100%; padding:10px; background:#fef2f2; color:#ef4444; border:1px solid #fca5a5; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">🗑️ Eliminar Promoción</button>
+        </div>
+    `;
+    m.style.display = 'flex';
+};
+
+window.guardarPromoRegalo = function () {
+    window.dt_promo_regalo = {
+        activa: document.getElementById('promo-regalo-activa').checked,
+        nombrePromo: document.getElementById('promo-regalo-nombre').value.trim() || 'Promo Especial',
+        montoMinimo: parseInt(document.getElementById('promo-regalo-monto').value) || 0,
+        productoId: parseInt(document.getElementById('promo-regalo-producto').value) || null,
+        cantidad: parseInt(document.getElementById('promo-regalo-qty').value) || 1
+    };
+
+    if (window.dt_promo_regalo.activa && (!window.dt_promo_regalo.montoMinimo || !window.dt_promo_regalo.productoId)) {
+        if (typeof showToast === 'function') showToast('Revisa monto y producto', '⚠️');
+        return;
+    }
+
+    localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
+
+    if (typeof db !== 'undefined') {
+        db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
+            .then(() => {
+                if (typeof showToast === 'function') showToast("Promo de regalo guardada", "🎁");
+            })
+            .catch(e => console.error("Error guardando promo:", e));
+    } else {
+        if (typeof showToast === 'function') showToast("Promo guardada localmente", "🎁");
+    }
+
+    document.getElementById('modal-promo-regalo').style.display = 'none';
+
+    // Forzar re-evaluacion del carrito por si cambia el estado activo
+    if (typeof updateCart === 'function') updateCart();
+
+    window.renderAdminPromoCard();
+    if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
+}

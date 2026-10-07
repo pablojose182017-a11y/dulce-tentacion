@@ -1103,25 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Sincronización integral de roles manejada en window.confirmRoleChange
 
-// Extender el bloqueo para actualizar en Firestore
-const originalAdminToggleBlockFS = window.adminToggleBlock;
-window.adminToggleBlock = function (emailTarget) {
-    const targetEmail = (emailTarget || '').toLowerCase().trim();
-    if (SUPER_ADMINS.includes(targetEmail)) {
-        alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
-        return;
-    }
-    const u = typeof db_users !== 'undefined' ? db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail) : null;
-    if (u) {
-        const nuevoEstado = !u.blocked ? 'bloqueado' : 'activo';
-        db.collection('usuarios').doc(emailTarget).update({ estado: nuevoEstado, blocked: !u.blocked })
-            .catch(err => console.warn('No se pudo guardar el estado en Firestore:', err));
-    }
-    if (originalAdminToggleBlockFS) originalAdminToggleBlockFS(emailTarget);
-};
 
-// Extender eliminación de usuario para proteger a los Super Admins
-const originalAdminDeleteUser = window.adminDeleteUser;
 
 
 // =========================================================
@@ -2397,121 +2379,9 @@ window.renderAdminPromoCard = function () {
     }
 };
 
-window.eliminarPromoRegalo = function () {
-    if (!confirm('¿Estás seguro de eliminar y desactivar esta promoción?')) return;
-    window.dt_promo_regalo = { activa: false, montoMinimo: 0, productoId: null, cantidad: 1, nombrePromo: '' };
-    localStorage.removeItem('dt_promo_regalo');
 
-    if (typeof db !== 'undefined') {
-        db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
-            .then(() => {
-                if (typeof showToast === 'function') showToast("Promoción eliminada", "🗑️");
-            })
-            .catch(e => console.error("Error eliminando promo:", e));
-    }
 
-    document.getElementById('modal-promo-regalo').style.display = 'none';
-    if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
-    window.renderAdminPromoCard();
-    if (typeof updateCart === 'function') updateCart();
-};
 
-window.abrirModalPromoRegalo = function () {
-    if (!document.getElementById('modal-promo-regalo')) {
-        const modal = document.createElement('div');
-        modal.className = 'auth-modal';
-        modal.id = 'modal-promo-regalo';
-        modal.style.display = 'none';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.zIndex = '999999';
-        document.body.appendChild(modal);
-    }
-
-    const m = document.getElementById('modal-promo-regalo');
-    const conf = window.dt_promo_regalo;
-
-    // Opciones de productos para el regalo
-    const prodOptions = typeof products !== 'undefined'
-        ? products.map(p => `<option value="${p.id}" ${conf.productoId == p.id ? 'selected' : ''}>${p.name}</option>`).join('')
-        : '';
-
-    m.innerHTML = `
-        <div class="auth-content" style="max-width:400px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-            <button class="auth-close-btn" onclick="document.getElementById('modal-promo-regalo').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
-            <h3 style="margin-top:0; color:#8b5cf6; text-align:center;">🎁 Configurar Regalo</h3>
-            
-            <div style="margin-bottom:12px; text-align:left;">
-                <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:5px;">Nombre o Mensaje de la Promoción:</label>
-                <input type="text" id="promo-regalo-nombre" value="${conf.nombrePromo || ''}" placeholder="Ej: ❤️ Especial Amor y Amistad" style="width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px;">
-            </div>
-            
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Monto mínimo de compra (COP)</label>
-                <input type="number" id="promo-regalo-monto" value="${conf.montoMinimo || ''}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 50000">
-            </div>
-            
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Producto de Regalo</label>
-                <select id="promo-regalo-producto" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;">
-                    <option value="">-- Elige un producto --</option>
-                    ${prodOptions}
-                </select>
-            </div>
-            
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Cantidad a regalar</label>
-                <input type="number" id="promo-regalo-qty" value="${conf.cantidad || 1}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" min="1">
-            </div>
-            
-            <div style="margin-bottom:20px; text-align:left;">
-                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:bold; color:#475569;">
-                    <input type="checkbox" id="promo-regalo-activa" ${conf.activa ? 'checked' : ''} style="width:18px; height:18px;">
-                    Activar Promoción
-                </label>
-            </div>
-            
-            <button onclick="window.guardarPromoRegalo()" style="width:100%; padding:12px; background:#8b5cf6; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer; margin-bottom:10px;">💾 Guardar Configuración</button>
-            <button onclick="window.eliminarPromoRegalo()" style="width:100%; padding:10px; background:#fef2f2; color:#ef4444; border:1px solid #fca5a5; border-radius:8px; font-weight:bold; font-size:0.9rem; cursor:pointer;">🗑️ Eliminar Promoción</button>
-        </div>
-    `;
-    m.style.display = 'flex';
-};
-
-window.guardarPromoRegalo = function () {
-    window.dt_promo_regalo = {
-        activa: document.getElementById('promo-regalo-activa').checked,
-        nombrePromo: document.getElementById('promo-regalo-nombre').value.trim() || 'Promo Especial',
-        montoMinimo: parseInt(document.getElementById('promo-regalo-monto').value) || 0,
-        productoId: parseInt(document.getElementById('promo-regalo-producto').value) || null,
-        cantidad: parseInt(document.getElementById('promo-regalo-qty').value) || 1
-    };
-
-    if (window.dt_promo_regalo.activa && (!window.dt_promo_regalo.montoMinimo || !window.dt_promo_regalo.productoId)) {
-        if (typeof showToast === 'function') showToast('Revisa monto y producto', '⚠️');
-        return;
-    }
-
-    localStorage.setItem('dt_promo_regalo', JSON.stringify(window.dt_promo_regalo));
-
-    if (typeof db !== 'undefined') {
-        db.collection('config').doc('promocion_regalo').set(window.dt_promo_regalo)
-            .then(() => {
-                if (typeof showToast === 'function') showToast("Promo de regalo guardada", "🎁");
-            })
-            .catch(e => console.error("Error guardando promo:", e));
-    } else {
-        if (typeof showToast === 'function') showToast("Promo guardada localmente", "🎁");
-    }
-
-    document.getElementById('modal-promo-regalo').style.display = 'none';
-
-    // Forzar re-evaluacion del carrito por si cambia el estado activo
-    if (typeof updateCart === 'function') updateCart();
-
-    window.renderAdminPromoCard();
-    if (typeof window.renderPromoBanner === 'function') window.renderPromoBanner();
-};
 
 window.closeCartModal = function () {
     const m = document.getElementById('cartModal');
