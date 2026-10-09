@@ -3963,6 +3963,7 @@ function createCardHTML(p) {
     const btnText = isOut ? '🚫 Agotado por hoy' : '🛒 Agregar al Carrito';
     const btnClass = isOut ? 'btn-add disabled' : `btn-add badd-${p.id}`;
     const btnAction = isOut ? '' : `onclick="addToCart(${p.id},event)"`;
+    const cardAction = isOut ? '' : `addToCart(${p.id},event);`;
     const outBadge = isOut ? `<span class="badge-status" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">🚫 Agotado</span>` : '';
     const tagBadge = (p.tag && p.tag.trim() !== '') ? `<span class="badge-status" style="background:#dbeafe; color:#1e40af; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${p.tag}</span>` : '';
 
@@ -4020,7 +4021,7 @@ function createCardHTML(p) {
                 `;
     }
 
-    return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${btnAction} }" style="position:relative;">
+    return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${cardAction} }" style="position:relative;">
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt}; cursor:pointer;" onclick="event.stopPropagation(); const img = this.querySelector('img'); if(img) window.openProductImageModal(img.src, img.alt);" title="Ver foto ampliada">
                 <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); window.openProductImageModal(this.src, this.alt);">
