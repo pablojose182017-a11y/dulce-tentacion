@@ -46,7 +46,10 @@
                 </svg>
             </span>
             <input type="text" id="searchInputDesktop" placeholder="Buscar: cascarita, torta, croissant..."
-                oninput="filterProductsBySearch('searchInputDesktop')">
+                aria-label="Buscar productos" autocomplete="off" oninput="filterProductsBySearch('searchInputDesktop')"
+                onkeydown="if(event.key==='Escape'){clearProductSearch(); this.blur();}">
+            <button class="search-clear-btn" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda"
+                onclick="clearProductSearch()" hidden>×</button>
         </div>
 
         <nav>
@@ -136,7 +139,8 @@
             </div>
         </div>
         <div class="mobile-header-actions">
-            <button class="search-circle-btn" onclick="toggleMobileSearch()" title="Buscar" aria-label="Buscar productos">
+            <button class="search-circle-btn" onclick="toggleMobileSearch()" title="Buscar" aria-label="Buscar productos"
+                aria-controls="mobileSearchBar" aria-expanded="false">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -187,7 +191,10 @@
                 </svg>
             </span>
             <input type="text" id="searchInputMobile" placeholder="Buscar pan, torta, croissant..."
-                oninput="filterProductsBySearch('searchInputMobile')">
+                aria-label="Buscar productos" autocomplete="off" oninput="filterProductsBySearch('searchInputMobile')"
+                onkeydown="if(event.key==='Escape'){toggleMobileSearch();}">
+            <button class="search-clear-btn" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda"
+                onclick="clearProductSearch()" hidden>×</button>
         </div>
     </div>
 
@@ -386,6 +393,7 @@
             <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta ✨</button>
         </div>
 
+        <div id="searchHelp" class="search-help" role="status" aria-live="polite" hidden></div>
         <div class="grid" id="productGrid"></div>
     </section>
 

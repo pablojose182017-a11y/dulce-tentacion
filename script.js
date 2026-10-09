@@ -332,9 +332,12 @@ function goToCatalog(e) {
 // ===== MOBILE SEARCH TOGGLE =====
 function toggleMobileSearch() {
     const bar = document.getElementById('mobileSearchBar');
+    if (!bar) return;
     bar.classList.toggle('open');
+    const searchButton = document.querySelector('.search-circle-btn');
+    if (searchButton) searchButton.setAttribute('aria-expanded', String(bar.classList.contains('open')));
     if (bar.classList.contains('open')) {
-        document.getElementById('searchInputMobile').focus();
+        document.getElementById('searchInputMobile')?.focus();
     }
 }
 
@@ -4071,10 +4074,49 @@ function filterCategory(cat, el) {
     }));
     renderFeatured(cat);
 }
+function showSearchHelp(title, message, actionLabel, action) {
+    const panel = document.getElementById('searchHelp');
+    if (!panel) return;
+    panel.replaceChildren();
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    const text = document.createElement('p');
+    text.textContent = message;
+    panel.append(heading, text);
+    if (actionLabel && typeof action === 'function') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = actionLabel;
+        button.addEventListener('click', action);
+        panel.append(button);
+    }
+    panel.hidden = false;
+}
+
+function clearProductSearch() {
+    ['searchInputDesktop', 'searchInputMobile'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    document.querySelectorAll('.search-clear-btn').forEach(button => { button.hidden = true; });
+    const panel = document.getElementById('searchHelp');
+    if (panel) { panel.hidden = true; panel.replaceChildren(); }
+    document.querySelectorAll('.cat-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.getAttribute('onclick')?.includes("'todos'"));
+    });
+    renderProducts(products);
+    renderFeatured('todos');
+}
+
 function filterProductsBySearch(inputId) {
     const inputEl = document.getElementById(inputId);
     const rawVal = inputEl ? inputEl.value : '';
-    const normalizeText = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const normalizeText = (str) => (str || '').normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
     const q = normalizeText(rawVal);
 
     // Sincronizar inputs móvil y desktop
@@ -4082,6 +4124,10 @@ function filterProductsBySearch(inputId) {
     const mobInp = document.getElementById('searchInputMobile');
     if (deskInp && deskInp !== inputEl) deskInp.value = rawVal;
     if (mobInp && mobInp !== inputEl) mobInp.value = rawVal;
+    document.querySelectorAll('.search-clear-btn').forEach(button => { button.hidden = !q; });
+
+    const helpPanel = document.getElementById('searchHelp');
+    if (helpPanel) { helpPanel.hidden = true; helpPanel.replaceChildren(); }
 
     // Si el campo queda vacío, restaurar catálogo completo y chip 'todos'
     if (!q) {
@@ -4093,12 +4139,44 @@ function filterProductsBySearch(inputId) {
         return;
     }
 
-    // Filtrar de forma segura por nombre, descripción y categoría
+    const terms = q.split(' ').filter(Boolean);
+    const deliveryQuestion = /\b(donde|entrega|entregan|domicilio|domicilios|cobertura|zona|zonas)\b/.test(q);
+    const orderQuestion = /\b(como|hago|hacer|realizar|pedir|comprar)\b/.test(q)
+        && /\b(pedido|pedidos|compra|comprar|carrito|orden)\b/.test(q);
+
+    if (deliveryQuestion) {
+        renderProducts(products);
+        renderFeatured('todos');
+        showSearchHelp(
+            'Entregas en Cúcuta',
+            'Cubrimos la zona urbana de Cúcuta. El domicilio es gratis en compras desde $10.000 COP; en pedidos menores cuesta $5.000 COP.',
+            'Ver zonas y condiciones',
+            () => window.openDeliveryCoverageModal?.()
+        );
+        showSection('productos', document.querySelectorAll('.nav-link')[1]);
+        return;
+    }
+
+    if (orderQuestion) {
+        renderProducts(products);
+        renderFeatured('todos');
+        showSearchHelp(
+            'Haz tu pedido en línea',
+            'Elige tus productos, agrégalos al carrito y continúa con la entrega para indicar tus datos y forma de pago. Al final podrás confirmar el pedido.',
+            'Ver catálogo',
+            () => showSection('productos', document.querySelectorAll('.nav-link')[1])
+        );
+        showSection('productos', document.querySelectorAll('.nav-link')[1]);
+        return;
+    }
+
+    // Buscar por frase o por todos los términos, sin depender de tildes o signos.
     const filtered = products.filter(p => {
         const name = normalizeText(p.name);
         const desc = normalizeText(p.desc);
         const cat = normalizeText(p.cat);
-        return name.includes(q) || desc.includes(q) || cat.includes(q);
+        const searchable = `${name} ${desc} ${cat}`;
+        return searchable.includes(q) || terms.every(term => searchable.includes(term));
     });
 
     renderProducts(filtered);

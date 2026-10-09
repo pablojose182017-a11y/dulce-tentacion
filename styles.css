@@ -6640,3 +6640,77 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
         padding-bottom: 84px !important;
     }
 }
+
+/* Search UI: consistent controls for the desktop header and compact mobile header. */
+.search-box input { padding-right: 42px; }
+.search-box:focus-within {
+    filter: drop-shadow(0 5px 12px rgba(216, 27, 96, 0.08));
+}
+.search-clear-btn {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: #9f1239;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.search-clear-btn:hover { background: #fff0f5; }
+.search-clear-btn[hidden] { display: none !important; }
+.mobile-search-bar {
+    padding: 10px 14px 12px;
+    background: #fff;
+    box-shadow: 0 8px 18px rgba(68, 38, 46, 0.08);
+}
+.mobile-search-wrap { max-width: 760px; margin: 0 auto; }
+.mobile-search-bar input {
+    box-sizing: border-box;
+    min-height: 46px;
+    padding-right: 48px;
+    border-color: #f2cbd8;
+    background: #fffafb;
+    color: #38252b;
+    box-shadow: 0 2px 8px rgba(103, 44, 63, 0.05);
+}
+.mobile-search-bar input::placeholder { color: #927b82; opacity: 1; }
+.search-help {
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    border: 1px solid #f4ccd8;
+    border-left: 4px solid #d81b60;
+    border-radius: 14px;
+    background: linear-gradient(120deg, #fff8fb, #fff);
+    color: #49343b;
+    line-height: 1.55;
+    box-shadow: 0 5px 16px rgba(90, 34, 55, 0.06);
+}
+.search-help strong { display: block; margin-bottom: 4px; color: #9f1239; }
+.search-help p { margin: 0; }
+.search-help button {
+    margin-top: 12px;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #d81b60;
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.search-help button:hover { background: #ad1457; }
+
+@media (max-width: 768px) {
+    .mobile-search-bar.open { display: block !important; }
+    .search-help { margin: 0 0 14px; padding: 14px; }
+}
