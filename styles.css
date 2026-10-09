@@ -6613,3 +6613,30 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     border-color: #0284c7;
     color: #0369a1;
 }
+
+/* Keep tablet portrait layouts on the compact navigation until desktop header fits. */
+@media (min-width: 769px) and (max-width: 1023px) {
+    header {
+        display: none !important;
+    }
+
+    .mobile-header {
+        display: flex !important;
+    }
+
+    .mobile-search-bar {
+        display: none !important;
+    }
+
+    .mobile-search-bar.open {
+        display: block !important;
+    }
+
+    .mobile-bottom-nav {
+        display: block !important;
+    }
+
+    body {
+        padding-bottom: 84px !important;
+    }
+}
