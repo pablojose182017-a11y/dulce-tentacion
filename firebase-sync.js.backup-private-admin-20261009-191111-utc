@@ -94,29 +94,6 @@ window.loadAdminHTMLFragment = async function() {
         const response = await window.fetchAdminAsset('/admin-dashboard-fragment.html');
         const html = await response.text();
         mountPoint.innerHTML = html;
-
-        // Los accesos de escritorio y móvil vienen dentro del fragmento
-        // autorizado; se montan en sus ubicaciones originales del perfil.
-        const protectedActionsContainer = mountPoint.querySelector('#protected-admin-actions');
-        const desktopActionsSlot = document.getElementById('desktop-profile-actions-slot');
-        const mobileActionsSlot = document.getElementById('mobile-profile-actions-slot');
-        if (!protectedActionsContainer || !desktopActionsSlot || !mobileActionsSlot) {
-            throw new Error('No se pudieron montar los accesos autorizados del panel.');
-        }
-
-        const protectedActions = [
-            ['desk-admin-btn', desktopActionsSlot],
-            ['desk-kitchen-btn', desktopActionsSlot],
-            ['mob-admin-btn', mobileActionsSlot],
-            ['mob-kitchen-btn', mobileActionsSlot]
-        ];
-        for (const [id, slot] of protectedActions) {
-            const button = protectedActionsContainer.querySelector(`#${id}`);
-            if (!button) throw new Error(`Falta el acceso protegido ${id}.`);
-            slot.appendChild(button);
-        }
-        protectedActionsContainer.remove();
-
         // FASE 2.4A: Cargar admin-core.js
         await window.loadProtectedAdminScript('/admin-core.js?v=1', 'admin-core.js');
 

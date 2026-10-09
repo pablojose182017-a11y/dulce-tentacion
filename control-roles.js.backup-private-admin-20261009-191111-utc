@@ -52,8 +52,25 @@ function isSuperAdmin(email) {
 window.isSuperAdmin = isSuperAdmin;
 
 window.addEventListener('DOMContentLoaded', () => {
-    // El modal de contraseña ahora solo existe dentro del fragmento
-    // administrativo autorizado; no se genera para visitantes ni clientes.
+    // --- 1. INYECTAR MODAL DE CONTRASEÑA SI NO EXISTE ---
+    if (!document.getElementById('adminPasswordModal')) {
+        const modalHTML = `
+        <div id="adminPasswordModal" class="modal-overlay" style="display:none !important; align-items:center; justify-content:center; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+            <div class="modal-content" style="max-width:400px; padding:20px; text-align:center; background:#fff; border-radius:12px; width:90%; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+                <h3 style="color:var(--brand-pink); margin-bottom:15px; font-size:1.5rem;">🔑 Restablecer Contraseña</h3>
+                <p id="adminPasswordModalUser" style="margin-bottom:15px; font-weight:bold; color:#475569; font-size:0.95rem;"></p>
+                <div class="password-wrapper" style="margin-bottom:20px;">
+                    <input type="password" id="adminNewPasswordInput" placeholder="Nueva Contraseña..." style="width:100%; padding:12px 42px 12px 12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; font-size:1rem;">
+                    <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('adminNewPasswordInput', this)" aria-label="Mostrar contraseña" style="right:12px;">👁️</button>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button class="btn-hero-secondary" onclick="document.getElementById('adminPasswordModal').style.setProperty('display', 'none', 'important')" style="padding:10px 20px; border:1px solid #ddd; background:#f1f5f9; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Cancelar</button>
+                    <button class="btn-gold" onclick="saveAdminNewPassword()" style="padding:10px 20px; border:none; background:var(--brand-pink); color:#fff; border-radius:8px; cursor:pointer; font-weight:bold; flex:1;">Guardar</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
 
     // --- SANITIZACIÓN DE CARRITO DE EMERGENCIA ---
     if (typeof cart !== 'undefined' && Array.isArray(cart)) {

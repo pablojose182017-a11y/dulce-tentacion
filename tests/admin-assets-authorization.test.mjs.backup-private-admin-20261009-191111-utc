@@ -4,34 +4,6 @@ import { readFile } from 'node:fs/promises';
 const middlewareSource = await readFile(new URL('../functions/_middleware.js', import.meta.url), 'utf8');
 const middleware = await import(`data:text/javascript;base64,${Buffer.from(middlewareSource).toString('base64')}`);
 const routeConfig = JSON.parse(await readFile(new URL('../_routes.json', import.meta.url), 'utf8'));
-const publicHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-const protectedHtml = await readFile(new URL('../admin-dashboard-fragment.html', import.meta.url), 'utf8');
-const syncSource = await readFile(new URL('../firebase-sync.js', import.meta.url), 'utf8');
-const roleSource = await readFile(new URL('../control-roles.js', import.meta.url), 'utf8');
-
-for (const id of [
-    'desk-admin-btn', 'desk-kitchen-btn', 'mob-admin-btn', 'mob-kitchen-btn',
-    'adminPasswordModal', 'adminEditUserModal', 'kitchen-modal', 'adminPointsModal'
-]) {
-    assert.doesNotMatch(publicHtml, new RegExp(`\\bid=["']${id}["']`), `index.html público no debe contener #${id}.`);
-    assert.match(protectedHtml, new RegExp(`\\bid=["']${id}["']`), `El fragmento protegido debe conservar #${id}.`);
-}
-for (const text of ['Panel Administrador', 'Cambiar Contraseña', 'Editar Datos de Usuario', 'Panel Operativo de Cocina y Despacho', 'Clientes &amp; Roles']) {
-    assert.ok(!publicHtml.includes(text), `index.html público no debe incluir el texto administrativo: ${text}`);
-}
-assert.doesNotMatch(publicHtml, /Admin modules deferred/i, 'No debe quedar el comentario que enumera módulos privados.');
-assert.match(publicHtml, /id="desktop-profile-actions-slot"/);
-assert.match(publicHtml, /id="mobile-profile-actions-slot"/);
-assert.match(publicHtml, /accounts\.google\.com\/gsi\/client/, 'Google Sign-In permanece en la página pública.');
-assert.match(publicHtml, /id="productGrid"/, 'El catálogo público permanece en index.html.');
-assert.match(publicHtml, /id="cartModal"/, 'El carrito público permanece en index.html.');
-assert.match(protectedHtml, /id="protected-admin-actions"/);
-assert.match(syncSource, /fetchAdminAsset\('\/admin-dashboard-fragment\.html'\)/);
-assert.match(syncSource, /protected-admin-actions/);
-assert.match(syncSource, /desktop-profile-actions-slot/);
-assert.match(syncSource, /mobile-profile-actions-slot/);
-assert.doesNotMatch(roleSource, /const modalHTML\s*=/, 'control-roles.js no debe generar HTML del modal para visitantes.');
-console.log('PASS: el HTML inicial conserva la tienda, pero el marcado y controles administrativos viven en el fragmento protegido.');
 
 const accounts = new Map([
     ['customer-token', { localId: 'customer-uid', email: 'customer@example.test' }],
@@ -83,11 +55,6 @@ const expectedProtectedRoutes = [
     '/ai-guardian-bundle.min.js*', '/*.bak', '/*.backup-*', '/*.before-*'
 ];
 assert.deepEqual(routeConfig.include, expectedProtectedRoutes, 'Pages debe invocar la barrera en cada archivo y patrón de respaldo privado.');
-
-const publicHome = await request('/index.html', null);
-assert.equal(publicHome.result.status, 200, 'La página pública de la tienda debe seguir accesible sin sesión.');
-assert.equal(publicHome.nextCalls, 1, 'La tienda pública debe continuar hasta el servidor estático.');
-console.log('PASS: index.html sigue siendo público y no queda detrás de la autorización administrativa.');
 
 for (const path of [
     '/admin-dashboard-fragment.html', '/admin-dashboard-fragment.html.before-old',
