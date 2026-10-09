@@ -532,17 +532,3 @@ window.AI_CORE.SemanticOrchestrator = SemanticOrchestrator;
 window.AI_CORE.SemanticComparator = SemanticComparator;
 window.AI_CORE.Level0Provider = Level0Provider;
 window.AI_CORE.Level1Provider = Level1Provider;
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        InputIdentity,
-        EvidenceCandidate,
-        EvidenceSpan,
-        SemanticStructuralValidator,
-        SemanticProviderRegistry,
-        SemanticOrchestrator,
-        SemanticComparator,
-        Level0Provider,
-        Level1Provider
-    };
-}

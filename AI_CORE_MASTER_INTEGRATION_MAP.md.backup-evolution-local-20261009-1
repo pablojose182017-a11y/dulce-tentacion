@@ -32,14 +32,14 @@ El bundle minificado histórico se conserva, pero el cargador local usa el bundl
 | Proveniencia / semántica | `ai-provenance.js`, `ai-semantic.js` | Fuentes incluidas; integración cognitiva completa no demostrada | Ejecutar pruebas de contrato y verificar el flujo desde el mensaje hasta evidencia validada |
 | Consolidación | `ai-consolidation.js`, `ai-integrated-consolidation.js` | No están en el manifiesto de producción | Resolver auditorías pendientes y validar referencias, conflictos, ciclos y límites de cómputo |
 | Seguridad / ejecución | `ai-security.js`, `ai-execution.js`, `ai-controlled-execution.js`, `ai-autonomous.js` | Componentes cargados, pero la ejecución real se declara no lista en informes | Mantener acciones apagadas hasta completar pruebas de autorización, aprobación, rollback y auditoría |
-| Evolution V1–V5 | Diseños, auditorías, `ai-evolution-v5.js`, `ai-evolution-advisor.js` | V5 integrado en modo local de propuestas; presupuesto de recursos acotado, oráculo conservador, auditoría encapsulada y sin ejecución | Sigue sin persistencia entre sesiones ni verificador independiente conectado; toda evolución de reglas requiere evaluación y aprobación humana |
+| Evolution V5 | `ai-evolution-v5.js` y diseños V1–V5 | No incluido en runtime; experimental y con limitaciones críticas documentadas | No activar. Primero corregir limitaciones críticas y separar propuestas de cualquier escritura/ejecución |
 
 ## Informes que requieren reconciliación
 
 - `AI_CORE_PHASE2_BRAIN_CONNECTION_REPORT.md` documenta que se usa `provider.generate()`, pero el código actual de `ReasoningEngine` llama a `_mockAIProvider()` y la respuesta normal de `ChatBridge` se compone localmente. El informe es historial, no prueba del flujo actual.
 - Los informes 4C.1/4C.2 contienen estados sucesivos de `BLOCKED`, `PENDING AUDIT`, `VERIFIED` y `NOT VERIFIED`; el estado final debe resolverse con las últimas pruebas ejecutadas sobre el código actual.
 - Fase 4D describe un parser local Level 0/1 y niveles superiores pendientes. No equivale a comprensión libre del lenguaje.
-- `AI_CORE_EVOLUTION_V5_IMPLEMENTATION_LIMITATIONS.md` y la auditoría adversarial describen riesgos del prototipo previo. El código local se endureció y su suite se reemplazó por pruebas negativas reproducibles; esto no invalida los límites de diseño que requieren infraestructura o un verificador independiente.
+- `AI_CORE_EVOLUTION_V5_IMPLEMENTATION_LIMITATIONS.md` marca V5 experimental/no segura para producción y enumera riesgos críticos. Es una barrera explícita para su activación.
 - La auditoría cognitiva describe límites del motor local y puede preceder cambios posteriores; cada hallazgo debe contrastarse con la fuente actual antes de marcarlo vigente o cerrado.
 
 ## Orden de integración propuesto
@@ -71,7 +71,6 @@ El bundle minificado histórico se conserva, pero el cargador local usa el bundl
 
 ### Hito E — Evolution controlada
 
-- `ai-evolution-advisor.js` observa solo categorías de respuesta y produce propuestas versionadas después de señales repetidas; no almacena mensajes ni persiste estado. `ai-evolution-v5.js` gobierna presupuesto local, reserva recursos y registra propuestas sin autoridad.
 - Evolution puede evaluar resultados y proponer mejoras versionadas.
 - Toda modificación pasa por pruebas aisladas, comparación contra regresiones y revisión humana.
 - No puede cambiar permisos, reglas de seguridad ni código activo por decisión propia.

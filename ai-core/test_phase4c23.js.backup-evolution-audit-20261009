@@ -35,9 +35,9 @@ async function runTests() {
         claimId: 'testLineage',
         claimProposal: { intent: 'REPORT', knowledgeType: 'FACT', subject: 'LineageTest' },
         supports: [
-            { source: sB, evidence: { reference: 'support-B' } },
-            { source: sC, evidence: { reference: 'support-C' } },
-            { source: sD, evidence: { reference: 'support-D' } }
+            { source: sB, evidence: [] },
+            { source: sC, evidence: [] },
+            { source: sD, evidence: [] }
         ]
     };
     graph.claims.set('testLineage', claimLineage);

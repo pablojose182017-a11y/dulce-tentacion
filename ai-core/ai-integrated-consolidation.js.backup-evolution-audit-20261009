@@ -1,4 +1,4 @@
-if (typeof window !== 'undefined') window.AI_CORE = window.AI_CORE || {};
+const crypto = require('crypto');
 
 class EvidenceValidator {
     static isValid(support, provenanceGraph) {
@@ -83,7 +83,37 @@ class IntegratedConsolidationEngine {
     async consolidateClaim(claimId) {
         let record = this.provenance.claims.get(claimId); 
         if (!record) return null;
-        const newState = this._deriveState(claimId, record);
+
+        let proposal = record.claimProposal;
+        
+        let independentCount = this._areSourcesIndependent(record.supports);
+
+        let isConflicted = false;
+        let conflictList = Array.from(this.provenance.conflicts.values());
+        for (let c of conflictList) {
+            if (c.status === 'OPEN' && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)) {
+                isConflicted = true;
+                break;
+            }
+        }
+
+        let newState = 'STRUCTURED';
+        let type = proposal.knowledgeType || 'UNKNOWN';
+        let epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
+
+        if (isConflicted) {
+            newState = 'CONFLICTED';
+        } else if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED') {
+            newState = 'UNCERTAIN';
+        } else if (independentCount === 0) {
+            newState = 'UNCERTAIN';
+        } else if (epistemicallyRestricted.includes(type)) {
+            newState = independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
+        } else if (type === 'FACT' || type === 'OBSERVATION') {
+            newState = independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
+        } else {
+            newState = 'RAW';
+        }
 
         if (this.consolidationStates.get(claimId) !== newState) {
             this.consolidationStates.set(claimId, newState);
@@ -94,26 +124,8 @@ class IntegratedConsolidationEngine {
         return newState;
     }
 
-    _deriveState(claimId, record) {
-        if (!record || !record.claimProposal) return 'RAW';
-        const independentCount = this._areSourcesIndependent(record.supports);
-        const isConflicted = Array.from(this.provenance.conflicts.values()).some(c =>
-            c.status === 'OPEN' && c.claimA && c.claimB && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)
-        );
-        const type = record.claimProposal.knowledgeType || 'UNKNOWN';
-        const epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
-
-        if (isConflicted) return 'CONFLICTED';
-        if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED' || independentCount === 0) return 'UNCERTAIN';
-        if (epistemicallyRestricted.includes(type)) return independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
-        if (type === 'FACT' || type === 'OBSERVATION') return independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
-        return 'RAW';
-    }
-
     getConsolidatedState(claimId) {
-        // The public map is a derived cache and may be tampered with. Never
-        // treat a cached state as evidence; derive it from the current graph.
-        return this._deriveState(claimId, this.provenance.claims.get(claimId));
+        return this.consolidationStates.get(claimId) || 'RAW';
     }
 
     // VULN-01 Remediation: Rehydrate is READ-ONLY. Computes derived state locally.
@@ -124,7 +136,37 @@ class IntegratedConsolidationEngine {
             let record = this.provenance.claims.get(claimId); 
             if (!record) continue;
 
-            derivedStates[claimId] = this._deriveState(claimId, record);
+            let proposal = record.claimProposal;
+            let independentCount = this._areSourcesIndependent(record.supports);
+
+            let isConflicted = false;
+            let conflictList = Array.from(this.provenance.conflicts.values());
+            for (let c of conflictList) {
+                if (c.status === 'OPEN' && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)) {
+                    isConflicted = true;
+                    break;
+                }
+            }
+
+            let newState = 'STRUCTURED';
+            let type = proposal.knowledgeType || 'UNKNOWN';
+            let epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
+
+            if (isConflicted) {
+                newState = 'CONFLICTED';
+            } else if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED') {
+                newState = 'UNCERTAIN';
+            } else if (independentCount === 0) {
+                newState = 'UNCERTAIN';
+            } else if (epistemicallyRestricted.includes(type)) {
+                newState = independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
+            } else if (type === 'FACT' || type === 'OBSERVATION') {
+                newState = independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
+            } else {
+                newState = 'RAW';
+            }
+            
+            derivedStates[claimId] = newState;
         }
         
         // Deep freeze POJO (keys and string values)
@@ -203,11 +245,8 @@ class SemanticConsolidationPipeline {
     }
 }
 
-const integratedConsolidationApi = {
+module.exports = {
     IntegratedConsolidationEngine,
     EvidenceValidator,
     SemanticConsolidationPipeline
 };
-
-if (typeof window !== 'undefined') Object.assign(window.AI_CORE, integratedConsolidationApi);
-if (typeof module !== 'undefined' && module.exports) module.exports = integratedConsolidationApi;

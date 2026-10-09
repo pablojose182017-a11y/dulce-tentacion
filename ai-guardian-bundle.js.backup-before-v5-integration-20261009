@@ -4342,298 +4342,6 @@ class PersonalityEngine {
 window.AI_CORE.PersonalityEngine = PersonalityEngine;
 if (typeof module !== 'undefined') module.exports = { PersonalityEngine };
 
-/* --- SOURCE: ai-evolution-v5.js --- */
-/*
- * Guarded Evolution V5 (local, proposal-only).
- * This module cannot authorize or execute actions and has no persistence layer.
- */
-(function(root) {
-    const governorState = new WeakMap();
-    const machineState = new WeakMap();
-    const MAX_ID_LENGTH = 120;
-    const RESOURCE_KEYS = ['cpuTime', 'memoryMb', 'toolCalls', 'concurrentObjectives'];
-
-    function freezeCopy(value) {
-        if (value === null || typeof value !== 'object') return value;
-        if (Array.isArray(value)) return Object.freeze(value.map(freezeCopy));
-        const copy = {};
-        for (const key of Object.keys(value)) copy[key] = freezeCopy(value[key]);
-        return Object.freeze(copy);
-    }
-
-    function validId(value) {
-        return typeof value === 'string' && value.trim().length > 0 && value.length <= MAX_ID_LENGTH;
-    }
-
-    function defaultClock() {
-        if (typeof performance !== 'undefined' && typeof performance.now === 'function') return performance.now();
-        return Date.now();
-    }
-
-    class GlobalResourceGovernor {
-        constructor(options = {}) {
-            const limits = Object.assign({
-                cpuTime: 10000,
-                memoryMb: 512,
-                toolCalls: 50,
-                concurrentObjectives: 5
-            }, options.limits || {});
-            for (const key of RESOURCE_KEYS) {
-                if (!Number.isSafeInteger(limits[key]) || limits[key] < 0) throw new TypeError(`Invalid resource limit: ${key}`);
-            }
-            governorState.set(this, {
-                limits,
-                reservations: new Map(),
-                clock: typeof options.clock === 'function' ? options.clock : defaultClock
-            });
-        }
-
-        _releaseExpired() {
-            const state = governorState.get(this);
-            const now = state.clock();
-            for (const [id, reservation] of state.reservations) {
-                if (reservation.expiresAt <= now) state.reservations.delete(id);
-            }
-        }
-
-        reserveAtomically(reservationId, requested, ttlMs = 30000) {
-            const state = governorState.get(this);
-            if (!validId(reservationId) || !requested || typeof requested !== 'object' || Array.isArray(requested)) return false;
-            if (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 300000) return false;
-            this._releaseExpired();
-            if (state.reservations.has(reservationId)) return false;
-
-            const normalized = Object.fromEntries(RESOURCE_KEYS.map(key => [
-                key,
-                requested[key] === undefined ? (key === 'concurrentObjectives' ? 1 : 0) : requested[key]
-            ]));
-            for (const key of RESOURCE_KEYS) {
-                if (!Number.isSafeInteger(normalized[key]) || normalized[key] < 0) return false;
-            }
-            if (!RESOURCE_KEYS.some(key => normalized[key] > 0)) return false;
-
-            const active = Array.from(state.reservations.values());
-            const usage = Object.fromEntries(RESOURCE_KEYS.map(key => [key, active.reduce((total, reservation) => total + reservation.resources[key], 0)]));
-            for (const key of RESOURCE_KEYS) {
-                if (usage[key] + normalized[key] > state.limits[key]) return false;
-            }
-
-            const now = state.clock();
-            if (!Number.isFinite(now)) return false;
-            state.reservations.set(reservationId, { resources: normalized, expiresAt: now + ttlMs });
-            return true;
-        }
-
-        release(reservationId) {
-            return governorState.get(this).reservations.delete(reservationId);
-        }
-
-        releaseExpired() {
-            const state = governorState.get(this);
-            const before = state.reservations.size;
-            this._releaseExpired();
-            return before - state.reservations.size;
-        }
-
-        snapshot() {
-            const state = governorState.get(this);
-            this._releaseExpired();
-            const reservations = Array.from(state.reservations, ([id, reservation]) => ({
-                id,
-                resources: Object.assign({}, reservation.resources),
-                expiresAt: reservation.expiresAt
-            }));
-            const usage = Object.fromEntries(RESOURCE_KEYS.map(key => [key,
-                reservations.reduce((total, reservation) => total + reservation.resources[key], 0)
-            ]));
-            return freezeCopy({ limits: state.limits, usage, reservations });
-        }
-    }
-
-    class ProgressOracle {
-        constructor(options = {}) {
-            this.verifier = typeof options.verifier === 'function' ? options.verifier : null;
-        }
-
-        async verify(progressClaim, evidence) {
-            if (!progressClaim || typeof progressClaim !== 'object' || !evidence || typeof evidence !== 'object') {
-                return Object.freeze({ status: 'INCONCLUSIVE', reason: 'MISSING_STRUCTURED_EVIDENCE' });
-            }
-            // Confidence/source counts supplied by the claimant are not independent verification.
-            if (!this.verifier) return Object.freeze({ status: 'INCONCLUSIVE', reason: 'NO_INDEPENDENT_VERIFIER' });
-            try {
-                const result = await this.verifier(freezeCopy(progressClaim), freezeCopy(evidence));
-                if (result === true) return Object.freeze({ status: 'VERIFIED', reason: 'INDEPENDENT_VERIFIER_ACCEPTED' });
-                if (result === false) return Object.freeze({ status: 'NOT_VERIFIED', reason: 'INDEPENDENT_VERIFIER_REJECTED' });
-                return Object.freeze({ status: 'INCONCLUSIVE', reason: 'VERIFIER_RETURNED_NO_DECISION' });
-            } catch (_error) {
-                return Object.freeze({ status: 'INCONCLUSIVE', reason: 'VERIFIER_FAILED' });
-            }
-        }
-    }
-
-    class EvolutionStateMachine {
-        constructor(options = {}) {
-            const governor = options.governor || new GlobalResourceGovernor(options.governorOptions);
-            const oracle = options.oracle || new ProgressOracle({ verifier: options.verifier });
-            const maxAuditEvents = Number.isSafeInteger(options.maxAuditEvents) ? Math.max(10, Math.min(1000, options.maxAuditEvents)) : 200;
-            const maxProposals = Number.isSafeInteger(options.maxProposals) ? Math.max(5, Math.min(100, options.maxProposals)) : 30;
-            machineState.set(this, {
-                governor,
-                oracle,
-                objectives: new Map(),
-                proposals: new Map(),
-                proposalVersions: new Map(),
-                audit: [],
-                auditCapacity: maxAuditEvents,
-                maxProposals,
-                sequence: 0,
-                stopped: false
-            });
-        }
-
-        get governor() { return machineState.get(this).governor; }
-        get oracle() { return machineState.get(this).oracle; }
-        get auditLog() { return this.getAuditLog(); }
-        get stopped() { return machineState.get(this).stopped; }
-
-        _audit(event) {
-            const state = machineState.get(this);
-            if (state.audit.length >= state.auditCapacity) {
-                state.stopped = true;
-                return false;
-            }
-            state.audit.push(freezeCopy(Object.assign({ sequence: ++state.sequence }, event)));
-            return true;
-        }
-
-        getAuditLog() {
-            const audit = machineState.get(this).audit;
-            return Object.freeze(audit.map(event => freezeCopy(event)));
-        }
-
-        getProposals() {
-            const proposals = machineState.get(this).proposals;
-            return Object.freeze(Array.from(proposals.values(), proposal => freezeCopy(proposal)));
-        }
-
-        proposeObjective(globalOperationId, objectiveId, requiredResources = {}) {
-            const state = machineState.get(this);
-            if (state.stopped) return Object.freeze({ status: 'EVOLUTION_STOPPED', reason: 'AUDIT_CAPACITY_EXHAUSTED' });
-            if (!validId(globalOperationId) || !validId(objectiveId)) return Object.freeze({ status: 'REJECTED_INVALID_ID' });
-            if (state.objectives.has(objectiveId)) return Object.freeze({ status: 'REJECTED_DUPLICATE_OBJECTIVE' });
-            if (!this._audit({ globalOperationId, objectiveId, actionId: 'PROPOSE_ATTEMPT' })) {
-                return Object.freeze({ status: 'EVOLUTION_STOPPED', reason: 'AUDIT_CAPACITY_EXHAUSTED' });
-            }
-
-            const reservationId = `evo-res-${++state.sequence}`;
-            const reserved = this.governor.reserveAtomically(reservationId, requiredResources);
-            if (!reserved) {
-                this._audit({ globalOperationId, objectiveId, actionId: 'PROPOSE_REJECTED', reason: 'RESOURCE_LIMIT_OR_INVALID_RESERVATION' });
-                return Object.freeze({ status: 'FAILED_RESOURCES', globalOperationId, objectiveId });
-            }
-            if (!this._audit({ globalOperationId, objectiveId, actionId: 'PROPOSE', decision: 'PROPOSED' })) {
-                this.governor.release(reservationId);
-                return Object.freeze({ status: 'EVOLUTION_STOPPED', reason: 'AUDIT_CAPACITY_EXHAUSTED' });
-            }
-            state.objectives.set(objectiveId, { globalOperationId, reservationId, status: 'PROPOSED' });
-            return Object.freeze({ status: 'PROPOSED', globalOperationId, objectiveId, reservationId });
-        }
-
-        async claimProgress(globalOperationId, objectiveId, evidence) {
-            const state = machineState.get(this);
-            const objective = state.objectives.get(objectiveId);
-            if (!objective || objective.globalOperationId !== globalOperationId) {
-                return Object.freeze({ status: 'NOT_VERIFIED', reason: 'OBJECTIVE_NOT_FOUND' });
-            }
-            const result = await this.oracle.verify({ globalOperationId, objectiveId }, evidence);
-            if (!this._audit({ globalOperationId, objectiveId, actionId: 'PROGRESS_CHECK', verification: result.status })) {
-                return Object.freeze({ status: 'INCONCLUSIVE', reason: 'AUDIT_CAPACITY_EXHAUSTED' });
-            }
-            return result;
-        }
-
-        closeObjective(objectiveId, outcome = 'REVIEW_REQUIRED') {
-            const state = machineState.get(this);
-            const objective = state.objectives.get(objectiveId);
-            if (!objective) return false;
-            const allowed = new Set(['REVIEW_REQUIRED', 'VERIFIED', 'NOT_VERIFIED', 'CANCELLED']);
-            if (!allowed.has(outcome)) return false;
-            if (!this._audit({ globalOperationId: objective.globalOperationId, objectiveId, actionId: 'OBJECTIVE_CLOSED', outcome })) return false;
-            this.governor.release(objective.reservationId);
-            objective.status = outcome;
-            return true;
-        }
-
-        createImprovementProposal(input = {}) {
-            const state = machineState.get(this);
-            const allowedCategories = new Set(['SAFE_BLOCK', 'RESEARCH_INSUFFICIENT', 'MISSING_INFORMATION', 'CONFLICTING_EVIDENCE']);
-            if (state.stopped) return Object.freeze({ status: 'EVOLUTION_STOPPED', reason: 'AUDIT_CAPACITY_EXHAUSTED' });
-            if (!allowedCategories.has(input.category) || !Number.isSafeInteger(input.evidenceCount) || input.evidenceCount < 1 || typeof input.recommendation !== 'string' || input.recommendation.length > 400) {
-                return Object.freeze({ status: 'REJECTED_INVALID_PROPOSAL' });
-            }
-            const reservationId = `evo-proposal-${++state.sequence}`;
-            if (!this.governor.reserveAtomically(reservationId, { cpuTime: 1, memoryMb: 1 })) {
-                return Object.freeze({ status: 'FAILED_RESOURCES' });
-            }
-            try {
-                const version = (state.proposalVersions.get(input.category) || 0) + 1;
-                const proposal = freezeCopy({
-                    id: `evo-${input.category.toLowerCase()}`,
-                    category: input.category,
-                    revision: version,
-                    status: 'PROPOSED',
-                    evidenceCount: input.evidenceCount,
-                    recommendation: input.recommendation,
-                    verification: 'INCONCLUSIVE',
-                    authority: 'NONE',
-                    requiresHumanReview: true
-                });
-                if (!this._audit({ actionId: 'IMPROVEMENT_PROPOSED', category: input.category, revision: version, evidenceCount: input.evidenceCount })) {
-                    return Object.freeze({ status: 'EVOLUTION_STOPPED', reason: 'AUDIT_CAPACITY_EXHAUSTED' });
-                }
-                state.proposalVersions.set(input.category, version);
-                state.proposals.set(input.category, proposal);
-                while (state.proposals.size > state.maxProposals) state.proposals.delete(state.proposals.keys().next().value);
-                return proposal;
-            } finally {
-                this.governor.release(reservationId);
-            }
-        }
-
-        reviewImprovementProposal(proposalId, revision, decision) {
-            const state = machineState.get(this);
-            if (state.stopped || !validId(proposalId) || !Number.isSafeInteger(revision)) return false;
-            const proposal = Array.from(state.proposals.values()).find(item => item.id === proposalId);
-            if (!proposal || proposal.revision !== revision || proposal.status !== 'PROPOSED') return false;
-            const statuses = {
-                ACCEPT_FOR_MANUAL_IMPLEMENTATION: 'ACCEPTED_FOR_MANUAL_IMPLEMENTATION',
-                DISMISS: 'DISMISSED'
-            };
-            if (!statuses[decision]) return false;
-            if (!this._audit({ actionId: 'PROPOSAL_REVIEWED', proposalId, revision, decision })) return false;
-            const updated = freezeCopy(Object.assign({}, proposal, { status: statuses[decision] }));
-            state.proposals.set(proposal.category, updated);
-            return true;
-        }
-
-        stop(reason = 'MANUAL_STOP') {
-            const state = machineState.get(this);
-            if (!this._audit({ actionId: 'STOP', reason: String(reason).slice(0, 80) })) return false;
-            state.stopped = true;
-            return true;
-        }
-    }
-
-    const api = { GlobalResourceGovernor, ProgressOracle, EvolutionStateMachine };
-    if (root && root.AI_CORE) Object.assign(root.AI_CORE, api);
-    else if (root && typeof window !== 'undefined') {
-        root.AI_CORE = root.AI_CORE || {};
-        Object.assign(root.AI_CORE, api);
-    }
-    if (typeof module !== 'undefined' && module.exports) module.exports = api;
-})(typeof window !== 'undefined' ? window : globalThis);
-
 /* --- SOURCE: ai-core/ai-evolution-advisor.js --- */
 if (typeof window !== 'undefined') {
     window.AI_CORE = window.AI_CORE || {};
@@ -4649,10 +4357,6 @@ class EvolutionAdvisor {
         this.threshold = Math.max(2, Math.min(10, options.threshold || 3));
         this.maxSignals = Math.max(20, Math.min(200, options.maxSignals || 100));
         this.maxProposals = Math.max(5, Math.min(30, options.maxProposals || 20));
-        const EvolutionStateMachine = typeof window !== 'undefined' && window.AI_CORE && window.AI_CORE.EvolutionStateMachine;
-        this.stateMachine = EvolutionStateMachine
-            ? new EvolutionStateMachine({ maxProposals: this.maxProposals })
-            : null;
         this.signals = [];
         this.counts = new Map();
         this.proposals = new Map();
@@ -4660,7 +4364,7 @@ class EvolutionAdvisor {
     }
 
     _classify(response) {
-        const text = String(response || '').slice(0, 2000);
+        const text = String(response || '');
         if (/\[FAIL_CLOSED\]|\[SEMANTIC_VALIDATION_REJECTED\]/i.test(text)) return 'SAFE_BLOCK';
         if (/\[ERROR DE INVESTIGACI[ÓO]N\]|\[INVESTIGACI[ÓO]N FALLIDA\]/i.test(text)) return 'RESEARCH_INSUFFICIENT';
         if (/\[RAZONAMIENTO LOCAL\][\s\S]*Falta información:|\[CLARIFICACI[ÓO]N\]/i.test(text)) return 'MISSING_INFORMATION';
@@ -4680,26 +4384,19 @@ class EvolutionAdvisor {
         this.counts.set(category, count);
 
         let proposal = this.proposals.get(category) || null;
-        if (count >= this.threshold && count % this.threshold === 0) {
+        if (count >= this.threshold) {
             const advice = this._adviceFor(category);
             const revision = proposal ? proposal.revision + 1 : 1;
-            const fallbackProposal = Object.freeze({
+            proposal = Object.freeze({
                 id: `evo-${category.toLowerCase()}`,
                 category,
                 revision,
                 status: 'PROPOSED',
                 evidenceCount: count,
                 recommendation: advice,
-                verification: 'INCONCLUSIVE',
                 authority: 'NONE',
                 requiresHumanReview: true
             });
-            proposal = this.stateMachine
-                ? this.stateMachine.createImprovementProposal({ category, evidenceCount: count, recommendation: advice })
-                : fallbackProposal;
-            if (proposal.status !== 'PROPOSED') {
-                return Object.freeze({ observed: true, category, count, proposal: null, evolutionStatus: proposal.status });
-            }
             this.proposals.set(category, proposal);
             this._trimProposals();
         }
@@ -4724,13 +4421,7 @@ class EvolutionAdvisor {
     }
 
     getProposals() {
-        if (this.stateMachine) return this.stateMachine.getProposals();
         return Object.freeze(Array.from(this.proposals.values(), proposal => Object.freeze({ ...proposal })));
-    }
-
-    reviewProposal(id, revision, decision) {
-        if (!this.stateMachine) return false;
-        return this.stateMachine.reviewImprovementProposal(id, revision, decision);
     }
 }
 
@@ -5905,7 +5596,6 @@ class ResearchEngine {
         this.ingestionEngine = deps.ingestionEngine;
         this.permissionManager = deps.permissionManager;
         this.provenanceGraph = deps.provenanceGraph || null;
-        this.consolidationEngine = deps.consolidationEngine || null;
         this.connectivityPolicyEngine = deps.connectivityPolicyEngine || null;
 
         if (!this.offlineResolver || !this.reasoningEngine || !this.webFetcher) {
@@ -6150,7 +5840,6 @@ class ResearchEngine {
         }
 
         // FASE 4: Lineage and Provenance Recording (Observational only)
-        const consolidationResults = [];
         if (this.provenanceGraph && webFindings.length > 0) {
             for (const wf of webFindings) {
                 try {
@@ -6163,17 +5852,12 @@ class ResearchEngine {
                         confidence: 0.7
                     });
                     if (conclusion) {
-                        const claim = this.provenanceGraph.registerClaim({
+                        this.provenanceGraph.registerClaim({
                             subject: task,
                             predicate: 'research_finding',
                             objectValue: conclusion,
                             knowledgeType: 'FACT'
                         }, src, { url: wf.url });
-                        if (claim && this.consolidationEngine) {
-                            const state = await this.consolidationEngine.consolidateClaim(claim.claimId);
-                            consolidationResults.push({ claimId: claim.claimId, state });
-                            log('Estado epistémico de hallazgo: ' + state + ' (sin permisos ni efectos de ejecución).');
-                        }
                     }
                 } catch (e) {
                     // Lineage recording failure must never break research
@@ -6236,7 +5920,6 @@ class ResearchEngine {
             localResultsUsed: localFindings,
             staleDocsFound: offlineRes.staleDocs.map(d => d.document.id),
             webResultsUsed: webFindings,
-            consolidationResults,
             contradictions: contradictions,
             conclusion: finalConclusion,
             confidence: finalConfidence,
@@ -6248,8 +5931,6 @@ class ResearchEngine {
 }
 
 window.AI_CORE.ResearchEngine = ResearchEngine;
-
-if (typeof module !== 'undefined' && module.exports) module.exports = { ResearchEngine };
 
 /* --- SOURCE: ai-core/ai-understanding.js --- */
 window.AI_CORE = window.AI_CORE || {};
@@ -7241,20 +6922,6 @@ window.AI_CORE.SemanticComparator = SemanticComparator;
 window.AI_CORE.Level0Provider = Level0Provider;
 window.AI_CORE.Level1Provider = Level1Provider;
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        InputIdentity,
-        EvidenceCandidate,
-        EvidenceSpan,
-        SemanticStructuralValidator,
-        SemanticProviderRegistry,
-        SemanticOrchestrator,
-        SemanticComparator,
-        Level0Provider,
-        Level1Provider
-    };
-}
-
 /* --- SOURCE: ai-core/ai-provenance.js --- */
 window.AI_CORE = window.AI_CORE || {};
 
@@ -7577,13 +7244,6 @@ class ProvenanceGraph {
         return roots;
     }
 
-    // Compatibility helper for older phase-test consumers. New code should use
-    // _findRootSources because a source can legitimately have multiple roots.
-    _findRootSource(source) {
-        const roots = this._findRootSources(source);
-        return roots.size === 1 ? Array.from(roots)[0] : null;
-    }
-
     _getCausalParentIds(source) {
         let ids = new Set();
         if (source.copiedFrom) ids.add(source.copiedFrom);
@@ -7777,225 +7437,6 @@ class ProvenanceGraph {
 window.AI_CORE.SourceProvenance = SourceProvenance;
 window.AI_CORE.ClaimIdentity = ClaimIdentity;
 window.AI_CORE.ProvenanceGraph = ProvenanceGraph;
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SourceProvenance, ClaimIdentity, ProvenanceGraph };
-}
-
-/* --- SOURCE: ai-core/ai-integrated-consolidation.js --- */
-if (typeof window !== 'undefined') window.AI_CORE = window.AI_CORE || {};
-
-class EvidenceValidator {
-    static isValid(support, provenanceGraph) {
-        if (!support || !support.source || !support.evidence) return false;
-        
-        let sourceExists = provenanceGraph.sources.has(support.source.sourceId);
-        if (!sourceExists) return false;
-        
-        let ev = support.evidence;
-        if (typeof ev !== 'object' && typeof ev !== 'string') return false;
-        if (Array.isArray(ev) && ev.length === 0) return false;
-        
-        // Check for broken reference
-        if (ev.broken || ev.invalid) return false;
-        
-        return true;
-    }
-}
-
-class IntegratedConsolidationEngine {
-    constructor(provenanceGraph) {
-        this.provenance = provenanceGraph;
-        this.consolidationStates = new Map(); // targetId -> state
-        this.history = [];
-    }
-
-    _areSourcesIndependent(supports) {
-        if (!Array.isArray(supports)) return 0;
-        
-        let validSources = new Map();
-        
-        for (let s of supports) {
-            if (!s || !s.source) continue;
-            if (!this.provenance._isEvidenceValid(s.evidence)) continue;
-            
-            let srcId = s.source.sourceId;
-            if (!validSources.has(srcId)) {
-                let supportRoots = this.provenance._findRootSources(s.source);
-                let rootIds = new Set();
-                for (let r of supportRoots) {
-                    rootIds.add(r.sourceId);
-                }
-                validSources.set(srcId, rootIds);
-            }
-        }
-        
-        let sourcesArray = Array.from(validSources.entries());
-        if (sourcesArray.length === 0) return 0;
-        
-        const MAX_EXACT_SOURCES = 15;
-        if (sourcesArray.length > MAX_EXACT_SOURCES) {
-            return 'COMPUTATION_BUDGET_EXCEEDED';
-        }
-        
-        sourcesArray.sort((a, b) => a[0].localeCompare(b[0]));
-        
-        let backtrack = (index, currentSetRootUnion) => {
-            if (index >= sourcesArray.length) return 0;
-            
-            let [srcId, srcRoots] = sourcesArray[index];
-            let canInclude = true;
-            for (let r of srcRoots) {
-                if (currentSetRootUnion.has(r)) {
-                    canInclude = false;
-                    break;
-                }
-            }
-            
-            let countWithout = backtrack(index + 1, currentSetRootUnion);
-            let countWith = 0;
-            if (canInclude) {
-                let nextUnion = new Set(currentSetRootUnion);
-                for (let r of srcRoots) nextUnion.add(r);
-                countWith = 1 + backtrack(index + 1, nextUnion);
-            }
-            return Math.max(countWith, countWithout);
-        };
-        
-        return backtrack(0, new Set());
-    }
-
-    async consolidateClaim(claimId) {
-        let record = this.provenance.claims.get(claimId); 
-        if (!record) return null;
-        const newState = this._deriveState(claimId, record);
-
-        if (this.consolidationStates.get(claimId) !== newState) {
-            this.consolidationStates.set(claimId, newState);
-            if (!this._isRehydrating) {
-                this.history.push({ type: 'CONSOLIDATION_CHANGE', claimId: claimId, state: newState, timestamp: new Date().toISOString() });
-            }
-        }
-        return newState;
-    }
-
-    _deriveState(claimId, record) {
-        if (!record || !record.claimProposal) return 'RAW';
-        const independentCount = this._areSourcesIndependent(record.supports);
-        const isConflicted = Array.from(this.provenance.conflicts.values()).some(c =>
-            c.status === 'OPEN' && c.claimA && c.claimB && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)
-        );
-        const type = record.claimProposal.knowledgeType || 'UNKNOWN';
-        const epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
-
-        if (isConflicted) return 'CONFLICTED';
-        if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED' || independentCount === 0) return 'UNCERTAIN';
-        if (epistemicallyRestricted.includes(type)) return independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
-        if (type === 'FACT' || type === 'OBSERVATION') return independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
-        return 'RAW';
-    }
-
-    getConsolidatedState(claimId) {
-        // The public map is a derived cache and may be tampered with. Never
-        // treat a cached state as evidence; derive it from the current graph.
-        return this._deriveState(claimId, this.provenance.claims.get(claimId));
-    }
-
-    // VULN-01 Remediation: Rehydrate is READ-ONLY. Computes derived state locally.
-    rehydrate() {
-        let derivedStates = {}; // POJO
-        
-        for (let claimId of this.provenance.claims.keys()) {
-            let record = this.provenance.claims.get(claimId); 
-            if (!record) continue;
-
-            derivedStates[claimId] = this._deriveState(claimId, record);
-        }
-        
-        // Deep freeze POJO (keys and string values)
-        return Object.freeze(derivedStates);
-    }
-}
-
-class SemanticConsolidationPipeline {
-    constructor(semanticOrchestrator, provenanceGraph, consolidationEngine) {
-        this.semantic = semanticOrchestrator;
-        this.provenance = provenanceGraph;
-        this.engine = consolidationEngine;
-    }
-
-    async process(rawText, sourceData) {
-        let semanticResult = await this.semantic.interpret(rawText);
-        
-        let claimsToProcess = [];
-        if (semanticResult.candidates) {
-            claimsToProcess = semanticResult.candidates;
-        } else if (semanticResult.claimProposal) {
-            claimsToProcess = [semanticResult];
-        }
-
-        let output = [];
-
-        for (let candidate of claimsToProcess) {
-            if (candidate.detectedIntent === 'ACTION_REQUEST') {
-                output.push({ actionRequest: true, status: 'NO_ACTION_AUTHORIZED' });
-                continue;
-            }
-
-            if (candidate.interpretationStatus === 'UNSUPPORTED' || candidate.interpretationStatus === 'INVALID') {
-                output.push({ status: candidate.interpretationStatus });
-                continue;
-            }
-
-            // Atomic stage integration
-            let src = this.provenance.registerSource(sourceData);
-            
-            let claimSnapshot = this.provenance.registerClaim(candidate.claimProposal, src, candidate.evidenceSpans);
-
-            if (Array.isArray(candidate.missingInformation)) {
-                for (let missing of candidate.missingInformation) {
-                    let desc = `Missing info: ${missing.info} (Priority: ${missing.type || 'USEFUL'})`;
-                    let exists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.description === desc && g.relatedClaims.includes(claimSnapshot.claimId));
-                    if (!exists) {
-                        this.provenance.createKnowledgeGap(desc, [claimSnapshot.claimId], missing.type || 'USEFUL');
-                    }
-                }
-            }
-
-            let state = await this.engine.consolidateClaim(claimSnapshot.claimId);
-            
-            // SIDE-EFFECT SEPARATION: Create gaps for conflicts during ingestion only
-            if (state === 'CONFLICTED') {
-                let conflictList = Array.from(this.provenance.conflicts.values());
-                for (let c of conflictList) {
-                    if (c.status === 'OPEN' && (c.claimA.claimId === claimSnapshot.claimId || c.claimB.claimId === claimSnapshot.claimId)) {
-                        let gapExists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.status === 'OPEN' && g.relatedClaims.includes(claimSnapshot.claimId));
-                        if (!gapExists) {
-                            this.provenance.createKnowledgeGap(`Resolution required for conflict ${c.conflictId}`, [claimSnapshot.claimId], 'INDISPENSABLE');
-                        }
-                    }
-                }
-            }
-
-            output.push({
-                claimId: claimSnapshot.claimId,
-                consolidationState: state,
-                claimProposal: claimSnapshot.claimProposal
-            });
-        }
-
-        return output;
-    }
-}
-
-const integratedConsolidationApi = {
-    IntegratedConsolidationEngine,
-    EvidenceValidator,
-    SemanticConsolidationPipeline
-};
-
-if (typeof window !== 'undefined') Object.assign(window.AI_CORE, integratedConsolidationApi);
-if (typeof module !== 'undefined' && module.exports) module.exports = integratedConsolidationApi;
 
 /* --- SOURCE: ai-core/ai-retention.js --- */
 window.AI_CORE = window.AI_CORE || {};
@@ -8607,7 +8048,7 @@ window.AI_CORE.ControlledExecutionManager = ControlledExecutionManager;
 window.AI_CORE.MockDefensiveAdapter = MockDefensiveAdapter;
 
 /* --- SOURCE: ai-core/ai-chat-bridge.js --- */
-﻿if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
+if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
 
 class ChatBridge {
     constructor(inventoryAuthority = null) {
@@ -8678,9 +8119,6 @@ class ChatBridge {
         if (window.AI_CORE.ProvenanceGraph) {
             this.provenanceGraph = new window.AI_CORE.ProvenanceGraph();
         }
-        if (window.AI_CORE.IntegratedConsolidationEngine && this.provenanceGraph) {
-            this.consolidationEngine = new window.AI_CORE.IntegratedConsolidationEngine(this.provenanceGraph);
-        }
 
         // FASE 7 & 8 - Connectivity Policy Integration
         if (window.AI_CORE.ConnectivityPolicyEngine) {
@@ -8712,7 +8150,6 @@ class ChatBridge {
                 ingestionEngine,
                 permissionManager: this.permissionManager,
                 provenanceGraph: this.provenanceGraph,
-                consolidationEngine: this.consolidationEngine,
                 connectivityPolicyEngine: this.connectivityPolicyEngine
             });
         }
@@ -8970,26 +8407,30 @@ class ChatBridge {
             }
         }
 
-        if (analysis.actionProposal) {
-            // Razonar puede proponer; nunca fabrica evidencia ni ejecuta. La
-            // propuesta pasa por la aprobación humana configurada.
-            if (this.securityEngine && this.executionGateway) {
-                try {
-                    const proposal = analysis.actionProposal;
-                    const toolId = proposal.toolId || "UNKNOWN_TOOL";
-                    const version = proposal.toolVersion || "1.0";
-                    const req = this.securityEngine.createApprovalRequest(
-                        toolId, version, proposal.parameters || {},
-                        "Guardian action proposal: " + String(analysis.conclusion || "").slice(0, 240), context
-                    );
-                    req.requiresCreatorApproval = true;
-                    this._pendingApprovals.set(req.requestId, req);
-                    responseText = `[PENDING_APPROVAL] La propuesta requiere aprobaciÃ³n del creador y las comprobaciones de seguridad configuradas (Tool: ${toolId}). ID: ${req.requestId}`;
-                } catch (e) {
-                    responseText = `[FAIL_CLOSED] Propuesta no autorizada: ${e.message}`;
-                }
-            } else {
-                responseText = "[FAIL_CLOSED] Subsistema de aprobaciÃ³n no disponible; no se ejecutÃ³ ninguna acciÃ³n.";
+        if (analysis.actionProposal && this.autonomousPolicyEngine) {
+            try {
+                const mockEvidenceId = this.executionGateway.history.registerResult({
+                    status: "SUCCESS",
+                    verificationStatus: "PASSED"
+                }, this.executionGateway._historyToken);
+                
+                const authRecord = await this.autonomousPolicyEngine.evaluateAndAuthorize(
+                    analysis.actionProposal,
+                    { type: "ACTUAL_TOOL_RESULT", evidenceId: mockEvidenceId },
+                    context,
+                    this.identityManager.getBotIdentity()
+                );
+
+                const execResult = await this.executionGateway.execute(
+                    authRecord.payload.authorizationId,
+                    analysis.actionProposal.parameters,
+                    this.identityManager.getBotIdentity(),
+                    context
+                );
+                
+                responseText = `[AUTONOMOUS_EXECUTION] Success: ${execResult.status} (Evidence: ${execResult.evidenceId})\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
+            } catch (e) {
+                responseText = `[AUTONOMOUS_EXECUTION] Failed: ${e.message}\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
             }
         } else if (analysis.authorizationRequirement && analysis.authorizationRequirement.required) {
             if (this.securityEngine && this.executionGateway) {
@@ -9001,7 +8442,6 @@ class ChatBridge {
                     const req = this.securityEngine.createApprovalRequest(
                         toolId, version, parameters, "Autonomous Request", context
                     );
-                    req.requiresCreatorApproval = true;
                     
                     if (req.status === "PENDING_APPROVAL") {
                         this._pendingApprovals.set(req.requestId, req);
@@ -9041,21 +8481,7 @@ class ChatBridge {
         if (!this.securityEngine || !this.executionGateway) throw new Error("FAIL_CLOSED: Subsystems not initialized");
         const request = this._pendingApprovals.get(requestId);
         if (!request) throw new Error("FAIL_CLOSED: APPROVAL_NOT_FOUND");
-        if (request.requiresCreatorApproval) {
-            const auth = typeof firebase !== "undefined" && typeof firebase.auth === "function"
-                ? firebase.auth()
-                : null;
-            const authUser = auth && auth.currentUser && !auth.currentUser.isAnonymous
-                ? auth.currentUser
-                : null;
-            const authenticatedActor = authUser ? this.identityManager.getCurrentUser(authUser) : null;
-            const suppliedEmail = approverIdentity && typeof approverIdentity.email === "string"
-                ? approverIdentity.email.toLowerCase().trim()
-                : null;
-            if (!authenticatedActor || authenticatedActor.isCreator !== true || suppliedEmail !== authenticatedActor.email) {
-                throw new Error("FAIL_CLOSED: CREATOR_APPROVAL_REQUIRED");
-            }
-        }        
+        
         let authRecord;
         try {
             authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
@@ -9180,7 +8606,6 @@ ChatBridge.prototype.receiveMessage = async function(message, ...args) {
 const defaultInventoryAuth = window.AI_CORE.InventoryAuthority ? new window.AI_CORE.InventoryAuthority() : { verifyIdentity: () => null };
 window.AI_CORE.chatBridgeInstance = new ChatBridge(defaultInventoryAuth);
 window.AI_CORE.ChatBridge = ChatBridge;
-
 
 /* --- SOURCE: guardian-financiero.js --- */
 window.renderGuardianView = function() {

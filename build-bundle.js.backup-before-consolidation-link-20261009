@@ -31,7 +31,6 @@ const productionSources = [
     'ai-core/ai-understanding.js',
     'ai-core/ai-semantic.js',
     'ai-core/ai-provenance.js',
-    'ai-core/ai-integrated-consolidation.js',
     'ai-core/ai-retention.js',
     'ai-core/ai-connectivity.js',
     'ai-core/ai-cyber-defense.js',

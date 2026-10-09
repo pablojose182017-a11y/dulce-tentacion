@@ -59,7 +59,7 @@ async function runIntegrationTests() {
     assert(stateInf === 'UNCERTAIN' || stateInf === 'SUPPORTED', 'I-14 (Inference cannot ascend to fact)');
 
     // I-15 User provided knowledge
-    let claimUser = graph.registerClaim({ intent: 'REPORT', knowledgeType: 'FACT', subject: 'Y' }, graph.registerSource({sourceId: 'S7', sourceType: 'USER_PROVIDED'}), { reference: 'user-provided-evidence' });
+    let claimUser = graph.registerClaim({ intent: 'REPORT', knowledgeType: 'FACT', subject: 'Y' }, graph.registerSource({sourceId: 'S7', sourceType: 'USER_PROVIDED'}), []);
     let stateUser = await engine.consolidateClaim(claimUser.claimId);
     assert(stateUser === 'SUPPORTED', 'I-15 (User-provided consolidates contextually)');
 

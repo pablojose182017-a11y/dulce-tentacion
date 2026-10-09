@@ -55,7 +55,6 @@
             const state = governorState.get(this);
             if (!validId(reservationId) || !requested || typeof requested !== 'object' || Array.isArray(requested)) return false;
             if (!Number.isSafeInteger(ttlMs) || ttlMs < 1 || ttlMs > 300000) return false;
-            this._releaseExpired();
             if (state.reservations.has(reservationId)) return false;
 
             const normalized = Object.fromEntries(RESOURCE_KEYS.map(key => [
@@ -67,6 +66,7 @@
             }
             if (!RESOURCE_KEYS.some(key => normalized[key] > 0)) return false;
 
+            this._releaseExpired();
             const active = Array.from(state.reservations.values());
             const usage = Object.fromEntries(RESOURCE_KEYS.map(key => [key, active.reduce((total, reservation) => total + reservation.resources[key], 0)]));
             for (const key of RESOURCE_KEYS) {
@@ -254,22 +254,6 @@
             } finally {
                 this.governor.release(reservationId);
             }
-        }
-
-        reviewImprovementProposal(proposalId, revision, decision) {
-            const state = machineState.get(this);
-            if (state.stopped || !validId(proposalId) || !Number.isSafeInteger(revision)) return false;
-            const proposal = Array.from(state.proposals.values()).find(item => item.id === proposalId);
-            if (!proposal || proposal.revision !== revision || proposal.status !== 'PROPOSED') return false;
-            const statuses = {
-                ACCEPT_FOR_MANUAL_IMPLEMENTATION: 'ACCEPTED_FOR_MANUAL_IMPLEMENTATION',
-                DISMISS: 'DISMISSED'
-            };
-            if (!statuses[decision]) return false;
-            if (!this._audit({ actionId: 'PROPOSAL_REVIEWED', proposalId, revision, decision })) return false;
-            const updated = freezeCopy(Object.assign({}, proposal, { status: statuses[decision] }));
-            state.proposals.set(proposal.category, updated);
-            return true;
         }
 
         stop(reason = 'MANUAL_STOP') {

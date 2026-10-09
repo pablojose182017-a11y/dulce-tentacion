@@ -5905,7 +5905,6 @@ class ResearchEngine {
         this.ingestionEngine = deps.ingestionEngine;
         this.permissionManager = deps.permissionManager;
         this.provenanceGraph = deps.provenanceGraph || null;
-        this.consolidationEngine = deps.consolidationEngine || null;
         this.connectivityPolicyEngine = deps.connectivityPolicyEngine || null;
 
         if (!this.offlineResolver || !this.reasoningEngine || !this.webFetcher) {
@@ -6150,7 +6149,6 @@ class ResearchEngine {
         }
 
         // FASE 4: Lineage and Provenance Recording (Observational only)
-        const consolidationResults = [];
         if (this.provenanceGraph && webFindings.length > 0) {
             for (const wf of webFindings) {
                 try {
@@ -6163,17 +6161,12 @@ class ResearchEngine {
                         confidence: 0.7
                     });
                     if (conclusion) {
-                        const claim = this.provenanceGraph.registerClaim({
+                        this.provenanceGraph.registerClaim({
                             subject: task,
                             predicate: 'research_finding',
                             objectValue: conclusion,
                             knowledgeType: 'FACT'
                         }, src, { url: wf.url });
-                        if (claim && this.consolidationEngine) {
-                            const state = await this.consolidationEngine.consolidateClaim(claim.claimId);
-                            consolidationResults.push({ claimId: claim.claimId, state });
-                            log('Estado epistémico de hallazgo: ' + state + ' (sin permisos ni efectos de ejecución).');
-                        }
                     }
                 } catch (e) {
                     // Lineage recording failure must never break research
@@ -6236,7 +6229,6 @@ class ResearchEngine {
             localResultsUsed: localFindings,
             staleDocsFound: offlineRes.staleDocs.map(d => d.document.id),
             webResultsUsed: webFindings,
-            consolidationResults,
             contradictions: contradictions,
             conclusion: finalConclusion,
             confidence: finalConfidence,
@@ -6248,8 +6240,6 @@ class ResearchEngine {
 }
 
 window.AI_CORE.ResearchEngine = ResearchEngine;
-
-if (typeof module !== 'undefined' && module.exports) module.exports = { ResearchEngine };
 
 /* --- SOURCE: ai-core/ai-understanding.js --- */
 window.AI_CORE = window.AI_CORE || {};
@@ -7577,13 +7567,6 @@ class ProvenanceGraph {
         return roots;
     }
 
-    // Compatibility helper for older phase-test consumers. New code should use
-    // _findRootSources because a source can legitimately have multiple roots.
-    _findRootSource(source) {
-        const roots = this._findRootSources(source);
-        return roots.size === 1 ? Array.from(roots)[0] : null;
-    }
-
     _getCausalParentIds(source) {
         let ids = new Set();
         if (source.copiedFrom) ids.add(source.copiedFrom);
@@ -7781,221 +7764,6 @@ window.AI_CORE.ProvenanceGraph = ProvenanceGraph;
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { SourceProvenance, ClaimIdentity, ProvenanceGraph };
 }
-
-/* --- SOURCE: ai-core/ai-integrated-consolidation.js --- */
-if (typeof window !== 'undefined') window.AI_CORE = window.AI_CORE || {};
-
-class EvidenceValidator {
-    static isValid(support, provenanceGraph) {
-        if (!support || !support.source || !support.evidence) return false;
-        
-        let sourceExists = provenanceGraph.sources.has(support.source.sourceId);
-        if (!sourceExists) return false;
-        
-        let ev = support.evidence;
-        if (typeof ev !== 'object' && typeof ev !== 'string') return false;
-        if (Array.isArray(ev) && ev.length === 0) return false;
-        
-        // Check for broken reference
-        if (ev.broken || ev.invalid) return false;
-        
-        return true;
-    }
-}
-
-class IntegratedConsolidationEngine {
-    constructor(provenanceGraph) {
-        this.provenance = provenanceGraph;
-        this.consolidationStates = new Map(); // targetId -> state
-        this.history = [];
-    }
-
-    _areSourcesIndependent(supports) {
-        if (!Array.isArray(supports)) return 0;
-        
-        let validSources = new Map();
-        
-        for (let s of supports) {
-            if (!s || !s.source) continue;
-            if (!this.provenance._isEvidenceValid(s.evidence)) continue;
-            
-            let srcId = s.source.sourceId;
-            if (!validSources.has(srcId)) {
-                let supportRoots = this.provenance._findRootSources(s.source);
-                let rootIds = new Set();
-                for (let r of supportRoots) {
-                    rootIds.add(r.sourceId);
-                }
-                validSources.set(srcId, rootIds);
-            }
-        }
-        
-        let sourcesArray = Array.from(validSources.entries());
-        if (sourcesArray.length === 0) return 0;
-        
-        const MAX_EXACT_SOURCES = 15;
-        if (sourcesArray.length > MAX_EXACT_SOURCES) {
-            return 'COMPUTATION_BUDGET_EXCEEDED';
-        }
-        
-        sourcesArray.sort((a, b) => a[0].localeCompare(b[0]));
-        
-        let backtrack = (index, currentSetRootUnion) => {
-            if (index >= sourcesArray.length) return 0;
-            
-            let [srcId, srcRoots] = sourcesArray[index];
-            let canInclude = true;
-            for (let r of srcRoots) {
-                if (currentSetRootUnion.has(r)) {
-                    canInclude = false;
-                    break;
-                }
-            }
-            
-            let countWithout = backtrack(index + 1, currentSetRootUnion);
-            let countWith = 0;
-            if (canInclude) {
-                let nextUnion = new Set(currentSetRootUnion);
-                for (let r of srcRoots) nextUnion.add(r);
-                countWith = 1 + backtrack(index + 1, nextUnion);
-            }
-            return Math.max(countWith, countWithout);
-        };
-        
-        return backtrack(0, new Set());
-    }
-
-    async consolidateClaim(claimId) {
-        let record = this.provenance.claims.get(claimId); 
-        if (!record) return null;
-        const newState = this._deriveState(claimId, record);
-
-        if (this.consolidationStates.get(claimId) !== newState) {
-            this.consolidationStates.set(claimId, newState);
-            if (!this._isRehydrating) {
-                this.history.push({ type: 'CONSOLIDATION_CHANGE', claimId: claimId, state: newState, timestamp: new Date().toISOString() });
-            }
-        }
-        return newState;
-    }
-
-    _deriveState(claimId, record) {
-        if (!record || !record.claimProposal) return 'RAW';
-        const independentCount = this._areSourcesIndependent(record.supports);
-        const isConflicted = Array.from(this.provenance.conflicts.values()).some(c =>
-            c.status === 'OPEN' && c.claimA && c.claimB && (c.claimA.claimId === claimId || c.claimB.claimId === claimId)
-        );
-        const type = record.claimProposal.knowledgeType || 'UNKNOWN';
-        const epistemicallyRestricted = ['INFERENCE', 'OPINION', 'HYPOTHESIS', 'UNKNOWN', 'QUESTION', 'INSTRUCTION', 'USER_ASSERTION'];
-
-        if (isConflicted) return 'CONFLICTED';
-        if (independentCount === 'COMPUTATION_BUDGET_EXCEEDED' || independentCount === 0) return 'UNCERTAIN';
-        if (epistemicallyRestricted.includes(type)) return independentCount > 1 ? 'SUPPORTED' : 'UNCERTAIN';
-        if (type === 'FACT' || type === 'OBSERVATION') return independentCount > 1 ? 'CONSOLIDATED' : 'SUPPORTED';
-        return 'RAW';
-    }
-
-    getConsolidatedState(claimId) {
-        // The public map is a derived cache and may be tampered with. Never
-        // treat a cached state as evidence; derive it from the current graph.
-        return this._deriveState(claimId, this.provenance.claims.get(claimId));
-    }
-
-    // VULN-01 Remediation: Rehydrate is READ-ONLY. Computes derived state locally.
-    rehydrate() {
-        let derivedStates = {}; // POJO
-        
-        for (let claimId of this.provenance.claims.keys()) {
-            let record = this.provenance.claims.get(claimId); 
-            if (!record) continue;
-
-            derivedStates[claimId] = this._deriveState(claimId, record);
-        }
-        
-        // Deep freeze POJO (keys and string values)
-        return Object.freeze(derivedStates);
-    }
-}
-
-class SemanticConsolidationPipeline {
-    constructor(semanticOrchestrator, provenanceGraph, consolidationEngine) {
-        this.semantic = semanticOrchestrator;
-        this.provenance = provenanceGraph;
-        this.engine = consolidationEngine;
-    }
-
-    async process(rawText, sourceData) {
-        let semanticResult = await this.semantic.interpret(rawText);
-        
-        let claimsToProcess = [];
-        if (semanticResult.candidates) {
-            claimsToProcess = semanticResult.candidates;
-        } else if (semanticResult.claimProposal) {
-            claimsToProcess = [semanticResult];
-        }
-
-        let output = [];
-
-        for (let candidate of claimsToProcess) {
-            if (candidate.detectedIntent === 'ACTION_REQUEST') {
-                output.push({ actionRequest: true, status: 'NO_ACTION_AUTHORIZED' });
-                continue;
-            }
-
-            if (candidate.interpretationStatus === 'UNSUPPORTED' || candidate.interpretationStatus === 'INVALID') {
-                output.push({ status: candidate.interpretationStatus });
-                continue;
-            }
-
-            // Atomic stage integration
-            let src = this.provenance.registerSource(sourceData);
-            
-            let claimSnapshot = this.provenance.registerClaim(candidate.claimProposal, src, candidate.evidenceSpans);
-
-            if (Array.isArray(candidate.missingInformation)) {
-                for (let missing of candidate.missingInformation) {
-                    let desc = `Missing info: ${missing.info} (Priority: ${missing.type || 'USEFUL'})`;
-                    let exists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.description === desc && g.relatedClaims.includes(claimSnapshot.claimId));
-                    if (!exists) {
-                        this.provenance.createKnowledgeGap(desc, [claimSnapshot.claimId], missing.type || 'USEFUL');
-                    }
-                }
-            }
-
-            let state = await this.engine.consolidateClaim(claimSnapshot.claimId);
-            
-            // SIDE-EFFECT SEPARATION: Create gaps for conflicts during ingestion only
-            if (state === 'CONFLICTED') {
-                let conflictList = Array.from(this.provenance.conflicts.values());
-                for (let c of conflictList) {
-                    if (c.status === 'OPEN' && (c.claimA.claimId === claimSnapshot.claimId || c.claimB.claimId === claimSnapshot.claimId)) {
-                        let gapExists = Array.from(this.provenance.knowledgeGaps.values()).some(g => g.status === 'OPEN' && g.relatedClaims.includes(claimSnapshot.claimId));
-                        if (!gapExists) {
-                            this.provenance.createKnowledgeGap(`Resolution required for conflict ${c.conflictId}`, [claimSnapshot.claimId], 'INDISPENSABLE');
-                        }
-                    }
-                }
-            }
-
-            output.push({
-                claimId: claimSnapshot.claimId,
-                consolidationState: state,
-                claimProposal: claimSnapshot.claimProposal
-            });
-        }
-
-        return output;
-    }
-}
-
-const integratedConsolidationApi = {
-    IntegratedConsolidationEngine,
-    EvidenceValidator,
-    SemanticConsolidationPipeline
-};
-
-if (typeof window !== 'undefined') Object.assign(window.AI_CORE, integratedConsolidationApi);
-if (typeof module !== 'undefined' && module.exports) module.exports = integratedConsolidationApi;
 
 /* --- SOURCE: ai-core/ai-retention.js --- */
 window.AI_CORE = window.AI_CORE || {};
@@ -8607,7 +8375,7 @@ window.AI_CORE.ControlledExecutionManager = ControlledExecutionManager;
 window.AI_CORE.MockDefensiveAdapter = MockDefensiveAdapter;
 
 /* --- SOURCE: ai-core/ai-chat-bridge.js --- */
-﻿if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
+if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
 
 class ChatBridge {
     constructor(inventoryAuthority = null) {
@@ -8678,9 +8446,6 @@ class ChatBridge {
         if (window.AI_CORE.ProvenanceGraph) {
             this.provenanceGraph = new window.AI_CORE.ProvenanceGraph();
         }
-        if (window.AI_CORE.IntegratedConsolidationEngine && this.provenanceGraph) {
-            this.consolidationEngine = new window.AI_CORE.IntegratedConsolidationEngine(this.provenanceGraph);
-        }
 
         // FASE 7 & 8 - Connectivity Policy Integration
         if (window.AI_CORE.ConnectivityPolicyEngine) {
@@ -8712,7 +8477,6 @@ class ChatBridge {
                 ingestionEngine,
                 permissionManager: this.permissionManager,
                 provenanceGraph: this.provenanceGraph,
-                consolidationEngine: this.consolidationEngine,
                 connectivityPolicyEngine: this.connectivityPolicyEngine
             });
         }
@@ -8970,26 +8734,30 @@ class ChatBridge {
             }
         }
 
-        if (analysis.actionProposal) {
-            // Razonar puede proponer; nunca fabrica evidencia ni ejecuta. La
-            // propuesta pasa por la aprobación humana configurada.
-            if (this.securityEngine && this.executionGateway) {
-                try {
-                    const proposal = analysis.actionProposal;
-                    const toolId = proposal.toolId || "UNKNOWN_TOOL";
-                    const version = proposal.toolVersion || "1.0";
-                    const req = this.securityEngine.createApprovalRequest(
-                        toolId, version, proposal.parameters || {},
-                        "Guardian action proposal: " + String(analysis.conclusion || "").slice(0, 240), context
-                    );
-                    req.requiresCreatorApproval = true;
-                    this._pendingApprovals.set(req.requestId, req);
-                    responseText = `[PENDING_APPROVAL] La propuesta requiere aprobaciÃ³n del creador y las comprobaciones de seguridad configuradas (Tool: ${toolId}). ID: ${req.requestId}`;
-                } catch (e) {
-                    responseText = `[FAIL_CLOSED] Propuesta no autorizada: ${e.message}`;
-                }
-            } else {
-                responseText = "[FAIL_CLOSED] Subsistema de aprobaciÃ³n no disponible; no se ejecutÃ³ ninguna acciÃ³n.";
+        if (analysis.actionProposal && this.autonomousPolicyEngine) {
+            try {
+                const mockEvidenceId = this.executionGateway.history.registerResult({
+                    status: "SUCCESS",
+                    verificationStatus: "PASSED"
+                }, this.executionGateway._historyToken);
+                
+                const authRecord = await this.autonomousPolicyEngine.evaluateAndAuthorize(
+                    analysis.actionProposal,
+                    { type: "ACTUAL_TOOL_RESULT", evidenceId: mockEvidenceId },
+                    context,
+                    this.identityManager.getBotIdentity()
+                );
+
+                const execResult = await this.executionGateway.execute(
+                    authRecord.payload.authorizationId,
+                    analysis.actionProposal.parameters,
+                    this.identityManager.getBotIdentity(),
+                    context
+                );
+                
+                responseText = `[AUTONOMOUS_EXECUTION] Success: ${execResult.status} (Evidence: ${execResult.evidenceId})\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
+            } catch (e) {
+                responseText = `[AUTONOMOUS_EXECUTION] Failed: ${e.message}\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
             }
         } else if (analysis.authorizationRequirement && analysis.authorizationRequirement.required) {
             if (this.securityEngine && this.executionGateway) {
@@ -9001,7 +8769,6 @@ class ChatBridge {
                     const req = this.securityEngine.createApprovalRequest(
                         toolId, version, parameters, "Autonomous Request", context
                     );
-                    req.requiresCreatorApproval = true;
                     
                     if (req.status === "PENDING_APPROVAL") {
                         this._pendingApprovals.set(req.requestId, req);
@@ -9041,21 +8808,7 @@ class ChatBridge {
         if (!this.securityEngine || !this.executionGateway) throw new Error("FAIL_CLOSED: Subsystems not initialized");
         const request = this._pendingApprovals.get(requestId);
         if (!request) throw new Error("FAIL_CLOSED: APPROVAL_NOT_FOUND");
-        if (request.requiresCreatorApproval) {
-            const auth = typeof firebase !== "undefined" && typeof firebase.auth === "function"
-                ? firebase.auth()
-                : null;
-            const authUser = auth && auth.currentUser && !auth.currentUser.isAnonymous
-                ? auth.currentUser
-                : null;
-            const authenticatedActor = authUser ? this.identityManager.getCurrentUser(authUser) : null;
-            const suppliedEmail = approverIdentity && typeof approverIdentity.email === "string"
-                ? approverIdentity.email.toLowerCase().trim()
-                : null;
-            if (!authenticatedActor || authenticatedActor.isCreator !== true || suppliedEmail !== authenticatedActor.email) {
-                throw new Error("FAIL_CLOSED: CREATOR_APPROVAL_REQUIRED");
-            }
-        }        
+        
         let authRecord;
         try {
             authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
@@ -9180,7 +8933,6 @@ ChatBridge.prototype.receiveMessage = async function(message, ...args) {
 const defaultInventoryAuth = window.AI_CORE.InventoryAuthority ? new window.AI_CORE.InventoryAuthority() : { verifyIdentity: () => null };
 window.AI_CORE.chatBridgeInstance = new ChatBridge(defaultInventoryAuth);
 window.AI_CORE.ChatBridge = ChatBridge;
-
 
 /* --- SOURCE: guardian-financiero.js --- */
 window.renderGuardianView = function() {

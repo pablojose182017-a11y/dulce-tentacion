@@ -1,0 +1,30 @@
+# Reconciliación local de Evolution V5 y módulos relacionados
+
+Fecha: 2026-10-09. Alcance local: no hubo commit, push, sincronización ni despliegue.
+
+## Estado funcional
+
+- Evolution V5 y su asesor están en el bundle y conectados a ChatBridge. Observan categorías acotadas, generan propuestas en memoria y requieren revisión humana. No ejecutan ni aplican cambios.
+- El módulo `ai-integrated-consolidation.js` ahora está en el manifiesto del bundle y se conecta al `ResearchEngine` mediante el grafo de procedencia. La prueba de runtime offline recorre buscador simulado local, procedencia, afirmación y estado de consolidación. Este estado es una evaluación local de evidencia disponible, no garantía de verdad externa.
+- `ai-consolidation.js` simple sigue fuera del runtime porque su heurística puede elevar indebidamente confianza.
+- Creator Knowledge permanece fuera del bundle. Su suite de Node pasa, pero faltan pruebas del almacenamiento/integridad en el runtime real de navegador y su adaptación actual necesita trabajo para esas dependencias.
+- Documentos de diseño, auditorías, prototipos y harnesses que no forman parte del manifiesto se conservan como material de referencia/herramientas; no se consideran capacidades activas ni repositorios de runtime.
+
+## Inventario del manifiesto
+
+La fuente de verdad del bundle es `build-bundle.js`; contiene 33 fuentes de producción y excluye pruebas y herramientas. `ai-guardian-bundle.js` se regeneró desde ese manifiesto y `node build-bundle.js --check` confirmó coincidencia exacta.
+
+## Validación ejecutada
+
+- Evolution V5: 15/15.
+- Asesor e integración ChatBridge: pasó.
+- ChatBridge: 21/21.
+- Finanzas locales: 12/12; cargador: 5/5; permisos: 5/5; investigación: 3/3.
+- Creator Knowledge: 12/12 en Node (no equivale a prueba de navegador).
+- Fases locales: 4A 22/22, 4B 19/19, 4C base 14/14, 4C.1 45, 4C.1.1/1.2, 4C.2 20, 4C.2.2 14, 4C.2.3 3, 4C.2.4, 4D consenso 20 y remediación 30 pasaron en sus harnesses. El harness 4D legado conserva mensajes de discrepancia histórica y no se cuenta como prueba limpia.
+- Consolidación integrada: prueba offline pasa y confirma `SUPPORTED` para el fixture de una fuente, sin red externa.
+- Bundle: `node build-bundle.js --check` pasa con 33 fuentes.
+
+## Límites pendientes
+
+No hay modelo de lenguaje general local conectado. El razonamiento permanece determinista y acotado; no se afirma que sea equivalente a un asistente general. No hay aprendizaje autónomo, autoedición de código, memoria persistente de Evolution ni verificador independiente configurado. La investigación web y la verdad de sus fuentes no se demostraron con red real. Creator Knowledge necesita pruebas e integración de navegador antes de activarse.

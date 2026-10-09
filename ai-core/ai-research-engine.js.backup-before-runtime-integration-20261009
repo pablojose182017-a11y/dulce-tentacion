@@ -21,7 +21,6 @@ class ResearchEngine {
         this.ingestionEngine = deps.ingestionEngine;
         this.permissionManager = deps.permissionManager;
         this.provenanceGraph = deps.provenanceGraph || null;
-        this.consolidationEngine = deps.consolidationEngine || null;
         this.connectivityPolicyEngine = deps.connectivityPolicyEngine || null;
 
         if (!this.offlineResolver || !this.reasoningEngine || !this.webFetcher) {
@@ -266,7 +265,6 @@ class ResearchEngine {
         }
 
         // FASE 4: Lineage and Provenance Recording (Observational only)
-        const consolidationResults = [];
         if (this.provenanceGraph && webFindings.length > 0) {
             for (const wf of webFindings) {
                 try {
@@ -279,17 +277,12 @@ class ResearchEngine {
                         confidence: 0.7
                     });
                     if (conclusion) {
-                        const claim = this.provenanceGraph.registerClaim({
+                        this.provenanceGraph.registerClaim({
                             subject: task,
                             predicate: 'research_finding',
                             objectValue: conclusion,
                             knowledgeType: 'FACT'
                         }, src, { url: wf.url });
-                        if (claim && this.consolidationEngine) {
-                            const state = await this.consolidationEngine.consolidateClaim(claim.claimId);
-                            consolidationResults.push({ claimId: claim.claimId, state });
-                            log('Estado epistémico de hallazgo: ' + state + ' (sin permisos ni efectos de ejecución).');
-                        }
                     }
                 } catch (e) {
                     // Lineage recording failure must never break research
@@ -352,7 +345,6 @@ class ResearchEngine {
             localResultsUsed: localFindings,
             staleDocsFound: offlineRes.staleDocs.map(d => d.document.id),
             webResultsUsed: webFindings,
-            consolidationResults,
             contradictions: contradictions,
             conclusion: finalConclusion,
             confidence: finalConfidence,
@@ -364,5 +356,3 @@ class ResearchEngine {
 }
 
 window.AI_CORE.ResearchEngine = ResearchEngine;
-
-if (typeof module !== 'undefined' && module.exports) module.exports = { ResearchEngine };

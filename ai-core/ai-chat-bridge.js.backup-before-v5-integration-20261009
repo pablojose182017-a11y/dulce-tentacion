@@ -1,4 +1,4 @@
-﻿if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
+if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
 
 class ChatBridge {
     constructor(inventoryAuthority = null) {
@@ -69,9 +69,6 @@ class ChatBridge {
         if (window.AI_CORE.ProvenanceGraph) {
             this.provenanceGraph = new window.AI_CORE.ProvenanceGraph();
         }
-        if (window.AI_CORE.IntegratedConsolidationEngine && this.provenanceGraph) {
-            this.consolidationEngine = new window.AI_CORE.IntegratedConsolidationEngine(this.provenanceGraph);
-        }
 
         // FASE 7 & 8 - Connectivity Policy Integration
         if (window.AI_CORE.ConnectivityPolicyEngine) {
@@ -103,7 +100,6 @@ class ChatBridge {
                 ingestionEngine,
                 permissionManager: this.permissionManager,
                 provenanceGraph: this.provenanceGraph,
-                consolidationEngine: this.consolidationEngine,
                 connectivityPolicyEngine: this.connectivityPolicyEngine
             });
         }
@@ -361,26 +357,30 @@ class ChatBridge {
             }
         }
 
-        if (analysis.actionProposal) {
-            // Razonar puede proponer; nunca fabrica evidencia ni ejecuta. La
-            // propuesta pasa por la aprobación humana configurada.
-            if (this.securityEngine && this.executionGateway) {
-                try {
-                    const proposal = analysis.actionProposal;
-                    const toolId = proposal.toolId || "UNKNOWN_TOOL";
-                    const version = proposal.toolVersion || "1.0";
-                    const req = this.securityEngine.createApprovalRequest(
-                        toolId, version, proposal.parameters || {},
-                        "Guardian action proposal: " + String(analysis.conclusion || "").slice(0, 240), context
-                    );
-                    req.requiresCreatorApproval = true;
-                    this._pendingApprovals.set(req.requestId, req);
-                    responseText = `[PENDING_APPROVAL] La propuesta requiere aprobaciÃ³n del creador y las comprobaciones de seguridad configuradas (Tool: ${toolId}). ID: ${req.requestId}`;
-                } catch (e) {
-                    responseText = `[FAIL_CLOSED] Propuesta no autorizada: ${e.message}`;
-                }
-            } else {
-                responseText = "[FAIL_CLOSED] Subsistema de aprobaciÃ³n no disponible; no se ejecutÃ³ ninguna acciÃ³n.";
+        if (analysis.actionProposal && this.autonomousPolicyEngine) {
+            try {
+                const mockEvidenceId = this.executionGateway.history.registerResult({
+                    status: "SUCCESS",
+                    verificationStatus: "PASSED"
+                }, this.executionGateway._historyToken);
+                
+                const authRecord = await this.autonomousPolicyEngine.evaluateAndAuthorize(
+                    analysis.actionProposal,
+                    { type: "ACTUAL_TOOL_RESULT", evidenceId: mockEvidenceId },
+                    context,
+                    this.identityManager.getBotIdentity()
+                );
+
+                const execResult = await this.executionGateway.execute(
+                    authRecord.payload.authorizationId,
+                    analysis.actionProposal.parameters,
+                    this.identityManager.getBotIdentity(),
+                    context
+                );
+                
+                responseText = `[AUTONOMOUS_EXECUTION] Success: ${execResult.status} (Evidence: ${execResult.evidenceId})\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
+            } catch (e) {
+                responseText = `[AUTONOMOUS_EXECUTION] Failed: ${e.message}\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
             }
         } else if (analysis.authorizationRequirement && analysis.authorizationRequirement.required) {
             if (this.securityEngine && this.executionGateway) {
@@ -392,7 +392,6 @@ class ChatBridge {
                     const req = this.securityEngine.createApprovalRequest(
                         toolId, version, parameters, "Autonomous Request", context
                     );
-                    req.requiresCreatorApproval = true;
                     
                     if (req.status === "PENDING_APPROVAL") {
                         this._pendingApprovals.set(req.requestId, req);
@@ -432,21 +431,7 @@ class ChatBridge {
         if (!this.securityEngine || !this.executionGateway) throw new Error("FAIL_CLOSED: Subsystems not initialized");
         const request = this._pendingApprovals.get(requestId);
         if (!request) throw new Error("FAIL_CLOSED: APPROVAL_NOT_FOUND");
-        if (request.requiresCreatorApproval) {
-            const auth = typeof firebase !== "undefined" && typeof firebase.auth === "function"
-                ? firebase.auth()
-                : null;
-            const authUser = auth && auth.currentUser && !auth.currentUser.isAnonymous
-                ? auth.currentUser
-                : null;
-            const authenticatedActor = authUser ? this.identityManager.getCurrentUser(authUser) : null;
-            const suppliedEmail = approverIdentity && typeof approverIdentity.email === "string"
-                ? approverIdentity.email.toLowerCase().trim()
-                : null;
-            if (!authenticatedActor || authenticatedActor.isCreator !== true || suppliedEmail !== authenticatedActor.email) {
-                throw new Error("FAIL_CLOSED: CREATOR_APPROVAL_REQUIRED");
-            }
-        }        
+        
         let authRecord;
         try {
             authRecord = await this.securityEngine.approveRequest(request, approverIdentity);
@@ -571,4 +556,3 @@ ChatBridge.prototype.receiveMessage = async function(message, ...args) {
 const defaultInventoryAuth = window.AI_CORE.InventoryAuthority ? new window.AI_CORE.InventoryAuthority() : { verifyIdentity: () => null };
 window.AI_CORE.chatBridgeInstance = new ChatBridge(defaultInventoryAuth);
 window.AI_CORE.ChatBridge = ChatBridge;
-

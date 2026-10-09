@@ -1,4 +1,4 @@
-if (typeof window !== 'undefined') window.AI_CORE = window.AI_CORE || {};
+const crypto = require('crypto');
 
 class EvidenceValidator {
     static isValid(support, provenanceGraph) {
@@ -203,11 +203,8 @@ class SemanticConsolidationPipeline {
     }
 }
 
-const integratedConsolidationApi = {
+module.exports = {
     IntegratedConsolidationEngine,
     EvidenceValidator,
     SemanticConsolidationPipeline
 };
-
-if (typeof window !== 'undefined') Object.assign(window.AI_CORE, integratedConsolidationApi);
-if (typeof module !== 'undefined' && module.exports) module.exports = integratedConsolidationApi;

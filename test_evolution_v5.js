@@ -1,76 +1,107 @@
+'use strict';
+const assert = require('node:assert/strict');
 const { GlobalResourceGovernor, ProgressOracle, EvolutionStateMachine } = require('./ai-evolution-v5');
 
 async function runTests() {
     let passed = 0;
-    let failed = 0;
-    let knownLimitations = 0;
-
-    const assert = (condition, msg, isLimitation = false) => {
-        if (condition) {
-            console.log(`[PASS] ${msg}`);
-            passed++;
-        } else {
-            if (isLimitation) {
-                console.warn(`[KNOWN V5 LIMITATION] ${msg}`);
-                knownLimitations++;
-            } else {
-                console.error(`[FAIL] ${msg}`);
-                failed++;
-            }
-        }
+    const check = async (name, fn) => {
+        await fn();
+        passed++;
+        console.log(`[PASS] ${name}`);
     };
 
-    console.log("=== INICIANDO TESTS ESTRUCTURALES EVOLUTION V5 ===\n");
+    console.log('=== GUARDED EVOLUTION V5 TESTS ===');
 
-    const sm = new EvolutionStateMachine();
-    
-    // TEST 1: Atomic Resource Reservation
-    const result1 = sm.proposeObjective("op-global-01", "obj-01", { cpuTime: 5000, memoryMb: 128 });
-    assert(result1.status === "PROPOSED", "Atomic reservation is successful when within limits");
-    
-    const result2 = sm.proposeObjective("op-global-01", "obj-02", { cpuTime: 6000, memoryMb: 128 });
-    assert(result2.status === "FAILED_RESOURCES", "Atomic reservation fails (Rollback) when exceeding global budget (5000 + 6000 > 10000)");
+    let now = 100;
+    const governor = new GlobalResourceGovernor({
+        clock: () => now,
+        limits: { cpuTime: 10000, memoryMb: 512, toolCalls: 50, concurrentObjectives: 2 }
+    });
+    await check('reservation accepts valid bounded resources', () => {
+        assert.equal(governor.reserveAtomically('r1', { cpuTime: 5000, memoryMb: 128 }), true);
+    });
+    await check('resource overrun fails without partial reservation', () => {
+        assert.equal(governor.reserveAtomically('r2', { cpuTime: 6000, memoryMb: 128 }), false);
+        assert.equal(governor.snapshot().usage.cpuTime, 5000);
+        assert.equal(governor.snapshot().reservations.length, 1);
+    });
+    await check('duplicate reservation and negative values are rejected', () => {
+        assert.equal(governor.reserveAtomically('r1', { cpuTime: 1 }), false);
+        assert.equal(governor.reserveAtomically('r2', { cpuTime: -1 }), false);
+        assert.equal(governor.reserveAtomically('r2', { cpuTime: 0, concurrentObjectives: 0 }), false);
+    });
+    await check('release is idempotent and restores reserved budget', () => {
+        assert.equal(governor.release('r1'), true);
+        assert.equal(governor.release('r1'), false);
+        assert.equal(governor.snapshot().usage.cpuTime, 0);
+    });
+    await check('expired lease is reclaimed using the monotonic clock source', () => {
+        assert.equal(governor.reserveAtomically('lease', { toolCalls: 1 }, 10), true);
+        now += 11;
+        assert.equal(governor.releaseExpired(), 1);
+        assert.equal(governor.snapshot().reservations.length, 0);
+    });
 
-    // TEST 2: Oracle Domain Separation
-    const claimResult = sm.claimProgress("op-global-01", "obj-01", { confidence: 0.9, independentSources: 2 });
-    assert(claimResult === "VERIFIED", "Oracle successfully verifies progress based on evidence");
-    assert(claimResult !== "GRANT_AUTHORITY", "Oracle verification does not grant authority, only returns status");
+    const noOracle = new ProgressOracle();
+    const forgedEvidence = { confidence: 0.99, independentSources: 99 };
+    await check('self-reported confidence is never treated as independent verification', async () => {
+        assert.equal((await noOracle.verify({ objectiveId: 'x' }, forgedEvidence)).status, 'INCONCLUSIVE');
+    });
+    const independentOracle = new ProgressOracle({ verifier: async (_claim, evidence) => evidence.localCheck === true });
+    await check('independent verifier controls verified result', async () => {
+        assert.equal((await independentOracle.verify({ objectiveId: 'x' }, { localCheck: true })).status, 'VERIFIED');
+        assert.equal((await independentOracle.verify({ objectiveId: 'x' }, { localCheck: false })).status, 'NOT_VERIFIED');
+    });
+    const failingOracle = new ProgressOracle({ verifier: async () => { throw new Error('failure'); } });
+    await check('verifier errors fail closed to inconclusive', async () => {
+        assert.equal((await failingOracle.verify({ objectiveId: 'x' }, {})).status, 'INCONCLUSIVE');
+    });
 
-    const invalidClaim = sm.claimProgress("op-global-01", "obj-01", { confidence: 0.5, independentSources: 1 });
-    assert(invalidClaim === "INCONCLUSIVE", "Oracle returns INCONCLUSIVE when evidence is weak");
+    const machine = new EvolutionStateMachine();
+    await check('objective proposal reserves bounded resources', () => {
+        assert.equal(machine.proposeObjective('guardian-feedback', 'research-gap-1', { cpuTime: 10, memoryMb: 1 }).status, 'PROPOSED');
+    });
+    await check('duplicate objective cannot reset its budget', () => {
+        assert.equal(machine.proposeObjective('guardian-feedback', 'research-gap-1', { cpuTime: 10 }).status, 'REJECTED_DUPLICATE_OBJECTIVE');
+    });
+    await check('progress remains inconclusive without independent verifier', async () => {
+        assert.equal((await machine.claimProgress('guardian-feedback', 'research-gap-1', forgedEvidence)).status, 'INCONCLUSIVE');
+    });
+    await check('closing a review releases its resource reservation', () => {
+        assert.equal(machine.closeObjective('research-gap-1'), true);
+        assert.equal(machine.governor.snapshot().reservations.length, 0);
+    });
+    await check('improvement proposals are versioned and require human review', () => {
+        const p1 = machine.createImprovementProposal({ category: 'RESEARCH_INSUFFICIENT', evidenceCount: 3, recommendation: 'Revisar evidencia local.' });
+        const p2 = machine.createImprovementProposal({ category: 'RESEARCH_INSUFFICIENT', evidenceCount: 4, recommendation: 'Revisar evidencia local.' });
+        assert.equal(p1.revision, 1);
+        assert.equal(p2.revision, 2);
+        assert.equal(p2.authority, 'NONE');
+        assert.equal(p2.requiresHumanReview, true);
+        assert.equal(p2.verification, 'INCONCLUSIVE');
+    });
+    await check('audit collection and entries cannot be mutated by callers', () => {
+        const audit = machine.auditLog;
+        assert.throws(() => audit.push({ actionId: 'TAMPERED' }), TypeError);
+        assert.throws(() => { audit[0].actionId = 'TAMPERED'; }, TypeError);
+        assert.notEqual(machine.auditLog[0].actionId, 'TAMPERED');
+    });
+    await check('audit capacity stops evolution without affecting other subsystems', () => {
+        const bounded = new EvolutionStateMachine({ maxAuditEvents: 10 });
+        let result;
+        for (let i = 0; i < 20; i++) {
+            result = bounded.createImprovementProposal({ category: 'SAFE_BLOCK', evidenceCount: i + 1, recommendation: 'Revisar.' });
+            if (result.status === 'EVOLUTION_STOPPED') break;
+        }
+        assert.equal(result.status, 'EVOLUTION_STOPPED');
+        assert.equal(bounded.stopped, true);
+        assert.equal(typeof bounded.execute, 'undefined');
+    });
 
-    // TEST 3: Offline Autonomy (No network calls made)
-    assert(true, "Oracle and Governor operate synchronously without External AI or Internet");
-
-    // TEST 4: Fail-closed y Audit Inmutability
-    assert(sm.auditLog.length === 4, "Audit log immutably records all proposals and claims");
-    try {
-        sm.auditLog[0].decision = "TAMPERED";
-        assert(false, "Audit log tampering should throw error");
-    } catch (e) {
-        assert(true, "Audit log entries are completely frozen (Object.freeze)");
-    }
-
-    // TEST 5: Known Limitation (Time-Travel Epoch Attack)
-    assert(false, "Time-Travel Epoch Attack (Clock drift manipulation is not protected structurally)", true);
-
-    // TEST 6: Known Limitation (False-Flag Security Revocation)
-    assert(false, "False-Flag Security Revocation (Evolution can trigger self-destruction of sibling processes via SecurityEngine)", true);
-    
-    // TEST 7: Known Limitation (Phantom Resource Reservation Leak)
-    assert(false, "Phantom Resource Reservation Leak (Asynchronous abort before commit/release leads to starvation)", true);
-
-    console.log(`\n=== RESUMEN DE TESTS ===`);
-    console.log(`Passed: ${passed}`);
-    console.log(`Failed: ${failed}`);
-    console.log(`Known Limitations: ${knownLimitations}`);
-
-    if (failed > 0) {
-        console.error("❌ LA IMPLEMENTACIÓN ESTRUCTURAL TIENE FALLOS CRÍTICOS");
-        process.exit(1);
-    } else {
-        console.log("✅ IMPLEMENTACIÓN ESTRUCTURAL CORRECTA (CON LIMITACIONES CONOCIDAS).");
-    }
+    console.log(`\n=== RESUMEN: ${passed} PASS / 0 FAIL ===`);
 }
 
-runTests();
+runTests().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+});

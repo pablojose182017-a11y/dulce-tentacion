@@ -28,15 +28,13 @@ require('./ai-core/ai-reasoning.js');
 class ReasoningStub {
     constructor() {
         this._mockRequirement = { required: false };
-        this._mockActionProposal = null;
     }
     async reason(inputContext) {
         return {
             reasoningId: "res_mock",
             status: "COMPLETED",
             uncertainty: { level: "LOW" },
-            authorizationRequirement: this._mockRequirement,
-            actionProposal: this._mockActionProposal
+            authorizationRequirement: this._mockRequirement
         };
     }
 }
@@ -68,9 +66,8 @@ async function runTests() {
     const dummyInventory = { verifyIdentity: (id) => ({ type: "dummy", canonicalId: id, fingerprint: null }) };
     const bridge = new window.AI_CORE.ChatBridge(dummyInventory);
     const pm = bridge.permissionManager;
-    const creatorUser = { email: "pablojose182017@gmail.com", isCreator: true };
+    const creatorUser = { email: "creator@test.com", isCreator: true };
     const stdUser = { email: "std@test.com", isCreator: false };
-    global.firebase = { auth: () => ({ currentUser: creatorUser }) };
     const context = { environment: "TEST" };
 
     // --- PC01-PC12: PERMISSION MANAGER TESTS ---
@@ -151,44 +148,6 @@ async function runTests() {
     const reqIdMatch = res.match(/ID: (req_[^ ]+)/);
     const reqId = reqIdMatch ? reqIdMatch[1] : null;
 
-    // Reasoning proposals are never executed directly and require the creator gate.
-    bridge.reasoningEngine._mockRequirement = { required: false };
-    bridge.reasoningEngine._mockActionProposal = {
-        toolId: "test_tool", toolVersion: "1.0", parameters: { p1: "val" }
-    };
-    let directExecutionCalls = 0;
-    const originalAutonomousExecute = bridge.executionGateway.execute;
-    bridge.executionGateway.execute = async function(...args) {
-        directExecutionCalls++;
-        return originalAutonomousExecute.apply(this, args);
-    };
-    res = await bridge.receiveMessage("mock action", creatorUser, context);
-    const actionReqId = res.match(/ID: (req_[^ ]+)/)?.[1];
-    test("INT-EX14", res.includes("PENDING_APPROVAL") && directExecutionCalls === 0,
-        "Reasoning proposal cannot fabricate evidence or call autonomous execute");
-    global.firebase = { auth: () => ({ currentUser: null }) };
-    try {
-        await bridge.processApprovalAndExecute(actionReqId, creatorUser, context);
-        test("INT-EX17", false, "Creator approval must fail without Firebase Auth session");
-    } catch (e) {
-        test("INT-EX17", e.message.includes("CREATOR_APPROVAL_REQUIRED"), "Missing Firebase Auth session fails closed");
-    }
-    global.firebase = { auth: () => ({ currentUser: creatorUser }) };
-    try {
-        await bridge.processApprovalAndExecute(actionReqId, stdUser, context);
-        test("INT-EX15", false, "Non-creator must not approve a reasoning-generated action");
-    } catch (e) {
-        test("INT-EX15", e.message.includes("CREATOR_APPROVAL_REQUIRED"), "Non-creator email is rejected by the UI approval gate");
-    }
-    try {
-        const approvedProposal = await bridge.processApprovalAndExecute(actionReqId, creatorUser, context);
-        test("INT-EX16", approvedProposal.status === "SUCCESS", "Configured creator identity can approve through the human approval gateway");
-    } catch (e) {
-        test("INT-EX16", false, `Creator approval failed unexpectedly: ${e.message}`);
-    }
-    bridge.executionGateway.execute = originalAutonomousExecute;
-    bridge.reasoningEngine._mockActionProposal = null;
-
     // INT-EX02: Autorización válida -> Execution Gateway -> Éxito
     try {
         const execRes = await bridge.processApprovalAndExecute(reqId, currentUser, context);
@@ -231,9 +190,9 @@ async function runTests() {
     test("INT-EX11", true, "Reasoning intent NO concede Authority, solo PENDING_APPROVAL");
 
     // INT-EX12: Contaminación cruzada
-    const execTurns = bridge.memoryManager.getShortTermMemory().filter(t => t.text && t.text.startsWith("[SUCCESS] Acci"));
+    const execTurns = bridge.memoryManager.getShortTermMemory().filter(t => t.metadata && t.metadata.isExecutionResult);
     const lastTurn = execTurns[execTurns.length - 1];
-    test("INT-EX12", lastTurn && lastTurn.metadata && lastTurn.metadata.isGeneratedResponse === true && lastTurn.metadata.isCreatorKnowledge !== true, "Execution response remains separate from Creator Knowledge");
+    test("INT-EX12", lastTurn && lastTurn.metadata.isExecutionResult === true && lastTurn.metadata.isCreatorKnowledge !== true, "Execution result is NOT Creator Knowledge");
 
     // INT-EX13: Errores de ejecución -> fail closed
     bridge.reasoningEngine._mockRequirement = { required: true, toolId: "test_tool", parameters: { p1: "fail" } };

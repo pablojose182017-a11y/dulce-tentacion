@@ -319,13 +319,6 @@ class ProvenanceGraph {
         return roots;
     }
 
-    // Compatibility helper for older phase-test consumers. New code should use
-    // _findRootSources because a source can legitimately have multiple roots.
-    _findRootSource(source) {
-        const roots = this._findRootSources(source);
-        return roots.size === 1 ? Array.from(roots)[0] : null;
-    }
-
     _getCausalParentIds(source) {
         let ids = new Set();
         if (source.copiedFrom) ids.add(source.copiedFrom);
@@ -519,7 +512,3 @@ class ProvenanceGraph {
 window.AI_CORE.SourceProvenance = SourceProvenance;
 window.AI_CORE.ClaimIdentity = ClaimIdentity;
 window.AI_CORE.ProvenanceGraph = ProvenanceGraph;
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SourceProvenance, ClaimIdentity, ProvenanceGraph };
-}

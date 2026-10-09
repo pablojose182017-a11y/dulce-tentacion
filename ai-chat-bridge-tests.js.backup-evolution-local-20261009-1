@@ -37,8 +37,6 @@ require('./ai-core/ai-context.js');
 require('./ai-core/ai-provider.js');
 require('./ai-core/ai-reasoning.js');
 require('./ai-core/ai-personality.js');
-require('./ai-evolution-v5.js');
-require('./ai-core/ai-evolution-advisor.js');
 require('./guardian-financiero.js');
 require('./ai-core/ai-chat-bridge.js');
 
@@ -119,7 +117,6 @@ async function runTests() {
     const engineProvider = testBridge && testBridge.reasoningEngine ? testBridge.reasoningEngine.aiProvider : null;
     recordTest("T0_3", !engineProvider && !testBridge.provider, "El flujo activo usa razonamiento local y no instancia el proveedor simulado");
     recordTest("T0_4", !testBridge.toolRegistry, "La prueba aislada no habilita herramientas de ejecución");
-    recordTest("T0_5", testBridge.evolutionAdvisor instanceof window.AI_CORE.EvolutionAdvisor && Array.isArray(testBridge.getEvolutionProposals()), "Evolution se integra como observador local de propuestas, sin autoridad");
 
     
     // T1: USE_NEW_AI_CORE=false conserva flujo legacy

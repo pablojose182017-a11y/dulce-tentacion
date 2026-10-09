@@ -9042,17 +9042,8 @@ class ChatBridge {
         const request = this._pendingApprovals.get(requestId);
         if (!request) throw new Error("FAIL_CLOSED: APPROVAL_NOT_FOUND");
         if (request.requiresCreatorApproval) {
-            const auth = typeof firebase !== "undefined" && typeof firebase.auth === "function"
-                ? firebase.auth()
-                : null;
-            const authUser = auth && auth.currentUser && !auth.currentUser.isAnonymous
-                ? auth.currentUser
-                : null;
-            const authenticatedActor = authUser ? this.identityManager.getCurrentUser(authUser) : null;
-            const suppliedEmail = approverIdentity && typeof approverIdentity.email === "string"
-                ? approverIdentity.email.toLowerCase().trim()
-                : null;
-            if (!authenticatedActor || authenticatedActor.isCreator !== true || suppliedEmail !== authenticatedActor.email) {
+            const authenticatedActor = this.identityManager.getCurrentUser(approverIdentity);
+            if (!authenticatedActor || authenticatedActor.isCreator !== true) {
                 throw new Error("FAIL_CLOSED: CREATOR_APPROVAL_REQUIRED");
             }
         }        
