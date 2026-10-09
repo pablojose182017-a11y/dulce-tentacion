@@ -79,7 +79,7 @@
                         <span id="desk-vip-crown" class="vip-crown-badge" style="display:none;">👑</span>
                     </div>
                     <span id="user-name" class="user-pill-name"></span>
-                    <span class="user-pill-arrow">▼</span>
+                    <span class="user-pill-arrow">â–¼</span>
                     <div id="user-dropdown-menu" class="user-dropdown-menu">
                         <div class="dropdown-profile-header">
                             <img id="dropdown-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
@@ -97,7 +97,7 @@
                             <small>Te faltan 350 pts para un premio</small>
                         </div>
                         <div class="dropdown-points-simulator">
-                            <strong>✨ Gana Puntos Hoy:</strong>
+                            <strong>âœ¨ Gana Puntos Hoy:</strong>
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
@@ -115,10 +115,10 @@
 
                         <button id="desk-admin-btn" class="dropdown-btn"
                             onclick="openAdminPanelFlow(this);"
-                            style="display:none; color:var(--brand-pink);">⚙️ Panel Administrador</button>
+                            style="display:none; color:var(--brand-pink);">âš™ï¸ Panel Administrador</button>
                         <button id="desk-kitchen-btn" class="dropdown-btn"
                             onclick="openKitchenModal()"
-                            style="display:none; color:#f59e0b;">👨‍🍳 Modo Cocina / Despacho</button>
+                            style="display:none; color:#f59e0b;">ðŸ‘¨â€🍳 Modo Cocina / Despacho</button>
                         <button class="dropdown-btn" onclick="openCartFromDropdown(event)">🛒 Ver mi Carrito (<span
                                 class="dropdown-cart-qty">0</span>)</button>
                         <button class="dropdown-btn logout" onclick="logoutUser(event)">🚪 Cerrar Sesión</button>
@@ -224,7 +224,7 @@
                     <span class="mmi-icon">👑</span> <span>Membresía VIP Oro</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('nosotros', document.getElementById('bnNosotros'))">
-                    <span class="mmi-icon">❤️</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
+                    <span class="mmi-icon">â¤ï¸</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openDeliveryCoverageModal()">
                     <span class="mmi-icon">🛵</span> <span>Políticas y Zonas de Entrega</span>
@@ -246,20 +246,20 @@
         <div class="hero">
             <div class="hero-welcome-card">
                 <img src="logo-pys.png" class="hero-logo-img" alt="Logo P&S Punto Dulce">
-                <h2 class="hero-quote">“Hecho con amor, endulzamos tu día” 💖</h2>
+                <h2 class="hero-quote">â€œHecho con amor, endulzamos tu díaâ€ 💖</h2>
                 <p class="hero-desc">Tortas de celebración hechas a la medida & panadería artesanal horneada cada mañana en Cúcuta.</p>
                 <div class="hero-order-hint">
-                    ✨ Haz tu pedido fácil en línea · ¡Elige tu opción! <span class="bouncing-hand">👇</span>
+                    âœ¨ Haz tu pedido fácil en línea Â· ¡Elige tu opción! <span class="bouncing-hand">👇</span>
                 </div>
                 <div class="hero-buttons-group">
                     <button class="btn-hero-primary" onclick="filterCategory('todos', null); goToCatalog(event)">
-                        🍰 ¡Quiero antojarme y pedir! ➔
+                        ðŸ° ¡Quiero antojarme y pedir! âž”
                     </button>
                     <button class="btn-hero-secondary" onclick="filterCategory('eventos', this); goToCatalog(event)">
-                        🎉 Pasabocas y Bandejas al por mayor ➔
+                        🎉 Pasabocas y Bandejas al por mayor âž”
                     </button>
                 </div>
-                <p class="hero-trust-badge">✨ Domicilios en Cúcuta • Calidad artesanal garantizada</p>
+                <p class="hero-trust-badge">âœ¨ Domicilios en Cúcuta â€¢ Calidad artesanal garantizada</p>
             </div>
             <div class="hero-love-phrase">
                 "El ingrediente secreto siempre es el amor"
@@ -269,11 +269,11 @@
             <div class="login-incentive-box" onclick="openAuthModal()" id="hero-login-incentive">
                 <div class="li-icon">🎁</div>
                 <div class="li-text">
-                    <strong>¡Únete al Club Dulce Tentación!</strong>
+                    <strong>¡Ãšnete al Club Dulce Tentación!</strong>
                     <p>Inicia sesión ahora y recibe un <strong>6% de descuento</strong> en tu 1ra compra, y acumula
                         puntos.</p>
                 </div>
-                <div class="li-arrow">➔</div>
+                <div class="li-arrow">âž”</div>
             </div>
         </div>
 
@@ -288,14 +288,14 @@
             <button class="btn-gold">¡Empezar a diseñar!</button>
         </div>
 
-        <h2 class="section-title">⭐ Los Más Pedidos de Hoy</h2>
+        <h2 class="section-title">â­ Los Más Pedidos de Hoy</h2>
 
         <div class="cat-chip-scroll">
             <button class="cat-chip active" onclick="filterCategory('todos', this)">🔥 Todos</button>
             <button class="cat-chip" onclick="filterCategory('panaderia', this)">🥖 Pan</button>
             <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
             <button class="cat-chip" onclick="filterCategory('combos', this)">🔥 Ofertas</button>
-            <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
+            <button class="cat-chip" onclick="filterCategory('antojos', this)">â˜• Antojos</button>
             <button class="cat-chip" onclick="filterCategory('paquetes', this)">📦 Paquetes</button>
             <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
         </div>
@@ -303,11 +303,11 @@
         <div class="grid" id="featuredGrid"></div>
 
         <div class="identity-banner">
-            <h3>❤️ El Secreto Está en Nuestras Manos y Nuestro Amor</h3>
+            <h3>â¤ï¸ El Secreto Está en Nuestras Manos y Nuestro Amor</h3>
             <p>En Dulce Tentación P y S seleccionamos harinas de primera calidad, mantequillas premium y horneamos
                 tandas constantes durante todo el día para que siempre disfrutes de panes suaves, doraditos y recién
                 hechos a manos de los artesanos más apasionados de Cúcuta.</p>
-            <div class="identity-tagline">✨ Hecho con amor, endulzamos tu día ✨</div>
+            <div class="identity-tagline">âœ¨ Hecho con amor, endulzamos tu día âœ¨</div>
         </div>
 
         <div class="features-grid">
@@ -324,12 +324,12 @@
                     <strong>Entrega Rápida en Cúcuta</strong>
                     <p>Cubrimos todos los barrios. Tu pedido llega empacado y protegido en 25-45 min.</p>
                     <span class="delivery-conditions-link" style="color: #d81b60; font-size: 0.82rem; font-weight: 700; text-decoration: underline; margin-top: 6px; display: inline-block;">
-                        Ver zonas y condiciones ℹ️
+                        Ver zonas y condiciones â„¹ï¸
                     </span>
                 </div>
             </div>
             <div class="feature-card">
-                <span class="feature-icon">⭐</span>
+                <span class="feature-icon">â­</span>
                 <div class="feature-text">
                     <strong>La Mejor Calidad a Solo $500</strong>
                     <p>Mantenemos recetas generosas con queso, bocadillo y mantequilla al mejor precio de la ciudad.</p>
@@ -343,7 +343,7 @@
                 <span class="club-puntos-tag">🌟 Beneficios Exclusivos</span>
                 <h2 class="club-puntos-title">🎟️ Club Puntos &amp; Recompensas VIP</h2>
                 <div class="club-points-balance-card">
-                    <span class="cp-balance-icon">✨</span>
+                    <span class="cp-balance-icon">âœ¨</span>
                     <div class="cp-balance-text">
                         <span>Puntos Acumulados</span>
                         <p>Tienes <strong id="modal-ticket-val">0</strong> puntos disponibles</p>
@@ -379,7 +379,7 @@
             <button class="cat-chip" onclick="filterCategory('panaderia', this)">🥖 Pan</button>
             <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
             <button class="cat-chip" onclick="filterCategory('combos', this)">🔥 Ofertas</button>
-            <button class="cat-chip" onclick="filterCategory('antojos', this)">☕ Antojos</button>
+            <button class="cat-chip" onclick="filterCategory('antojos', this)">â˜• Antojos</button>
             <button class="cat-chip" onclick="filterCategory('paquetes', this)">📦 Paquetes</button>
             <button class="cat-chip" onclick="filterCategory('eventos', this)">🎉 Eventos & Fiestas</button>
         </div>
@@ -388,7 +388,7 @@
         <div style="background: linear-gradient(135deg, #fff0f5, #fde8ef); border: 2px dashed #d81b60; border-radius: var(--r-lg); padding: 20px; text-align: center; margin-bottom: 24px; cursor: pointer; transition: all 0.3s ease;" onclick="openWizard()" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
             <h3 style="color: #9f1239; font-size: 1.4rem; margin-bottom: 8px;">🎂 Torta para Celebración (Bajo Pedido)</h3>
             <p style="color: #6d3a1f; font-size: 0.95rem; margin-bottom: 15px;">¡Personaliza el sabor, tamaño y diseño de tu torta ideal!</p>
-            <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta ✨</button>
+            <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta âœ¨</button>
         </div>
 
         <div class="grid" id="productGrid"></div>
@@ -420,7 +420,7 @@
             </div>
             <div class="values-grid">
                 <div class="value-card">
-                    <h4>✨ Calidad Innegociable</h4>
+                    <h4>âœ¨ Calidad Innegociable</h4>
                     <p>Cuidamos cada receta y tiempo de fermentación para panes perfectos.</p>
                 </div>
                 <div class="value-card">
@@ -441,15 +441,15 @@
             <div class="info-grid">
                 <div class="contact-box">
                     <h4>🕒 Horarios</h4>
-                    <p style="color:var(--text-soft);line-height:1.6;"><strong>Lun – Sáb:</strong> 6:00 AM – 9:00
-                        PM<br><strong>Dom y Festivos:</strong> 6:30 AM – 8:30 PM<br><em>¡Varios horneados en el
+                    <p style="color:var(--text-soft);line-height:1.6;"><strong>Lun â€“ Sáb:</strong> 6:00 AM â€“ 9:00
+                        PM<br><strong>Dom y Festivos:</strong> 6:30 AM â€“ 8:30 PM<br><em>¡Varios horneados en el
                             día!</em></p>
                 </div>
                 <div class="contact-box">
                     <h4>📞 Contacto / Pedidos</h4>
                     <p style="color:var(--text-soft);line-height:1.6;"><strong>WhatsApp:</strong> 322 951 2693<br><strong>Cobertura:</strong> Toda Cúcuta, Los Patios y Villa del Rosario.<br><strong>Tiempo estimado:</strong> 25 a 45 minutos.</p>
                     <span class="delivery-conditions-link" onclick="openDeliveryCoverageModal()" style="color: #d81b60; font-size: 0.82rem; font-weight: 700; text-decoration: underline; margin-top: 6px; display: inline-block; cursor: pointer;">
-                        Ver zonas y condiciones ℹ️
+                        Ver zonas y condiciones â„¹ï¸
                     </span>
                 </div>
                 <div class="contact-box">
@@ -520,7 +520,7 @@
     <!-- ===== MOBILE PROFILE MODAL ===== -->
     <div class="auth-modal" id="mobileProfileModal" style="display:none;" onclick="handleMobileProfileBdrop(event)">
         <div class="auth-card" style="padding: 24px 16px; margin: auto 12px 12px 12px; align-self: flex-end;">
-            <button class="auth-close-btn" onclick="closeMobileProfile()">✕</button>
+            <button class="auth-close-btn" onclick="closeMobileProfile()">âœ•</button>
             <div class="dropdown-profile-header">
                 <img id="mp-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
                 <div class="dropdown-profile-info">
@@ -537,7 +537,7 @@
                 <small>Te faltan 350 pts para un premio</small>
             </div>
             <div class="dropdown-points-simulator">
-                <strong>✨ Gana Puntos Hoy:</strong>
+                <strong>âœ¨ Gana Puntos Hoy:</strong>
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
             </div>
 
@@ -555,11 +555,11 @@
 
             <button id="mob-admin-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); openAdminPanelFlow(this);"
-                style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:8px 0;">⚙️
+                style="display:none; width:100%; justify-content:center; background:#fce7f3; color:var(--brand-pink); margin:8px 0;">âš™ï¸
                 Panel Administrador</button>
             <button id="mob-kitchen-btn" class="dropdown-btn"
                 onclick="closeMobileProfile(); openKitchenModal();"
-                style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:8px 0;">👨‍🍳
+                style="display:none; width:100%; justify-content:center; background:#fef3c7; color:#b45309; margin:8px 0;">ðŸ‘¨â€ðŸ³
                 Modo Cocina / Despacho</button>
 
             <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();"
@@ -590,7 +590,7 @@
     <div class="modal-overlay" id="adminEditUserModal" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999;" onclick="if(event.target===this) window.cerrarModalEdicionUsuarioAdmin && window.cerrarModalEdicionUsuarioAdmin()">
         <div style="background:#fff; border-radius:16px; padding:24px; width:90%; max-width:420px; text-align:center; box-shadow:0 12px 36px rgba(0,0,0,0.22); border:1px solid #fed7aa; position:relative;">
             <h3 style="color:#b45309; margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                <span>✏️</span> Editar Datos de Usuario
+                <span>âœï¸</span> Editar Datos de Usuario
             </h3>
             <p style="font-size:0.85rem; color:#64748b; margin-bottom:18px;">Actualiza el nombre completo o corrige errores en el correo del cliente.</p>
             <input type="hidden" id="adminEditUserOriginalEmail">
@@ -604,7 +604,7 @@
             <div class="custom-form-group" style="text-align:left; margin-bottom:20px;">
                 <label style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:4px; display:block;">Correo Electrónico</label>
                 <div class="input-wrap" style="position:relative;">
-                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">✉️</span>
+                    <span class="field-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:1rem;">âœ‰ï¸</span>
                     <input type="email" id="adminEditUserEmail" placeholder="correo@ejemplo.com..." style="width:100%; padding:10px 12px 10px 38px; border-radius:8px; border:1.5px solid #cbd5e1; outline:none; font-size:0.95rem; box-sizing:border-box;">
                 </div>
             </div>
@@ -616,7 +616,7 @@
     <!-- ===== AUTH MODAL ===== -->
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
         <div class="auth-card" style="padding:24px; text-align:center;">
-            <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
+            <button class="auth-close-btn" onclick="closeAuthModal()">âœ•</button>
             <img src="logo-pys.png" alt="Logo P&S Punto Dulce"
                 style="width:80px; height:80px; border-radius:50%; margin-bottom:15px; border:2px solid var(--brand-pink);">
 
@@ -627,7 +627,7 @@
 
             <div class="auth-incentive-banner">
                 <span style="font-size: 1.4rem;">🥐</span>
-                <span>¡Únete al Club P&S Punto Dulce y acumula puntos en tus pedidos favoritos! 🍰</span>
+                <span>¡Ãšnete al Club P&S Punto Dulce y acumula puntos en tus pedidos favoritos! 🍰</span>
             </div>
 
             <div id="authMsg" class="auth-msg"></div>
@@ -637,7 +637,7 @@
                     <div class="form-group">
                         <label>Correo Electrónico o Usuario</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon">âœ‰ï¸</span>
                             <input type="text" id="loginEmail" placeholder="ejemplo@correo.com">
                         </div>
                     </div>
@@ -646,7 +646,7 @@
                         <div class="input-wrap">
                             <span class="field-icon">🔒</span>
                             <div class="password-wrapper">
-                                <input type="password" id="loginPassword" placeholder="••••••••">
+                                <input type="password" id="loginPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
                                 <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar contraseña">👁️</button>
                             </div>
                         </div>
@@ -684,7 +684,7 @@
                     <div class="form-group">
                         <label>Correo Electrónico</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon">âœ‰ï¸</span>
                             <input type="email" id="regEmail" placeholder="ejemplo@correo.com">
                         </div>
                     </div>
@@ -693,7 +693,7 @@
                         <div class="input-wrap">
                             <span class="field-icon">🔒</span>
                             <div class="password-wrapper">
-                                <input type="password" id="regPassword" placeholder="••••••••">
+                                <input type="password" id="regPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
                                 <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Mostrar contraseña">👁️</button>
                             </div>
                         </div>
@@ -731,7 +731,7 @@
                     <div class="form-group">
                         <label>Correo Electrónico Registrado</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon">âœ‰ï¸</span>
                             <input type="email" id="recoveryEmail" placeholder="tucorreo@ejemplo.com">
                         </div>
                     </div>
@@ -743,7 +743,7 @@
                     </div>
                     
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: var(--text-dark); text-decoration: none;">⬅ Volver a Iniciar Sesión</a>
+                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: var(--text-dark); text-decoration: none;">â¬… Volver a Iniciar Sesión</a>
                     </div>
                 </div>
             </div>
@@ -755,7 +755,7 @@
         <div class="cart-content">
             <div class="cart-header">
                 <h3>🛒 Tu Carrito</h3>
-                <button class="auth-close-btn" style="position:static;" onclick="toggleCart()">✕</button>
+                <button class="auth-close-btn" style="position:static;" onclick="toggleCart()">âœ•</button>
             </div>
             <div id="cart-user-greeting"></div>
 
@@ -793,9 +793,9 @@
                             <span>Saldo contra entrega (50%):</span><span id="sumBalance">$0 COP</span>
                         </div>
                     </div>
-                    <button class="btn-gold" id="btnContinueCheckout" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega →</button>
+                    <button class="btn-gold" id="btnContinueCheckout" style="width:100%; background: #d81b60; color: white; padding: 14px; border-radius: 12px; font-weight: 800; border: none; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(216,27,96,0.2); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="goToCartStep2()">Continuar con la Entrega â†’</button>
                     <button type="button" id="btnContinueShopping" class="btn-continue-shopping" onclick="closeCartModal()">
-                        ← Seguir comprando / Agregar más productos
+                        â† Seguir comprando / Agregar más productos
                     </button>
                 </div>
             </div>
@@ -804,7 +804,7 @@
                 <div class="checkout-form-card" id="checkoutCard" style="margin-top: 5px;">
                     <div class="checkout-form-title">
                         <span>🛵 Datos para la Entrega en Cúcuta</span>
-                        <small style="color:var(--brand-pink);font-weight:700;">→ WhatsApp</small>
+                        <small style="color:var(--brand-pink);font-weight:700;">â†’ WhatsApp</small>
                     </div>
                     <input type="text" id="orderName" class="checkout-input" placeholder="👤 Nombre de quien recibe">
 
@@ -841,14 +841,14 @@
                                 </div>
                             </div>
                             <p class="pickup-store-note">🕒 Pasa por tu pedido fresco y sin filas una vez confirmemos la preparación.</p>
-                            <a id="btnStoreMapsLink" href="https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6" target="_blank" rel="noopener noreferrer" class="btn-maps-link" onclick="window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');">📍 ¿Cómo llegar? (Ver en Google Maps)</a>
+                            <a id="btnStoreMapsLink" href="https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6" target="_blank" rel="noopener noreferrer" class="btn-maps-link" onclick="window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');">ðŸ“ ¿Cómo llegar? (Ver en Google Maps)</a>
                         </div>
                     </div>
 
                     <div style="margin-bottom: 15px;">
                         <label style="font-size:0.78rem;font-weight:700;color:#475569;display:block;margin-bottom:5px;">Tipo de Pedido:</label>
                         <div class="payment-grid" style="grid-template-columns: 1fr 1fr;">
-                            <div class="payment-chip active" id="btn-order-immediate" onclick="toggleOrderType('inmediato')">⚡ Inmediato</div>
+                            <div class="payment-chip active" id="btn-order-immediate" onclick="toggleOrderType('inmediato')">âš¡ Inmediato</div>
                             <div class="payment-chip" id="btn-order-event" onclick="toggleOrderType('evento')">📅 Programado (Evento)</div>
                         </div>
                     </div>
@@ -863,11 +863,11 @@
                             <input type="text" id="eventTime" class="checkout-input" style="margin-bottom:0;" readonly placeholder="Selecciona la hora">
                         </div>
                         <div class="event-alert">
-                            ⚠️ Para pedidos de eventos se requiere un anticipo del 50% para reservar la producción.
+                            âš ï¸ Para pedidos de eventos se requiere un anticipo del 50% para reservar la producción.
                         </div>
                     </div>
 
-                    <!-- Bloque de carrito mixto (torta + vitrina) — gestionado por sincronizarCheckoutConTortas() -->
+                    <!-- Bloque de carrito mixto (torta + vitrina) â€” gestionado por sincronizarCheckoutConTortas() -->
                     <div id="mixedCartBlock" class="mixed-cart-block" style="display:none;" role="group" aria-label="Opciones de despacho para pedido mixto"></div>
 
                     <div>
@@ -884,7 +884,7 @@
 
                     <!-- Calculadora de Efectivo (Oculta por defecto) -->
                     <div id="cash-calculator-container" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
-                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">💵 ¿Con cuánto vas a pagar?</label>
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: block;">ðŸ’µ ¿Con cuánto vas a pagar?</label>
                         
                         <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
                             <button type="button" class="cash-quick-btn" onclick="setCashAmount('exacto')">Exacto</button>
@@ -903,7 +903,7 @@
                             Vuelto / Cambio: <span id="changeReturnAmount">$0</span>
                         </div>
                         <div id="cashShortageDisplay" style="display: none; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: #dc2626; text-align: center;">
-                            ⚠️ El monto ingresado es menor al total.
+                            âš ï¸ El monto ingresado es menor al total.
                         </div>
                     </div>
 
@@ -926,7 +926,7 @@
                 </div>
                 <div class="cart-footer" style="position: sticky; bottom: 0; background: #fff; z-index: 10;">
                     <button class="btn-whatsapp" onclick="sendOrder()">📲 Confirmar y Enviar Pedido</button>
-                    <button style="width:100%; background: #f1f5f9; color: #475569; border: none; border-radius: 12px; padding: 12px; margin-top: 10px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" onclick="goToCartStep1()">← Volver a la canasta</button>
+                    <button style="width:100%; background: #f1f5f9; color: #475569; border: none; border-radius: 12px; padding: 12px; margin-top: 10px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'" onclick="goToCartStep1()">â† Volver a la canasta</button>
                 </div>
             </div>
         </div>
@@ -955,10 +955,10 @@
         <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px; width:100%; max-width:480px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f0e2e5; padding-bottom: 10px; margin-bottom: 15px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <button id="btn-back-order-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromOrderHistory()" title="Volver al Perfil">←</button>
+                    <button id="btn-back-order-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromOrderHistory()" title="Volver al Perfil">â†</button>
                     <h3 style="color:var(--brand-pink); margin:0;">📦 Mis Pedidos</h3>
                 </div>
-                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()" title="Cerrar">✕</button>
+                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closeOrderHistory()" title="Cerrar">âœ•</button>
             </div>
             <div id="order-history-content" style="display:flex; flex-direction:column; gap:12px;"></div>
         </div>
@@ -969,10 +969,10 @@
         <div class="auth-card" style="max-height:85vh; overflow-y:auto; padding:20px; width:100%; max-width:480px;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #f0e2e5; padding-bottom: 10px; margin-bottom: 15px;">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <button id="btn-back-points-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromPointsHistory()" title="Volver al Perfil">←</button>
+                    <button id="btn-back-points-history" class="auth-close-btn" style="position:static; margin:0; display:none; align-items:center; justify-content:center; width:32px; height:32px; font-size:1.1rem; border-radius:50%; background:#fff5f8; color:var(--brand-pink); border:none; cursor:pointer;" onclick="returnFromPointsHistory()" title="Volver al Perfil">â†</button>
                     <h3 style="color:var(--brand-pink); margin:0;">📊 Historial de Puntos</h3>
                 </div>
-                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closePointsHistoryModal()" title="Cerrar">✕</button>
+                <button class="auth-close-btn" style="position:static; margin:0;" onclick="closePointsHistoryModal()" title="Cerrar">âœ•</button>
             </div>
             <div id="points-history-summary" style="background:#fff5f8; border-radius:12px; padding:10px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; border:1px solid #fce7f3;">
                 <span style="color:#64748b; font-size:0.88rem; font-weight:600;">Saldo disponible actual:</span>
@@ -996,14 +996,14 @@
         style="display:none; align-items:center; justify-content:center; z-index:2000;"
         onclick="if(event.target===this) closeVipModal()">
         <div class="vip-modal-content">
-            <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">✕</button>
+            <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">âœ•</button>
             <h3>👑 Membresía VIP Oro</h3>
             <p style="color:#64748b; margin-bottom:20px; font-size:0.95rem;">Accede al club exclusivo de Dulce Tentación
                 y disfruta de beneficios de por vida por solo <strong id="uiVipPricePromo" style="color:#d81b60;">$20.000 COP</strong> al mes.</p>
             <ul>
-                <li><span>✅</span> 10% de descuento automático en TODAS tus compras.</li>
+                <li><span>âœ…</span> 10% de descuento automático en TODAS tus compras.</li>
                 <li><span>🎁</span> Una muestra sorpresa artesanal en cada pedido.</li>
-                <li><span>⏱️</span> Atención y horneado prioritario (tu pedido sale primero).</li>
+                <li><span>â±ï¸</span> Atención y horneado prioritario (tu pedido sale primero).</li>
             </ul>
             <button class="btn-gold-shimmer" style="width:100%; padding:12px; font-size:1rem;"
                 onclick="requestVipWhatsApp()">
@@ -1037,7 +1037,7 @@
             </button>
             <button class="bottom-nav-btn" id="bnNosotros" onclick="showSection('nosotros', this)"
                 data-section="nosotros">
-                <span class="bn-icon">❤️</span>
+                <span class="bn-icon">â¤ï¸</span>
                 <span class="bn-label">Nosotros</span>
             </button>
         </div>
@@ -1048,7 +1048,7 @@
         <div class="auth-modal-content orders-modal-content">
             <div class="cart-header" style="border-bottom: 1px solid #f0ece6; padding-bottom: 12px; margin-bottom: 16px;">
                 <h3 style="color: var(--brand-pink);">📦 Mis Pedidos</h3>
-                <button class="auth-close-btn" style="position:static;" onclick="document.getElementById('modal-mis-pedidos').style.display = 'none';">✕</button>
+                <button class="auth-close-btn" style="position:static;" onclick="document.getElementById('modal-mis-pedidos').style.display = 'none';">âœ•</button>
             </div>
             
             <div class="orders-tabs">
@@ -1075,7 +1075,7 @@
     <div class="auth-modal" id="kitchen-modal">
         <div class="kitchen-modal-content">
             <div class="kitchen-header">
-                <h2>👨‍🍳 Panel Operativo de Cocina y Despacho</h2>
+                <h2>ðŸ‘¨â€🍳 Panel Operativo de Cocina y Despacho</h2>
                 <button class="kitchen-close-btn" onclick="closeKitchenModal()">Cerrar Vista</button>
             </div>
             
@@ -1103,8 +1103,8 @@
                     <input type="search" id="k-user-search" placeholder="Buscar por nombre, email o teléfono..." oninput="renderKitchenUsers()" style="flex:1; min-width:250px; padding:10px; border-radius:8px; border:none; outline:none;">
                     <select id="k-user-filter" onchange="renderKitchenUsers()" style="padding:10px; border-radius:8px; border:none; outline:none; background:#f8fafc; cursor:pointer;">
                         <option value="todos">Todos los Clientes</option>
-                        <option value="vip">Solo ⭐ VIPs</option>
-                        <option value="cocina">👨‍🍳 Equipo Cocina</option>
+                        <option value="vip">Solo â­ VIPs</option>
+                        <option value="cocina">ðŸ‘¨â€🍳 Equipo Cocina</option>
                         <option value="admin">🛡️ Administradores</option>
                     </select>
                 </div>
@@ -1125,10 +1125,10 @@
                     <span style="font-size: 1.6rem;">🎂</span>
                     <div>
                         <h2 style="font-size: 1.25rem; font-weight: 800; color: #881337; margin: 0;">Diseña tu Torta Especial</h2>
-                        <span style="font-size: 0.8rem; color: #9f1239; font-weight: 500;">P&amp;S Punto Dulce • Horneado para ti</span>
+                        <span style="font-size: 0.8rem; color: #9f1239; font-weight: 500;">P&amp;S Punto Dulce â€¢ Horneado para ti</span>
                     </div>
                 </div>
-                <button type="button" class="kitchen-close-btn" onclick="closeWizard()" style="background: #fff; border: 1px solid #fecdd3; border-radius: 50%; width: 34px; height: 34px; font-size: 1rem; color: #9f1239; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: all 0.2s;">✕</button>
+                <button type="button" class="kitchen-close-btn" onclick="closeWizard()" style="background: #fff; border: 1px solid #fecdd3; border-radius: 50%; width: 34px; height: 34px; font-size: 1rem; color: #9f1239; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: all 0.2s;">âœ•</button>
             </div>
 
             <!-- INDICADOR DE PROGRESO (STEPPER) -->
@@ -1167,17 +1167,17 @@
 
                     <div class="wizard-flavor-grid">
                         <div class="flavor-card selected" onclick="selectSaborCard('Clásica Tres Leches', this)" data-flavor="Clásica Tres Leches">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <span class="flavor-icon">🥛</span>
                             <div class="flavor-info">
                                 <strong>Clásica Tres Leches</strong>
-                                <span class="flavor-badge-tag">La Favorita ⭐</span>
+                                <span class="flavor-badge-tag">La Favorita â­</span>
                                 <p>Bizcocho suave bañado en infusión de tres leches y cubierta en chantilly artesanal.</p>
                             </div>
                         </div>
 
                         <div class="flavor-card" onclick="selectSaborCard('Chocoarequipe', this)" data-flavor="Chocoarequipe">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <span class="flavor-icon">🍫</span>
                             <div class="flavor-info">
                                 <strong>Chocoarequipe</strong>
@@ -1187,7 +1187,7 @@
                         </div>
 
                         <div class="flavor-card" onclick="selectSaborCard('Ponqué Clásico', this)" data-flavor="Ponqué Clásico">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <span class="flavor-icon">🍰</span>
                             <div class="flavor-info">
                                 <strong>Ponqué Tradicional</strong>
@@ -1197,7 +1197,7 @@
                         </div>
 
                         <div class="flavor-card" onclick="selectSaborCard('Frutos Rojos', this)" data-flavor="Frutos Rojos">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <span class="flavor-icon">🍓</span>
                             <div class="flavor-info">
                                 <strong>Frutos Rojos &amp; Vainilla</strong>
@@ -1218,7 +1218,7 @@
 
                     <div class="wizard-size-grid" id="cake-size-grid">
                         <div class="size-card selected" onclick="selectTamanoCard('1/4 (10 porciones)', this)" data-size="1/4 (10 porciones)">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <div class="size-header">
                                 <span class="size-icon">🎂</span>
                                 <div class="size-title-block">
@@ -1231,23 +1231,23 @@
                         </div>
 
                         <div class="size-card" onclick="selectTamanoCard('1/2 (20 porciones)', this)" data-size="1/2 (20 porciones)">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <div class="size-header">
-                                <span class="size-icon">🎂🎂</span>
+                                <span class="size-icon">ðŸŽ‚🎂</span>
                                 <div class="size-title-block">
                                     <strong>1/2 Libra</strong>
                                     <small>Rinde ~20 porciones</small>
                                 </div>
                             </div>
-                            <span class="size-featured-tag">Recomendado ✨</span>
+                            <span class="size-featured-tag">Recomendado âœ¨</span>
                             <p class="size-desc">El tamaño favorito para cumpleaños, aniversarios y fiestas medianas.</p>
                             <div class="size-price-tag size-price" id="torta-precio-1-2">$75.000 COP</div>
                         </div>
 
                         <div class="size-card" onclick="selectTamanoCard('1 Libra (30 porciones)', this)" data-size="1 Libra (30 porciones)">
-                            <div class="card-check-icon">✓</div>
+                            <div class="card-check-icon">âœ“</div>
                             <div class="size-header">
-                                <span class="size-icon">👑🎂</span>
+                                <span class="size-icon">ðŸ‘‘🎂</span>
                                 <div class="size-title-block">
                                     <strong>1 Libra Completa</strong>
                                     <small>Rinde ~30 porciones</small>
@@ -1281,7 +1281,7 @@
                         <div id="upload-preview-block" style="display: none; align-items: center; gap: 12px;">
                             <img id="upload-preview-img" src="" alt="Diseño Personalizado" style="width: 55px; height: 55px; object-fit: cover; border-radius: 10px; border: 2px solid #d81b60;">
                             <div style="flex: 1; text-align: left;">
-                                <strong style="color: #15803d; font-size: 0.9rem; display: block;">✓ Foto cargada exitosamente</strong>
+                                <strong style="color: #15803d; font-size: 0.9rem; display: block;">âœ“ Foto cargada exitosamente</strong>
                                 <span id="upload-file-name" style="color: #64748b; font-size: 0.78rem; word-break: break-all;">imagen.jpg</span>
                             </div>
                             <button type="button" onclick="event.stopPropagation(); document.getElementById('wizard-photo-input').click();" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 15px; padding: 4px 10px; font-size: 0.75rem; color: #475569; cursor: pointer;">Cambiar</button>
@@ -1306,7 +1306,7 @@
                         <p style="margin: 4px 0 0 0; color: #64748b; font-size: 0.85rem;">Personaliza tu mensaje y agenda la fecha de entrega.</p>
                     </div>
 
-                    <!-- BANNER CORTESÍA -->
+                    <!-- BANNER CORTESÃA -->
                     <div style="background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 12px 14px; border-radius: 14px; margin-bottom: 16px; font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 1.5rem;">🎁</span>
                         <div>
@@ -1317,14 +1317,14 @@
 
                     <!-- DEDICATORIA -->
                     <div style="background: #fdfaf6; border: 1px solid #f3e8d8; border-radius: 16px; padding: 15px; margin-bottom: 16px;">
-                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 6px; display: block;">✍️ Mensaje o Dedicatoria en la Torta:</label>
+                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 6px; display: block;">âœï¸ Mensaje o Dedicatoria en la Torta:</label>
                         <input type="text" id="w-message" placeholder="Ej: ¡Feliz Cumpleaños Mamá! Te amamos 🎂" oninput="saveWizardField('mensaje', this.value)" style="width: 100%; border-radius: 12px; padding: 12px 14px; border: 1px solid #e2e8f0; background: #fff; font-size: 0.95rem; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#d81b60'; this.style.boxShadow='0 0 0 3px rgba(216,27,96,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
                         <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 4px;">Lo escribiremos con glaseado artesanal sobre tu torta.</small>
                     </div>
 
                     <!-- COMPLEMENTOS EXTRAS (dinámico desde Firestore/tortas_config) -->
                     <div style="background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 15px; margin-bottom: 16px;">
-                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 10px; display: block;">✨ ¿Deseas agregar algún detalle extra?</label>
+                        <label style="font-weight: 700; color: #475569; font-size: 0.9rem; margin-bottom: 10px; display: block;">âœ¨ ¿Deseas agregar algún detalle extra?</label>
                         <div id="container-extras-wizard" style="display: flex; flex-direction: column; gap: 8px;">
                             <!-- Poblado dinámicamente por renderConfigTortasPublica() -->
                             <p style="color:#94a3b8; font-size:0.82rem; margin:0;">Cargando extras disponibles...</p>
@@ -1348,7 +1348,7 @@
                                 </select>
                             </div>
                         </div>
-                        <small style="color: #b45309; font-size: 0.75rem; display: block; margin-top: 6px;">⏱️ Horneado fresco el mismo día de tu evento.</small>
+                        <small style="color: #b45309; font-size: 0.75rem; display: block; margin-top: 6px;">â±ï¸ Horneado fresco el mismo día de tu evento.</small>
                     </div>
 
                     <div id="w-error" style="display:none; color:#ef4444; background:#fef2f2; border:1px solid #f87171; padding:10px; border-radius:10px; margin-top:10px; text-align:center; font-weight:bold; font-size:0.85rem;"></div>
@@ -1359,16 +1359,16 @@
             <!-- FOOTER STICKY FIJO CON RESUMEN Y NAVEGACIÓN -->
             <div class="wizard-footer-sticky">
                 <div class="wizard-footer-summary">
-                    <span id="wizard-summary-badge">1/4 • Tres Leches</span>
+                    <span id="wizard-summary-badge">1/4 â€¢ Tres Leches</span>
                     <strong id="wizard-summary-total">$45.000 COP</strong>
                 </div>
 
                 <div class="wizard-footer-actions">
                     <button type="button" id="btnWizardPrev" onclick="navWizardStep(-1)">
-                        ← Atrás
+                        â† Atrás
                     </button>
                     <button type="button" id="btnWizardNext" onclick="navWizardStep(1)">
-                        Continuar →
+                        Continuar â†’
                     </button>
                     <button type="button" id="btnWizardSubmit" onclick="addCustomCakeToCartNew()">
                         🛒 Agregar al Carrito
@@ -1384,17 +1384,17 @@
         <!-- Se llena dinámicamente con renderAdminPointsModalContent() -->
     </div>
 
-    <!-- ===== MODAL TÉRMINOS Y BENEFICIOS VIP ===== -->
+    <!-- ===== MODAL TÃ‰RMINOS Y BENEFICIOS VIP ===== -->
     <div class="auth-modal" id="modalVipTerms" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeVipTermsModal && window.closeVipTermsModal()">
        <div class="auth-modal-content" style="max-width: 520px; width: 92%; padding: 25px; text-align: center; border-radius: 20px; background: #fff; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
-         <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">×</button>
+         <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">Ã—</button>
          <span style="font-size: 2.2rem;">👑</span>
          <h3 style="color: #b71c1c; margin: 10px 0; font-size: 1.3rem; font-weight: 800;">Membresía Club VIP Oro</h3>
          <p style="font-size: 0.9rem; color: #555; margin: 0 0 4px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes más dulces por solo <strong id="uiVipPriceTerms" style="color:#d81b60;">$20.000 COP</strong> mensual.</p>
          <p style="font-size: 0.8rem; color: #888; margin: 0 0 12px 0; font-style: italic;">(Vigencia de 30 días continuos a partir del momento de activación)</p>
 
          <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 15px; text-align: left; font-size: 0.88rem; margin: 0 0 12px 0; color: #5d4037;">
-           <strong>✨ Beneficios Exclusivos:</strong>
+           <strong>âœ¨ Beneficios Exclusivos:</strong>
            <ul style="margin: 8px 0 0 18px; padding: 0;">
              <li>Acumulación de 10 Pts por cada $1.000 COP en compras.</li>
              <li>Descuentos exclusivos aplicados directamente en tus compras.</li>
@@ -1418,7 +1418,7 @@
        </div>
     </div>
 
-    <!-- ===== MODAL COBERTURA Y POLÍTICAS DE DOMICILIO ===== -->
+    <!-- ===== MODAL COBERTURA Y POLÃTICAS DE DOMICILIO ===== -->
     <div id="deliveryCoverageModal" class="modal-backdrop-generic" style="display:none;" onclick="closeDeliveryCoverageModal(event)">
        <div class="modal-content-card" onclick="event.stopPropagation()">
          <div class="modal-header-custom">
@@ -1432,7 +1432,7 @@
            
            <div class="coverage-zone-item" style="margin-bottom:12px;">
              <h4 style="margin:0 0 4px 0; color:#2c3e50; font-size:0.95rem;">📍 Cúcuta (Zona Urbana Habitual)</h4>
-             <p style="margin:0; font-size:0.87rem; color:#555;">• Pedidos menores a $10.000 COP: <strong>$5.000 COP</strong>.<br>• Pedidos de $10.000 COP o más: <strong>¡GRATIS!</strong></p>
+             <p style="margin:0; font-size:0.87rem; color:#555;">â€¢ Pedidos menores a $10.000 COP: <strong>$5.000 COP</strong>.<br>â€¢ Pedidos de $10.000 COP o más: <strong>¡GRATIS!</strong></p>
            </div>
 
            <div class="coverage-zone-item" style="margin-bottom:12px;">
@@ -1465,7 +1465,7 @@
                 <img id="productLightboxImg" src="" alt="Producto" class="product-lightbox-image">
                 <div id="productLightboxCaption" class="product-lightbox-caption"></div>
                 <div id="lightboxActionContainer" style="display:none; text-align:center; margin-top:15px;">
-                    <button type="button" id="btnLightboxSelect" style="background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 0.92rem; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);" onclick="if(window._lightboxCallback) { window._lightboxCallback(); window.closeProductImageModal(); }">✓ Seleccionar este diseño</button>
+                    <button type="button" id="btnLightboxSelect" style="background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border: none; border-radius: 12px; padding: 11px 22px; font-weight: 800; font-size: 0.92rem; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);" onclick="if(window._lightboxCallback) { window._lightboxCallback(); window.closeProductImageModal(); }">âœ“ Seleccionar este diseño</button>
                 </div>
             </div>
         </div>
