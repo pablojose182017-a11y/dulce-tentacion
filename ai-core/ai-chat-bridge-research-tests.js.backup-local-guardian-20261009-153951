@@ -7,7 +7,6 @@
 const fs = require('fs');
 
 global.window = { AI_CORE: {} };
-global.localStorage = { getItem() { return null; }, setItem() {} };
 
 // Mock dependencies required by ChatBridge
 window.AI_CORE.IdentityManager = class { 
@@ -65,8 +64,6 @@ window.AI_CORE.ResearchEngine = class {
     }
 };
 
-eval(fs.readFileSync('./ai-core/ai-understanding.js', 'utf8'));
-
 const code = fs.readFileSync('./ai-core/ai-chat-bridge.js', 'utf8');
 eval('(function(window){ ' + code + ' })(global.window)');
 const { ChatBridge } = global.window.AI_CORE;
@@ -96,7 +93,7 @@ async function runAll() {
         lastTask = null;
         const bridge = new ChatBridge();
         const res = await bridge.receiveMessage('Hola, ¿como estas?');
-        assert(res.includes('Soy el Guardián Financiero'), 'Debe responder localmente el saludo sin usar provider.');
+        assert(res === 'Respuesta generica', 'Debe usar flujo regular');
         assert(lastTask === null, 'No debio llamar a ResearchEngine');
         assert(bridge.memoryManager.shortTerm.length === 2, 'Debe guardar turnos en memoria');
     });
@@ -105,7 +102,7 @@ async function runAll() {
         lastTask = null;
         const bridge = new ChatBridge();
         const res = await bridge.receiveMessage('Investiga sobre redes neuronales');
-        assert(lastTask === 'redes neuronales', 'Debio enviar al ResearchEngine el tema extraido de la consulta');
+        assert(lastTask === 'Investiga sobre redes neuronales', 'Debio llamar a ResearchEngine con la tarea');
         assert(res.includes('[INVESTIGACIÓN COMPLETA]'), 'La respuesta debe ser el reporte de investigacion');
         assert(res.includes('Test conclusion'), 'Debe incluir conclusion');
         
@@ -118,7 +115,7 @@ async function runAll() {
     await test('T3: Manejo de error en investigacion', async () => {
         throwError = true;
         const bridge = new ChatBridge();
-        const res = await bridge.receiveMessage('Investiga sobre este error');
+        const res = await bridge.receiveMessage('Investigate this error');
         assert(res.includes('[ERROR DE INVESTIGACIÓN]'), 'Debe capturar el error y devolver formato error');
         assert(res.includes('Simulated research error'), 'Debe incluir el mensaje de error');
         

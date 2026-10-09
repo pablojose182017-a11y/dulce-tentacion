@@ -24,9 +24,8 @@ class ChatBridge {
             this.creatorKnowledgeManager = null;
         }
 
-        // El puente usa el motor local estructurado directamente. El LocalMockProvider
-        // se conserva solo para compatibilidad con el flujo legacy y sus pruebas.
-        this.reasoningEngine = new window.AI_CORE.ReasoningEngine();
+        this.provider = new window.AI_CORE.LocalMockProvider();
+        this.reasoningEngine = new window.AI_CORE.ReasoningEngine(this.provider);
         this.personalityEngine = new window.AI_CORE.PersonalityEngine();
         this._pendingApprovals = new Map();
 

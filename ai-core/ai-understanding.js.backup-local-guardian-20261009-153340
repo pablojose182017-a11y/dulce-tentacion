@@ -14,8 +14,8 @@ class LanguageUnderstandingEngine {
             SOCIAL_FAREWELL: ['adios', 'hasta luego', 'nos vemos', 'chao', 'hasta pronto', 'bye'],
             KNOWLEDGE_SHARING: ['compartir conocimiento', 'enseñarte algo', 'guarda esta informacion', 'guarda esta info', 'aprende esto'],
             HELP_REQUEST: ['necesito ayuda', 'ayudame', 'auxilio', 'dame una mano', 'ayuda', 'apoyame'],
-            FINANCIAL_COST: ['cuanto cuesta', 'costo de', 'costo produccion', 'cuanto vale', 'precio de', 'precio', 'mas costoso', 'mas caro', 'mas gastado'],
-            FINANCIAL_MARGIN: ['margen', 'rentabilidad', 'ganancia', 'porcentaje', 'rentable', 'mas rentable', 'menos rentable', 'mejor margen', 'peor margen', 'mas lucrativo', 'menos lucrativo'],
+            FINANCIAL_COST: ['cuanto cuesta', 'costo de', 'costo produccion', 'cuanto vale', 'precio de', 'precio'],
+            FINANCIAL_MARGIN: ['margen', 'rentabilidad', 'ganancia', 'porcentaje'],
             FINANCIAL_INGREDIENTS: ['ingredientes', 'receta', 'insumos', 'que lleva', 'que contiene'],
             FINANCIAL_LOSS: ['perdida', 'perder', 'por debajo', 'poca ganancia'],
             ANALYSIS_REQUEST: ['analiza', 'compara', 'revisa', 'evalua', 'analizar'],
@@ -167,7 +167,6 @@ class LanguageUnderstandingEngine {
         };
 
         const isShortResponse = tokens.length <= 2;
-        const hasExplicitResearchIntent = this._containsPhrase(normalized, this.dictionaries.RESEARCH_REQUEST);
         let lastIntent = null;
         let lastClarification = null;
         
@@ -208,7 +207,7 @@ class LanguageUnderstandingEngine {
         const hasModel = techModelRegex.test(normalized);
         const isGenericProduct = (hasBrand && hasModel) || (hasBrand && tokens.length <= 4) || (hasModel && tokens.length <= 3);
 
-        if ((isProductInfo || isProductRec || isGenericProduct) && !hasExplicitResearchIntent) {
+        if (isProductInfo || isProductRec || isGenericProduct) {
             interpretation.intent = isProductRec ? "PRODUCT_RECOMMENDATION" : "PRODUCT_INFORMATION";
             const prodStops = new Set([...this.dictionaries.PRODUCT_INFORMATION, ...this.dictionaries.PRODUCT_RECOMMENDATION].flatMap(p => p.split(' ')));
             interpretation.topic = tokens.filter(t => !prodStops.has(t) && !this.stopWords.has(t) && t !== 'necesito' && t !== 'quiero').join(' ');
@@ -238,14 +237,12 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
         
-        const isAuthorizationGranted = /^(si|autorizado|autorizada|procede|adelante|hazlo|claro|dale|por supuesto|de acuerdo)(?:[,.!¡?\s]+(?:busca(?:lo)?|investiga|averigua)(?:\s+.*)?)?$/.test(normalized.trim());
-        if (isAuthorizationGranted) {
+        if (this._containsPhrase(normalized, this.dictionaries.AUTHORIZATION_GRANTED)) {
             interpretation.intent = "AUTHORIZATION_GRANTED";
             interpretation.confidence = 0.9;
             return interpretation;
         }
-        const isAuthorizationDenied = /^(no|denegado|cancela|no lo hagas|detente|espera|omite|ignora)(?:[,.!¡?\s]+(?:la busqueda|esa busqueda|buscar|investigar|la investigacion|eso))?$/.test(normalized.trim());
-        if (isAuthorizationDenied) {
+        if (this._containsPhrase(normalized, this.dictionaries.AUTHORIZATION_DENIED)) {
             interpretation.intent = "AUTHORIZATION_DENIED";
             interpretation.confidence = 0.9;
             return interpretation;
@@ -266,7 +263,7 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
-        if (!hasExplicitResearchIntent && (this._containsPhrase(normalized, this.dictionaries.USER_COMPLAINT) || normalized.includes('porque no me respondes') || normalized.includes('que necesitas'))) {
+        if (this._containsPhrase(normalized, this.dictionaries.USER_COMPLAINT) || normalized.includes('porque no me respondes') || normalized.includes('que necesitas')) {
             interpretation.intent = "USER_COMPLAINT";
             interpretation.confidence = 0.95;
             return interpretation;
@@ -351,8 +348,6 @@ class LanguageUnderstandingEngine {
         const esMargen  = this._containsPhrase(normalized, this.dictionaries.FINANCIAL_MARGIN);
         const esIngred  = this._containsPhrase(normalized, this.dictionaries.FINANCIAL_INGREDIENTS);
         const esPerdida = this._containsPhrase(normalized, this.dictionaries.FINANCIAL_LOSS);
-        const esRankingRentabilidad = /\b(mas|menos) rentable\b|\b(mejor|peor) margen\b|\b(mas|menos) lucrativo\b/.test(normalized);
-        const esRankingInsumos = /\b(insumo|ingrediente)s?\s+(?:es\s+)?(mas|menos)\s+(costoso|caro)\b/.test(normalized);
         
         if (esCosto || esMargen || esIngred || esPerdida) {
             interpretation.intent = "FINANCIAL_QUERY";
@@ -360,7 +355,7 @@ class LanguageUnderstandingEngine {
             interpretation.topic = tokens.filter(t => !financeStops.has(t)).join(' ');
             interpretation.confidence = 0.9;
             
-            if (interpretation.topic.trim() === '' && tokens.length <= 3 && !esPerdida && !esRankingRentabilidad && !esRankingInsumos) {
+            if (interpretation.topic.trim() === '' && tokens.length <= 3 && !esPerdida) {
                 interpretation.confidence = 0.4;
                 interpretation.ambiguity.push("no se menciona el producto objetivo");
                 interpretation.missingInformation.push("el nombre del producto o insumo");

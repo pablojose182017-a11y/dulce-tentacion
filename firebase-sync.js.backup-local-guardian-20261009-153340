@@ -6,8 +6,6 @@
  */
 window._adminModulesLoaded = false;
 window._adminModulesLoading = false;
-window._adminModulesPromise = null;
-window._adminChartPromise = null;
 
 // Los recursos administrativos se sirven desde la misma ruta, pero Pages
 // exige un token Firebase y comprueba el rol antes de entregar cada archivo.
@@ -47,35 +45,22 @@ window.loadProtectedAdminScript = async function(path, marker) {
 };
 
 window.loadPhase2AdminModules = async function() {
-    if (window._adminModulesLoaded) return true;
-    if (window._adminModulesPromise) return window._adminModulesPromise;
+    if (window._adminModulesLoaded || window._adminModulesLoading) return;
     window._adminModulesLoading = true;
-    window._adminModulesPromise = (async () => {
-        // El gráfico es opcional para el chat. Su descarga corre en paralelo y
-        // su fallo solo degrada el gráfico, nunca impide cargar el Guardián.
-        if (!window.Chart && !window._adminChartPromise) {
-            window._adminChartPromise = new Promise((resolve, reject) => {
+
+    try {
+        await new Promise((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
             script.onload = resolve;
             script.onerror = () => reject(new Error('Fallo al cargar Chart.js'));
             document.head.appendChild(script);
-            }).catch(error => {
-                console.warn('[Punto Dulce] Chart.js no está disponible; el gráfico de rentabilidad se omitirá.', error);
-                return false;
-            });
-        }
-
-        try {
-            await window.loadProtectedAdminScript('/ai-guardian-bundle.js?v=2', 'ai-guardian-bundle.js');
-            window._adminModulesLoaded = true;
-            return true;
-        } finally {
-            window._adminModulesLoading = false;
-            if (!window._adminModulesLoaded) window._adminModulesPromise = null;
-        }
-    })();
-    return window._adminModulesPromise;
+        });
+        await window.loadProtectedAdminScript('/ai-guardian-bundle.min.js?v=1', 'ai-guardian-bundle.min.js');
+        window._adminModulesLoaded = true;
+    } finally {
+        window._adminModulesLoading = false;
+    }
 };
 
 // FASE 2.2A: Loader del Fragmento HTML Administrativo

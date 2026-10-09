@@ -1,49 +1,90 @@
+'use strict';
+
 const fs = require('fs');
-const { execSync } = require('child_process');
+const path = require('path');
 
-// Extract the scripts array from firebase-sync.js
-const firebaseSyncContent = fs.readFileSync('firebase-sync.js', 'utf8');
-const match = firebaseSyncContent.match(/const scripts = \[\s*([\s\S]*?)\s*\];/);
-if (!match) {
-    console.error('Could not find scripts array in firebase-sync.js');
+// Manifiesto único de fuentes de producción, en orden de dependencias.
+// Las pruebas, scripts de reparación y prototipos no pertenecen al bundle.
+const productionSources = [
+    'costos-recetas.js',
+    'ai-core/ai-store.js',
+    'ai-core/ai-persistence.js',
+    'ai-core/ai-hash.js',
+    'ai-core/ai-knowledge.js',
+    'ai-core/ai-security.js',
+    'ai-core/ai-execution.js',
+    'ai-core/ai-autonomous.js',
+    'ai-core/ai-identity.js',
+    'ai-core/ai-memory.js',
+    'ai-core/ai-context.js',
+    'ai-core/ai-provider.js',
+    'ai-core/ai-legacy-rag-adapter.js',
+    'ai-core/ai-reasoning.js',
+    'ai-core/ai-personality.js',
+    'ai-core/ai-offline-resolver.js',
+    'ai-core/ai-web-fetcher.js',
+    'ai-core/ai-ingestion.js',
+    'ai-core/ai-investigation.js',
+    'ai-core/ai-research-engine.js',
+    'ai-core/ai-understanding.js',
+    'ai-core/ai-semantic.js',
+    'ai-core/ai-provenance.js',
+    'ai-core/ai-retention.js',
+    'ai-core/ai-connectivity.js',
+    'ai-core/ai-cyber-defense.js',
+    'ai-core/ai-owner-authority.js',
+    'ai-core/ai-controlled-execution.js',
+    'ai-core/ai-chat-bridge.js',
+    'guardian-financiero.js'
+];
+
+const root = __dirname;
+const outputPath = path.join(root, 'ai-guardian-bundle.js');
+const checkOnly = process.argv.includes('--check');
+const minify = process.argv.includes('--minify');
+
+function fail(message) {
+    console.error(`[bundle] ERROR: ${message}`);
     process.exit(1);
 }
 
-const lines = match[1].split(',').map(l => l.trim().replace(/"/g, '').replace(/\?v=1$/, ''));
-const targetFiles = lines.filter(l => !l.includes('chart.js'));
-
-console.log('Target files to bundle:');
-console.log(targetFiles.join('\n'));
-
-// Concatenate them
-let bundleContent = '';
-for (const file of targetFiles) {
-    bundleContent += `\n/* --- SOURCE: ${file} --- */\n`;
-    bundleContent += fs.readFileSync(file, 'utf8');
+if (new Set(productionSources).size !== productionSources.length) {
+    fail('El manifiesto contiene fuentes duplicadas.');
 }
-fs.writeFileSync('ai-guardian-bundle.js', bundleContent, 'utf8');
-console.log(`Concatenated ${targetFiles.length} files into ai-guardian-bundle.js`);
-
-// Minify with esbuild
-try {
-    execSync('npx esbuild ai-guardian-bundle.js --minify --outfile=ai-guardian-bundle.min.js', { stdio: 'inherit' });
-    console.log('Successfully minified using esbuild to ai-guardian-bundle.min.js');
-} catch (e) {
-    console.error('Failed to minify using esbuild', e);
-    process.exit(1);
+if (productionSources.some(source => /(?:test|fix|debug|apply)/i.test(path.basename(source)))) {
+    fail('El manifiesto no puede incluir pruebas ni herramientas de reparación.');
 }
 
-// Sizes
-const originalSize = fs.statSync('ai-guardian-bundle.js').size;
-const minifiedSize = fs.statSync('ai-guardian-bundle.min.js').size;
-console.log(`Original concatenated size: ${(originalSize / 1024).toFixed(2)} KB`);
-console.log(`Minified bundle size: ${(minifiedSize / 1024).toFixed(2)} KB`);
+let bundle = '';
+for (const source of productionSources) {
+    const absolute = path.resolve(root, source);
+    if (!absolute.startsWith(root + path.sep) || !fs.existsSync(absolute)) {
+        fail(`Fuente ausente o fuera del proyecto: ${source}`);
+    }
+    bundle += `\n/* --- SOURCE: ${source.replace(/\\/g, '/')} --- */\n`;
+    bundle += fs.readFileSync(absolute, 'utf8');
+    if (!bundle.endsWith('\n')) bundle += '\n';
+}
 
-// Modify firebase-sync.js
-const newScriptsArray = `const scripts = [
-        "https://cdn.jsdelivr.net/npm/chart.js",
-        "ai-guardian-bundle.min.js"
-    ];`;
-const updatedContent = firebaseSyncContent.replace(match[0], newScriptsArray);
-fs.writeFileSync('firebase-sync.js', updatedContent, 'utf8');
-console.log('Updated firebase-sync.js to load the bundle.');
+if (checkOnly) {
+    if (!fs.existsSync(outputPath)) fail('No existe ai-guardian-bundle.js.');
+    const current = fs.readFileSync(outputPath, 'utf8');
+    if (current !== bundle) fail('ai-guardian-bundle.js no coincide con el manifiesto y sus fuentes.');
+    console.log(`[bundle] OK: ${productionSources.length} fuentes de producción; bundle sincronizado.`);
+    process.exit(0);
+}
+
+fs.writeFileSync(outputPath, bundle, 'utf8');
+console.log(`[bundle] Generado ai-guardian-bundle.js con ${productionSources.length} fuentes.`);
+
+if (minify) {
+    let esbuild;
+    try {
+        esbuild = require('esbuild');
+    } catch (_error) {
+        fail('Se pidió --minify, pero esbuild no está instalado localmente. No se descargó ninguna dependencia.');
+    }
+    const minified = esbuild.transformSync(bundle, { minify: true, loader: 'js' }).code;
+    fs.writeFileSync(path.join(root, 'ai-guardian-bundle.min.js'), minified, 'utf8');
+    console.log('[bundle] Generado ai-guardian-bundle.min.js usando esbuild local.');
+}

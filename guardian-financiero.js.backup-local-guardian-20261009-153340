@@ -433,60 +433,11 @@ window._gf_resolverLocalmente = function(prompt) {
     // ── Operaciones dependientes de estado financiero ──
     if (!window.costosState) return null;
     const { insumos = [], recetas = [] } = window.costosState;
-    const esMasRentable = /\b(mas rentable|mejor margen|mas lucrativo)\b/.test(p);
-    const esMenosRentable = /\b(menos rentable|peor margen|menos lucrativo)\b/.test(p);
-    const esInsumoMasCostoso = /\b(insumo|ingrediente)?\s*mas\s*(costoso|caro)\b/.test(p);
-    const esInsumoMenosCostoso = /\b(insumo|ingrediente)?\s*menos\s*(costoso|caro)\b/.test(p);
-    if (esInsumoMasCostoso || esInsumoMenosCostoso) {
-        const rankingInsumos = insumos.filter(item => Number.isFinite(Number(item.costoTotal)));
-        if (rankingInsumos.length === 0) return 'Aún no hay datos de compras de insumos para compararlos.';
-        rankingInsumos.sort((a, b) => esInsumoMasCostoso ? Number(b.costoTotal) - Number(a.costoTotal) : Number(a.costoTotal) - Number(b.costoTotal));
-        const item = rankingInsumos[0];
-        const etiqueta = esInsumoMasCostoso ? 'Mayor gasto registrado en insumos' : 'Menor gasto registrado en insumos';
-        return `📦 <strong>${etiqueta}: ${item.nombre}</strong><br>• Total de compra: <strong>$${Number(item.costoTotal).toLocaleString('es-CO')} COP</strong>`;
-    }
-    if (recetas.length === 0 && (esMasRentable || esMenosRentable || /\b(costo|margen|rentabilidad|receta)\b/.test(p))) {
-        return 'Aún no hay recetas registradas para calcular esa consulta.';
-    }
-    if (esMasRentable || esMenosRentable) {
-        const calculos = recetas.map(rec => {
-            const ingredientes = Array.isArray(rec.ingredientes) ? rec.ingredientes : [];
-            const items = ingredientes.map(ing => ({ ing, insumo: insumos.find(item => item.id === ing.insumoId) }));
-            const ingredientesValidos = items.length > 0 && items.every(({ ing, insumo }) =>
-                insumo && Number.isFinite(Number(insumo.costoUnitario)) && Number(insumo.costoUnitario) >= 0 &&
-                Number.isFinite(Number(ing.cantidad)) && Number(ing.cantidad) > 0
-            );
-            const rendimiento = Number(rec.rendimiento);
-            const precioVenta = Number(rec.precioVenta);
-            const servicios = Number(rec.factorServiciosPct);
-            const datosBaseValidos = ingredientesValidos && Number.isFinite(rendimiento) && rendimiento > 0 &&
-                Number.isFinite(precioVenta) && precioVenta > 0 && Number.isFinite(servicios) && servicios >= 0;
-            const costoInsumos = datosBaseValidos
-                ? items.reduce((total, { ing, insumo }) => total + Number(insumo.costoUnitario) * Number(ing.cantidad), 0)
-                : NaN;
-            const costoUnitario = datosBaseValidos ? costoInsumos * (1 + servicios / 100) / rendimiento : NaN;
-            const margen = Number.isFinite(costoUnitario) ? ((precioVenta - costoUnitario) / precioVenta) * 100 : NaN;
-            return { ...rec, costoUnitario, margen, ganancia: precioVenta - costoUnitario, datosValidos: Number.isFinite(margen) };
-        });
-        const incompletas = calculos.filter(rec => !rec.datosValidos);
-        if (incompletas.length > 0) {
-            return `No puedo comparar la rentabilidad con seguridad: revisa los ingredientes, costos, rendimiento, precio y servicios de ${incompletas.map(rec => rec.nombre).join(', ')}.`;
-        }
-        const ranking = calculos;
-        if (ranking.length === 0) return 'No hay datos válidos de recetas e insumos para comparar rentabilidad.';
-        ranking.sort((a, b) => esMasRentable ? b.margen - a.margen : a.margen - b.margen);
-        const receta = ranking[0];
-        const encabezado = esMasRentable ? 'La receta más rentable' : 'La receta menos rentable';
-        return `📊 <strong>${encabezado}: ${receta.nombre}</strong><br>` +
-            `• Costo unitario: <strong>$${receta.costoUnitario.toLocaleString('es-CO', { maximumFractionDigits: 0 })} COP</strong><br>` +
-            `• Precio de venta: <strong>$${Number(receta.precioVenta).toLocaleString('es-CO')} COP</strong><br>` +
-            `• Ganancia: <strong>$${receta.ganancia.toLocaleString('es-CO', { maximumFractionDigits: 0 })} COP</strong><br>` +
-            `• Margen: <strong>${receta.margen.toFixed(1)}%</strong>`;
-    }
+    if (recetas.length === 0) return null;
 
     // ── Detectar tipo de consulta ──
     const esCosto    = /cuanto\s*cuesta|costo\s*de|costo\s*produccion|cuanto\s*vale|precio\s*de\s*produccion/.test(p);
-    const esMargen   = /margen\s*de|margen\s*ganancia|rentabilidad\s*de|ganancia\s*de|porcentaje|rentable|lucrativo/.test(p);
+    const esMargen   = /margen\s*de|margen\s*ganancia|rentabilidad\s*de|ganancia\s*de|porcentaje/.test(p);
     const esIngred   = /ingredientes\s*de|receta\s*de|insumos\s*de|que\s*lleva|que\s*contiene/.test(p);
     const esPrecio   = /precio\s*de\s*venta|cuanto\s*se\s*vende|precio\s*venta/.test(p);
     const esPerdida  = /perdida|perder\s*dinero|por\s*debajo\s*del\s*costo/.test(p);

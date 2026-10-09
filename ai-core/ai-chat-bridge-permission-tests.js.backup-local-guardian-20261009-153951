@@ -7,7 +7,6 @@
 const fs = require('fs');
 
 global.window = { AI_CORE: {} };
-global.localStorage = { getItem() { return null; }, setItem() {} };
 
 // Mock dependencies
 window.AI_CORE.IdentityManager = class { 
@@ -41,7 +40,6 @@ window.AI_CORE.PersonalityEngine = class { applyPersonality() { return { convers
 eval(fs.readFileSync('./ai-core/ai-offline-resolver.js', 'utf8').replace('window.AI_CORE = window.AI_CORE || {};', ''));
 eval(fs.readFileSync('./ai-core/ai-web-fetcher.js', 'utf8').replace('window.AI_CORE = window.AI_CORE || {};', ''));
 eval(fs.readFileSync('./ai-core/ai-research-engine.js', 'utf8').replace('window.AI_CORE = window.AI_CORE || {};', ''));
-eval(fs.readFileSync('./ai-core/ai-understanding.js', 'utf8'));
 const { OfflineResolver, StubWebFetcher, ResearchEngine } = global.window.AI_CORE;
 
 // ChatBridge
@@ -62,8 +60,8 @@ async function runAll() {
 
     const resolver = new OfflineResolver(new window.AI_CORE.KnowledgeManager());
     const webFetcher = new StubWebFetcher({
-        search: { 'test': [{ url: 'http://example.com', title: 'Example test', snippet: 'A snippet about test longer than 10 chars' }] },
-        pages: { 'http://example.com': { title: 'T', html: 'content about test longer than 10 chars' } }
+        search: { 'test': [{ url: 'http://example.com', title: 'Example', snippet: 'A snippet longer than 10 chars' }] },
+        pages: { 'http://example.com': { title: 'T', html: 'content longer than 10 chars' } }
     });
     
     // Configurar ChatBridge para usar el ResearchEngine real pero con stubs locales
@@ -98,7 +96,7 @@ async function runAll() {
         allowedCapabilities = ['WEB_SEARCH'];
         const bridge = buildBridge();
         const res = await bridge.receiveMessage('Hola, como estas hoy?');
-        assert(res.includes('Soy el Guardián Financiero'), 'Debe usar la respuesta local del flujo ordinario');
+        assert(res === 'ChatFlow', 'Debe usar el flujo normal de ChatBridge');
         assert(!bridge.memoryManager.shortTerm[1].meta.isResearchReport, 'No debe tener isResearchReport');
     });
 
@@ -122,9 +120,8 @@ async function runAll() {
         allowedCapabilities = ['WEB_SEARCH', 'KNOWLEDGE_INGEST_UNVERIFIED']; 
         const bridge = buildBridge();
         const res = await bridge.receiveMessage('Busca informacion sobre test');
-        assert(res.includes('[INVESTIGACIÓN COMPLETA]'), 'La investigacion debe completarse');
         assert(res.includes('Estado Ingesta: STORED_UNVERIFIED'), 'La ingestion debe proceder (STORED_UNVERIFIED)');
-        assert(res.includes('content about test longer than 10 chars'), 'Debe procesar la evidencia web con el contenido correcto');
+        assert(res.includes('content longer than 10 chars'), 'Debe procesar la evidencia web con el contenido correcto');
     });
 
     console.log('\n--- Resultados ---');

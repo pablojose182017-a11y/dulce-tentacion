@@ -421,15 +421,7 @@ window.renderRentabilidadChart = function() {
         return 'rgba(220, 38, 38, 0.8)';                        // rojo
     });
 
-    if (typeof window.Chart !== 'function') {
-        const aviso = document.createElement('p');
-        aviso.textContent = 'El gráfico no está disponible ahora. Los cálculos y la tabla siguen disponibles.';
-        aviso.style.cssText = 'color:#64748b;text-align:center;padding:12px;';
-        ctx.parentElement.appendChild(aviso);
-        return;
-    }
-
-    window.myRentabilidadChart = new window.Chart(ctx, {
+    window.myRentabilidadChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
