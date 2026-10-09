@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "include": [
+    "/admin-dashboard-fragment.html*",
+    "/admin-core.js*",
+    "/contabilidad.js*",
+    "/costos-recetas.js*",
+    "/guardian-financiero.js*",
+    "/ai-guardian-bundle.js*",
+    "/ai-guardian-bundle.min.js*",
+    "/*.bak",
+    "/*.backup-*",
+    "/*.before-*"
+  ],
+  "exclude": []
+}

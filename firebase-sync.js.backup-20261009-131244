@@ -6,61 +6,27 @@
  */
 window._adminModulesLoaded = false;
 window._adminModulesLoading = false;
-
-// Los recursos administrativos se sirven desde la misma ruta, pero Pages
-// exige un token Firebase y comprueba el rol antes de entregar cada archivo.
-window.fetchAdminAsset = async function(path) {
-    const auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
-    const user = auth && auth.currentUser;
-    if (!user || user.isAnonymous) throw new Error('Inicia sesión con una cuenta autorizada.');
-
-    const idToken = await user.getIdToken();
-    const response = await fetch(path, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${idToken}` },
-        cache: 'no-store'
-    });
-    if (!response.ok) throw new Error(`Acceso al recurso administrativo denegado (HTTP ${response.status}).`);
-    return response;
-};
-
-window.loadProtectedAdminScript = async function(path, marker) {
-    if (document.querySelector(`script[data-admin-module="${marker}"]`)) return;
-    const response = await window.fetchAdminAsset(path);
-    const source = await response.text();
-    const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
-
-    await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = blobUrl;
-        script.dataset.adminModule = marker;
-        script.onload = () => { URL.revokeObjectURL(blobUrl); resolve(); };
-        script.onerror = () => {
-            URL.revokeObjectURL(blobUrl);
-            script.remove();
-            reject(new Error(`No se pudo ejecutar el módulo administrativo ${marker}.`));
-        };
-        document.head.appendChild(script);
-    });
-};
-
 window.loadPhase2AdminModules = async function() {
     if (window._adminModulesLoaded || window._adminModulesLoading) return;
     window._adminModulesLoading = true;
+    
+    const scripts = [
+        "https://cdn.jsdelivr.net/npm/chart.js",
+        "ai-guardian-bundle.min.js"
+    ];
 
-    try {
-        await new Promise((resolve, reject) => {
+    for (const src of scripts) {
+        await new Promise((resolve) => {
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.src = src;
             script.onload = resolve;
-            script.onerror = () => reject(new Error('Fallo al cargar Chart.js'));
+            script.onerror = () => { console.warn("Fallo al cargar", src); resolve(); };
             document.head.appendChild(script);
         });
-        await window.loadProtectedAdminScript('/ai-guardian-bundle.min.js?v=1', 'ai-guardian-bundle.min.js');
-        window._adminModulesLoaded = true;
-    } finally {
-        window._adminModulesLoading = false;
     }
+    
+    window._adminModulesLoaded = true;
+    window._adminModulesLoading = false;
 };
 
 // FASE 2.2A: Loader del Fragmento HTML Administrativo
@@ -91,17 +57,35 @@ window.loadAdminHTMLFragment = async function() {
             return;
         }
 
-        const response = await window.fetchAdminAsset('/admin-dashboard-fragment.html');
+        const response = await fetch('admin-dashboard-fragment.html');
+        if (!response.ok) throw new Error('HTTP error ' + response.status);
         const html = await response.text();
         mountPoint.innerHTML = html;
         // FASE 2.4A: Cargar admin-core.js
-        await window.loadProtectedAdminScript('/admin-core.js?v=1', 'admin-core.js');
+        await new Promise((resolve) => {
+            if (document.querySelector('script[src*="admin-core.js"]')) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = "admin-core.js?v=" + Date.now();
+            script.onload = resolve;
+            script.onerror = () => { console.warn("Fallo al cargar admin-core.js"); resolve(); };
+            document.head.appendChild(script);
+        });
 
         // FASE 2.2C: Cargar contabilidad.js
-        const userRole = window.currentUser && (window.currentUser.role || window.currentUser.rol);
-        if (userRole === 'admin') {
-            await window.loadProtectedAdminScript('/contabilidad.js?v=17', 'contabilidad.js');
-        }
+        await new Promise((resolve) => {
+            if (document.querySelector('script[src*="contabilidad.js"]')) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = "contabilidad.js?v=17";
+            script.onload = resolve;
+            script.onerror = () => { console.warn("Fallo al cargar contabilidad.js"); resolve(); };
+            document.head.appendChild(script);
+        });
 
         window._adminFragmentLoaded = true;
     } catch (e) {

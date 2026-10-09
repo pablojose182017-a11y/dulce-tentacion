@@ -19,39 +19,6 @@ service cloud.firestore {
              get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.nivel : 0;
     }
 
-    // El perfil describe la cuenta para la interfaz; la autoridad real vive
-    // exclusivamente en roles/{uid}. Un perfil propio nunca puede elevarse.
-    function ownProfileRoleMatchesAuthority() {
-      return (isCreator() || getRol() >= 50)
-               ? request.resource.data.get('role', 'cliente') == 'admin'
-                 && request.resource.data.get('rol', 'cliente') == 'admin'
-                 && request.resource.data.get('isAdmin', false) == true
-             : getRol() >= 20
-               ? request.resource.data.get('role', 'cliente') == 'trabajador'
-                 && request.resource.data.get('rol', 'cliente') == 'trabajador'
-                 && request.resource.data.get('isAdmin', false) == false
-             : request.resource.data.get('role', 'cliente') == 'cliente'
-               && request.resource.data.get('rol', 'cliente') == 'cliente'
-               && request.resource.data.get('isAdmin', false) == false;
-    }
-
-    function canCreateOwnProfile(email) {
-      return request.auth != null
-             && request.auth.token.email == email
-             && request.resource.data.get('email', '') == email
-             && request.resource.data.keys().hasOnly([
-               'nombre', 'name', 'username', 'email', 'foto', 'photo',
-               'role', 'rol', 'isAdmin', 'vip', 'isVip', 'points', 'puntos',
-               'telefono', 'phone', 'direccion', 'address', 'estado', 'blocked',
-               'ultimaSincronizacion', 'ultimoIngreso'
-             ])
-             && ownProfileRoleMatchesAuthority()
-             && request.resource.data.get('vip', false) == false
-             && request.resource.data.get('isVip', false) == false
-             && request.resource.data.get('blocked', false) == false
-             && request.resource.data.get('estado', 'activo') == 'activo';
-    }
-
     // =========================================================================
     // 2. COLECCIÓN DE ROLES (NUEVA ARQUITECTURA)
     // =========================================================================
@@ -88,9 +55,8 @@ service cloud.firestore {
       // Lectura: El propio usuario o Admin+
       allow read: if (request.auth != null && request.auth.token.email == email) || getRol() >= 50;
       
-      // Un usuario puede crear solo un perfil coherente con su rol canónico.
-      // Admin+ conserva el flujo de gestión de perfiles existente.
-      allow create: if isCreator() || getRol() >= 50 || canCreateOwnProfile(email);
+      // Creación: El propio usuario (registro) o Admin+
+      allow create: if (request.auth != null && request.auth.token.email == email) || getRol() >= 50;
 
       // Actualización: Admin+ tiene control. El propio usuario está RESTRINGIDO.
       allow update: if isCreator() || getRol() >= 50 || 
