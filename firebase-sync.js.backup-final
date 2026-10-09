@@ -9,11 +9,6 @@ window._adminModulesLoading = false;
 window._adminModulesPromise = null;
 window._adminChartPromise = null;
 
-// FIX: Helper para resolver la desconexión léxica entre script.js y firebase-sync.js
-// cuando el inicio de sesión (ej. Google One Tap) no asigna explícitamente window.currentUser
-function _getSyncUser() {
-    return window.currentUser || (typeof currentUser !== 'undefined' ? currentUser : null);
-}
 // Los recursos administrativos se sirven desde la misma ruta, pero Pages
 // exige un token Firebase y comprueba el rol antes de entregar cada archivo.
 window.fetchAdminAsset = async function(path) {
@@ -141,8 +136,7 @@ window.loadAdminHTMLFragment = async function() {
         await window.loadProtectedAdminScript('/admin-core.js?v=1', 'admin-core.js');
 
         // FASE 2.2C: Cargar contabilidad.js
-        const activeUser = _getSyncUser();
-        const userRole = activeUser && (activeUser.role || activeUser.rol);
+        const userRole = window.currentUser && (window.currentUser.role || window.currentUser.rol);
         if (userRole === 'admin') {
             await window.loadProtectedAdminScript('/contabilidad.js?v=17', 'contabilidad.js');
         }
@@ -159,13 +153,12 @@ window.loadAdminHTMLFragment = async function() {
 const originalSyncUserUI = window.syncUserUI;
 if (originalSyncUserUI) {
     window.syncUserUI = async function() {
-        const activeUser = _getSyncUser();
-        if (activeUser && activeUser.email) {
-            const uEmail = activeUser.email.toLowerCase().trim();
+        if (window.currentUser && window.currentUser.email) {
+            const uEmail = window.currentUser.email.toLowerCase().trim();
             const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
                 ? window.SUPER_ADMINS.includes(uEmail)
                 : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
-            const role = activeUser.role || activeUser.rol;
+            const role = window.currentUser.role || window.currentUser.rol;
             const isAdmin = isSuper || role === 'admin';
             const isTrabajador = role === 'trabajador';
             
@@ -677,28 +670,27 @@ window.addEventListener('DOMContentLoaded', () => {
                     const doc = await db.collection("usuarios").doc(email).get();
                     if (doc.exists) {
                         const data = doc.data();
-                        const activeUser = _getSyncUser();
-                        if (activeUser && (activeUser.email || '').toLowerCase().trim() === email) {
+                        if (window.currentUser && (window.currentUser.email || '').toLowerCase().trim() === email) {
                             // Restaurar puntos
-                            if (data.points !== undefined && data.points !== activeUser.points) {
-                                activeUser.points = Number(data.points);
+                            if (data.points !== undefined && data.points !== window.currentUser.points) {
+                                window.currentUser.points = Number(data.points);
                                 profileChanged = true;
                             }
 
                             // Restaurar vip
-                            if (data.vip !== undefined && data.vip !== activeUser.vip) {
-                                activeUser.vip = !!data.vip;
-                                activeUser.isVip = !!data.vip;
+                            if (data.vip !== undefined && data.vip !== window.currentUser.vip) {
+                                window.currentUser.vip = !!data.vip;
+                                window.currentUser.isVip = !!data.vip;
                                 profileChanged = true;
                             }
 
                             // FIX: Restaurar rol/role desde Firestore (nunca sobrescribir con 'cliente' si Firestore dice otra cosa)
                             if (!isSuper) {
                                 const rolEnFirestore = data.rol || data.role;
-                                if (rolEnFirestore && rolEnFirestore !== (activeUser.role || activeUser.rol)) {
-                                    activeUser.role = rolEnFirestore;
-                                    activeUser.rol = rolEnFirestore;
-                                    activeUser.isAdmin = (rolEnFirestore === 'admin');
+                                if (rolEnFirestore && rolEnFirestore !== (window.currentUser.role || window.currentUser.rol)) {
+                                    window.currentUser.role = rolEnFirestore;
+                                    window.currentUser.rol = rolEnFirestore;
+                                    window.currentUser.isAdmin = (rolEnFirestore === 'admin');
                                     profileChanged = true;
                                     console.log("✓ onAuthStateChanged: rol restaurado desde Firestore:", email, rolEnFirestore);
                                 }
@@ -708,14 +700,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 } catch (err) {
                     console.warn("Error leyendo perfil en onAuthStateChanged:", err);
                 } finally {
-                    const activeUser = _getSyncUser();
-                    if (activeUser && (activeUser.email || '').toLowerCase().trim() === email) {
+                    if (window.currentUser && (window.currentUser.email || '').toLowerCase().trim() === email) {
                         if (profileChanged) {
-                            try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) {}
+                            try { localStorage.setItem('dt_user', JSON.stringify(window.currentUser)); } catch (e) {}
                         }
                         // FIX: Reintento seguro de sincronización UI para roles protegidos tras Auth.
                         // Ahora está DESACOPLADO de doc.exists, por lo que un SuperAdmin sin perfil comercial igual cargará el panel.
-                        if (profileChanged || isSuper || activeUser.isAdmin || activeUser.role === 'admin' || activeUser.rol === 'admin') {
+                        if (profileChanged || isSuper || window.currentUser.isAdmin || window.currentUser.role === 'admin' || window.currentUser.rol === 'admin') {
                             if (typeof window.syncUserUI === 'function') window.syncUserUI();
                         }
                     }
