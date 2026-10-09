@@ -1,3 +1,15 @@
+const crypto = require('crypto');
+global.window = {
+    AI_CORE: {
+        hash: {
+            sha256: (data) => {
+                if (!data) return null;
+                return crypto.createHash('sha256').update(data).digest('hex');
+            }
+        }
+    },
+    crypto: crypto.webcrypto ? { webcrypto: crypto.webcrypto, subtle: crypto.webcrypto.subtle, randomUUID: () => crypto.randomUUID() } : { subtle: crypto.webcrypto, randomUUID: () => crypto.randomUUID() }
+};
 const {
     InputIdentity,
     EvidenceCandidate,

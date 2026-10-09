@@ -8607,7 +8607,7 @@ window.AI_CORE.ControlledExecutionManager = ControlledExecutionManager;
 window.AI_CORE.MockDefensiveAdapter = MockDefensiveAdapter;
 
 /* --- SOURCE: ai-core/ai-chat-bridge.js --- */
-﻿if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
+if (typeof window.AI_CORE === 'undefined') window.AI_CORE = {};
 
 class ChatBridge {
     constructor(inventoryAuthority = null) {
@@ -8728,6 +8728,41 @@ class ChatBridge {
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal, fileAttachment = null) {
+        // V1 & V3: Task Envelope, Presupuesto y Estado (OBSERVE -> ... -> EVOLUTION_REVIEW)
+        const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+        const taskEnvelope = {
+            id: requestId,
+            state: 'OBSERVE',
+            budget: 10,
+            user: this.identityManager.getCurrentUser(currentUserGlobal),
+            objective: message
+        };
+
+        let responseText;
+        try {
+            responseText = await this._processMessageInner(message, currentUserGlobal, costosStateGlobal, fileAttachment, taskEnvelope);
+            taskEnvelope.state = 'RECORD';
+        } catch (e) {
+            console.error("[ChatBridge] Error en procesamiento:", e);
+            responseText = `[FAIL_CLOSED] Error interno: ${e.message}`;
+            taskEnvelope.state = 'FAIL_CLOSED';
+        }
+
+        // V5: Evolution Review
+        if (this.evolutionAdvisor) {
+            taskEnvelope.state = 'EVOLUTION_REVIEW';
+            const evoResult = this.evolutionAdvisor.observe(responseText);
+            if (evoResult && evoResult.proposal) {
+                console.log("[ChatBridge] Evolution V5 Proposal generated:", evoResult.proposal);
+            }
+        }
+        return responseText;
+    }
+
+    async _processMessageInner(message, currentUserGlobal, costosStateGlobal, fileAttachment, taskEnvelope) {
+        if (taskEnvelope.budget <= 0) return "[BUDGET_EXCEEDED] Presupuesto agotado para esta petición.";
+        taskEnvelope.budget--;
+        taskEnvelope.state = 'UNDERSTAND';
         // --- 1. NATURAL LANGUAGE UNDERSTANDING ---
         let interpretation = { intent: "UNKNOWN_FACTUAL", isClarificationNeeded: false };
         if (this.understandingEngine) {

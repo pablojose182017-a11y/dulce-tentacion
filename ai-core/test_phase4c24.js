@@ -1,6 +1,18 @@
+const crypto = require('crypto');
+global.window = {
+    AI_CORE: {
+        hash: {
+            sha256: (data) => {
+                if (!data) return null;
+                return crypto.createHash('sha256').update(data).digest('hex');
+            }
+        }
+    },
+    crypto: crypto.webcrypto ? { webcrypto: crypto.webcrypto, subtle: crypto.webcrypto.subtle } : { subtle: crypto.webcrypto }
+};
+
 const { ProvenanceGraph, SourceProvenance, ClaimIdentity } = require('./ai-provenance.js');
 const { IntegratedConsolidationEngine } = require('./ai-integrated-consolidation.js');
-const crypto = require('crypto');
 
 function assert(condition, message) {
     if (!condition) {
