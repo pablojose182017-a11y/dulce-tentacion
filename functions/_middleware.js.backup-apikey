@@ -8,7 +8,7 @@ const ADMIN_PATHS = [
     '/ai-guardian-bundle.min.js'
 ];
 
-const FIREBASE_API_KEY = 'AIzaSyAXsUDZeDStUV1oqfBfHre84u4u9TxYr1E';
+const FIREBASE_API_KEY = 'AIzaSyAXeUDZeDStUV1oqfBfHre84u4u9TxYr1E';
 const FIREBASE_PROJECT_ID = 'ps-punto-dulce';
 
 function isBackupPath(pathname) {
