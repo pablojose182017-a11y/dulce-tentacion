@@ -93,8 +93,19 @@ export async function authorizeAdminAsset(request, env = {}, fetcher = fetch) {
             const roleData = await roleResponse.json();
             roleLevel = firestoreIntegerValue(roleData.fields && roleData.fields.nivel);
         } else if (roleResponse.status !== 404) {
-            // Sin confirmación del rol se cierra el acceso, incluso ante una
-            // caída de Firestore o una regla que deniegue la lectura.
+            let errorCode = 'UNKNOWN';
+            try {
+                const errData = await roleResponse.json();
+                if (errData && errData.error && errData.error.status) {
+                    errorCode = errData.error.status;
+                }
+            } catch (e) {
+                errorCode = 'PARSE_ERROR';
+            }
+            
+            console.error(`[DIAGNOSTICO] Firestore HTTP ${roleResponse.status} - Status: ${errorCode}`);
+            
+            // Sin confirmación del rol se cierra el acceso. Respuesta pública genérica.
             return errorResponse(503, 'No fue posible verificar los permisos. Acceso cerrado.');
         }
 
