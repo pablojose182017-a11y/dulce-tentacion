@@ -648,8 +648,28 @@ window.addEventListener('DOMContentLoaded', () => {
                                         throw linkErr;
                                     }
                                 }
-                            } else if (auth.currentUser.email !== (window.currentUser && window.currentUser.email)) {
-                                await auth.signInWithCredential(googleCred);
+                            } else {
+                                // Extraer email del ID Token para validar coincidencia exacta
+                                let tokenEmail = '';
+                                try {
+                                    if (typeof decodeJwtResponse === 'function') {
+                                        tokenEmail = (decodeJwtResponse(response.credential).email || '').toLowerCase().trim();
+                                    } else {
+                                        const base64Url = response.credential.split('.')[1];
+                                        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                                        const parsed = JSON.parse(decodeURIComponent(escape(atob(base64))));
+                                        tokenEmail = (parsed.email || '').toLowerCase().trim();
+                                    }
+                                } catch (e) {
+                                    tokenEmail = (window.currentUser && window.currentUser.email || '').toLowerCase().trim();
+                                }
+                                const currentAuthEmail = (auth.currentUser.email || '').toLowerCase().trim();
+                                if (currentAuthEmail && tokenEmail && currentAuthEmail === tokenEmail) {
+                                    console.log("✓ Sesión activa de Firebase coincide con Google Sign-In; llamada redundante omitida.");
+                                } else {
+                                    await auth.signInWithCredential(googleCred);
+                                    console.log("✓ Firebase Auth actualizado con nueva credencial de Google.");
+                                }
                             }
                         } else {
                             await auth.signInWithCredential(googleCred);
