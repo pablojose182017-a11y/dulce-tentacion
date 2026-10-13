@@ -1087,11 +1087,64 @@ window.renderUsersTable = function () {
 };
 
 // Llenar tabla en tiempo real tan pronto inicie
+// BLINDAJE P0: renderUsersTable() SÓLO se activa cuando Firebase Auth confirma
+// que el usuario tiene rol administrativo (admin/trabajador o superadmin).
+// Esto elimina el error "Missing or insufficient permissions" que antes ocurría
+// para todos los visitantes/invitados al dispararse sin credenciales.
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof db !== 'undefined') {
-        window.renderUsersTable();
+    if (typeof db === 'undefined' || !db) return;
+
+    // Esperamos a que Firebase Auth resuelva el token antes de suscribir.
+    if (typeof auth !== 'undefined' && auth && typeof auth.onAuthStateChanged === 'function') {
+        let _usuariosAdminUnsub = null;
+
+        auth.onAuthStateChanged((fbUser) => {
+            // Si no hay usuario autenticado (ni siquiera anónimo con rol), no suscribir.
+            if (!fbUser || fbUser.isAnonymous) {
+                if (_usuariosAdminUnsub) {
+                    _usuariosAdminUnsub();
+                    _usuariosAdminUnsub = null;
+                }
+                return;
+            }
+
+            // Comprobar privilegios: superadmin por UID/email, o rol admin/trabajador en localStorage
+            const superUIDs = ['JT7c41zATQNrhzvWL4CdQxCAiby1'];
+            const superEmails = ['pablojose182017@gmail.com', 'dulcestentaciones2004@gmail.com'];
+            const userEmail = (fbUser.email || '').toLowerCase().trim();
+            const isSuper = superUIDs.includes(fbUser.uid) || superEmails.includes(userEmail);
+
+            let isPrivileged = isSuper;
+            if (!isPrivileged) {
+                try {
+                    const uStr = localStorage.getItem('dt_user');
+                    if (uStr) {
+                        const uObj = JSON.parse(uStr);
+                        const uRole = uObj.role || uObj.rol || '';
+                        isPrivileged = (uRole === 'admin' || uRole === 'trabajador');
+                    }
+                } catch (e) {}
+            }
+
+            if (isPrivileged) {
+                // Solo suscribir si aún no hay listener activo
+                if (!_usuariosAdminUnsub) {
+                    window.renderUsersTable();
+                    // renderUsersTable() internamente llama onSnapshot y devuelve el unsub
+                    // No podemos capturarlo directamente sin refactoring mayor; esto es suficiente
+                    // para evitar la suscripción en guests.
+                }
+            } else {
+                // Usuario autenticado pero sin privilegios: desuscribir si existía
+                if (_usuariosAdminUnsub) {
+                    _usuariosAdminUnsub();
+                    _usuariosAdminUnsub = null;
+                }
+            }
+        });
     }
 });
+
 
 // Sincronización integral de roles manejada en window.confirmRoleChange
 

@@ -915,175 +915,231 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (typeof window.syncUserUI === 'function') await window.syncUserUI();
                     if (typeof window._crRolesApplyUI === 'function') window._crRolesApplyUI();
                 }
+
+                // --- ACTIVACIÓN P0: Listeners privilegiados ahora se inician aquí ---
+                // Solo se activan cuando onAuthStateChanged confirma credenciales admin/trabajador.
+                const ePrivilegiado = isSuper || (activeUser && (activeUser.isAdmin || activeUser.role === 'admin' || activeUser.rol === 'admin' || activeUser.role === 'trabajador' || activeUser.rol === 'trabajador'));
+                if (ePrivilegiado) {
+                    if (typeof window._initVipListener === 'function') window._initVipListener();
+                    if (typeof window._initUsuariosListener === 'function') window._initUsuariosListener(fbUser);
+                    if (typeof window.initAdminListener === 'function') window.initAdminListener();
+                }
             }
         });
+
+        // Limpiar listeners privilegiados al cerrar sesión
+        if (typeof window.logoutUser === 'function') {
+            const _origLogoutP0 = window.logoutUser;
+            // Solo agregar el limpiador una vez
+            if (!window._p0CleanupHooked) {
+                window._p0CleanupHooked = true;
+                window.logoutUser = function() {
+                    if (typeof window._destroyVipListener === 'function') window._destroyVipListener();
+                    if (typeof window._destroyUsuariosListener === 'function') window._destroyUsuariosListener();
+                    _origLogoutP0.apply(this, arguments);
+                };
+            }
+        }
     }
 
     // --- LISTENER EN TIEMPO REAL: Solicitudes VIP ---
-    // Escucha la colección 'solicitudes_vip' y notifica al panel admin en cualquier dispositivo.
-    let solicitudesVipPrimeraCarga = true;
-    db.collection('solicitudes_vip')
-        .orderBy('timestamp', 'desc')
-        .limit(20)
-        .onSnapshot((snapshot) => {
-            if (!solicitudesVipPrimeraCarga) {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        const data = change.doc.data();
-                        // Inyectar en el array de notificaciones local
-                        const newNotif = {
-                            id: data.id || ('notif_vip_' + Date.now()),
-                            type: 'solicitud_vip',
-                            title: '👑 Nueva Solicitud VIP',
-                            message: `${data.message || (data.email || 'Cliente')}`,
-                            time: 'Hace un momento',
-                            read: false,
-                            timestamp: data.timestamp || Date.now()
-                        };
-                        try {
-                            let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
-                            notifs.unshift(newNotif);
-                            if (notifs.length > 50) notifs = notifs.slice(0, 50);
-                            localStorage.setItem('dt_notifications', JSON.stringify(notifs));
-                        } catch(e) {}
-                        // Actualizar UI del panel de notificaciones
-                        if (typeof window.renderAdminNotifList === 'function') {
-                            window.renderAdminNotifList();
+    // BLINDAJE P0: Este listener SÓLO se activa cuando hay un usuario admin autenticado.
+    // Antes se ejecutaba incondicionalmente, causando 'Missing or insufficient permissions'
+    // para todos los invitados y clientes normales en cada carga de página.
+    let _vipListenerUnsub = null;
+    window._initVipListener = function() {
+        if (_vipListenerUnsub) return; // Ya suscrito, no duplicar
+        let solicitudesVipPrimeraCarga = true;
+        _vipListenerUnsub = db.collection('solicitudes_vip')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .onSnapshot((snapshot) => {
+                if (!solicitudesVipPrimeraCarga) {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const data = change.doc.data();
+                            // Inyectar en el array de notificaciones local
+                            const newNotif = {
+                                id: data.id || ('notif_vip_' + Date.now()),
+                                type: 'solicitud_vip',
+                                title: '👑 Nueva Solicitud VIP',
+                                message: `${data.message || (data.email || 'Cliente')}`,
+                                time: 'Hace un momento',
+                                read: false,
+                                timestamp: data.timestamp || Date.now()
+                            };
+                            try {
+                                let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
+                                notifs.unshift(newNotif);
+                                if (notifs.length > 50) notifs = notifs.slice(0, 50);
+                                localStorage.setItem('dt_notifications', JSON.stringify(notifs));
+                            } catch(e) {}
+                            // Actualizar UI del panel de notificaciones
+                            if (typeof window.renderAdminNotifList === 'function') {
+                                window.renderAdminNotifList();
+                            }
+                            // Sonar campana y mostrar toast
+                            if (typeof window.sonarCampanaNuevoPedido === 'function') {
+                                window.sonarCampanaNuevoPedido();
+                            }
+                            if (typeof showToast === 'function') {
+                                showToast('👑 ¡Nueva Solicitud de Membresía VIP!');
+                            }
+                            console.log('✓ Solicitud VIP recibida en tiempo real:', data);
                         }
-                        // Sonar campana y mostrar toast
-                        if (typeof window.sonarCampanaNuevoPedido === 'function') {
-                            window.sonarCampanaNuevoPedido();
+                    });
+                }
+                solicitudesVipPrimeraCarga = false;
+            }, (err) => {
+                console.warn('Error escuchando solicitudes_vip:', err);
+            });
+    };
+    window._destroyVipListener = function() {
+        if (_vipListenerUnsub) { _vipListenerUnsub(); _vipListenerUnsub = null; }
+    };
+
+
+    // --- LISTENER EN TIEMPO REAL: Sincronización de Usuarios ---
+    // BLINDAJE P0: usuariosQuery.onSnapshot SÓLO se activa desde onAuthStateChanged
+    // cuando el usuario autenticado tiene privilegios (admin/trabajador/superadmin).
+    // Antes se ejecutaba en el top-level del script para invitados, causando errores 403.
+    let _usuariosListenerUnsub = null;
+    window._initUsuariosListener = function(fbUser) {
+        if (_usuariosListenerUnsub) return; // Ya activo, evitar duplicados
+
+        let usuariosQuery = db.collection("usuarios");
+        try {
+            let isPriv = false;
+            let uEmail = null;
+            if (fbUser && fbUser.email) {
+                uEmail = (fbUser.email || '').toLowerCase().trim();
+                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
+                if (isSuper) { isPriv = true; }
+            }
+            if (!isPriv) {
+                try {
+                    const uStr = localStorage.getItem('dt_user');
+                    if (uStr) {
+                        const uObj = JSON.parse(uStr);
+                        uEmail = uEmail || (uObj.email || '').toLowerCase().trim();
+                        if (uObj.rol === 'admin' || uObj.rol === 'trabajador' || uObj.role === 'admin' || uObj.role === 'trabajador') {
+                            isPriv = true;
                         }
-                        if (typeof showToast === 'function') {
-                            showToast('👑 ¡Nueva Solicitud de Membresía VIP!');
+                    }
+                } catch (e) {}
+            }
+            // Sin privilegios: no suscribir a la colección completa
+            if (!isPriv) {
+                console.log('[usuariosListener] Omitido: usuario sin privilegios admin/trabajador.');
+                return;
+            }
+        } catch(e) {}
+
+        _usuariosListenerUnsub = usuariosQuery.onSnapshot((snapshot) => {
+            let firebaseUsers = [];
+            snapshot.forEach(doc => {
+                firebaseUsers.push(doc.data());
+            });
+            
+            // Actualizar db_users y dt_registered_users localmente (fusionando en tiempo real)
+            if (typeof db_users !== 'undefined') {
+                let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                if (!Array.isArray(regUsers)) regUsers = [];
+                let currentUserUpdated = false;
+
+                firebaseUsers.forEach(fbUser => {
+                    const fbEmail = (fbUser.email || '').toLowerCase().trim();
+                    const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(fbEmail) : (fbEmail === 'pablojose182017@gmail.com' || fbEmail === 'dulcestentaciones2004@gmail.com');
+                    if (isSuper) {
+                        fbUser.rol = 'admin';
+                        fbUser.role = 'admin';
+                        fbUser.isAdmin = true;
+                        fbUser.blocked = false;
+                        fbUser.estado = 'activo';
+                        if (typeof adminEmails !== 'undefined' && !adminEmails.includes(fbEmail)) {
+                            adminEmails.push(fbEmail);
                         }
-                        console.log('✓ Solicitud VIP recibida en tiempo real:', data);
+                        if (typeof workerEmails !== 'undefined') {
+                            workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                        }
+                    } else {
+                        const r = fbUser.role || fbUser.rol || 'cliente';
+                        if (r === 'admin') {
+                            if (typeof adminEmails !== 'undefined' && !adminEmails.includes(fbEmail)) adminEmails.push(fbEmail);
+                            if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                        } else if (r === 'trabajador') {
+                            if (typeof workerEmails !== 'undefined' && !workerEmails.includes(fbEmail)) workerEmails.push(fbEmail);
+                            if (typeof adminEmails !== 'undefined') adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                        } else {
+                            if (typeof adminEmails !== 'undefined') adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                            if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
+                        }
+                    }
+
+                    // Sincronizar en db_users
+                    const idx = db_users.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
+                    if (idx !== -1) {
+                        db_users[idx] = { ...db_users[idx], ...fbUser };
+                    } else {
+                        db_users.push(fbUser);
+                    }
+
+                    // Sincronizar en dt_registered_users
+                    const rIdx = regUsers.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
+                    if (rIdx !== -1) {
+                        regUsers[rIdx] = { ...regUsers[rIdx], ...fbUser };
+                    } else {
+                        regUsers.push(fbUser);
+                    }
+
+                    // Sincronizar en currentUser si es el usuario activo
+                    if (typeof currentUser !== 'undefined' && currentUser && (currentUser.email || '').toLowerCase().trim() === fbEmail) {
+                        const updatedRole = isSuper ? 'admin' : (fbUser.role || fbUser.rol || currentUser.role || 'cliente');
+                        const updatedIsVip = isSuper || !!(fbUser.isVip || fbUser.vip || (updatedRole === 'vip'));
+                        const updatedVipStatus = fbUser.vipStatus || (updatedIsVip ? 'activo' : (currentUser.vipStatus || 'inactivo'));
+                        const updatedPoints = (fbUser.points !== undefined && fbUser.points !== null) ? fbUser.points : currentUser.points;
+
+                        currentUser.role = updatedRole;
+                        currentUser.rol = updatedRole;
+                        currentUser.isAdmin = isSuper || (updatedRole === 'admin');
+                        currentUser.isVip = updatedIsVip;
+                        currentUser.vip = updatedIsVip;
+                        currentUser.vipStatus = updatedVipStatus;
+                        currentUser.points = updatedPoints;
+                        if (fbUser.blocked !== undefined) currentUser.blocked = !!fbUser.blocked;
+                        currentUserUpdated = true;
                     }
                 });
+
+                localStorage.setItem('dt_users_db', JSON.stringify(db_users));
+                localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+                if (typeof saveAdminEmails === 'function') saveAdminEmails();
+                try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
+
+                if (currentUserUpdated) {
+                    localStorage.setItem('dt_user', JSON.stringify(currentUser));
+                    if (typeof window.syncUserUI === 'function') window.syncUserUI();
+                }
+                
+                // Re-renderizar si estamos en la vista de admin de usuarios
+                if (typeof renderAdminUsers === 'function') {
+                    renderAdminUsers();
+                }
+                if (typeof renderKitchenUsers === 'function') {
+                    renderKitchenUsers();
+                }
+                if (typeof renderLiveOrders === 'function') {
+                    renderLiveOrders();
+                }
             }
-            solicitudesVipPrimeraCarga = false;
         }, (err) => {
-            console.warn('Error escuchando solicitudes_vip:', err);
+            console.warn('[usuariosListener] Error en onSnapshot:', err);
         });
+    };
+    window._destroyUsuariosListener = function() {
+        if (_usuariosListenerUnsub) { _usuariosListenerUnsub(); _usuariosListenerUnsub = null; }
+    };
 
-    let usuariosQuery = db.collection("usuarios");
-    try {
-        let isPriv = false;
-        let uEmail = null;
-        const uStr = localStorage.getItem('dt_user');
-        if (uStr) {
-            const uObj = JSON.parse(uStr);
-            uEmail = (uObj.email || '').toLowerCase().trim();
-            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(uEmail) : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
-            if (isSuper || uObj.rol === 'admin' || uObj.rol === 'trabajador' || uObj.role === 'admin' || uObj.role === 'trabajador') {
-                isPriv = true;
-            }
-        }
-        if (!isPriv && uEmail) {
-            usuariosQuery = db.collection("usuarios").where("email", "==", uEmail);
-        } else if (!isPriv) {
-            usuariosQuery = db.collection("usuarios").where("email", "==", "guest_no_match");
-        }
-    } catch(e) {}
-
-    usuariosQuery.onSnapshot((snapshot) => {
-        let firebaseUsers = [];
-        snapshot.forEach(doc => {
-            firebaseUsers.push(doc.data());
-        });
-        
-        // Actualizar db_users y dt_registered_users localmente (fusionando en tiempo real)
-        if (typeof db_users !== 'undefined') {
-            let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-            if (!Array.isArray(regUsers)) regUsers = [];
-            let currentUserUpdated = false;
-
-            firebaseUsers.forEach(fbUser => {
-                const fbEmail = (fbUser.email || '').toLowerCase().trim();
-                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(fbEmail) : (fbEmail === 'pablojose182017@gmail.com' || fbEmail === 'dulcestentaciones2004@gmail.com');
-                if (isSuper) {
-                    fbUser.rol = 'admin';
-                    fbUser.role = 'admin';
-                    fbUser.isAdmin = true;
-                    fbUser.blocked = false;
-                    fbUser.estado = 'activo';
-                    if (typeof adminEmails !== 'undefined' && !adminEmails.includes(fbEmail)) {
-                        adminEmails.push(fbEmail);
-                    }
-                    if (typeof workerEmails !== 'undefined') {
-                        workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
-                    }
-                } else {
-                    const r = fbUser.role || fbUser.rol || 'cliente';
-                    if (r === 'admin') {
-                        if (typeof adminEmails !== 'undefined' && !adminEmails.includes(fbEmail)) adminEmails.push(fbEmail);
-                        if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
-                    } else if (r === 'trabajador') {
-                        if (typeof workerEmails !== 'undefined' && !workerEmails.includes(fbEmail)) workerEmails.push(fbEmail);
-                        if (typeof adminEmails !== 'undefined') adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
-                    } else {
-                        if (typeof adminEmails !== 'undefined') adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
-                        if (typeof workerEmails !== 'undefined') workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== fbEmail);
-                    }
-                }
-
-                // Sincronizar en db_users
-                const idx = db_users.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
-                if (idx !== -1) {
-                    db_users[idx] = { ...db_users[idx], ...fbUser };
-                } else {
-                    db_users.push(fbUser);
-                }
-
-                // Sincronizar en dt_registered_users
-                const rIdx = regUsers.findIndex(u => (u.email || '').toLowerCase().trim() === fbEmail);
-                if (rIdx !== -1) {
-                    regUsers[rIdx] = { ...regUsers[rIdx], ...fbUser };
-                } else {
-                    regUsers.push(fbUser);
-                }
-
-                // Sincronizar en currentUser si es el usuario activo
-                if (typeof currentUser !== 'undefined' && currentUser && (currentUser.email || '').toLowerCase().trim() === fbEmail) {
-                    const updatedRole = isSuper ? 'admin' : (fbUser.role || fbUser.rol || currentUser.role || 'cliente');
-                    const updatedIsVip = isSuper || !!(fbUser.isVip || fbUser.vip || (updatedRole === 'vip'));
-                    const updatedVipStatus = fbUser.vipStatus || (updatedIsVip ? 'activo' : (currentUser.vipStatus || 'inactivo'));
-                    const updatedPoints = (fbUser.points !== undefined && fbUser.points !== null) ? fbUser.points : currentUser.points;
-
-                    currentUser.role = updatedRole;
-                    currentUser.rol = updatedRole;
-                    currentUser.isAdmin = isSuper || (updatedRole === 'admin');
-                    currentUser.isVip = updatedIsVip;
-                    currentUser.vip = updatedIsVip;
-                    currentUser.vipStatus = updatedVipStatus;
-                    currentUser.points = updatedPoints;
-                    if (fbUser.blocked !== undefined) currentUser.blocked = !!fbUser.blocked;
-                    currentUserUpdated = true;
-                }
-            });
-
-            localStorage.setItem('dt_users_db', JSON.stringify(db_users));
-            localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-            if (typeof saveAdminEmails === 'function') saveAdminEmails();
-            try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch(e){}
-
-            if (currentUserUpdated) {
-                localStorage.setItem('dt_user', JSON.stringify(currentUser));
-                if (typeof window.syncUserUI === 'function') window.syncUserUI();
-            }
-            
-            // Re-renderizar si estamos en la vista de admin de usuarios
-            if (typeof renderAdminUsers === 'function') {
-                renderAdminUsers();
-            }
-            if (typeof renderKitchenUsers === 'function') {
-                renderKitchenUsers();
-            }
-            if (typeof renderLiveOrders === 'function') {
-                renderLiveOrders();
-            }
-        }
-    });
 
 
     // --- 1. GESTOR DE AUDIO SILENCIOSO Y SEGURO ---
@@ -1199,7 +1255,11 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log("Listener de pedidos omitido para ahorrar cuota (Usuario sin privilegios).");
         }
     };
-    window.initAdminListener();
+    // FIX P0 (Condición de Carrera): window.initAdminListener() ya NO se llama
+    // sincrónicamente al parsear el script. En su lugar, se invoca desde
+    // onAuthStateChanged() una vez que el token de Firebase Auth está confirmado.
+    // Ver las llamadas en los bloques isSuper y isPrivileged del observador de auth.
+    // (La función sigue disponible globalmente para ser llamada manualmente si se requiere.)
 
     // --- 3. ACTUALIZACIÓN DE ESTADOS HACIA FIRESTORE (Interceptor global) ---
     const originalUpdateOrderStatus = window.updateOrderStatus;
