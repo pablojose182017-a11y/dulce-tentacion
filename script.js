@@ -441,6 +441,7 @@ async function loginCustomUser(e) {
     }
 
     if (typeof firebase !== 'undefined' && firebase.auth) {
+        window._authLoginInProgress = true;
         try {
             await firebase.auth().signInWithEmailAndPassword(email, pass);
             
@@ -506,6 +507,8 @@ async function loginCustomUser(e) {
                 return showAuthMessage('Error de conexión a internet. Revisa tu red.', 'error');
             }
             return showAuthMessage('Error de autenticación: ' + (err.message || err.code), 'error');
+        } finally {
+            window._authLoginInProgress = false;
         }
     } else {
         return showAuthMessage('El servicio de autenticación no está disponible en este momento.', 'error');

@@ -12,16 +12,71 @@ window._adminChartPromise = null;
 // FIX: Helper para resolver la desconexión léxica entre script.js y firebase-sync.js
 // cuando el inicio de sesión (ej. Google One Tap) no asigna explícitamente window.currentUser
 function _getSyncUser() {
-    return window.currentUser || (typeof currentUser !== 'undefined' ? currentUser : null);
+    let u = window.currentUser || (typeof currentUser !== 'undefined' ? currentUser : null);
+    if (!u) {
+        try {
+            const raw = localStorage.getItem('dt_user');
+            if (raw && raw !== 'null' && raw !== 'undefined') {
+                u = JSON.parse(raw);
+            }
+        } catch (e) {}
+    }
+    return u;
+}
+
+function _hasPreviousSession() {
+    try {
+        const raw = localStorage.getItem('dt_user');
+        if (raw && raw !== 'null' && raw !== 'undefined' && raw !== '{}') {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.email || parsed.uid || parsed.name)) return true;
+        }
+    } catch (e) {
+        if (localStorage.getItem('dt_user')) return true;
+    }
+    try {
+        const rawLogged = localStorage.getItem('dt_logged_user');
+        if (rawLogged && rawLogged !== 'null' && rawLogged !== 'undefined') return true;
+    } catch (e) {}
+    return false;
+}
+
+function _isLoginInProgress() {
+    return !!(
+        window._authLoginInProgress ||
+        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('dt_login_in_progress') === 'true')
+    );
+}
+
+function _isSuperAdminUser(userOrEmailOrUid) {
+    if (!userOrEmailOrUid) return false;
+    let email = '';
+    let uid = '';
+    if (typeof userOrEmailOrUid === 'string') {
+        email = userOrEmailOrUid.toLowerCase().trim();
+    } else if (typeof userOrEmailOrUid === 'object') {
+        email = (userOrEmailOrUid.email || '').toLowerCase().trim();
+        uid = userOrEmailOrUid.uid || '';
+    }
+    if (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com' || uid === 'JT7c41zATQNrhzvWL4CdQxCAiby1') {
+        return true;
+    }
+    if (typeof window.isSuperAdmin === 'function') {
+        if (window.isSuperAdmin({ email, uid }) || window.isSuperAdmin(email)) return true;
+    }
+    if (typeof window.SUPER_ADMINS !== 'undefined' && Array.isArray(window.SUPER_ADMINS)) {
+        if (window.SUPER_ADMINS.includes(email) || window.SUPER_ADMINS.includes(uid)) return true;
+    }
+    return false;
 }
 // Los recursos administrativos se sirven desde la misma ruta, pero Pages
 // exige un token Firebase y comprueba el rol antes de entregar cada archivo.
-window.fetchAdminAsset = async function(path) {
+window.fetchAdminAsset = window.fetchAdminAsset || async function(path) {
     const auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
     const user = auth && auth.currentUser;
     if (!user || user.isAnonymous) throw new Error('Inicia sesión con una cuenta autorizada.');
 
-    const idToken = await user.getIdToken();
+    const idToken = (typeof user.getIdToken === 'function') ? await user.getIdToken() : '';
     const response = await fetch(path, {
         method: 'GET',
         headers: { Authorization: `Bearer ${idToken}` },
@@ -31,7 +86,7 @@ window.fetchAdminAsset = async function(path) {
     return response;
 };
 
-window.loadProtectedAdminScript = async function(path, marker) {
+window.loadProtectedAdminScript = window.loadProtectedAdminScript || async function(path, marker) {
     if (document.querySelector(`script[data-admin-module="${marker}"]`)) return;
     const response = await window.fetchAdminAsset(path);
     const source = await response.text();
@@ -106,7 +161,40 @@ window.loadAdminHTMLFragment = async function() {
     window._adminFragmentLoading = true;
     try {
         const auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
-        if (!auth || !auth.currentUser || auth.currentUser.isAnonymous) {
+        let currentUser = auth ? auth.currentUser : null;
+
+        // Si aún no hay usuario autenticado o es anónimo, pero detectamos que el usuario local
+        // es SuperAdmin o hay un login en progreso, esperar a que Firebase Auth resuelva la sesión
+        // en lugar de abortar inmediatamente la carga.
+        if (!currentUser || currentUser.isAnonymous) {
+            const activeUser = _getSyncUser();
+            const isSuper = _isSuperAdminUser(activeUser);
+            if ((isSuper || _isLoginInProgress()) && auth && typeof auth.onAuthStateChanged === 'function') {
+                currentUser = await new Promise((resolve) => {
+                    let resolved = false;
+                    let unsubscribe = null;
+                    const timer = setTimeout(() => {
+                        if (!resolved) {
+                            resolved = true;
+                            if (typeof unsubscribe === 'function') unsubscribe();
+                            resolve(auth.currentUser);
+                        }
+                    }, 4000);
+                    unsubscribe = auth.onAuthStateChanged((u) => {
+                        if (u && !u.isAnonymous) {
+                            if (!resolved) {
+                                resolved = true;
+                                clearTimeout(timer);
+                                if (typeof unsubscribe === 'function') unsubscribe();
+                                resolve(u);
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        if (!currentUser || currentUser.isAnonymous) {
             console.warn("Intento de cargar fragmento admin sin autenticación. Interrumpido.");
             return;
         }
@@ -148,7 +236,7 @@ window.loadAdminHTMLFragment = async function() {
         // FASE 2.2C: Cargar contabilidad.js
         const activeUser = _getSyncUser();
         const userRole = activeUser && (activeUser.role || activeUser.rol);
-        if (userRole === 'admin') {
+        if (userRole === 'admin' || _isSuperAdminUser(activeUser)) {
             await window.loadProtectedAdminScript('/contabilidad.js?v=17', 'contabilidad.js');
         }
 
@@ -170,11 +258,7 @@ if (originalSyncUserUI) {
         const checkUid = (authUser && authUser.uid) ? authUser.uid : (activeUser && activeUser.uid ? activeUser.uid : '');
 
         if (checkEmail || checkUid) {
-            const isSuper = (typeof window.isSuperAdmin === 'function')
-                ? window.isSuperAdmin({ email: checkEmail, uid: checkUid })
-                : ((typeof window.SUPER_ADMINS !== 'undefined')
-                    ? (window.SUPER_ADMINS.includes(checkEmail) || checkUid === 'JT7c41zATQNrhzvWL4CdQxCAiby1')
-                    : (checkEmail === 'pablojose182017@gmail.com' || checkEmail === 'dulcestentaciones2004@gmail.com' || checkUid === 'JT7c41zATQNrhzvWL4CdQxCAiby1'));
+            const isSuper = _isSuperAdminUser({ email: checkEmail, uid: checkUid });
             const role = activeUser ? (activeUser.role || activeUser.rol) : (isSuper ? 'admin' : '');
             const isAdmin = isSuper || role === 'admin';
             const isTrabajador = role === 'trabajador';
@@ -455,6 +539,10 @@ window.loginWithGooglePopup = async function() {
         alert("Firebase Auth no está listo. Por favor recarga la página.");
         return;
     }
+    window._authLoginInProgress = true;
+    try {
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('dt_login_in_progress', 'true');
+    } catch (e) {}
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
@@ -463,7 +551,7 @@ window.loginWithGooglePopup = async function() {
         const fbUser = result.user;
         if (fbUser && fbUser.email) {
             const email = fbUser.email.toLowerCase().trim();
-            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined') ? window.SUPER_ADMINS.includes(email) : false;
+            const isSuper = _isSuperAdminUser({ email, uid: fbUser.uid });
             
             // Consultar datos previos en Firestore
             let pts = 15;
@@ -484,11 +572,13 @@ window.loginWithGooglePopup = async function() {
             const userObj = {
                 name: fbUser.displayName || email.split('@')[0],
                 email: email,
+                uid: fbUser.uid,
                 picture: fbUser.photoURL || '',
                 points: pts,
                 vip: isVip,
                 isVip: isVip,
                 role: role,
+                rol: role,
                 isAdmin: isSuper || (role === 'admin'),
                 blocked: false
             };
@@ -497,7 +587,17 @@ window.loginWithGooglePopup = async function() {
             localStorage.setItem('dt_user', JSON.stringify(userObj));
             
             if (typeof window.saveUsersDB === 'function') window.saveUsersDB();
+            if (isSuper || userObj.isAdmin) {
+                if (typeof window.loadAdminHTMLFragment === 'function') {
+                    try {
+                        await window.loadAdminHTMLFragment();
+                    } catch (e) {
+                        console.error("Error cargando fragmento admin en popup login:", e);
+                    }
+                }
+            }
             if (typeof window.syncUserUI === 'function') window.syncUserUI();
+            if (typeof window._crRolesApplyUI === 'function') window._crRolesApplyUI();
             await window.syncCurrentUserToCloud();
             
             if (typeof window.showToast === 'function') {
@@ -511,6 +611,11 @@ window.loginWithGooglePopup = async function() {
         if (err.code !== 'auth/popup-closed-by-user') {
             alert("Error al iniciar sesión con Google: " + (err.message || err.code));
         }
+    } finally {
+        window._authLoginInProgress = false;
+        try {
+            if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('dt_login_in_progress');
+        } catch (e) {}
     }
 };
 
@@ -519,67 +624,86 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof handleCredentialResponse !== 'undefined') {
         const originalHandleCredentialResponse = window.handleCredentialResponse;
         window.handleCredentialResponse = async function(response) {
-            // Llama a la lógica original (decodificación, guardado en db_users/localStorage, render)
-            originalHandleCredentialResponse.apply(this, arguments);
+            window._authLoginInProgress = true;
+            try {
+                if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('dt_login_in_progress', 'true');
+            } catch (e) {}
+            try {
+                // Llama a la lógica original (decodificación, guardado en db_users/localStorage, render)
+                originalHandleCredentialResponse.apply(this, arguments);
 
-            // Autenticar la sesión en Firebase Authentication con el ID Token de Google
-            if (auth && response && response.credential) {
-                try {
-                    const googleCred = firebase.auth.GoogleAuthProvider.credential(response.credential);
-                    if (auth.currentUser && auth.currentUser.isAnonymous) {
-                        await auth.currentUser.linkWithCredential(googleCred).catch(async (e) => {
-                            if (e.code === 'auth/credential-already-in-use') {
-                                await auth.signInWithCredential(googleCred);
-                            } else throw e;
-                        });
-                        console.log("✓ Cuenta autenticada/vinculada exitosamente con Google.");
-                    } else {
-                        await auth.signInWithCredential(googleCred);
-                        console.log("✓ Firebase Auth autenticado con ID Token de Google.");
+                // Autenticar la sesión en Firebase Authentication con el ID Token de Google
+                if (auth && response && response.credential) {
+                    try {
+                        const googleCred = firebase.auth.GoogleAuthProvider.credential(response.credential);
+                        if (auth.currentUser && auth.currentUser.isAnonymous) {
+                            await auth.currentUser.linkWithCredential(googleCred).catch(async (e) => {
+                                if (e.code === 'auth/credential-already-in-use') {
+                                    await auth.signInWithCredential(googleCred);
+                                } else throw e;
+                            });
+                            console.log("✓ Cuenta autenticada/vinculada exitosamente con Google.");
+                        } else {
+                            await auth.signInWithCredential(googleCred);
+                            console.log("✓ Firebase Auth autenticado con ID Token de Google.");
+                        }
+                    } catch (authErr) {
+                        console.warn("Aviso Firebase Auth:", authErr.message || authErr);
                     }
-                } catch (authErr) {
-                    console.warn("Aviso Firebase Auth:", authErr.message || authErr);
                 }
-            }
 
-            // Sincronizar de inmediato el usuario activo con Firestore
-            if (window.currentUser) {
-                const email = (window.currentUser.email || '').toLowerCase().trim();
-                const isSuper = (typeof window.isSuperAdmin === 'function')
-                    ? window.isSuperAdmin(email)
-                    : ((typeof window.SUPER_ADMINS !== 'undefined')
-                        ? window.SUPER_ADMINS.includes(email)
-                        : (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com'));
-                // Si el usuario ya tenía puntos en Firestore, mantenerlos intactos
-                try {
-                    const doc = await db.collection("usuarios").doc(email).get();
-                    if (doc.exists) {
-                        const data = doc.data();
-                        if (data.points !== undefined && data.points !== null) {
-                            window.currentUser.points = Number(data.points);
-                        }
-                        if (data.vip !== undefined) {
-                            window.currentUser.vip = !!data.vip;
-                            window.currentUser.isVip = !!data.vip;
-                        }
-                        // FIX: Aplicar el rol guardado en Firestore para todos los usuarios
-                        // (no solo para los que no son admin), respetando a los Super Admins.
-                        if (!isSuper) {
-                            const savedRole = data.rol || data.role;
-                            if (savedRole) {
-                                window.currentUser.role = savedRole;
-                                window.currentUser.rol = savedRole;
-                                window.currentUser.isAdmin = (savedRole === 'admin');
+                // Sincronizar de inmediato el usuario activo con Firestore
+                if (window.currentUser) {
+                    const email = (window.currentUser.email || '').toLowerCase().trim();
+                    const isSuper = _isSuperAdminUser(window.currentUser);
+                    // Si el usuario ya tenía puntos en Firestore, mantenerlos intactos
+                    try {
+                        const doc = await db.collection("usuarios").doc(email).get();
+                        if (doc.exists) {
+                            const data = doc.data();
+                            if (data.points !== undefined && data.points !== null) {
+                                window.currentUser.points = Number(data.points);
                             }
+                            if (data.vip !== undefined) {
+                                window.currentUser.vip = !!data.vip;
+                                window.currentUser.isVip = !!data.vip;
+                            }
+                            // FIX: Aplicar el rol guardado en Firestore para todos los usuarios
+                            // (no solo para los que no son admin), respetando a los Super Admins.
+                            if (isSuper) {
+                                window.currentUser.role = 'admin';
+                                window.currentUser.rol = 'admin';
+                                window.currentUser.isAdmin = true;
+                            } else {
+                                const savedRole = data.rol || data.role;
+                                if (savedRole) {
+                                    window.currentUser.role = savedRole;
+                                    window.currentUser.rol = savedRole;
+                                    window.currentUser.isAdmin = (savedRole === 'admin');
+                                }
+                            }
+                            localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
+                            if (isSuper || window.currentUser.isAdmin) {
+                                if (typeof window.loadAdminHTMLFragment === 'function') {
+                                    try {
+                                        await window.loadAdminHTMLFragment();
+                                    } catch (e) {}
+                                }
+                            }
+                            if (typeof window.syncUserUI === 'function') window.syncUserUI();
+                            if (typeof window._crRolesApplyUI === 'function') window._crRolesApplyUI();
                         }
-                        localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
-                        if (typeof window.syncUserUI === 'function') window.syncUserUI();
+                    } catch(e) {
+                        console.warn("Error leyendo perfil previo:", e);
                     }
-                } catch(e) {
-                    console.warn("Error leyendo perfil previo:", e);
-                }
 
-                await window.syncCurrentUserToCloud({ ultimoIngreso: new Date().toISOString() });
+                    await window.syncCurrentUserToCloud({ ultimoIngreso: new Date().toISOString() });
+                }
+            } finally {
+                window._authLoginInProgress = false;
+                try {
+                    if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('dt_login_in_progress');
+                } catch (e) {}
             }
         };
     }
@@ -599,6 +723,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (typeof window.logoutUser === 'function') {
         const originalLogoutUser = window.logoutUser;
         window.logoutUser = function(e) {
+            window._adminFragmentLoaded = false;
             if (auth) {
                 auth.signOut().catch(err => console.warn("Error en Firebase Auth signOut:", err));
             }
@@ -669,14 +794,17 @@ window.addEventListener('DOMContentLoaded', () => {
     if (auth) {
         auth.onAuthStateChanged(async (fbUser) => {
             if (!fbUser) {
-                // Si no hay sesión activa ni usuario en caché, generar sesión anónima para habilitar pedidos y reglas
+                // NO llamar a signInAnonymously() de inmediato si ya existe una sesión previa en localStorage ('dt_user')
+                // o si hay un proceso de login en curso.
+                if (_hasPreviousSession() || _isLoginInProgress()) {
+                    return;
+                }
+
+                // Si no hay sesión previa ni usuario en caché ni login en curso, generar sesión anónima para habilitar pedidos y reglas
                 try {
-                    const storedUser = localStorage.getItem('dt_user');
-                    if (!storedUser) {
-                        auth.signInAnonymously().catch(err => {
-                            console.warn("Aviso: No se pudo crear sesión anónima inicial:", err.message || err);
-                        });
-                    }
+                    auth.signInAnonymously().catch(err => {
+                        console.warn("Aviso: No se pudo crear sesión anónima inicial:", err.message || err);
+                    });
                 } catch (e) { }
                 return;
             }
@@ -689,30 +817,51 @@ window.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (fbUser && fbUser.email) {
-                const email = fbUser.email.toLowerCase().trim();
-                const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
-                    ? (window.SUPER_ADMINS.includes(email) || fbUser.uid === 'JT7c41zATQNrhzvWL4CdQxCAiby1')
-                    : (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com' || fbUser.uid === 'JT7c41zATQNrhzvWL4CdQxCAiby1');
-                
-                // Si el usuario en memoria estaba vacío, hidratarlo directamente desde fbUser
-                let activeUser = _getSyncUser();
-                if (!activeUser || !activeUser.email) {
-                    activeUser = {
-                        email: email,
-                        name: fbUser.displayName || email.split('@')[0],
-                        picture: fbUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fbUser.displayName || 'Admin')}&background=d81b60&color=fff&bold=true`,
-                        role: isSuper ? 'admin' : 'cliente',
-                        rol: isSuper ? 'admin' : 'cliente',
-                        isAdmin: isSuper,
-                        points: 15
-                    };
-                    window.currentUser = activeUser;
-                    try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) { }
+            const email = (fbUser.email || '').toLowerCase().trim();
+            const uid = fbUser.uid;
+            const isSuper = _isSuperAdminUser({ email, uid });
+            
+            // Si el usuario en memoria estaba vacío, hidratarlo directamente desde fbUser
+            let activeUser = _getSyncUser();
+            if (!activeUser || !activeUser.email) {
+                activeUser = {
+                    email: email || 'pablojose182017@gmail.com',
+                    uid: uid,
+                    name: fbUser.displayName || (email ? email.split('@')[0] : 'Admin'),
+                    picture: fbUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fbUser.displayName || 'Admin')}&background=d81b60&color=fff&bold=true`,
+                    role: isSuper ? 'admin' : 'cliente',
+                    rol: isSuper ? 'admin' : 'cliente',
+                    isAdmin: isSuper,
+                    points: 15
+                };
+                window.currentUser = activeUser;
+                try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) { }
+            } else if (isSuper) {
+                activeUser.role = 'admin';
+                activeUser.rol = 'admin';
+                activeUser.isAdmin = true;
+                if (uid) activeUser.uid = uid;
+                window.currentUser = activeUser;
+                try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) { }
+            }
+
+            // Si el usuario que inicia sesión es SuperAdmin (pablojose182017@gmail.com o UID JT7c41zATQNrhzvWL4CdQxCAiby1),
+            // llamar a loadAdminHTMLFragment() inmediatamente después de completar la autenticación, sin abortar la carga.
+            if (isSuper) {
+                if (typeof window.loadAdminHTMLFragment === 'function') {
+                    try {
+                        await window.loadAdminHTMLFragment();
+                    } catch (e) {
+                        console.error("Error al cargar fragmento admin para SuperAdmin tras autenticación:", e);
+                    }
                 }
+                if (typeof window.syncUserUI === 'function') await window.syncUserUI();
+                if (typeof window._crRolesApplyUI === 'function') window._crRolesApplyUI();
+            }
 
-                let profileChanged = false;
+            let profileChanged = false;
 
+            if (email) {
                 try {
                     const doc = await db.collection("usuarios").doc(email).get();
                     if (doc.exists) {
@@ -747,18 +896,24 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                 } catch (err) {
                     console.warn("Error leyendo perfil en onAuthStateChanged:", err);
-                } finally {
-                    activeUser = _getSyncUser();
-                    if (activeUser && (activeUser.email || '').toLowerCase().trim() === email) {
-                        if (profileChanged) {
-                            try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) {}
-                        }
-                        // FIX: Reintento seguro de sincronización UI para roles protegidos tras Auth.
-                        // Ahora está DESACOPLADO de doc.exists, por lo que un SuperAdmin sin perfil comercial igual cargará el panel.
-                        if (profileChanged || isSuper || (activeUser && (activeUser.isAdmin || activeUser.role === 'admin' || activeUser.rol === 'admin'))) {
-                            if (typeof window.syncUserUI === 'function') window.syncUserUI();
-                        }
+                }
+            }
+
+            activeUser = _getSyncUser();
+            if (activeUser && ((activeUser.email || '').toLowerCase().trim() === email || isSuper)) {
+                if (profileChanged) {
+                    try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) {}
+                }
+                // FIX: Reintento seguro de sincronización UI para roles protegidos tras Auth.
+                // Ahora está DESACOPLADO de doc.exists, por lo que un SuperAdmin sin perfil comercial igual cargará el panel.
+                if (profileChanged || isSuper || (activeUser && (activeUser.isAdmin || activeUser.role === 'admin' || activeUser.rol === 'admin'))) {
+                    if (typeof window.loadAdminHTMLFragment === 'function' && (isSuper || (activeUser && (activeUser.isAdmin || activeUser.role === 'admin')))) {
+                        try {
+                            await window.loadAdminHTMLFragment();
+                        } catch (e) {}
                     }
+                    if (typeof window.syncUserUI === 'function') await window.syncUserUI();
+                    if (typeof window._crRolesApplyUI === 'function') window._crRolesApplyUI();
                 }
             }
         });
