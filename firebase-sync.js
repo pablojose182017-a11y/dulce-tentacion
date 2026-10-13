@@ -636,13 +636,21 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (auth && response && response.credential) {
                     try {
                         const googleCred = firebase.auth.GoogleAuthProvider.credential(response.credential);
-                        if (auth.currentUser && auth.currentUser.isAnonymous) {
-                            await auth.currentUser.linkWithCredential(googleCred).catch(async (e) => {
-                                if (e.code === 'auth/credential-already-in-use') {
-                                    await auth.signInWithCredential(googleCred);
-                                } else throw e;
-                            });
-                            console.log("✓ Cuenta autenticada/vinculada exitosamente con Google.");
+                        if (auth.currentUser) {
+                            if (auth.currentUser.isAnonymous) {
+                                try {
+                                    await auth.currentUser.linkWithCredential(googleCred);
+                                    console.log("✓ Cuenta anónima vinculada exitosamente con Google.");
+                                } catch (linkErr) {
+                                    if (linkErr.code === 'auth/credential-already-in-use' || linkErr.code === 'auth/email-already-in-use') {
+                                        await auth.signInWithCredential(googleCred);
+                                    } else {
+                                        throw linkErr;
+                                    }
+                                }
+                            } else if (auth.currentUser.email !== (window.currentUser && window.currentUser.email)) {
+                                await auth.signInWithCredential(googleCred);
+                            }
                         } else {
                             await auth.signInWithCredential(googleCred);
                             console.log("✓ Firebase Auth autenticado con ID Token de Google.");

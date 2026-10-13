@@ -1040,7 +1040,7 @@ window.handleCredentialResponse = function (response) {
 
 // 3. TABLA DE USUARIOS DEL ADMINISTRADOR EN TIEMPO REAL
 window.renderUsersTable = function () {
-    db.collection('usuarios').onSnapshot((snapshot) => {
+    return db.collection('usuarios').onSnapshot((snapshot) => {
         const listaUsuarios = [];
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -1083,6 +1083,8 @@ window.renderUsersTable = function () {
             }
             if (typeof renderAdminUsers === 'function') renderAdminUsers();
         }
+    }, (err) => {
+        console.warn("[renderUsersTable] Acceso denegado o error en listener de usuarios:", err.message || err);
     });
 };
 
@@ -1129,10 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isPrivileged) {
                 // Solo suscribir si aún no hay listener activo
                 if (!_usuariosAdminUnsub) {
-                    window.renderUsersTable();
-                    // renderUsersTable() internamente llama onSnapshot y devuelve el unsub
-                    // No podemos capturarlo directamente sin refactoring mayor; esto es suficiente
-                    // para evitar la suscripción en guests.
+                    _usuariosAdminUnsub = window.renderUsersTable();
                 }
             } else {
                 // Usuario autenticado pero sin privilegios: desuscribir si existía

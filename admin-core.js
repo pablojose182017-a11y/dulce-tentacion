@@ -841,6 +841,8 @@ window.renderAdminClaims = function() {
             });
         });
         tbody.innerHTML = html;
+    }, (err) => {
+        console.warn("[renderAdminClaims] Permisos insuficientes o error en solicitudes_puntos:", err.message || err);
     });
 };
 
