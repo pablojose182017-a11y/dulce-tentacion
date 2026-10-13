@@ -489,7 +489,9 @@ async function loginCustomUser(e) {
                 localExists = dbUsers.some(u => u && u.email && u.email.toLowerCase() === email);
             } catch (e) {}
 
-            if (err.code === 'auth/user-not-found') {
+            if (err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+                return showAuthMessage('Correo o contraseña incorrectos. Verifica tus datos o regístrate si no tienes cuenta.', 'error');
+            } else if (err.code === 'auth/user-not-found') {
                 if (localExists) {
                     return showAuthMessage('Tu cuenta es antigua. Por seguridad, regístrate nuevamente con este correo para migrar tus datos y conservar tu historial.', 'error');
                 }
@@ -498,6 +500,10 @@ async function loginCustomUser(e) {
                 return showAuthMessage('Contraseña incorrecta. Por favor intenta de nuevo.', 'error');
             } else if (err.code === 'auth/too-many-requests') {
                 return showAuthMessage('Demasiados intentos fallidos. Por favor, intenta más tarde.', 'error');
+            } else if (err.code === 'auth/user-disabled') {
+                return showAuthMessage('⛔ Tu cuenta ha sido deshabilitada.', 'error');
+            } else if (err.code === 'auth/network-request-failed') {
+                return showAuthMessage('Error de conexión a internet. Revisa tu red.', 'error');
             }
             return showAuthMessage('Error de autenticación: ' + (err.message || err.code), 'error');
         }
@@ -569,6 +575,12 @@ async function registerCustomUser(e) {
                 return showAuthMessage('Este correo ya está registrado en la nube. Por favor inicia sesión.', 'error');
             } else if (err.code === 'auth/weak-password') {
                 return showAuthMessage('La contraseña es demasiado débil (mínimo 6 caracteres).', 'error');
+            } else if (err.code === 'auth/invalid-email') {
+                return showAuthMessage('El correo electrónico no es válido.', 'error');
+            } else if (err.code === 'auth/operation-not-allowed') {
+                return showAuthMessage('El registro por correo no está habilitado actualmente.', 'error');
+            } else if (err.code === 'auth/network-request-failed') {
+                return showAuthMessage('Error de conexión a internet. Revisa tu red.', 'error');
             }
             return showAuthMessage('Error al registrar: ' + (err.message || err.code), 'error');
         }

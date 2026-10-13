@@ -10,6 +10,11 @@ const ADMIN_PATHS = [
 
 const FIREBASE_API_KEY = 'AIzaSyAXsUDZeDStUV1oqfBfHre84u4u9TxYr1E';
 const FIREBASE_PROJECT_ID = 'ps-punto-dulce';
+const SUPER_ADMIN_EMAILS = [
+    'pablojose182017@gmail.com',
+    'dulcestentaciones2004@gmail.com'
+];
+const CREATOR_UID = 'JT7c41zATQNrhzvWL4CdQxCAiby1';
 
 function isBackupPath(pathname) {
     return /\.(?:bak|backup-[^/]+|before-[^/]+)$/i.test(pathname);
@@ -83,15 +88,20 @@ export async function authorizeAdminAsset(request, env = {}, fetcher = fetch) {
             return errorResponse(401, 'La sesión no corresponde a una cuenta de personal activa.');
         }
 
+        const accountEmail = (account.email || '').toLowerCase().trim();
+        const isSuperAdminAccount = SUPER_ADMIN_EMAILS.includes(accountEmail) || account.localId === CREATOR_UID;
+
         const roleUrl = `${firestoreBase}/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/roles/${encodeURIComponent(account.localId)}`;
         const roleResponse = await fetcher(roleUrl, {
             headers: { Authorization: `Bearer ${idToken}` }
         });
 
-        let roleLevel = 0;
-        if (roleResponse.ok) {
+        let roleLevel = isSuperAdminAccount ? 100 : 0;
+        if (roleResponse.ok && !isSuperAdminAccount) {
             const roleData = await roleResponse.json();
             roleLevel = firestoreIntegerValue(roleData.fields && roleData.fields.nivel);
+        } else if (isSuperAdminAccount) {
+            roleLevel = 100;
         } else if (roleResponse.status !== 404) {
             let errorCode = 'UNKNOWN';
             try {

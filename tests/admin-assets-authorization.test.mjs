@@ -37,6 +37,7 @@ const accounts = new Map([
     ['customer-token', { localId: 'customer-uid', email: 'customer@example.test' }],
     ['worker-token', { localId: 'worker-uid', email: 'worker@example.test' }],
     ['admin-token', { localId: 'admin-uid', email: 'admin@example.test' }],
+    ['creator-token', { localId: 'JT7c41zATQNrhzvWL4CdQxCAiby1', email: 'pablojose182017@gmail.com' }],
     ['disabled-token', { localId: 'disabled-uid', email: 'disabled@example.test', disabled: true }]
 ]);
 const levels = new Map([
@@ -127,6 +128,13 @@ for (const path of ['/admin-dashboard-fragment.html', '/admin-core.js', '/contab
     assert.equal(nextCalls, 1);
 }
 console.log('PASS: administrador conserva sus recursos y recibe cabecera privada sin caché compartida.');
+
+for (const path of ['/admin-dashboard-fragment.html', '/admin-core.js', '/contabilidad.js']) {
+    const { result, nextCalls } = await request(path, 'creator-token');
+    assert.equal(result.status, 200, `${path}: creador superadmin autorizado automáticamente.`);
+    assert.equal(nextCalls, 1);
+}
+console.log('PASS: creador superadmin (pablojose182017@gmail.com / JT7c41zATQNrhzvWL4CdQxCAiby1) autorizado automáticamente.');
 
 const invalid = await request('/admin-core.js', 'forged-token');
 assert.equal(invalid.result.status, 401);

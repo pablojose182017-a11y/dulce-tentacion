@@ -137,6 +137,11 @@ window.loadAdminHTMLFragment = async function() {
         }
         protectedActionsContainer.remove();
 
+        // Forzar reactivación visual inmediata de los botones recién insertados
+        if (typeof window._crRolesApplyUI === 'function') {
+            window._crRolesApplyUI();
+        }
+
         // FASE 2.4A: Cargar admin-core.js
         await window.loadProtectedAdminScript('/admin-core.js?v=1', 'admin-core.js');
 
@@ -160,12 +165,17 @@ const originalSyncUserUI = window.syncUserUI;
 if (originalSyncUserUI) {
     window.syncUserUI = async function() {
         const activeUser = _getSyncUser();
-        if (activeUser && activeUser.email) {
-            const uEmail = activeUser.email.toLowerCase().trim();
-            const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
-                ? window.SUPER_ADMINS.includes(uEmail)
-                : (uEmail === 'pablojose182017@gmail.com' || uEmail === 'dulcestentaciones2004@gmail.com');
-            const role = activeUser.role || activeUser.rol;
+        const authUser = (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser : null;
+        const checkEmail = (activeUser && activeUser.email) ? activeUser.email.toLowerCase().trim() : (authUser && authUser.email ? authUser.email.toLowerCase().trim() : '');
+        const checkUid = (authUser && authUser.uid) ? authUser.uid : (activeUser && activeUser.uid ? activeUser.uid : '');
+
+        if (checkEmail || checkUid) {
+            const isSuper = (typeof window.isSuperAdmin === 'function')
+                ? window.isSuperAdmin({ email: checkEmail, uid: checkUid })
+                : ((typeof window.SUPER_ADMINS !== 'undefined')
+                    ? (window.SUPER_ADMINS.includes(checkEmail) || checkUid === 'JT7c41zATQNrhzvWL4CdQxCAiby1')
+                    : (checkEmail === 'pablojose182017@gmail.com' || checkEmail === 'dulcestentaciones2004@gmail.com' || checkUid === 'JT7c41zATQNrhzvWL4CdQxCAiby1'));
+            const role = activeUser ? (activeUser.role || activeUser.rol) : (isSuper ? 'admin' : '');
             const isAdmin = isSuper || role === 'admin';
             const isTrabajador = role === 'trabajador';
             
@@ -216,6 +226,7 @@ if (isLocalhost && useEmulator) {
 }
 
 window.db = db; // Expuesto globalmente para acceso desde script.js y otros módulos
+window.auth = auth;
 console.log("Firebase Firestore y Auth inicializados.");
 
 // --- CONFIGURACIÓN DINÁMICA GLOBAL (VIP) ---
@@ -534,6 +545,11 @@ window.addEventListener('DOMContentLoaded', () => {
             // Sincronizar de inmediato el usuario activo con Firestore
             if (window.currentUser) {
                 const email = (window.currentUser.email || '').toLowerCase().trim();
+                const isSuper = (typeof window.isSuperAdmin === 'function')
+                    ? window.isSuperAdmin(email)
+                    : ((typeof window.SUPER_ADMINS !== 'undefined')
+                        ? window.SUPER_ADMINS.includes(email)
+                        : (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com'));
                 // Si el usuario ya tenía puntos en Firestore, mantenerlos intactos
                 try {
                     const doc = await db.collection("usuarios").doc(email).get();
@@ -653,7 +669,15 @@ window.addEventListener('DOMContentLoaded', () => {
     if (auth) {
         auth.onAuthStateChanged(async (fbUser) => {
             if (!fbUser) {
-                // FASE 5.9: Lazy Auth. No se crea identidad anónima automáticamente al navegar.
+                // Si no hay sesión activa ni usuario en caché, generar sesión anónima para habilitar pedidos y reglas
+                try {
+                    const storedUser = localStorage.getItem('dt_user');
+                    if (!storedUser) {
+                        auth.signInAnonymously().catch(err => {
+                            console.warn("Aviso: No se pudo crear sesión anónima inicial:", err.message || err);
+                        });
+                    }
+                } catch (e) { }
                 return;
             }
             
@@ -668,16 +692,32 @@ window.addEventListener('DOMContentLoaded', () => {
             if (fbUser && fbUser.email) {
                 const email = fbUser.email.toLowerCase().trim();
                 const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
-                    ? window.SUPER_ADMINS.includes(email)
-                    : (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com');
+                    ? (window.SUPER_ADMINS.includes(email) || fbUser.uid === 'JT7c41zATQNrhzvWL4CdQxCAiby1')
+                    : (email === 'pablojose182017@gmail.com' || email === 'dulcestentaciones2004@gmail.com' || fbUser.uid === 'JT7c41zATQNrhzvWL4CdQxCAiby1');
                 
+                // Si el usuario en memoria estaba vacío, hidratarlo directamente desde fbUser
+                let activeUser = _getSyncUser();
+                if (!activeUser || !activeUser.email) {
+                    activeUser = {
+                        email: email,
+                        name: fbUser.displayName || email.split('@')[0],
+                        picture: fbUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fbUser.displayName || 'Admin')}&background=d81b60&color=fff&bold=true`,
+                        role: isSuper ? 'admin' : 'cliente',
+                        rol: isSuper ? 'admin' : 'cliente',
+                        isAdmin: isSuper,
+                        points: 15
+                    };
+                    window.currentUser = activeUser;
+                    try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) { }
+                }
+
                 let profileChanged = false;
 
                 try {
                     const doc = await db.collection("usuarios").doc(email).get();
                     if (doc.exists) {
                         const data = doc.data();
-                        const activeUser = _getSyncUser();
+                        activeUser = _getSyncUser();
                         if (activeUser && (activeUser.email || '').toLowerCase().trim() === email) {
                             // Restaurar puntos
                             if (data.points !== undefined && data.points !== activeUser.points) {
@@ -708,14 +748,14 @@ window.addEventListener('DOMContentLoaded', () => {
                 } catch (err) {
                     console.warn("Error leyendo perfil en onAuthStateChanged:", err);
                 } finally {
-                    const activeUser = _getSyncUser();
+                    activeUser = _getSyncUser();
                     if (activeUser && (activeUser.email || '').toLowerCase().trim() === email) {
                         if (profileChanged) {
                             try { localStorage.setItem('dt_user', JSON.stringify(activeUser)); } catch (e) {}
                         }
                         // FIX: Reintento seguro de sincronización UI para roles protegidos tras Auth.
                         // Ahora está DESACOPLADO de doc.exists, por lo que un SuperAdmin sin perfil comercial igual cargará el panel.
-                        if (profileChanged || isSuper || activeUser.isAdmin || activeUser.role === 'admin' || activeUser.rol === 'admin') {
+                        if (profileChanged || isSuper || (activeUser && (activeUser.isAdmin || activeUser.role === 'admin' || activeUser.rol === 'admin'))) {
                             if (typeof window.syncUserUI === 'function') window.syncUserUI();
                         }
                     }

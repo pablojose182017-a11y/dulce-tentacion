@@ -44,10 +44,19 @@ window.SUPER_ADMINS = window.SUPER_ADMINS || Object.freeze([
 ]);
 var SUPER_ADMINS = window.SUPER_ADMINS;
 
-function isSuperAdmin(email) {
-    if (!email) return false;
+function isSuperAdmin(userOrEmail) {
+    if (!userOrEmail) return false;
+    if (typeof userOrEmail === 'string') {
+        const norm = userOrEmail.toLowerCase().trim();
+        const list = window.SUPER_ADMINS || SUPER_ADMINS || [];
+        return list.includes(norm) || norm === 'pablojose182017@gmail.com';
+    }
+    const email = (userOrEmail.email || '').toLowerCase().trim();
+    const uid = userOrEmail.uid || userOrEmail.localId || '';
+    if (uid === 'JT7c41zATQNrhzvWL4CdQxCAiby1') return true;
+    if (email === 'pablojose182017@gmail.com') return true;
     const list = window.SUPER_ADMINS || SUPER_ADMINS || [];
-    return list.includes(email.toLowerCase().trim());
+    return list.includes(email);
 }
 window.isSuperAdmin = isSuperAdmin;
 
@@ -87,7 +96,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (typeof currentUser === 'undefined' || !currentUser) return;
 
         const normEmail = (currentUser.email || '').toLowerCase().trim();
-        const isSuper = isSuperAdmin(normEmail);
+        const isSuper = isSuperAdmin(currentUser);
 
         // Proteger Super Admins: siempre admin, nunca modificable
         if (isSuper) {
