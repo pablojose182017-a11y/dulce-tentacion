@@ -387,9 +387,9 @@
         </div>
         
         <!-- BANNER DE TORTAS PERSONALIZADAS -->
-        <div style="background: linear-gradient(135deg, #fff0f5, #fde8ef); border: 2px dashed #d81b60; border-radius: var(--r-lg); padding: 20px; text-align: center; margin-bottom: 24px; cursor: pointer; transition: all 0.3s ease;" onclick="openWizard()" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-            <h3 style="color: #9f1239; font-size: 1.4rem; margin-bottom: 8px;">🎂 Torta para Celebración (Bajo Pedido)</h3>
-            <p style="color: #6d3a1f; font-size: 0.95rem; margin-bottom: 15px;">¡Personaliza el sabor, tamaño y diseño de tu torta ideal!</p>
+        <div class="cake-custom-banner-editorial" onclick="openWizard()">
+            <h3 class="cake-custom-banner-title">🎂 Torta para Celebración (Bajo Pedido)</h3>
+            <p class="cake-custom-banner-desc">¡Personaliza el sabor, tamaño y diseño de tu torta ideal!</p>
             <button class="btn-gold" style="pointer-events: none; padding: 10px 24px;">Personalizar Torta ✨</button>
         </div>
 
@@ -706,7 +706,7 @@
     <div class="cart-modal" id="cartModal" onclick="handleCartBdrop(event)">
         <div class="cart-content">
             <div class="cart-header">
-                <h3>🛒 Tu Carrito</h3>
+                <h3><span class="cart-header-icon">🛒</span> Tu Carrito</h3>
                 <button class="auth-close-btn" style="position:static;" onclick="toggleCart()">✕</button>
             </div>
             <div id="cart-user-greeting"></div>
