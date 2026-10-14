@@ -336,11 +336,13 @@ window.addEventListener('DOMContentLoaded', () => {
                             <option value="Admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
                         </select>
                         <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
+                    </div>
                     <select onchange="window.ejecutarAccionUsuario(this, '${u.email}')" style="width:100%; padding:6px; font-size:0.75rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; background:#f8fafc; color:#334155; font-weight:600; cursor:pointer; margin-top:4px;">
                         <option value="">⚙️ Más Acciones...</option>
                         <option value="editar">✏️ Editar Perfil</option>
                         ${(u.password !== undefined) ? `<option value="clave">🔑 Cambiar Clave</option>` : ''}
                         <option value="bloquear">${u.blocked ? '🔓 Desbloquear Cuenta' : '🔒 Bloquear Cuenta'}</option>
+                        <option value="eliminar">🗑️ Eliminar Usuario</option>
                         ${ u.premioRedesReclamado 
                             ? `<option value="" disabled>🎁 Redes ya validadas</option>`
                             : `<option value="redes">✅ Validar Redes (Regalo)</option>`
@@ -381,6 +383,11 @@ window.ejecutarAccionUsuario = function(selectElement, email) {
                 adminToggleBlock(email);
             }
             break;
+        case 'eliminar':
+            if (typeof window.adminDeleteUser === 'function') {
+                window.adminDeleteUser(email);
+            }
+            break;
         case 'redes':
             if (typeof window.entregarPremioRedesDesdeTabla === 'function') {
                 window.entregarPremioRedesDesdeTabla(email);
@@ -393,97 +400,140 @@ window.entregarPremioRedesDesdeTabla = function(email) {
     if (!confirm("¿Confirmas que este cliente ya verificó sus redes sociales en persona y se le entregará el premio de bienvenida?")) return;
     
     // Actualizar db_users local
-    const uidx = db_users.findIndex(u => u.email === email);
-    if (uidx !== -1) {
-        db_users[uidx].premioRedesReclamado = true;
-        if (typeof saveUsersDB === 'function') saveUsersDB();
-        
-        // Actualizar currentUser si es el mismo usuario (por si el admin se auto-asigna)
-        if (typeof currentUser !== 'undefined' && currentUser && currentUser.email === email) {
-            currentUser.premioRedesReclamado = true;
-            if (typeof saveUser === 'function') saveUser();
-            if (typeof syncUserUI === 'function') syncUserUI();
-            if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
-        }
+    const uidx = (typeof db_users !== 'undefined' && Array.isArray(db_users))
+        ? db_users.findIndex(u => (u.email || '').toLowerCase().trim() === (email || '').toLowerCase().trim())
+        : -1;
 
-        // Refrescar tabla visualmente de inmediato
-        if (typeof window.renderAdminUsers === 'function') window.renderAdminUsers();
-
-        // Actualizar en Firestore
-        if (typeof db !== 'undefined' && typeof db.collection === 'function') {
-            db.collection('usuarios').doc(email).set({ premioRedesReclamado: true }, { merge: true })
-                .then(() => {
-                    if (typeof showToast === 'function') showToast("Redes validadas. Premio registrado.", "✅");
-                })
-                .catch(err => {
-                    console.error("Error al actualizar premioRedesReclamado en Firestore:", err);
-                    alert("Error de conexión al guardar el premio. Verifica tu internet.");
-                });
-        }
-    } else {
+    if (uidx === -1) {
         alert("Usuario no encontrado en la base de datos local.");
+        return;
+    }
+
+    const prevDbVal = db_users[uidx].premioRedesReclamado;
+    const isCurrent = (typeof currentUser !== 'undefined' && currentUser && (currentUser.email || '').toLowerCase().trim() === (email || '').toLowerCase().trim());
+    const prevCurrentVal = isCurrent ? currentUser.premioRedesReclamado : undefined;
+
+    // Actualización local/optimista
+    db_users[uidx].premioRedesReclamado = true;
+    if (typeof saveUsersDB === 'function') saveUsersDB();
+    
+    // Actualizar currentUser si es el mismo usuario
+    if (isCurrent) {
+        currentUser.premioRedesReclamado = true;
+        if (typeof saveUser === 'function') saveUser();
+        if (typeof syncUserUI === 'function') syncUserUI();
+        if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
+    }
+
+    // Refrescar tabla visualmente de inmediato
+    if (typeof window.renderAdminUsers === 'function') window.renderAdminUsers();
+
+    // Actualizar en Firestore con rollback si falla
+    if (typeof db !== 'undefined' && typeof db.collection === 'function') {
+        db.collection('usuarios').doc(email).set({ premioRedesReclamado: true }, { merge: true })
+            .then(() => {
+                if (typeof showToast === 'function') showToast("Redes validadas. Premio registrado.", "✅");
+            })
+            .catch(err => {
+                console.error("Error al actualizar premioRedesReclamado en Firestore:", err);
+
+                // Rollback del estado local si la nube rechaza la operación
+                if (typeof db_users !== 'undefined' && db_users[uidx]) {
+                    db_users[uidx].premioRedesReclamado = prevDbVal;
+                    if (typeof saveUsersDB === 'function') saveUsersDB();
+                }
+                if (isCurrent) {
+                    currentUser.premioRedesReclamado = prevCurrentVal;
+                    if (typeof saveUser === 'function') saveUser();
+                    if (typeof syncUserUI === 'function') syncUserUI();
+                    if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
+                }
+                if (typeof window.renderAdminUsers === 'function') window.renderAdminUsers();
+
+                alert("Error de conexión al guardar el premio en Firestore. Los cambios no se guardaron.");
+            });
+    } else {
+        if (typeof showToast === 'function') showToast("Redes validadas localmente (sin conexión a base de datos)", "⚠️");
     }
 };
 
 window.confirmRoleChange = function (email) {
     const targetEmail = (email || '').toLowerCase().trim();
-    if (SUPER_ADMINS.includes(targetEmail)) {
+    if (typeof window.isSuperAdmin === 'function' ? window.isSuperAdmin(targetEmail) : (window.SUPER_ADMINS || []).includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
         return;
     }
 
     const selectEl = document.getElementById(`roleSel_${(email || '').replace(/[@.]/g, '_')}`);
     if (!selectEl) return;
-    const newRole = selectEl.value; // 'Normal', 'VIP', 'Trabajador', 'Admin'
+    const rawRole = (selectEl.value || '').trim();
+    const roleKey = rawRole.toLowerCase(); // 'normal', 'vip', 'trabajador', 'admin'
 
     const u = (typeof db_users !== 'undefined' && Array.isArray(db_users))
         ? db_users.find(x => x && x.email && (x.email || '').toLowerCase().trim() === targetEmail)
         : null;
     if (!u) return;
 
-    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && newRole !== 'Admin') {
+    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && roleKey !== 'admin') {
         if (typeof showToast === 'function') showToast('No se puede quitar el rol al administrador principal', 'error');
         return;
     }
 
-    // Limpiar roles previos
+    // Copia de seguridad del estado previo para rollback en caso de fallo en base de datos
+    const backupState = {
+        role: u.role,
+        rol: u.rol,
+        isAdmin: !!u.isAdmin,
+        vip: !!u.vip,
+        isVip: !!u.isVip,
+        vipStatus: u.vipStatus,
+        vipExpiresAt: u.vipExpiresAt,
+        adminEmails: typeof adminEmails !== 'undefined' ? [...adminEmails] : [],
+        workerEmails: typeof workerEmails !== 'undefined' ? [...workerEmails] : []
+    };
+
+    // 1. Limpiar listas de correo de privilegios
     adminEmails = (typeof adminEmails !== 'undefined') ? adminEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail) : [];
     workerEmails = (typeof workerEmails !== 'undefined') ? workerEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail) : [];
-    u.vip = false;
-    u.isVip = false;
-    delete u.vipExpiresAt;
-    u.role = 'cliente';
-    u.rol = 'cliente';
-    u.vipStatus = 'inactivo';
-    u.isAdmin = false;
 
-    // Aplicar nuevo rol y vigencia VIP si aplica
-    if (newRole === 'Admin') {
+    // 2. Aplicar el nuevo rol respetando la separación estricta entre Rol y Membresía VIP:
+    //    Cambiar entre Administrador, Trabajador o Normal NO debe alterar el estado VIP ni su vencimiento.
+    let displayRoleName = 'Normal';
+    if (roleKey === 'admin') {
         adminEmails.push(u.email);
         u.role = 'admin';
         u.rol = 'admin';
         u.isAdmin = true;
-    } else if (newRole === 'Trabajador') {
+        displayRoleName = 'Admin';
+    } else if (roleKey === 'trabajador') {
         workerEmails.push(u.email);
         u.role = 'trabajador';
         u.rol = 'trabajador';
         u.isAdmin = false;
-    } else if (newRole === 'VIP') {
-        u.vip = true;
-        u.isVip = true;
-        u.role = 'vip';
-        u.rol = 'vip';
-        u.vipStatus = 'activo';
-        u.vipExpiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000); // Vigencia 30 días
-    } else { // Normal
+        displayRoleName = 'Trabajador';
+    } else if (roleKey === 'vip') {
+        // Asignación explícita de VIP: asegura activación y vigencia de 30 días si no tiene una activa
         u.role = 'cliente';
         u.rol = 'cliente';
-        u.vip = false;
-        u.isVip = false;
-        u.vipStatus = 'inactivo';
+        u.isAdmin = false;
+        u.vip = true;
+        u.isVip = true;
+        u.vipStatus = 'activo';
+        let baseTime = Date.now();
+        if (u.vipExpiresAt) {
+            const expTime = typeof u.vipExpiresAt === 'number' ? u.vipExpiresAt : new Date(u.vipExpiresAt).getTime();
+            if (expTime > baseTime) baseTime = expTime;
+        }
+        u.vipExpiresAt = baseTime + (30 * 24 * 60 * 60 * 1000);
+        displayRoleName = 'VIP';
+    } else { // 'normal' o 'cliente'
+        u.role = 'cliente';
+        u.rol = 'cliente';
+        u.isAdmin = false;
+        displayRoleName = 'Normal';
     }
 
-    // 1. Guardar en 'dt_registered_users'
+    // 3. Sincronizar en dt_registered_users
     let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
     if (!Array.isArray(regUsers)) regUsers = [];
     let rIdx = regUsers.findIndex(x => x && x.email && x.email.toLowerCase().trim() === targetEmail);
@@ -509,13 +559,13 @@ window.confirmRoleChange = function (email) {
     }
     localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
 
-    // 2. Persistir localmente en los DB targets explícitos
+    // 4. Persistir localmente en los DB targets explícitos
     if (typeof saveAdminEmails === 'function') saveAdminEmails();
     try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch (e) { }
     try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
     if (typeof saveUsersDB === 'function') saveUsersDB();
 
-    // 3. Si el usuario modificado es el que está logueado en este navegador, actualizar su 'dt_user' al instante
+    // 5. Si el usuario modificado es el que está logueado en este navegador, actualizar currentUser al instante
     const currUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || 'null');
     if (currUser && (currUser.email || '').toLowerCase().trim() === targetEmail) {
         currUser.role = u.role;
@@ -524,6 +574,7 @@ window.confirmRoleChange = function (email) {
         currUser.vip = !!u.vip;
         currUser.isVip = !!u.isVip;
         currUser.vipStatus = u.vipStatus;
+        currUser.vipExpiresAt = u.vipExpiresAt;
         currUser.points = u.points !== undefined ? u.points : currUser.points;
         currentUser = currUser;
         localStorage.setItem('dt_user', JSON.stringify(currentUser));
@@ -531,7 +582,7 @@ window.confirmRoleChange = function (email) {
         if (typeof window.syncUserUI === 'function') window.syncUserUI();
     }
 
-    // 4. Sincronizar el documento correspondiente en Firestore
+    // 6. Sincronizar el documento correspondiente en Firestore (usuarios/{email})
     if (window.db && typeof window.db.collection === 'function') {
         const firestoreData = {
             nombre: u.name || '',
@@ -541,21 +592,43 @@ window.confirmRoleChange = function (email) {
             isAdmin: !!u.isAdmin,
             vip: !!u.vip,
             isVip: !!u.isVip,
-            vipStatus: u.vipStatus,
-            vipExpiresAt: u.vipExpiresAt,
+            vipStatus: u.vipStatus || (u.vip ? 'activo' : 'inactivo'),
             points: u.points !== undefined ? u.points : 0,
             blocked: !!u.blocked,
             updatedAt: new Date().toISOString()
         };
+        if (u.vipExpiresAt !== undefined) {
+            firestoreData.vipExpiresAt = u.vipExpiresAt;
+        }
         window.db.collection('usuarios').doc(u.email).set(firestoreData, { merge: true })
             .then(() => console.log('Usuario sincronizado con Firestore exitosamente:', u.email))
-            .catch(err => console.warn('Error sincronizando usuario con Firestore:', err));
+            .catch(err => {
+                console.error('Error sincronizando rol de usuario con Firestore:', err);
+                // Rollback de seguridad
+                u.role = backupState.role;
+                u.rol = backupState.rol;
+                u.isAdmin = backupState.isAdmin;
+                u.vip = backupState.vip;
+                u.isVip = backupState.isVip;
+                u.vipStatus = backupState.vipStatus;
+                u.vipExpiresAt = backupState.vipExpiresAt;
+                adminEmails = backupState.adminEmails;
+                workerEmails = backupState.workerEmails;
+                if (typeof saveAdminEmails === 'function') saveAdminEmails();
+                if (typeof saveUsersDB === 'function') saveUsersDB();
+                if (typeof renderAdminUsers === 'function') renderAdminUsers();
+                if (typeof showToast === 'function') {
+                    showToast('Error al guardar en el servidor: ' + (err && err.message ? err.message : 'Permiso denegado'), 'error');
+                } else {
+                    alert('Error al guardar en base de datos. Se revirtió el cambio de rol.');
+                }
+            });
     }
 
-    renderAdminUsers();
+    if (typeof renderAdminUsers === 'function') renderAdminUsers();
     if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
 
-    if (typeof showToast === 'function') showToast('Rol actualizado a: ' + newRole, '✅');
+    if (typeof showToast === 'function') showToast('Rol actualizado a: ' + displayRoleName, '✅');
 };
 
 

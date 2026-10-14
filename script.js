@@ -3065,58 +3065,79 @@ function setRoleFilter(role, el) {
 
 
 function confirmRoleChange(email) {
+    if (typeof window.confirmRoleChange === 'function' && window.confirmRoleChange !== confirmRoleChange) {
+        return window.confirmRoleChange(email);
+    }
     const targetEmail = (email || '').toLowerCase().trim();
-    if (SUPER_ADMINS.includes(targetEmail)) {
+    if (typeof window.isSuperAdmin === 'function' ? window.isSuperAdmin(targetEmail) : (window.SUPER_ADMINS || SUPER_ADMINS || []).includes(targetEmail)) {
         alert("Acción denegada: No se puede modificar ni remover a un Dueño/Super Administrador.");
         return;
     }
 
     const selectEl = document.getElementById(`roleSel_${(email || '').replace(/[@.]/g, '_')}`);
     if (!selectEl) return;
-    const newRole = selectEl.value;
+    const rawRole = (selectEl.value || '').trim();
+    const roleKey = rawRole.toLowerCase();
 
-    if (ADMIN_EMAILS.includes(email) && newRole !== 'admin') {
+    if (ADMIN_EMAILS.includes(email) && roleKey !== 'admin') {
         showToast('No se puede quitar el rol al administrador principal', 'error');
         return;
     }
 
-    const u = db_users.find(x => x.email === email);
+    const u = db_users.find(x => (x.email || '').toLowerCase().trim() === targetEmail);
     if (!u) return;
 
-    // Reset roles
-    adminEmails = adminEmails.filter(e => e !== email);
-    workerEmails = workerEmails.filter(e => e !== email);
-    u.vip = false;
-    u.role = 'cliente';
-    u.isAdmin = false;
+    // Reset roles en listas
+    adminEmails = adminEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail);
+    workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== targetEmail);
 
-    // Apply new role
-    if (newRole === 'admin') {
-        adminEmails.push(email);
+    let displayRole = 'Normal';
+    if (roleKey === 'admin') {
+        adminEmails.push(u.email);
         u.role = 'admin';
+        u.rol = 'admin';
         u.isAdmin = true;
-    } else if (newRole === 'trabajador') {
-        workerEmails.push(email);
+        displayRole = 'Admin';
+    } else if (roleKey === 'trabajador') {
+        workerEmails.push(u.email);
         u.role = 'trabajador';
-    } else if (newRole === 'vip') {
+        u.rol = 'trabajador';
+        u.isAdmin = false;
+        displayRole = 'Trabajador';
+    } else if (roleKey === 'vip') {
         let baseTime = Date.now();
         if (u.vip && u.vipExpiresAt && new Date(u.vipExpiresAt) > new Date()) {
             baseTime = new Date(u.vipExpiresAt).getTime();
         }
         u.vipExpiresAt = new Date(baseTime + (30 * 24 * 60 * 60 * 1000)).toISOString();
         u.vip = true;
-        u.role = 'cliente'; // As requested by user, reset role to 'cliente' (base behavior for VIPs typically)
+        u.isVip = true;
+        u.vipStatus = 'activo';
+        u.role = 'cliente';
+        u.rol = 'cliente';
+        u.isAdmin = false;
+        displayRole = 'VIP';
+    } else {
+        u.role = 'cliente';
+        u.rol = 'cliente';
+        u.isAdmin = false;
+        displayRole = 'Normal';
     }
 
     saveAdminEmails();
     saveUsersDB();
     renderAdminUsers();
-    if (currentUser && currentUser.email === email) { syncUserUI(); }
+    if (currentUser && (currentUser.email || '').toLowerCase().trim() === targetEmail) { 
+        currentUser.role = u.role;
+        currentUser.rol = u.rol;
+        currentUser.isAdmin = !!u.isAdmin;
+        syncUserUI(); 
+    }
 
-    if (newRole === 'vip') {
+    if (roleKey === 'vip') {
         alert(`Membresía VIP actualizada para ${email}. Vigente hasta el ${new Date(u.vipExpiresAt).toLocaleDateString('es-CO')}.`);
     } else {
-        showToast('Rol actualizado a: ' + newRole, '✅');
+        showToast('Rol actualizado a: ' + displayRole, '✅');
     }
 }
 

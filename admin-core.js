@@ -70,25 +70,126 @@ window.renderAdminUsers = function() {
                     <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
                         <div style="display:flex; gap:4px; width:100%; align-items:center;">
                             <select id="roleSel_${(u.email || '').replace(/[@.]/g, '_')}" style="flex:1; padding:4px; font-size:0.75rem; border-radius:4px; border:1px solid #ccc; outline:none;">
-                                <option value="normal" ${!isUserAdmin && !isUserWorker && !u.vip ? 'selected' : ''}>Normal</option>
-                                <option value="vip" ${u.vip && !isUserAdmin && !isUserWorker ? 'selected' : ''}>VIP</option>
-                                <option value="trabajador" ${isUserWorker ? 'selected' : ''}>Trabajador</option>
-                                <option value="admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
+                                <option value="Normal" ${!isUserAdmin && !isUserWorker && !u.vip ? 'selected' : ''}>Normal</option>
+                                <option value="VIP" ${u.vip && !isUserAdmin && !isUserWorker ? 'selected' : ''}>VIP</option>
+                                <option value="Trabajador" ${isUserWorker ? 'selected' : ''}>Trabajador</option>
+                                <option value="Admin" ${isUserAdmin ? 'selected' : ''}>Admin</option>
                             </select>
-                            <button onclick="confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
+                            <button onclick="window.confirmRoleChange ? window.confirmRoleChange('${u.email}') : confirmRoleChange('${u.email}')" style="background:var(--brand-pink); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">Guardar</button>
                         </div>
-                        <div style="display:flex; gap:4px; width:100%;">
-                            <button onclick="window.abrirModalEditarUsuarioAdmin('${u.email}')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1; font-weight:600;">✏️ Editar</button>
-                            ${(u.password !== undefined) ? `<button onclick="adminChangePassword('${u.email}')" style="background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; flex:1;">🔑 Cambiar Clave</button>` : ''}
-                        </div>
-                        <button onclick="adminToggleBlock('${u.email}')" style="background:${u.blocked ? '#d1fae5' : '#fee2e2'}; color:${u.blocked ? '#059669' : '#e11d48'}; border:none; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">${u.blocked ? 'Desbloquear' : 'Bloquear'}</button>
-                        <button onclick="adminDeleteUser('${u.email}')" style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:0.75rem; width:100%;">Eliminar</button>
+                        <select onchange="window.ejecutarAccionUsuario(this, '${u.email}')" style="width:100%; padding:6px; font-size:0.75rem; border-radius:6px; border:1px solid #cbd5e1; outline:none; background:#f8fafc; color:#334155; font-weight:600; cursor:pointer; margin-top:4px;">
+                            <option value="">⚙️ Más Acciones...</option>
+                            <option value="editar">✏️ Editar Perfil</option>
+                            ${(u.password !== undefined) ? `<option value="clave">🔑 Cambiar Clave</option>` : ''}
+                            <option value="bloquear">${u.blocked ? '🔓 Desbloquear Cuenta' : '🔒 Bloquear Cuenta'}</option>
+                            <option value="eliminar">🗑️ Eliminar Usuario</option>
+                            ${ u.premioRedesReclamado 
+                                ? `<option value="" disabled>🎁 Redes ya validadas</option>`
+                                : `<option value="redes">✅ Validar Redes (Regalo)</option>`
+                            }
+                        </select>
                     </div>`}
                 </td>
             </tr>
             `;
     }).join('');
-}
+};
+
+window.ejecutarAccionUsuario = function(selectElement, email) {
+    const accion = selectElement.value;
+    
+    // 1. Restablecer el select al valor neutro
+    selectElement.value = "";
+    
+    // 2. Enrutar a la función correspondiente
+    if (!accion) return;
+    
+    switch (accion) {
+        case 'editar':
+            if (typeof window.abrirModalEditarUsuarioAdmin === 'function') {
+                window.abrirModalEditarUsuarioAdmin(email);
+            }
+            break;
+        case 'clave':
+            if (typeof adminChangePassword === 'function') {
+                adminChangePassword(email);
+            }
+            break;
+        case 'bloquear':
+            if (typeof adminToggleBlock === 'function') {
+                adminToggleBlock(email);
+            }
+            break;
+        case 'eliminar':
+            if (typeof window.adminDeleteUser === 'function') {
+                window.adminDeleteUser(email);
+            }
+            break;
+        case 'redes':
+            if (typeof window.entregarPremioRedesDesdeTabla === 'function') {
+                window.entregarPremioRedesDesdeTabla(email);
+            }
+            break;
+    }
+};
+
+window.entregarPremioRedesDesdeTabla = function(email) {
+    if (!confirm("¿Confirmas que este cliente ya verificó sus redes sociales en persona y se le entregará el premio de bienvenida?")) return;
+    
+    const uidx = (typeof db_users !== 'undefined' && Array.isArray(db_users))
+        ? db_users.findIndex(u => (u.email || '').toLowerCase().trim() === (email || '').toLowerCase().trim())
+        : -1;
+
+    if (uidx === -1) {
+        alert("Usuario no encontrado en la base de datos local.");
+        return;
+    }
+
+    const prevDbVal = db_users[uidx].premioRedesReclamado;
+    const isCurrent = (typeof currentUser !== 'undefined' && currentUser && (currentUser.email || '').toLowerCase().trim() === (email || '').toLowerCase().trim());
+    const prevCurrentVal = isCurrent ? currentUser.premioRedesReclamado : undefined;
+
+    // Actualización local/optimista
+    db_users[uidx].premioRedesReclamado = true;
+    if (typeof saveUsersDB === 'function') saveUsersDB();
+
+    if (isCurrent) {
+        currentUser.premioRedesReclamado = true;
+        if (typeof saveUser === 'function') saveUser();
+        if (typeof syncUserUI === 'function') syncUserUI();
+        if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
+    }
+
+    if (typeof window.renderAdminUsers === 'function') window.renderAdminUsers();
+
+    // Sincronización en Firestore con reversión segura en caso de fallo
+    if (typeof db !== 'undefined' && typeof db.collection === 'function') {
+        db.collection('usuarios').doc(email).set({ premioRedesReclamado: true }, { merge: true })
+            .then(() => {
+                if (typeof showToast === 'function') showToast("Redes validadas. Premio registrado.", "✅");
+            })
+            .catch(err => {
+                console.error("Error al actualizar premioRedesReclamado en Firestore:", err);
+                
+                // Rollback del estado local si la nube rechaza la operación
+                if (typeof db_users !== 'undefined' && db_users[uidx]) {
+                    db_users[uidx].premioRedesReclamado = prevDbVal;
+                    if (typeof saveUsersDB === 'function') saveUsersDB();
+                }
+                if (isCurrent) {
+                    currentUser.premioRedesReclamado = prevCurrentVal;
+                    if (typeof saveUser === 'function') saveUser();
+                    if (typeof syncUserUI === 'function') syncUserUI();
+                    if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();
+                }
+                if (typeof window.renderAdminUsers === 'function') window.renderAdminUsers();
+
+                alert("Error de conexión al guardar el premio en Firestore. Los cambios no se guardaron.");
+            });
+    } else {
+        if (typeof showToast === 'function') showToast("Redes validadas localmente (sin conexión a base de datos)", "⚠️");
+    }
+};
 
 // Extracted from script.js
 window.adminRegisterUser = function() {
@@ -335,7 +436,11 @@ window.updateUserRole = function (email, role) {
     const selWrapper = document.createElement('div');
     selWrapper.innerHTML = `<select id="roleSel_${(email || '').replace(/[@.]/g, '_')}"><option value="${role}" selected></option></select>`;
     document.body.appendChild(selWrapper);
-    confirmRoleChange(email);
+    if (typeof window.confirmRoleChange === 'function') {
+        window.confirmRoleChange(email);
+    } else if (typeof confirmRoleChange === 'function') {
+        confirmRoleChange(email);
+    }
     selWrapper.remove();
 };
 
