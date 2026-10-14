@@ -52,8 +52,9 @@ window.renderAdminUsers = function() {
             levelHtml = '<span style="color:#64748b;font-weight:bold;">Cliente Normal</span>';
         }
 
+        const userRowId = `userRow_${userEmailNorm.replace(/[@.]/g, '_')}`;
         return `
-            <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
+            <tr id="${userRowId}" data-email="${escapeHTML(u.email)}" style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
                 <td style="padding:10px; display:flex; align-items:center; gap:10px;">
                     <img src="${safeImg(u.picture)}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:30px;height:30px;border-radius:50%;">
                     <strong>${escapeHTML(u.name)}</strong>

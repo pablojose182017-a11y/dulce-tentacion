@@ -1149,9 +1149,20 @@ window.addEventListener('DOMContentLoaded', () => {
                     if (typeof window.syncUserUI === 'function') window.syncUserUI();
                 }
                 
-                // Re-renderizar si estamos en la vista de admin de usuarios
+                // Re-renderizar si estamos en la vista de admin de usuarios conservando la posición de desplazamiento
                 if (typeof renderAdminUsers === 'function') {
+                    const scrollContainer = document.querySelector('#admin-tab-usuarios .admin-table-scroll');
+                    const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : null;
+                    const prevWindowScrollY = window.scrollY || window.pageYOffset || null;
+
                     renderAdminUsers();
+
+                    if (scrollContainer && prevScrollTop !== null) {
+                        scrollContainer.scrollTop = prevScrollTop;
+                    }
+                    if (prevWindowScrollY !== null) {
+                        window.scrollTo({ top: prevWindowScrollY, behavior: 'instant' });
+                    }
                 }
                 if (typeof renderKitchenUsers === 'function') {
                     renderKitchenUsers();

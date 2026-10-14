@@ -312,8 +312,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 levelHtml = '<span style="color:#64748b;font-weight:bold;">Normal</span>';
             }
 
+            const userRowId = `userRow_${uEmailNorm.replace(/[@.]/g, '_')}`;
             return `
-        <tr style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
+        <tr id="${userRowId}" data-email="${u.email}" style="border-bottom:1px solid #eee; background:${!isSuper && u.blocked ? '#fff1f2' : (isSuper ? '#fffbeb' : (isUserAdmin ? '#eff6ff' : (isUserWorker ? '#f3e8ff' : 'transparent')))}">
             <td style="padding:10px; display:flex; align-items:center; gap:10px;">
                 <img src="${u.picture || 'logo-pys.png'}" onerror="this.onerror=null; this.src='logo-pys.png';" style="width:30px;height:30px;border-radius:50%;">
                 <strong>${u.name}</strong>
@@ -582,7 +583,44 @@ window.confirmRoleChange = function (email) {
         if (typeof window.syncUserUI === 'function') window.syncUserUI();
     }
 
-    // 6. Sincronizar el documento correspondiente en Firestore (usuarios/{email})
+    // 6. Capturar contexto de desplazamiento previo para no desorientar al usuario
+    const scrollContainer = document.querySelector('#admin-tab-usuarios .admin-table-scroll');
+    const tableScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+    const windowScrollY = window.scrollY || window.pageYOffset || 0;
+    const userRowSelector = `#userRow_${targetEmail.replace(/[@.]/g, '_')}`;
+
+    function restoreUserContext(highlight = true) {
+        if (scrollContainer) {
+            scrollContainer.scrollTop = tableScrollTop;
+        }
+        window.scrollTo({ top: windowScrollY, behavior: 'instant' });
+
+        const targetRow = document.querySelector(userRowSelector);
+        if (targetRow) {
+            if (typeof targetRow.scrollIntoView === 'function') {
+                targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            if (highlight) {
+                targetRow.style.transition = 'background-color 0.4s ease';
+                const originalBg = targetRow.style.backgroundColor;
+                targetRow.style.backgroundColor = '#dcfce7'; // verde suave de éxito
+                setTimeout(() => {
+                    targetRow.style.backgroundColor = originalBg;
+                }, 1500);
+            }
+        }
+    }
+
+    // Guardar referencia al botón que disparó la acción para feedback de carga
+    const selectElem = document.getElementById(`roleSel_${(email || '').replace(/[@.]/g, '_')}`);
+    const saveBtn = selectElem ? selectElem.parentElement?.querySelector('button') : null;
+    const originalBtnText = saveBtn ? saveBtn.innerText : '';
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = '⏳';
+    }
+
+    // 7. Sincronizar el documento correspondiente en Firestore (usuarios/{email})
     if (window.db && typeof window.db.collection === 'function') {
         const firestoreData = {
             nombre: u.name || '',
@@ -601,9 +639,21 @@ window.confirmRoleChange = function (email) {
             firestoreData.vipExpiresAt = u.vipExpiresAt;
         }
         window.db.collection('usuarios').doc(u.email).set(firestoreData, { merge: true })
-            .then(() => console.log('Usuario sincronizado con Firestore exitosamente:', u.email))
+            .then(() => {
+                console.log('Usuario sincronizado con Firestore exitosamente:', u.email);
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = originalBtnText || 'Guardar';
+                }
+                if (typeof showToast === 'function') showToast('Rol confirmado y guardado: ' + displayRoleName, '✅');
+                restoreUserContext(true);
+            })
             .catch(err => {
                 console.error('Error sincronizando rol de usuario con Firestore:', err);
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = originalBtnText || 'Guardar';
+                }
                 // Rollback de seguridad
                 u.role = backupState.role;
                 u.rol = backupState.rol;
@@ -617,18 +667,26 @@ window.confirmRoleChange = function (email) {
                 if (typeof saveAdminEmails === 'function') saveAdminEmails();
                 if (typeof saveUsersDB === 'function') saveUsersDB();
                 if (typeof renderAdminUsers === 'function') renderAdminUsers();
+                restoreUserContext(false);
                 if (typeof showToast === 'function') {
                     showToast('Error al guardar en el servidor: ' + (err && err.message ? err.message : 'Permiso denegado'), 'error');
                 } else {
                     alert('Error al guardar en base de datos. Se revirtió el cambio de rol.');
                 }
             });
+    } else {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalBtnText || 'Guardar';
+        }
+        if (typeof showToast === 'function') showToast('Rol guardado localmente: ' + displayRoleName, '✅');
     }
 
     if (typeof renderAdminUsers === 'function') renderAdminUsers();
     if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
 
-    if (typeof showToast === 'function') showToast('Rol actualizado a: ' + displayRoleName, '✅');
+    // Restaurar inmediatamente el desplazamiento para que el usuario no sienta parpadeo
+    restoreUserContext(true);
 };
 
 
