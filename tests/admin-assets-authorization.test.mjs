@@ -81,7 +81,10 @@ async function request(path, token, fetcher = mockFetch) {
 const expectedProtectedRoutes = [
     '/admin-dashboard-fragment.html*', '/admin-core.js*', '/contabilidad.js*',
     '/costos-recetas.js*', '/guardian-financiero.js*', '/ai-guardian-bundle.js*',
-    '/ai-guardian-bundle.min.js*', '/*.bak', '/*.backup-*', '/*.before-*'
+    '/ai-guardian-bundle.min.js*', '/*.bak', '/*.backup-*', '/*.before-*',
+    '/ai-core/*', '/*.md', '/*.zip', '/*.log', '/*.ps1', '/*.py',
+    '/mojibake-*', '/fix*', '/extract*', '/test*', '/analyze-*', '/apply*',
+    '/debug-*', '/reverse-*', '/corruption-*', '/*-tests.js*', '/emulator-test-runner.html*'
 ];
 assert.deepEqual(routeConfig.include, expectedProtectedRoutes, 'Pages debe invocar la barrera en cada archivo y patrón de respaldo privado.');
 
@@ -89,6 +92,17 @@ const publicHome = await request('/index.html', null);
 assert.equal(publicHome.result.status, 200, 'La página pública de la tienda debe seguir accesible sin sesión.');
 assert.equal(publicHome.nextCalls, 1, 'La tienda pública debe continuar hasta el servidor estático.');
 console.log('PASS: index.html sigue siendo público y no queda detrás de la autorización administrativa.');
+
+for (const path of [
+    '/ai-core/ai-security.js', '/AUDITORIA_MAESTRA_PLATAFORMA_V1.md',
+    '/WhatsApp Unknown.zip', '/test-stock-synchronization.js',
+    '/mojibake-detector-simple.js', '/emulator-test-runner.html'
+]) {
+    const { result, nextCalls } = await request(path, null);
+    assert.equal(result.status, 404, `${path}: recurso interno debe ser bloqueado con 404.`);
+    assert.equal(nextCalls, 0, `${path}: la función no debe entregar archivos internos.`);
+}
+console.log('PASS: archivos internos, documentación, zips y scripts de diagnóstico devuelven 404 Not Found.');
 
 for (const path of [
     '/admin-dashboard-fragment.html', '/admin-dashboard-fragment.html.before-old',

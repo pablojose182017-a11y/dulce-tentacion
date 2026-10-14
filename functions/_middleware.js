@@ -20,6 +20,16 @@ function isBackupPath(pathname) {
     return /\.(?:bak|backup-[^/]+|before-[^/]+)$/i.test(pathname);
 }
 
+function isInternalBlockedPath(pathname) {
+    const p = pathname.toLowerCase();
+    return p.startsWith('/ai-core/') ||
+           /\.(?:md|zip|log|ps1|py)$/i.test(p) ||
+           /^\/(?:mojibake-|fix|extract|analyze-|apply|test|debug-|reverse-|corruption-)/i.test(p) ||
+           /-tests\.js$/i.test(p) ||
+           p === '/emulator-test-runner.html' ||
+           p === '/test_browser.html';
+}
+
 function minimumRole(pathname) {
     if (isBackupPath(pathname)) return 50;
     if (pathname.startsWith('/admin-dashboard-fragment.html') || pathname.startsWith('/admin-core.js')) return 20;
@@ -50,6 +60,9 @@ function firestoreIntegerValue(field) {
 /** Returns a denial Response or null when the request is authorized. */
 export async function authorizeAdminAsset(request, env = {}, fetcher = fetch) {
     const pathname = new URL(request.url).pathname;
+    if (isInternalBlockedPath(pathname)) {
+        return errorResponse(404, 'No encontrado.');
+    }
     if (!isProtectedPath(pathname)) return null;
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {

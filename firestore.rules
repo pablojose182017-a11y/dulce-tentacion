@@ -41,15 +41,23 @@ service cloud.firestore {
              && request.resource.data.get('email', '') == email
              && request.resource.data.keys().hasOnly([
                'nombre', 'name', 'username', 'email', 'foto', 'photo',
-               'role', 'rol', 'isAdmin', 'vip', 'isVip', 'points', 'puntos',
+               'role', 'rol', 'isAdmin', 'vip', 'isVip', 'vipStatus', 'vipExpiresAt', 'points', 'puntos',
                'telefono', 'phone', 'direccion', 'address', 'estado', 'blocked',
-               'ultimaSincronizacion', 'ultimoIngreso'
+               'ultimaSincronizacion', 'ultimoIngreso', 'birthday'
              ])
              && ownProfileRoleMatchesAuthority()
              && request.resource.data.get('vip', false) == false
              && request.resource.data.get('isVip', false) == false
+             && request.resource.data.get('vipStatus', 'inactivo') == 'inactivo'
+             && !('vipExpiresAt' in request.resource.data)
              && request.resource.data.get('blocked', false) == false
-             && request.resource.data.get('estado', 'activo') == 'activo';
+             && request.resource.data.get('estado', 'activo') == 'activo'
+             && request.resource.data.get('points', 0) is number
+             && request.resource.data.get('points', 0) >= 0
+             && request.resource.data.get('points', 0) <= 15
+             && request.resource.data.get('puntos', 0) is number
+             && request.resource.data.get('puntos', 0) >= 0
+             && request.resource.data.get('puntos', 0) <= 15;
     }
 
     // =========================================================================
@@ -95,17 +103,13 @@ service cloud.firestore {
       // Actualización: Admin+ tiene control. El propio usuario está RESTRINGIDO.
       allow update: if isCreator() || getRol() >= 50 || 
                     (request.auth != null && request.auth.token.email == email &&
-                     // Campos inmutables para el cliente:
-                     request.resource.data.role == resource.data.role &&
-                     request.resource.data.rol == resource.data.rol &&
-                     request.resource.data.isAdmin == resource.data.isAdmin &&
-                     request.resource.data.vip == resource.data.vip &&
-                     request.resource.data.isVip == resource.data.isVip &&
-                     request.resource.data.blocked == resource.data.blocked &&
-                     request.resource.data.points == resource.data.points &&
-                     request.resource.data.puntosActuales == resource.data.puntosActuales &&
-                     request.resource.data.historialPuntos == resource.data.historialPuntos &&
-                     request.resource.data.puntosReclamadosIDs == resource.data.puntosReclamadosIDs
+                     // Bloqueo estricto de campos sensibles para el cliente:
+                     !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+                       'role', 'rol', 'isAdmin', 'nivel',
+                       'points', 'puntos', 'puntosActuales', 'historialPuntos', 'puntosReclamadosIDs',
+                       'vip', 'isVip', 'vipStatus', 'vipExpiresAt',
+                       'blocked', 'estado'
+                     ])
                     );
                     
       allow delete: if isCreator();

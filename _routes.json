@@ -10,7 +10,24 @@
     "/ai-guardian-bundle.min.js*",
     "/*.bak",
     "/*.backup-*",
-    "/*.before-*"
+    "/*.before-*",
+    "/ai-core/*",
+    "/*.md",
+    "/*.zip",
+    "/*.log",
+    "/*.ps1",
+    "/*.py",
+    "/mojibake-*",
+    "/fix*",
+    "/extract*",
+    "/test*",
+    "/analyze-*",
+    "/apply*",
+    "/debug-*",
+    "/reverse-*",
+    "/corruption-*",
+    "/*-tests.js*",
+    "/emulator-test-runner.html*"
   ],
   "exclude": []
 }
