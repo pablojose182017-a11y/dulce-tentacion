@@ -1501,8 +1501,7 @@ window.SUPER_ADMINS = window.SUPER_ADMINS || Object.freeze([
 var SUPER_ADMINS = window.SUPER_ADMINS;
 
 const ADMIN_EMAILS = [
-    ...SUPER_ADMINS,
-    'pablojose182020@gmail.com'
+    ...SUPER_ADMINS
 ];
 let adminEmails = [...ADMIN_EMAILS];
 let workerEmails = [];
@@ -1510,7 +1509,7 @@ let stockConfig = {};
 if (typeof window !== 'undefined') window.stockConfig = stockConfig;
 window.addEventListener('DOMContentLoaded', () => {
     try { const db = localStorage.getItem('dt_users_db'); if (db) db_users = JSON.parse(db); } catch (e) { }
-    try { const adms = localStorage.getItem('dt_admin_emails'); if (adms) { adminEmails = [...new Set([...JSON.parse(adms), ...ADMIN_EMAILS])]; } } catch (e) { }
+    try { const adms = localStorage.getItem('dt_admin_emails'); if (adms) { adminEmails = [...new Set([...JSON.parse(adms), ...SUPER_ADMINS])]; } } catch (e) { }
     try { const wks = localStorage.getItem('dt_worker_emails'); if (wks) workerEmails = JSON.parse(wks); } catch (e) { }
     try {
         const stk = localStorage.getItem('dt_stock_config');
@@ -1573,8 +1572,9 @@ window.addEventListener('DOMContentLoaded', () => {
             db_users.push(existingUser);
         }
 
-        // Forzar rol de admin si es SUPER_ADMIN o está en la whitelist
-        if (SUPER_ADMINS.includes(normEmail) || ADMIN_EMAILS.includes(normEmail)) {
+        // Forzar rol de admin únicamente si es SUPER_ADMIN
+        const isSa = typeof window.isSuperAdmin === 'function' ? window.isSuperAdmin(normEmail) : (window.SUPER_ADMINS || SUPER_ADMINS || []).includes(normEmail);
+        if (isSa) {
             existingUser.role = 'admin';
             existingUser.isAdmin = true;
             existingUser.blocked = false;
@@ -1594,8 +1594,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 function saveAdminEmails() {
-    ADMIN_EMAILS.forEach(email => {
-        if (!adminEmails.includes(email)) adminEmails.push(email);
+    (window.SUPER_ADMINS || SUPER_ADMINS || []).forEach(email => {
+        const norm = (email || '').toLowerCase().trim();
+        if (norm && !adminEmails.some(e => (e || '').toLowerCase().trim() === norm)) {
+            adminEmails.push(norm);
+        }
     });
     try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch (e) { }
     try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
@@ -3079,7 +3082,8 @@ function confirmRoleChange(email) {
     const rawRole = (selectEl.value || '').trim();
     const roleKey = rawRole.toLowerCase();
 
-    if (ADMIN_EMAILS.includes(email) && roleKey !== 'admin') {
+    const isTargetSuper = typeof window.isSuperAdmin === 'function' ? window.isSuperAdmin(targetEmail) : (window.SUPER_ADMINS || SUPER_ADMINS || []).includes(targetEmail);
+    if (isTargetSuper && roleKey !== 'admin') {
         showToast('No se puede quitar el rol al administrador principal', 'error');
         return;
     }

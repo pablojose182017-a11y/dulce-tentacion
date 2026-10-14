@@ -475,7 +475,8 @@ window.confirmRoleChange = function (email) {
         : null;
     if (!u) return;
 
-    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email) && roleKey !== 'admin') {
+    const isTargetSuper = typeof window.isSuperAdmin === 'function' ? window.isSuperAdmin(targetEmail) : (window.SUPER_ADMINS || []).includes(targetEmail);
+    if (isTargetSuper && roleKey !== 'admin') {
         if (typeof showToast === 'function') showToast('No se puede quitar el rol al administrador principal', 'error');
         return;
     }
@@ -534,56 +535,58 @@ window.confirmRoleChange = function (email) {
         displayRoleName = 'Normal';
     }
 
-    // 3. Sincronizar en dt_registered_users
-    let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-    if (!Array.isArray(regUsers)) regUsers = [];
-    let rIdx = regUsers.findIndex(x => x && x.email && x.email.toLowerCase().trim() === targetEmail);
-    const regObj = {
-        role: u.role,
-        rol: u.rol,
-        isAdmin: !!u.isAdmin,
-        vip: !!u.vip,
-        isVip: !!u.isVip,
-        vipStatus: u.vipStatus,
-        vipExpiresAt: u.vipExpiresAt,
-        points: u.points !== undefined ? u.points : 0
-    };
-    if (rIdx !== -1) {
-        regUsers[rIdx] = { ...regUsers[rIdx], ...regObj };
-    } else {
-        regUsers.push({
-            name: u.name || '',
-            email: u.email,
-            phone: u.phone || '',
-            ...regObj
-        });
+    function applyLocalPersistence() {
+        // Sincronizar en dt_registered_users
+        let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+        if (!Array.isArray(regUsers)) regUsers = [];
+        let rIdx = regUsers.findIndex(x => x && x.email && x.email.toLowerCase().trim() === targetEmail);
+        const regObj = {
+            role: u.role,
+            rol: u.rol,
+            isAdmin: !!u.isAdmin,
+            vip: !!u.vip,
+            isVip: !!u.isVip,
+            vipStatus: u.vipStatus,
+            vipExpiresAt: u.vipExpiresAt,
+            points: u.points !== undefined ? u.points : 0
+        };
+        if (rIdx !== -1) {
+            regUsers[rIdx] = { ...regUsers[rIdx], ...regObj };
+        } else {
+            regUsers.push({
+                name: u.name || '',
+                email: u.email,
+                phone: u.phone || '',
+                ...regObj
+            });
+        }
+        localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
+        // Persistir localmente en los DB targets explícitos
+        if (typeof saveAdminEmails === 'function') saveAdminEmails();
+        try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch (e) { }
+        try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
+        if (typeof saveUsersDB === 'function') saveUsersDB();
+
+        // Si el usuario modificado es el que está logueado en este navegador, actualizar currentUser
+        const currUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || 'null');
+        if (currUser && (currUser.email || '').toLowerCase().trim() === targetEmail) {
+            currUser.role = u.role;
+            currUser.rol = u.rol;
+            currUser.isAdmin = !!u.isAdmin;
+            currUser.vip = !!u.vip;
+            currUser.isVip = !!u.isVip;
+            currUser.vipStatus = u.vipStatus;
+            currUser.vipExpiresAt = u.vipExpiresAt;
+            currUser.points = u.points !== undefined ? u.points : currUser.points;
+            currentUser = currUser;
+            localStorage.setItem('dt_user', JSON.stringify(currentUser));
+            localStorage.setItem('dt_logged_user', JSON.stringify(currentUser));
+            if (typeof window.syncUserUI === 'function') window.syncUserUI();
+        }
     }
-    localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
 
-    // 4. Persistir localmente en los DB targets explícitos
-    if (typeof saveAdminEmails === 'function') saveAdminEmails();
-    try { localStorage.setItem('dt_admin_emails', JSON.stringify(adminEmails)); } catch (e) { }
-    try { localStorage.setItem('dt_worker_emails', JSON.stringify(workerEmails)); } catch (e) { }
-    if (typeof saveUsersDB === 'function') saveUsersDB();
-
-    // 5. Si el usuario modificado es el que está logueado en este navegador, actualizar currentUser al instante
-    const currUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || 'null');
-    if (currUser && (currUser.email || '').toLowerCase().trim() === targetEmail) {
-        currUser.role = u.role;
-        currUser.rol = u.rol;
-        currUser.isAdmin = !!u.isAdmin;
-        currUser.vip = !!u.vip;
-        currUser.isVip = !!u.isVip;
-        currUser.vipStatus = u.vipStatus;
-        currUser.vipExpiresAt = u.vipExpiresAt;
-        currUser.points = u.points !== undefined ? u.points : currUser.points;
-        currentUser = currUser;
-        localStorage.setItem('dt_user', JSON.stringify(currentUser));
-        localStorage.setItem('dt_logged_user', JSON.stringify(currentUser));
-        if (typeof window.syncUserUI === 'function') window.syncUserUI();
-    }
-
-    // 6. Capturar contexto de desplazamiento previo para no desorientar al usuario
+    // Capturar contexto de desplazamiento previo para no desorientar al usuario
     const scrollContainer = document.querySelector('#admin-tab-usuarios .admin-table-scroll');
     const tableScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
     const windowScrollY = window.scrollY || window.pageYOffset || 0;
@@ -603,7 +606,7 @@ window.confirmRoleChange = function (email) {
             if (highlight) {
                 targetRow.style.transition = 'background-color 0.4s ease';
                 const originalBg = targetRow.style.backgroundColor;
-                targetRow.style.backgroundColor = '#dcfce7'; // verde suave de éxito
+                targetRow.style.backgroundColor = '#dcfce7'; // verde suave de confirmación
                 setTimeout(() => {
                     targetRow.style.backgroundColor = originalBg;
                 }, 1500);
@@ -620,7 +623,7 @@ window.confirmRoleChange = function (email) {
         saveBtn.innerText = '⏳';
     }
 
-    // 7. Sincronizar el documento correspondiente en Firestore (usuarios/{email})
+    // Sincronizar con Cloud Firestore (usuarios/{email})
     if (window.db && typeof window.db.collection === 'function') {
         const firestoreData = {
             nombre: u.name || '',
@@ -638,9 +641,14 @@ window.confirmRoleChange = function (email) {
         if (u.vipExpiresAt !== undefined) {
             firestoreData.vipExpiresAt = u.vipExpiresAt;
         }
+
         window.db.collection('usuarios').doc(u.email).set(firestoreData, { merge: true })
             .then(() => {
                 console.log('Usuario sincronizado con Firestore exitosamente:', u.email);
+                applyLocalPersistence();
+                if (typeof renderAdminUsers === 'function') renderAdminUsers();
+                if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
+
                 if (saveBtn) {
                     saveBtn.disabled = false;
                     saveBtn.innerText = originalBtnText || 'Guardar';
@@ -654,7 +662,7 @@ window.confirmRoleChange = function (email) {
                     saveBtn.disabled = false;
                     saveBtn.innerText = originalBtnText || 'Guardar';
                 }
-                // Rollback de seguridad
+                // Rollback estricto de seguridad
                 u.role = backupState.role;
                 u.rol = backupState.rol;
                 u.isAdmin = backupState.isAdmin;
@@ -675,18 +683,16 @@ window.confirmRoleChange = function (email) {
                 }
             });
     } else {
+        applyLocalPersistence();
+        if (typeof renderAdminUsers === 'function') renderAdminUsers();
+        if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.innerText = originalBtnText || 'Guardar';
         }
         if (typeof showToast === 'function') showToast('Rol guardado localmente: ' + displayRoleName, '✅');
+        restoreUserContext(true);
     }
-
-    if (typeof renderAdminUsers === 'function') renderAdminUsers();
-    if (typeof renderKitchenUsers === 'function') renderKitchenUsers();
-
-    // Restaurar inmediatamente el desplazamiento para que el usuario no sienta parpadeo
-    restoreUserContext(true);
 };
 
 
