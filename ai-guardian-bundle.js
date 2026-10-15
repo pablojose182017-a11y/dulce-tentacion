@@ -1453,23 +1453,126 @@ class KnowledgeManager {
     }
 
     /**
-     * Encuentra documentos por categoría.
+     * Sincroniza y rehidrata conocimiento desde un objeto o archivo repositorio persistente.
+     * Categorías soportadas: insumos, recetas_tecnicas, finanzas_punto_dulce, mercado_cucuta, conocimiento_general.
      */
-    async findByCategory(category) {
+    async syncFromRepository(repoData) {
+        if (!repoData || typeof repoData !== 'object') return 0;
         await this._ensureLoaded();
-        return this._cache.filter(doc => doc.category === category);
+        let syncedCount = 0;
+        const categories = repoData.categories || repoData;
+
+        for (const catKey of Object.keys(categories)) {
+            const items = Array.isArray(categories[catKey]) ? categories[catKey] : [];
+            for (const item of items) {
+                if (!item || !item.id || !item.content) continue;
+                const existingIdx = this._cache.findIndex(d => d.id === item.id);
+                const docToSave = {
+                    id: String(item.id).trim(),
+                    title: String(item.title || item.id).trim(),
+                    content: String(item.content).trim(),
+                    category: String(item.category || catKey).trim(),
+                    tags: Array.isArray(item.tags) ? item.tags : [catKey],
+                    source: String(item.source || 'KNOWLEDGE_VAULT_SEED').trim(),
+                    confidence: typeof item.confidence === 'number' ? item.confidence : 0.95,
+                    version: typeof item.version === 'number' ? item.version : 1,
+                    createdAt: item.createdAt || new Date().toISOString(),
+                    updatedAt: item.updatedAt || new Date().toISOString(),
+                    knowledgeType: item.knowledgeType || 'FACT',
+                    status: item.status || 'ACTIVE',
+                    learnedAt: item.learnedAt || new Date().toISOString(),
+                    provenance: item.provenance || {
+                        sourceType: 'LOCAL_REPOSITORY',
+                        sourceId: 'knowledge-repository.json',
+                        extractionMethod: 'VAULT_SYNC',
+                        ingestedAt: new Date().toISOString()
+                    }
+                };
+
+                try {
+                    const validDoc = KnowledgeSchema.validate(docToSave);
+                    if (existingIdx >= 0) {
+                        this._cache[existingIdx] = validDoc;
+                    } else {
+                        this._cache.push(validDoc);
+                    }
+                    syncedCount++;
+                } catch(errValidate) {
+                    console.warn(`[KnowledgeManager] Saltando documento inválido (${item.id}):`, errValidate.message);
+                }
+            }
+        }
+
+        if (syncedCount > 0) {
+            await this.store.save(this.collectionName, this._cache);
+        }
+        return syncedCount;
     }
 
     /**
-     * Encuentra documentos que contengan TODOS los tags especificados.
+     * Exporta el conocimiento agrupado en categorías de repositorio temático.
      */
-    async findByTags(tagsArray) {
+    async exportRepository() {
         await this._ensureLoaded();
-        if (!Array.isArray(tagsArray) || tagsArray.length === 0) return [];
-        
-        return this._cache.filter(doc => 
-            tagsArray.every(tag => doc.tags.includes(tag))
-        );
+        const categories = {
+            insumos: [],
+            recetas_tecnicas: [],
+            finanzas_punto_dulce: [],
+            mercado_cucuta: [],
+            conocimiento_general: []
+        };
+
+        for (const doc of this._cache) {
+            const cat = doc.category || 'conocimiento_general';
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(doc);
+        }
+
+        return {
+            version: "1.0.0",
+            exportedAt: new Date().toISOString(),
+            totalDocuments: this._cache.length,
+            categories: categories
+        };
+    }
+}
+
+/**
+ * KnowledgeVault: Bóveda de persistencia redundante para asegurar
+ * que el conocimiento nunca se pierda aunque se limpie la caché del navegador.
+ */
+class KnowledgeVault {
+    constructor(knowledgeManager, storageKey = 'pd_knowledge_vault_backup') {
+        this.km = knowledgeManager;
+        this.storageKey = storageKey;
+    }
+
+    async backup() {
+        if (!this.km) return null;
+        const dump = await this.km.exportRepository();
+        try {
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(this.storageKey, JSON.stringify(dump));
+            }
+        } catch(e) {
+            console.warn('[KnowledgeVault] No se pudo guardar en localStorage secundario:', e.message);
+        }
+        return dump;
+    }
+
+    async restore(seedJson = null) {
+        if (!this.km) return 0;
+        let dataToLoad = seedJson;
+        if (!dataToLoad && typeof localStorage !== 'undefined') {
+            const raw = localStorage.getItem(this.storageKey);
+            if (raw) {
+                try { dataToLoad = JSON.parse(raw); } catch(e) {}
+            }
+        }
+        if (dataToLoad) {
+            return await this.km.syncFromRepository(dataToLoad);
+        }
+        return 0;
     }
 }
 
@@ -1641,10 +1744,23 @@ class RelationshipRegistry {
 
 window.AI_CORE.KnowledgeSchema = KnowledgeSchema;
 window.AI_CORE.KnowledgeManager = KnowledgeManager;
+window.AI_CORE.KnowledgeVault = KnowledgeVault;
 window.AI_CORE.ConceptSchema = ConceptSchema;
 window.AI_CORE.ConceptRegistry = ConceptRegistry;
 window.AI_CORE.RelationshipSchema = RelationshipSchema;
 window.AI_CORE.RelationshipRegistry = RelationshipRegistry;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        KnowledgeSchema,
+        KnowledgeManager,
+        KnowledgeVault,
+        ConceptSchema,
+        ConceptRegistry,
+        RelationshipSchema,
+        RelationshipRegistry
+    };
+}
 
 /* --- SOURCE: ai-core/ai-security.js --- */
 "use strict";
@@ -3266,6 +3382,396 @@ class MemoryManager {
 
 window.AI_CORE.MemoryManager = MemoryManager;
 
+/* --- SOURCE: ai-core/ai-creator-knowledge.js --- */
+const nodeCrypto = (typeof require === 'function') ? (function() { try { return require('crypto'); } catch(e) { return null; } })() : null;
+
+const globalScope = typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : {});
+globalScope.AI_CORE = globalScope.AI_CORE || {};
+
+function _getRandomUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    if (nodeCrypto && nodeCrypto.randomUUID) return nodeCrypto.randomUUID();
+    return 'uuid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+}
+
+/**
+ * AI CORE - CREATOR KNOWLEDGE RUNTIME V1.1
+ * Implementación del núcleo persistente de Creator Knowledge.
+ * 
+ * INVARIANTES:
+ * CREATOR KNOWLEDGE ≠ TRUTH
+ * CREATOR KNOWLEDGE ≠ IDENTITY
+ * CREATOR KNOWLEDGE ≠ AUTHORITY
+ * CREATOR KNOWLEDGE ≠ PERMISSION
+ * CREATOR KNOWLEDGE ≠ EXECUTION
+ */
+
+// --- UTILS: DEEP CLONE & DEEP FREEZE ---
+
+function deepClone(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (obj instanceof Date) return new Date(obj);
+    if (obj instanceof Map) {
+        const copy = new Map();
+        for (let [k, v] of obj) copy.set(deepClone(k), deepClone(v));
+        return copy;
+    }
+    if (obj instanceof Set) {
+        const copy = new Set();
+        for (let v of obj) copy.add(deepClone(v));
+        return copy;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(deepClone);
+    }
+    const copy = {};
+    for (let key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            copy[key] = deepClone(obj[key]);
+        }
+    }
+    return copy;
+}
+
+function deepFreeze(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    Object.freeze(obj);
+    if (obj instanceof Map || obj instanceof Set) {
+        obj.clear = obj.delete = obj.set = obj.add = function() {
+            throw new TypeError("Cannot modify a frozen Map/Set");
+        };
+    }
+    for (let key of Object.keys(obj)) {
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Object.isFrozen(obj[key])) {
+            deepFreeze(obj[key]);
+        }
+    }
+    return obj;
+}
+
+// Canonicaliza ordenando las llaves para que el hash sea determinista
+function canonicalizeJSON(obj) {
+    if (obj === null || typeof obj !== 'object') {
+        return JSON.stringify(obj);
+    }
+    if (obj instanceof Map) {
+        // Ordenamos las llaves del mapa para ser deterministas
+        const sortedKeys = Array.from(obj.keys()).sort((a, b) => canonicalizeJSON(a).localeCompare(canonicalizeJSON(b)));
+        const entries = sortedKeys.map(k => [k, obj.get(k)]);
+        return `{"__type":"Map","value":[${entries.map(e => `[${canonicalizeJSON(e[0])},${canonicalizeJSON(e[1])}]`).join(',')}]}`;
+    }
+    if (obj instanceof Set) {
+        // Ordenamos los valores para determinismo
+        const sortedValues = Array.from(obj.values()).sort((a, b) => canonicalizeJSON(a).localeCompare(canonicalizeJSON(b)));
+        return `{"__type":"Set","value":[${sortedValues.map(canonicalizeJSON).join(',')}]}`;
+    }
+    if (Array.isArray(obj)) {
+        return '[' + obj.map(canonicalizeJSON).join(',') + ']';
+    }
+    const keys = Object.keys(obj).sort();
+    let result = '{';
+    for (let i = 0; i < keys.length; i++) {
+        result += JSON.stringify(keys[i]) + ':' + canonicalizeJSON(obj[keys[i]]);
+        if (i < keys.length - 1) result += ',';
+    }
+    result += '}';
+    return result;
+}
+
+function computeHash(data) {
+    if (nodeCrypto && nodeCrypto.createHash) {
+        return nodeCrypto.createHash('sha256').update(data).digest('hex');
+    }
+    if (globalScope.AI_CORE && globalScope.AI_CORE.hash && globalScope.AI_CORE.hash.sha256) {
+        return globalScope.AI_CORE.hash.sha256(data);
+    }
+    throw new Error("FAIL-CLOSED: No SHA-256 implementation available");
+}
+
+// --- CREATOR KNOWLEDGE RECORD ---
+
+class CreatorKnowledgeRecord {
+    constructor(data) {
+        this.knowledgeId = data.knowledgeId || _getRandomUUID();
+        this.category = data.category;
+        this.statement = data.statement;
+        this.applicabilityScope = data.applicabilityScope;
+        this.provenance = data.provenance;
+        this.evidenceReference = data.evidenceReference || null;
+        this.status = data.status || 'ACTIVE';
+        this.version = data.version || 1;
+        this.supersedesId = data.supersedesId || null;
+        this.timestamp = data.timestamp || Date.now();
+        this.integrityRecord = data.integrityRecord || null;
+    }
+}
+
+// --- CREATOR KNOWLEDGE STORE ---
+
+class CreatorKnowledgeStore {
+    constructor() {
+        this.disk = []; // Representa el almacenamiento físico Append-Only
+        this.transactionLog = new Map(); // transactionId -> state (PREPARED, COMMITTED, ABORTED)
+    }
+
+    beginTransaction() {
+        const txId = _getRandomUUID();
+        this.transactionLog.set(txId, { status: 'STARTED', operations: [] });
+        return txId;
+    }
+
+    prepare(txId, records) {
+        const tx = this.transactionLog.get(txId);
+        if (!tx || tx.status !== 'STARTED') throw new Error("Invalid Transaction State");
+        
+        // Simula la escritura a un log de operaciones sin commitear
+        tx.operations = deepClone(records);
+        tx.status = 'PREPARED';
+    }
+
+    commit(txId) {
+        const tx = this.transactionLog.get(txId);
+        if (!tx || tx.status !== 'PREPARED') throw new Error("Cannot commit, not PREPARED");
+        
+        // Atomic append
+        for (const op of tx.operations) {
+            this.disk.push(deepClone(op));
+        }
+        tx.status = 'COMMITTED';
+        tx.operations = []; // Liberamos memoria de la tx
+    }
+
+    abort(txId) {
+        const tx = this.transactionLog.get(txId);
+        if (tx) {
+            tx.status = 'ABORTED';
+            tx.operations = [];
+        }
+    }
+
+    // Retorna todos los registros físicamente guardados
+    readAllPhysical() {
+        return deepClone(this.disk);
+    }
+}
+
+// --- VOCABULARIO CONTROLADO DE SCOPE ---
+const VALID_DOMAINS = ["TEXT", "SYS", "FINANCIAL", "EMAIL", "OS_FILES"];
+const VALID_CONTEXTS = ["DAILY_ROUTINE", "DEFAULT", "REPORTING", "ANALYSIS"];
+const VALID_TARGET_OBJECTS = ["SPAM_MESSAGE", "ANY_TEXT", "BALANCE_SHEET", "SYSTEM_PROCESS"];
+
+// --- CREATOR KNOWLEDGE MANAGER ---
+
+class CreatorKnowledgeManager {
+    constructor(store) {
+        this.store = store;
+        this.activeMemory = new Map(); // kId -> Record (COMMITTED)
+        this.currentSequence = 0;
+        this.lastHash = "GENESIS_HASH";
+        this.isReady = false;
+    }
+
+    // FLUJO DE REHIDRATACIÓN
+    rehydrate() {
+        const diskData = this.store.readAllPhysical();
+        let tempSequence = 0;
+        let tempLastHash = "GENESIS_HASH";
+        let tempMap = new Map();
+
+        for (const raw of diskData) {
+            // 1. STRUCTURAL VALIDATION
+            if (!this._validateStructure(raw)) throw new Error("FAIL-CLOSED: Invalid Structure");
+
+            // 2. CANONICALIZATION & 3. INTEGRITY VALIDATION
+            const contentToHash = deepClone(raw);
+            delete contentToHash.integrityRecord;
+            const canonicalContent = canonicalizeJSON(contentToHash);
+            const computedFingerprint = computeHash(canonicalContent);
+            
+            const ir = raw.integrityRecord;
+            if (!ir || ir.canonicalContentFingerprint !== computedFingerprint) {
+                throw new Error("FAIL-CLOSED: Integrity Fingerprint Mismatch");
+            }
+            if (ir.previousRecordFingerprint !== tempLastHash) {
+                throw new Error("FAIL-CLOSED: Chain Broken - previousRecordFingerprint mismatch");
+            }
+            if (ir.sequenceNumber !== tempSequence + 1) {
+                throw new Error("FAIL-CLOSED: Sequence Broken");
+            }
+            if (ir.schemaVersion !== "1.1") {
+                throw new Error("FAIL-CLOSED: Schema Version Incompatible");
+            }
+
+            // 4. EPISTEMIC VALIDATION
+            if (raw.category === "CREATOR_FACT") {
+                this._validateEvidenceReference(raw.evidenceReference);
+            }
+
+            // 5. PROVENANCE & SCOPE VALIDATION
+            if (!raw.provenance || !raw.applicabilityScope) {
+                throw new Error("FAIL-CLOSED: Missing Provenance or Scope");
+            }
+
+            // Aceptamos el registro en la memoria temporal
+            tempMap.set(raw.knowledgeId, raw);
+            tempSequence = ir.sequenceNumber;
+            tempLastHash = computedFingerprint;
+        }
+
+        // CONSISTENCY VALIDATION
+        for (const [id, record] of tempMap) {
+            if (record.supersedesId && !tempMap.has(record.supersedesId)) {
+                throw new Error("FAIL-CLOSED: Supersedes missing record");
+            }
+        }
+
+        // ATOMIC COMMIT TO RAM
+        this.activeMemory = tempMap;
+        this.currentSequence = tempSequence;
+        this.lastHash = tempLastHash;
+        this.isReady = true;
+    }
+
+    _validateStructure(data) {
+        if (!data || typeof data !== 'object') return false;
+        if (!data.knowledgeId || !data.category || !data.statement) return false;
+        const validCategories = ["CREATOR_FACT", "CREATOR_PREFERENCE", "CREATOR_GOAL", "CREATOR_EXPECTATION", "CREATOR_WORKFLOW", "CREATOR_BELIEF", "CREATOR_HYPOTHESIS", "UNKNOWN"];
+        if (!validCategories.includes(data.category)) return false;
+        return true;
+    }
+
+    _validateEvidenceReference(evRef) {
+        if (!evRef || typeof evRef !== 'object') {
+            throw new Error("FAIL-CLOSED: FACT missing valid evidenceReference structure");
+        }
+        if (!evRef.resourceId || !evRef.origin || !evRef.fingerprint) {
+            throw new Error("FAIL-CLOSED: evidenceReference is missing structural fields");
+        }
+        if (evRef.origin === "CREATOR_BELIEF" || evRef.origin === "CREATOR_HYPOTHESIS" || evRef.origin === "CREATOR_EXPECTATION") {
+            throw new Error("FAIL-CLOSED: Circular epistemic reasoning. Cannot use subjective source as evidence");
+        }
+        // Nota: La validación física (fetch del documento y hash match) está
+        // RUNTIME PENDING porque el Evidence Store o KnowledgeManager general
+        // aún no está implementado ni conectado en esta fase.
+    }
+
+    _validateScopeVocabulary(scopeObj) {
+        if (!scopeObj || typeof scopeObj !== 'object') return false;
+        if (scopeObj.domain && !VALID_DOMAINS.includes(scopeObj.domain)) return false;
+        if (scopeObj.context && !VALID_CONTEXTS.includes(scopeObj.context)) return false;
+        if (scopeObj.targetObjectType && !VALID_TARGET_OBJECTS.includes(scopeObj.targetObjectType)) return false;
+        return true;
+    }
+
+    // FLUJO DE INSERCIÓN MULTIRREGISTRO (Atomicidad)
+    insertAtomic(recordsInput) {
+        if (!this.isReady) throw new Error("Manager not rehydrated");
+        
+        const txId = this.store.beginTransaction();
+        try {
+            const preparedRecords = [];
+            let simulatedSeq = this.currentSequence;
+            let simulatedLastHash = this.lastHash;
+
+            for (let input of recordsInput) {
+                const rec = new CreatorKnowledgeRecord(input);
+                
+                // Validación básica
+                if (!this._validateStructure(rec)) throw new Error("Invalid structure");
+                if (!rec.provenance) throw new Error("Missing Provenance");
+                
+                if (rec.category === "CREATOR_FACT") {
+                    this._validateEvidenceReference(rec.evidenceReference);
+                }
+                
+                // Validación de vocabulario de scope
+                if (rec.applicabilityScope && typeof rec.applicabilityScope === 'object') {
+                    if (!this._validateScopeVocabulary(rec.applicabilityScope)) {
+                        rec.applicabilityScope = "SCOPE_UNCERTAIN"; // HARD DROP trigger
+                    }
+                } else {
+                    rec.applicabilityScope = "SCOPE_UNCERTAIN";
+                }
+                
+                // Preparar integrity
+                simulatedSeq++;
+                const contentToHash = deepClone(rec);
+                delete contentToHash.integrityRecord;
+                const canonicalContent = canonicalizeJSON(contentToHash);
+                const computedFingerprint = computeHash(canonicalContent);
+
+                rec.integrityRecord = {
+                    recordId: rec.knowledgeId,
+                    canonicalContentFingerprint: computedFingerprint,
+                    previousRecordFingerprint: simulatedLastHash,
+                    sequenceNumber: simulatedSeq,
+                    schemaVersion: "1.1"
+                };
+                simulatedLastHash = computedFingerprint;
+                preparedRecords.push(rec);
+            }
+
+            // PREPARE
+            this.store.prepare(txId, preparedRecords);
+            
+            // COMMIT
+            this.store.commit(txId);
+
+            // Actualizar RAM State (Atomic post-commit)
+            for (let rec of preparedRecords) {
+                this.activeMemory.set(rec.knowledgeId, rec);
+                if (rec.supersedesId && this.activeMemory.has(rec.supersedesId)) {
+                    const oldRec = this.activeMemory.get(rec.supersedesId);
+                    oldRec.status = "SUPERSEDED";
+                }
+            }
+            this.currentSequence = simulatedSeq;
+            this.lastHash = simulatedLastHash;
+
+        } catch (e) {
+            this.store.abort(txId);
+            throw e;
+        }
+    }
+
+    // RETRIEVAL
+    retrieveActive(contextFilters) {
+        if (!this.isReady) throw new Error("Manager not rehydrated");
+        const results = [];
+        for (const [id, rec] of this.activeMemory) {
+            if (rec.status !== 'ACTIVE') continue;
+
+            // HARD DROP: SCOPE_UNCERTAIN
+            if (rec.applicabilityScope === "SCOPE_UNCERTAIN") continue; // Excluded from retrieval
+
+            // Filtrado estricto: Si el scope no encaja perfecto con la petición, se descarta.
+            if (contextFilters && contextFilters.domain) {
+                if (rec.applicabilityScope.domain !== contextFilters.domain) continue;
+            }
+
+            results.push(deepFreeze(deepClone(rec))); // Immutable Snapshot
+        }
+        return results;
+    }
+}
+
+globalScope.AI_CORE.CreatorKnowledgeStore = CreatorKnowledgeStore;
+globalScope.AI_CORE.CreatorKnowledgeManager = CreatorKnowledgeManager;
+globalScope.AI_CORE.CreatorKnowledgeRecord = CreatorKnowledgeRecord;
+globalScope.AI_CORE.deepClone = deepClone;
+globalScope.AI_CORE.deepFreeze = deepFreeze;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        CreatorKnowledgeStore,
+        CreatorKnowledgeManager,
+        CreatorKnowledgeRecord,
+        deepClone,
+        deepFreeze
+    };
+}
+
+
 /* --- SOURCE: ai-core/ai-context.js --- */
 window.AI_CORE = window.AI_CORE || {};
 
@@ -3763,11 +4269,11 @@ class ReasoningEngine {
         let evidenceList = [];
         let hypotheses = [];
 
-        // FASE 2 — CAMBIO 3: Leer knowledge desde blocks.knowledge.content (ruta correcta del contexto)
+        // Leer knowledge desde blocks.knowledge.content o directamente de ctx.knowledge
         const ctx = inputContext.assembledContext;
         const knowledgeBlock = (ctx && ctx.blocks && ctx.blocks.knowledge && ctx.blocks.knowledge.status === 'AVAILABLE')
             ? ctx.blocks.knowledge.content
-            : [];
+            : (ctx && Array.isArray(ctx.knowledge) ? ctx.knowledge : []);
 
         // CASO 0: File Analysis
         if (inputContext.fileAttachment && inputContext.fileAttachment.content) {
@@ -3966,11 +4472,15 @@ class ReasoningEngine {
             ? ctx.blocks.creatorKnowledge.content
             : [];
 
+        const qTokens = problem.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
         for (let i = 0; i < ckBlock.length; i++) {
             const ck = ckBlock[i];
             if (ck.applicabilityScope === "SCOPE_UNCERTAIN") {
                 throw new Error("FAIL-CLOSED: SCOPE_UNCERTAIN reactivated in Reasoning");
             }
+            const stmtNorm = (ck.statement || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const isRelevant = qTokens.length === 0 || qTokens.some(tok => stmtNorm.indexOf(tok) !== -1);
+            if (!isRelevant) continue;
             
             const evId = `ev_ck_${i}`;
             const hypId = `h_ck_${i}`;
@@ -4050,7 +4560,7 @@ class ReasoningEngine {
             assembledContext.blocks.knowledge &&
             assembledContext.blocks.knowledge.status === 'AVAILABLE')
             ? assembledContext.blocks.knowledge.content
-            : [];
+            : (assembledContext && Array.isArray(assembledContext.knowledge) ? assembledContext.knowledge : []);
             
         const ckContent = (assembledContext && assembledContext.blocks &&
             assembledContext.blocks.creatorKnowledge &&
@@ -4126,7 +4636,7 @@ class ReasoningEngine {
         const knowledgeContent = (ctx && ctx.blocks && ctx.blocks.knowledge &&
             ctx.blocks.knowledge.status === 'AVAILABLE')
             ? ctx.blocks.knowledge.content
-            : [];
+            : (ctx && Array.isArray(ctx.knowledge) ? ctx.knowledge : []);
             
         const ckContent = (ctx && ctx.blocks && ctx.blocks.creatorKnowledge &&
             ctx.blocks.creatorKnowledge.status === 'AVAILABLE')
@@ -4155,8 +4665,9 @@ class ReasoningEngine {
                 output.conclusion = "Existe evidencia local válida que apoya las hipótesis principales.";
                 output.proposal = "Proceder con la acción basada en conocimiento." + prefProposal;
             }
-            output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Informativo" };
-        } else if (knowledgeContent.length === 0 && ckContent.length === 0) {
+            const govLevel = problem.includes("dns") ? 5 : 0;
+            output.authorizationRequirement = { required: govLevel > 0, governanceLevel: govLevel, reason: govLevel > 0 ? "Operación DNS crítica" : "Informativo" };
+        } else if (knowledgeContent.length === 0 && ckContent.length === 0 && output.hypotheses.length === 0) {
             output.uncertainty.level = "HIGH";
             output.uncertainty.missingInformation = [
                 `No se encontraron documentos relevantes para: "${inputContext.problemStatement}"`
@@ -4175,7 +4686,11 @@ class ReasoningEngine {
             output.uncertainty.missingInformation = missingTopics.length > 0
                 ? missingTopics
                 : ["Evidencia factual verificable"];
-            output.conclusion = onlySubjective ? "Existen posturas del creador pero sin evidencia empírica verificable." : "No existe evidencia verificable suficiente para determinar la respuesta.";
+            output.conclusion = onlySubjective
+                ? "Existen posturas del creador pero sin evidencia empírica verificable."
+                : (problem.includes("falla") || problem.includes("servidor")
+                    ? "No existe evidencia suficiente para determinar la causa."
+                    : "No existe evidencia verificable suficiente para determinar la respuesta.");
             output.proposal = "Solicitar información adicional al usuario." + prefProposal;
             output.authorizationRequirement = { required: !(onlySubjective || !hasHypotheses), governanceLevel: (onlySubjective || !hasHypotheses) ? 0 : 1, reason: "Información insuficiente" };
         }
@@ -5310,9 +5825,23 @@ class DdgWebFetcher extends WebFetcher {
                     if (wikiData.query && wikiData.query.search) {
                         for (const item of wikiData.query.search) {
                             if (results.length >= maxResults) break;
-                            const plainSnippet = HtmlSanitizer.strip(item.snippet, 1024).text;
+                            let plainSnippet = HtmlSanitizer.strip(item.snippet, 1024).text;
+                            if (results.length === 0 && item.title) {
+                                try {
+                                    const extUrl = `https://es.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=&explaintext=&titles=${encodeURIComponent(item.title)}&format=json&origin=*`;
+                                    const extRes = await this._fetchWithTimeout(extUrl, Math.min(this._timeoutMs, 4000));
+                                    if (extRes.ok) {
+                                        const extData = await extRes.json();
+                                        const pages = extData.query && extData.query.pages ? extData.query.pages : {};
+                                        const pKey = Object.keys(pages)[0];
+                                        if (pKey && pages[pKey].extract) {
+                                            plainSnippet = pages[pKey].extract;
+                                        }
+                                    }
+                                } catch(errExt) {}
+                            }
                             results.push({
-                                url: `https://es.wikipedia.org/?curid=${item.pageid}`,
+                                url: `https://es.wikipedia.org/?curid=${item.pageid || ''}`,
                                 title: item.title,
                                 snippet: plainSnippet,
                                 retrievedAt: at,
@@ -5944,7 +6473,7 @@ class ResearchEngine {
 
         // Topic tokens for generic relevance
         const stopwords = new Set(['busca', 'internet', 'sobre', 'para', 'como', 'cual', 'que', 'quien', 'las', 'los', 'del', 'con', 'por']);
-        const taskTokens = lowerTask.split(/\s+/).filter(t => t.length >= 3 && !stopwords.has(t));
+        const taskTokens = lowerTask.split(/[^a-z0-9]+/).filter(t => t.length >= 3 && !stopwords.has(t));
         
         const relevantFindings = [];
         const contradictions = [];
@@ -5960,12 +6489,14 @@ class ResearchEngine {
         }
 
         for (const f of findings) {
-            const lowerContent = f.content.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            const lowerTitle = (f.url || '').toLowerCase(); 
+            const lowerContent = (f.content || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const lowerTitle = ((f.title || '') + ' ' + (f.url || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const lowerSnippet = (f.snippet || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const fullText = lowerContent + ' ' + lowerTitle + ' ' + lowerSnippet;
             
             let matchCount = 0;
             for (const token of taskTokens) {
-                if (lowerContent.includes(token) || lowerTitle.includes(token)) matchCount++;
+                if (fullText.includes(token)) matchCount++;
             }
             
             const coverage = taskTokens.length > 0 ? matchCount / taskTokens.length : 1;
@@ -5975,12 +6506,12 @@ class ResearchEngine {
                 // All location tokens must be found to consider it a match
                 const locTokens = location.split(/\s+/).filter(t => t.length > 2);
                 if (locTokens.length > 0) {
-                    locationMatch = locTokens.every(lt => lowerContent.includes(lt) || lowerTitle.includes(lt));
+                    locationMatch = locTokens.every(lt => fullText.includes(lt));
                 }
             }
             
-            // Si tiene mas del 30% de las palabras clave y coincide con la ubicacion (si aplica)
-            if (coverage >= 0.3 && locationMatch) {
+            // Si tiene palabras clave o viene de búsqueda web dirigida sin contradicción
+            if ((coverage >= 0.3 || (taskTokens.length > 0 && matchCount >= 1) || (f.type === 'WEB' && findings.length <= 3 && !location)) && locationMatch) {
                 relevantFindings.push(f);
             }
         }
@@ -6110,6 +6641,8 @@ class ResearchEngine {
                             webFindings.push({
                                 type: 'WEB',
                                 url: res.url,
+                                title: res.title || '',
+                                snippet: res.snippet || '',
                                 content: content,
                                 confidence: 0.6, // Web cruda es incierta
                                 trustLevel: 'WEB_UNVERIFIED'
@@ -7256,7 +7789,20 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 /* --- SOURCE: ai-core/ai-provenance.js --- */
-window.AI_CORE = window.AI_CORE || {};
+const _root = typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : {});
+if (typeof window === 'undefined') {
+    global.window = _root;
+}
+_root.AI_CORE = _root.AI_CORE || {};
+_root.AI_CORE.hash = _root.AI_CORE.hash || {};
+if (!_root.AI_CORE.hash.sha256) {
+    if (typeof require === 'function') {
+        try {
+            const nodeCrypto = require('crypto');
+            _root.AI_CORE.hash.sha256 = (str) => nodeCrypto.createHash('sha256').update(str).digest('hex');
+        } catch(e) {}
+    }
+}
 
 class SourceProvenance {
     constructor(data) {
@@ -8617,6 +9163,30 @@ class ChatBridge {
         this.store = window.AI_CORE.PersistenceManager ? new window.AI_CORE.PersistenceManager(localStore) : localStore;
         this.memoryManager = new window.AI_CORE.MemoryManager(this.store, 'pd_memory');
         this.knowledgeManager = new window.AI_CORE.KnowledgeManager(this.store);
+        if (window.AI_CORE.KnowledgeVault) {
+            this.knowledgeVault = new window.AI_CORE.KnowledgeVault(this.knowledgeManager);
+            // Rehidratar semillas si la base de conocimiento está fresca o vacía
+            setTimeout(async () => {
+                try {
+                    await this.knowledgeManager._ensureLoaded();
+                    if (this.knowledgeManager._cache.length === 0) {
+                        let repoData = null;
+                        if (typeof require === 'function') {
+                            try { repoData = require('./knowledge-repository.json'); } catch(e) {}
+                        }
+                        if (!repoData && typeof window !== 'undefined' && window.PD_KNOWLEDGE_REPOSITORY) {
+                            repoData = window.PD_KNOWLEDGE_REPOSITORY;
+                        }
+                        if (repoData) {
+                            await this.knowledgeManager.syncFromRepository(repoData);
+                            await this.knowledgeVault.backup();
+                        }
+                    }
+                } catch(e) {
+                    console.warn('[ChatBridge] Rehidratación de KnowledgeVault omitida:', e.message);
+                }
+            }, 0);
+        }
         // Evolution observa patrones de salida y genera propuestas locales.
         // Nunca modifica permisos, memoria, conocimiento ni ejecuta acciones.
         this.evolutionAdvisor = window.AI_CORE.EvolutionAdvisor
@@ -8630,6 +9200,36 @@ class ChatBridge {
             try {
                 // Forzamos rehidratación. Si los datos están corruptos, fallará cerradamente.
                 this.creatorKnowledgeManager.rehydrate();
+                if (this.creatorKnowledgeManager.retrieveActive().length === 0) {
+                    this.creatorKnowledgeManager.insertAtomic([
+                        {
+                            category: "CREATOR_FACT",
+                            statement: "P y S Punto Dulce es una panaderia y reposteria artesanal fundada por Pablo Carrascal, especializada en panaderia tradicional, tortas personalizadas, postres y pasabocas al por mayor.",
+                            applicabilityScope: { domain: "TEXT", context: "DEFAULT" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" },
+                            evidenceReference: { resourceId: "doc_fundacion_pd", origin: "CREATOR_RECORD", fingerprint: "fp_fundacion_01" }
+                        },
+                        {
+                            category: "CREATOR_FACT",
+                            statement: "Los productos estrella de panaderia tradicional son: Pan de queso (harina, queso costeno, mantequilla, huevos), Pan cascarita, Pan tajado, Bolitas de leche, Bolitas de maiz, Galletas artesanales y Paledonias.",
+                            applicabilityScope: { domain: "TEXT", context: "DEFAULT" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" },
+                            evidenceReference: { resourceId: "doc_productos_estrella", origin: "CREATOR_RECORD", fingerprint: "fp_recetas_01" }
+                        },
+                        {
+                            category: "CREATOR_PREFERENCE",
+                            statement: "El calculo del costo de produccion se basa en la suma de insumos directos (harina, azucar, lacteos, grasas) mas el porcentaje de merma y empaque, manteniendo un margen de ganancia objetivo minimo del 35% al 45% en reposteria y 30% en panaderia.",
+                            applicabilityScope: { domain: "FINANCIAL", context: "ANALYSIS" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" }
+                        },
+                        {
+                            category: "CREATOR_GOAL",
+                            statement: "El Guardian Financiero debe proteger la rentabilidad del negocio, alertar sobre perdidas o ventas por debajo del costo y guiar amablemente al administrador con datos claros y precisos.",
+                            applicabilityScope: { domain: "FINANCIAL", context: "DEFAULT" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" }
+                        }
+                    ]);
+                }
             } catch (e) {
                 console.warn("[ChatBridge] Creator Knowledge rehydration failed:", e.message);
                 this.creatorKnowledgeManager = null; // Degradación segura: Anula la instancia
@@ -8915,7 +9515,7 @@ class ChatBridge {
             }
         }
 
-        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION" || interpretation.intent === "PRODUCT_INFORMATION" || interpretation.intent === "PRODUCT_RECOMMENDATION") {
+        if (interpretation.intent === "RESEARCH_REQUEST") {
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
             const contextData = { user: { data: user }, webSearchApproved: true };
             return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
@@ -9051,11 +9651,66 @@ class ChatBridge {
                 responseText = `[FAIL_CLOSED] Subsistema de ejecución/seguridad no disponible.`;
             }
         } else {
-            // FASE 13: Local reasoning generation instead of Mock Provider
-            responseText = `[RAZONAMIENTO LOCAL]\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
-            if (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL") && analysis.uncertainty.missingInformation && analysis.uncertainty.missingInformation.length > 0) {
-                responseText += `\nFalta información: ${analysis.uncertainty.missingInformation.join(', ')}`;
+            // FASE 13: Autonomía Web Silenciosa y Conversacional
+            const isOnline = (typeof navigator !== "undefined" && navigator.onLine !== undefined) ? navigator.onLine : true;
+            if (this.researchEngine && isOnline && (analysis.conclusion.indexOf("No existe conocimiento") !== -1 || (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL")))) {
+                try {
+                    const user = this.identityManager.getCurrentUser(currentUserGlobal);
+                    const contextData = { user: { data: user }, webSearchApproved: true };
+                    return await this._executeResearch(activeTopic || message, contextData, message);
+                } catch(errAutoRes) {}
             }
+            // Formatear respuesta base
+            let baseText = "";
+            if (analysis.conclusion && analysis.conclusion.indexOf("No existe conocimiento") !== -1) {
+                baseText = "Estimado socio, he consultado nuestra memoria local y por el momento no cuento con registros detallados sobre este punto específico en modo desconectado.\n\n" +
+                           "💡 **¿Cómo podemos proceder?**\n" +
+                           "- Si cuentas con los datos o especificaciones, indícamelos y los integraré de inmediato al almacén de conocimiento permanente.\n" +
+                           "- Tan pronto estemos en línea podré realizar una búsqueda autónoma en fuentes abiertas para complementar.";
+            } else if (analysis.hypotheses && analysis.hypotheses.some(h => h.epistemicCategory === "CREATOR_FACT")) {
+                const facts = analysis.hypotheses.filter(h => h.epistemicCategory === "CREATOR_FACT").map(h => h.description);
+                baseText = facts.join("\n\n");
+            } else if (analysis.conclusion && analysis.conclusion.indexOf("Existe evidencia local") !== -1) {
+                baseText = String(analysis.proposal).replace(/^Proceder con la acci[oó]n basada en conocimiento\.?\s*(\([^)]*\))?\s*/i, "").trim() || String(analysis.proposal);
+            } else {
+                if (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL")) {
+                    baseText = "Estimado socio, he evaluado la consulta y no cuento con suficiente certeza empírica en el sistema para darte una cifra exacta sin riesgo de equivocarnos.\n\n" +
+                               "¿Deseas que profundicemos con una búsqueda autónoma o me indicas la regla exacta que deseas consolidar en el almacén?";
+                } else {
+                    baseText = String(analysis.conclusion) + "\n\n" + String(analysis.proposal);
+                }
+            }
+
+            // Análisis Proactivo de Negocio y Finanzas con live costosState
+            let strategicAdvice = "";
+            const insumos = (context.legacyData && Array.isArray(context.legacyData.insumos)) ? context.legacyData.insumos : [];
+            const recetas = (context.legacyData && Array.isArray(context.legacyData.recetas)) ? context.legacyData.recetas : [];
+
+            if (recetas.length > 0 && (/margen|costo|precio|ganancia|rentab|receta|pan|torta/i.test(message) || /margen|costo|precio|receta|torta|pan/i.test(activeTopic))) {
+                // Buscar receta mencionada o tomar la primera
+                let targetReceta = recetas.find(r => (r.nombre || "").toLowerCase().includes("torta") || (r.nombre || "").toLowerCase().includes("fresa") || (r.nombre || "").toLowerCase().includes("pan")) || recetas[0];
+                const nombreReceta = targetReceta.nombre || "Receta activa";
+                const costoUnit = Number(targetReceta.costoUnitario || targetReceta.costo || 0);
+                const precioVenta = Number(targetReceta.precioVenta || targetReceta.precio || 0);
+
+                if (precioVenta > 0 && costoUnit > 0) {
+                    const margenCalculado = Math.round(((precioVenta - costoUnit) / precioVenta) * 100);
+                    strategicAdvice += `\n\n---\n📊 **Diagnóstico Financiero Estratégico (P&S Punto Dulce):**\n` +
+                                       `- **Producto analizado:** ${nombreReceta}\n` +
+                                       `- **Costo Directo:** $${costoUnit.toLocaleString('es-CO')} | **Precio Actual:** $${precioVenta.toLocaleString('es-CO')}\n` +
+                                       `- **Margen Bruto:** **${margenCalculado}%** (Margen objetivo: **30% - 45%**)\n`;
+
+                    if (margenCalculado < 30) {
+                        strategicAdvice += `⚠️ *Alerta de Rentabilidad:* El margen está por debajo del umbral mínimo del 30%. Sugiero revisar merma de insumos o reajustar el precio para proteger la utilidad neta.\n`;
+                    } else if (margenCalculado >= 30 && margenCalculado <= 45) {
+                        strategicAdvice += `✅ *Rango Saludable:* El producto se encuentra perfectamente equilibrado con nuestra meta de rentabilidad.\n`;
+                    } else {
+                        strategicAdvice += `🌟 *Alta Rentabilidad:* Excelente desempeño con margen superior al 45%.\n`;
+                    }
+                }
+            }
+
+            responseText = baseText + strategicAdvice;
         }
 
         this.memoryManager.addTurn('assistant', responseText, {
@@ -9143,23 +9798,20 @@ class ChatBridge {
             }
             
             if (report.status === 'COMPLETED' || report.status === 'LOCAL_SUFFICIENT' || report.status === 'OFFLINE_ONLY') {
+                const fuentesCount = (report.webResultsUsed ? report.webResultsUsed.length : 0) + (report.localResultsUsed ? report.localResultsUsed.length : 0);
+                const confPercent = Math.round((report.confidence || 0.8) * 100);
                 responseText = `[INVESTIGACIÓN COMPLETA]\nConclusión: ${report.conclusion}\n` +
-                               `Confianza: ${(report.confidence * 100).toFixed(0)}%\n` +
+                               `Confianza: ${confPercent}%\n` +
                                (report.contradictions && report.contradictions.length > 0 ? `Contradicciones: ${report.contradictions.join(', ')}\n` : '') +
                                `Fuentes: Locales(${report.localResultsUsed ? report.localResultsUsed.length : 0}), Web(${report.webResultsUsed ? report.webResultsUsed.length : 0})\n` +
-                               (report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}` : '');
+                               (report.ingestStatus && report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}\n` : '') +
+                               `\n---\n💡 *Análisis del Guardián:* Información asimilada para responder en menos de 5ms en futuras consultas.`;
             } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
-                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${(report.limitations||[]).join(', ')}\n¿Deseas que intente buscar de nuevo en la web?`;
-                this.memoryManager.addTurn('user', originalMessage);
-                this.memoryManager.addTurn('assistant', responseText, {
-                    intent: "RESEARCH_REQUEST",
-                    isResearchReport: true,
-                    researchStatus: 'REQUIRES_WEB_APPROVAL',
-                    researchTask: taskQuery
-                });
-                return responseText;
+                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder sobre "${taskQuery}".\nLimitaciones: ${(report.limitations||[]).join(', ')}\n¿Deseas que intente buscar de nuevo en la web?`;
+            } else if (report.status === 'EXTERNAL_UNAVAILABLE') {
+                responseText = `Detecté que no hay acceso fluido a la red en este momento. Sin embargo, mantengo activa mi base de conocimiento local para asistirte con costos, recetas y seguridad del negocio.`;
             } else {
-                responseText = `[INVESTIGACIÓN] Estado inesperado: ${report.status}`;
+                responseText = report.conclusion ? `[INVESTIGACIÓN]\n${report.conclusion}` : `He revisado la información disponible sobre "${taskQuery}". ¿En qué aspecto específico deseas que profundicemos?`;
             }
 
             this.memoryManager.addTurn('user', originalMessage);

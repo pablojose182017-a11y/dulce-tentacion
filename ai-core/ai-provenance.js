@@ -1,4 +1,17 @@
-window.AI_CORE = window.AI_CORE || {};
+const _root = typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : {});
+if (typeof window === 'undefined') {
+    global.window = _root;
+}
+_root.AI_CORE = _root.AI_CORE || {};
+_root.AI_CORE.hash = _root.AI_CORE.hash || {};
+if (!_root.AI_CORE.hash.sha256) {
+    if (typeof require === 'function') {
+        try {
+            const nodeCrypto = require('crypto');
+            _root.AI_CORE.hash.sha256 = (str) => nodeCrypto.createHash('sha256').update(str).digest('hex');
+        } catch(e) {}
+    }
+}
 
 class SourceProvenance {
     constructor(data) {

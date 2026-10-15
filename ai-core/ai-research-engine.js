@@ -60,7 +60,7 @@ class ResearchEngine {
 
         // Topic tokens for generic relevance
         const stopwords = new Set(['busca', 'internet', 'sobre', 'para', 'como', 'cual', 'que', 'quien', 'las', 'los', 'del', 'con', 'por']);
-        const taskTokens = lowerTask.split(/\s+/).filter(t => t.length >= 3 && !stopwords.has(t));
+        const taskTokens = lowerTask.split(/[^a-z0-9]+/).filter(t => t.length >= 3 && !stopwords.has(t));
         
         const relevantFindings = [];
         const contradictions = [];
@@ -76,12 +76,14 @@ class ResearchEngine {
         }
 
         for (const f of findings) {
-            const lowerContent = f.content.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            const lowerTitle = (f.url || '').toLowerCase(); 
+            const lowerContent = (f.content || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const lowerTitle = ((f.title || '') + ' ' + (f.url || '')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const lowerSnippet = (f.snippet || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const fullText = lowerContent + ' ' + lowerTitle + ' ' + lowerSnippet;
             
             let matchCount = 0;
             for (const token of taskTokens) {
-                if (lowerContent.includes(token) || lowerTitle.includes(token)) matchCount++;
+                if (fullText.includes(token)) matchCount++;
             }
             
             const coverage = taskTokens.length > 0 ? matchCount / taskTokens.length : 1;
@@ -91,12 +93,12 @@ class ResearchEngine {
                 // All location tokens must be found to consider it a match
                 const locTokens = location.split(/\s+/).filter(t => t.length > 2);
                 if (locTokens.length > 0) {
-                    locationMatch = locTokens.every(lt => lowerContent.includes(lt) || lowerTitle.includes(lt));
+                    locationMatch = locTokens.every(lt => fullText.includes(lt));
                 }
             }
             
-            // Si tiene mas del 30% de las palabras clave y coincide con la ubicacion (si aplica)
-            if (coverage >= 0.3 && locationMatch) {
+            // Si tiene palabras clave o viene de búsqueda web dirigida sin contradicción
+            if ((coverage >= 0.3 || (taskTokens.length > 0 && matchCount >= 1) || (f.type === 'WEB' && findings.length <= 3 && !location)) && locationMatch) {
                 relevantFindings.push(f);
             }
         }
@@ -226,6 +228,8 @@ class ResearchEngine {
                             webFindings.push({
                                 type: 'WEB',
                                 url: res.url,
+                                title: res.title || '',
+                                snippet: res.snippet || '',
                                 content: content,
                                 confidence: 0.6, // Web cruda es incierta
                                 trustLevel: 'WEB_UNVERIFIED'

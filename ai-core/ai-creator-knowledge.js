@@ -1,4 +1,13 @@
-const crypto = require('crypto');
+const nodeCrypto = (typeof require === 'function') ? (function() { try { return require('crypto'); } catch(e) { return null; } })() : null;
+
+const globalScope = typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : {});
+globalScope.AI_CORE = globalScope.AI_CORE || {};
+
+function _getRandomUUID() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    if (nodeCrypto && nodeCrypto.randomUUID) return nodeCrypto.randomUUID();
+    return 'uuid_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+}
 
 /**
  * AI CORE - CREATOR KNOWLEDGE RUNTIME V1.1
@@ -85,14 +94,20 @@ function canonicalizeJSON(obj) {
 }
 
 function computeHash(data) {
-    return crypto.createHash('sha256').update(data).digest('hex');
+    if (nodeCrypto && nodeCrypto.createHash) {
+        return nodeCrypto.createHash('sha256').update(data).digest('hex');
+    }
+    if (globalScope.AI_CORE && globalScope.AI_CORE.hash && globalScope.AI_CORE.hash.sha256) {
+        return globalScope.AI_CORE.hash.sha256(data);
+    }
+    throw new Error("FAIL-CLOSED: No SHA-256 implementation available");
 }
 
 // --- CREATOR KNOWLEDGE RECORD ---
 
 class CreatorKnowledgeRecord {
     constructor(data) {
-        this.knowledgeId = data.knowledgeId || crypto.randomUUID();
+        this.knowledgeId = data.knowledgeId || _getRandomUUID();
         this.category = data.category;
         this.statement = data.statement;
         this.applicabilityScope = data.applicabilityScope;
@@ -115,7 +130,7 @@ class CreatorKnowledgeStore {
     }
 
     beginTransaction() {
-        const txId = crypto.randomUUID();
+        const txId = _getRandomUUID();
         this.transactionLog.set(txId, { status: 'STARTED', operations: [] });
         return txId;
     }
@@ -355,10 +370,19 @@ class CreatorKnowledgeManager {
     }
 }
 
-module.exports = {
-    CreatorKnowledgeStore,
-    CreatorKnowledgeManager,
-    CreatorKnowledgeRecord,
-    deepClone,
-    deepFreeze
-};
+globalScope.AI_CORE.CreatorKnowledgeStore = CreatorKnowledgeStore;
+globalScope.AI_CORE.CreatorKnowledgeManager = CreatorKnowledgeManager;
+globalScope.AI_CORE.CreatorKnowledgeRecord = CreatorKnowledgeRecord;
+globalScope.AI_CORE.deepClone = deepClone;
+globalScope.AI_CORE.deepFreeze = deepFreeze;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        CreatorKnowledgeStore,
+        CreatorKnowledgeManager,
+        CreatorKnowledgeRecord,
+        deepClone,
+        deepFreeze
+    };
+}
+

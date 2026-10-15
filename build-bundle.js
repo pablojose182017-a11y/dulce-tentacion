@@ -16,6 +16,7 @@ const productionSources = [
     'ai-core/ai-autonomous.js',
     'ai-core/ai-identity.js',
     'ai-core/ai-memory.js',
+    'ai-core/ai-creator-knowledge.js',
     'ai-core/ai-context.js',
     'ai-core/ai-provider.js',
     'ai-core/ai-legacy-rag-adapter.js',

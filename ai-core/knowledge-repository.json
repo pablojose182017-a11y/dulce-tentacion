@@ -1,0 +1,147 @@
+{
+  "version": "1.0.0",
+  "name": "P&S Punto Dulce Knowledge Repository",
+  "description": "Repositorio maestro de semillas y conocimiento persistente offline para Guardián.",
+  "categories": {
+    "insumos": [
+      {
+        "id": "insumo_harina_trigo",
+        "title": "Harina de Trigo Especial",
+        "category": "insumos",
+        "tags": ["harina", "insumos", "panaderia", "materia_prima"],
+        "content": "Harina de trigo de fuerza media-alta para panadería y repostería. Rendimiento estándar con absorción de agua entre 58% y 62%. Control estricto de humedad.",
+        "source": "FICHA_TECNICA_LOCAL",
+        "confidence": 0.98,
+        "version": 1
+      },
+      {
+        "id": "insumo_queso_costeno",
+        "title": "Queso Costeño Artesanal",
+        "category": "insumos",
+        "tags": ["queso", "costeno", "pan_de_queso", "lacteos"],
+        "content": "Queso costeño duro con salmuera tradicional, esencial para la textura y sabor característico del pan de queso. Punto de rallado fino.",
+        "source": "FICHA_TECNICA_LOCAL",
+        "confidence": 0.98,
+        "version": 1
+      },
+      {
+        "id": "insumo_mantequilla_repostera",
+        "title": "Mantequilla y Grasas de Panadería",
+        "category": "insumos",
+        "tags": ["mantequilla", "grasas", "reposteria", "croissant"],
+        "content": "Grasa repostera con 80% mínimo de materia grasa, ideal para hojaldrados, galletas y masas suaves de pan tradicional.",
+        "source": "FICHA_TECNICA_LOCAL",
+        "confidence": 0.95,
+        "version": 1
+      },
+      {
+        "id": "insumo_levadura_fresca",
+        "title": "Levadura Fresca y Seca Instantánea",
+        "category": "insumos",
+        "tags": ["levadura", "fermentacion", "leudado"],
+        "content": "Agente biológico de fermentación. Dosificación estándar del 2% al 3% sobre el peso total de harina para panes de leudado medio.",
+        "source": "FICHA_TECNICA_LOCAL",
+        "confidence": 0.95,
+        "version": 1
+      },
+      {
+        "id": "insumo_azucar_huevos",
+        "title": "Azúcar Blanca y Huevos AA",
+        "category": "insumos",
+        "tags": ["azucar", "huevos", "dulce", "bizcochuelos"],
+        "content": "Insumos base para equilibrio de dulzura, estructura esponjosa y emulsión en tortas personalizadas y bolitas de leche.",
+        "source": "FICHA_TECNICA_LOCAL",
+        "confidence": 0.95,
+        "version": 1
+      }
+    ],
+    "recetas_tecnicas": [
+      {
+        "id": "receta_pan_de_queso",
+        "title": "Receta Técnica: Pan de Queso Tradicional",
+        "category": "recetas_tecnicas",
+        "tags": ["receta", "pan_de_queso", "estrella", "panaderia"],
+        "content": "Proporción maestra de pan de queso: 50% harina de trigo seleccionada, 40% queso costeño finamente rallado, 6% mantequilla, 4% huevos y agua tibia. Amasado hasta masa homogénea elástica. Horneado a 180°C durante 18-22 minutos.",
+        "source": "MANUAL_PABLO_CARRASCAL",
+        "confidence": 1.0,
+        "version": 1
+      },
+      {
+        "id": "receta_pan_cascarita",
+        "title": "Receta Técnica: Pan Cascarita",
+        "category": "recetas_tecnicas",
+        "tags": ["receta", "pan_cascarita", "corteza", "tradicional"],
+        "content": "Pan de corteza crujiente y miga aireada suave. Fermentación en bloque de 45 minutos y vapor en horno a 210°C para lograr la cascarita dorada característica.",
+        "source": "MANUAL_PABLO_CARRASCAL",
+        "confidence": 1.0,
+        "version": 1
+      },
+      {
+        "id": "receta_pan_tajado",
+        "title": "Receta Técnica: Pan Tajado Especial",
+        "category": "recetas_tecnicas",
+        "tags": ["receta", "pan_tajado", "molde", "loncheras"],
+        "content": "Elaborado en molde rectangular con adición de leche y emulsificante natural para miga cerrada, flexible y de alta durabilidad en estantería.",
+        "source": "MANUAL_PABLO_CARRASCAL",
+        "confidence": 1.0,
+        "version": 1
+      },
+      {
+        "id": "receta_bolitas_paledonias",
+        "title": "Receta Técnica: Bolitas de Leche, Maíz y Paledonias",
+        "category": "recetas_tecnicas",
+        "tags": ["receta", "bolitas_leche", "bolitas_maiz", "paledonias", "pasabocas"],
+        "content": "Pasabocas y golosinas típicas de la región. Las paledonias usan panela concentrada y especias; las bolitas de maíz combinan harina precocida y queso; las bolitas de leche son confitadas al punto exacto para eventos.",
+        "source": "MANUAL_PABLO_CARRASCAL",
+        "confidence": 1.0,
+        "version": 1
+      }
+    ],
+    "finanzas_punto_dulce": [
+      {
+        "id": "finanzas_margen_estrategico",
+        "title": "Política de Rentabilidad y Margen Objetivo (30% - 45%)",
+        "category": "finanzas_punto_dulce",
+        "tags": ["margen", "rentabilidad", "finanzas", "estrategia", "precios"],
+        "content": "Regla Financiera Fundamental de P&S Punto Dulce: El margen de beneficio bruto en panadería tradicional debe mantenerse entre el 30% y el 38%. En pastelería fina, tortas personalizadas y pasabocas al por mayor, el margen objetivo debe oscilar entre el 38% y el 45%. Cualquier producto por debajo del 30% debe ser alertado de inmediato para optimización de porciones o reajuste de precio.",
+        "source": "ESTRATEGIA_PABLO_CARRASCAL",
+        "confidence": 1.0,
+        "version": 1
+      },
+      {
+        "id": "finanzas_estructura_costos",
+        "title": "Estructura de Costeo Directo y Mermas",
+        "category": "finanzas_punto_dulce",
+        "tags": ["costos", "mermas", "empaque", "costosState"],
+        "content": "El costo total unitario se compone de: (1) Insumos directos pesados por gramo según receta, (2) Factor de merma estimado entre 5% y 8% según horneado/manipulación, y (3) Costo de empaque y etiqueta. El precio sugerido de venta se calcula como: Costo Directo / (1 - Margen Objetivo).",
+        "source": "ESTRATEGIA_PABLO_CARRASCAL",
+        "confidence": 1.0,
+        "version": 1
+      }
+    ],
+    "mercado_cucuta": [
+      {
+        "id": "mercado_cucuta_abastecimiento",
+        "title": "Logística de Proveedores y Plazas en Cúcuta",
+        "category": "mercado_cucuta",
+        "tags": ["cucuta", "cenabastos", "proveedores", "norte_de_santander"],
+        "content": "Ecosistema comercial en Cúcuta, Norte de Santander: Abastecimiento mayorista clave en Central de Abastos (Cenabastos) y distribuidoras del centro para harinas por bulto y lácteos. Rutas de entrega en comunas urbanas, Los Patios y Villa del Rosario.",
+        "source": "ESTUDIO_MERCADO_LOCAL",
+        "confidence": 0.95,
+        "version": 1
+      }
+    ],
+    "conocimiento_general": [
+      {
+        "id": "conocimiento_artesanal_fermentacion",
+        "title": "Buenas Prácticas de Conservación y Fermentación",
+        "category": "conocimiento_general",
+        "tags": ["fermentacion", "conservacion", "calidad", "higiene"],
+        "content": "Factores de calidad en panificación: Temperatura ambiente cálida (típica de Cúcuta) acelera la fermentación, por lo que se recomienda vigilar los tiempos de leudado y usar agua fresca en amasados largos para evitar sobre-fermentación.",
+        "source": "COMPENDIO_PANADERO",
+        "confidence": 0.95,
+        "version": 1
+      }
+    ]
+  }
+}

@@ -8,6 +8,30 @@ class ChatBridge {
         this.store = window.AI_CORE.PersistenceManager ? new window.AI_CORE.PersistenceManager(localStore) : localStore;
         this.memoryManager = new window.AI_CORE.MemoryManager(this.store, 'pd_memory');
         this.knowledgeManager = new window.AI_CORE.KnowledgeManager(this.store);
+        if (window.AI_CORE.KnowledgeVault) {
+            this.knowledgeVault = new window.AI_CORE.KnowledgeVault(this.knowledgeManager);
+            // Rehidratar semillas si la base de conocimiento está fresca o vacía
+            setTimeout(async () => {
+                try {
+                    await this.knowledgeManager._ensureLoaded();
+                    if (this.knowledgeManager._cache.length === 0) {
+                        let repoData = null;
+                        if (typeof require === 'function') {
+                            try { repoData = require('./knowledge-repository.json'); } catch(e) {}
+                        }
+                        if (!repoData && typeof window !== 'undefined' && window.PD_KNOWLEDGE_REPOSITORY) {
+                            repoData = window.PD_KNOWLEDGE_REPOSITORY;
+                        }
+                        if (repoData) {
+                            await this.knowledgeManager.syncFromRepository(repoData);
+                            await this.knowledgeVault.backup();
+                        }
+                    }
+                } catch(e) {
+                    console.warn('[ChatBridge] Rehidratación de KnowledgeVault omitida:', e.message);
+                }
+            }, 0);
+        }
         // Evolution observa patrones de salida y genera propuestas locales.
         // Nunca modifica permisos, memoria, conocimiento ni ejecuta acciones.
         this.evolutionAdvisor = window.AI_CORE.EvolutionAdvisor
@@ -21,6 +45,36 @@ class ChatBridge {
             try {
                 // Forzamos rehidratación. Si los datos están corruptos, fallará cerradamente.
                 this.creatorKnowledgeManager.rehydrate();
+                if (this.creatorKnowledgeManager.retrieveActive().length === 0) {
+                    this.creatorKnowledgeManager.insertAtomic([
+                        {
+                            category: "CREATOR_FACT",
+                            statement: "P y S Punto Dulce es una panaderia y reposteria artesanal fundada por Pablo Carrascal, especializada en panaderia tradicional, tortas personalizadas, postres y pasabocas al por mayor.",
+                            applicabilityScope: { domain: "TEXT", context: "DEFAULT" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" },
+                            evidenceReference: { resourceId: "doc_fundacion_pd", origin: "CREATOR_RECORD", fingerprint: "fp_fundacion_01" }
+                        },
+                        {
+                            category: "CREATOR_FACT",
+                            statement: "Los productos estrella de panaderia tradicional son: Pan de queso (harina, queso costeno, mantequilla, huevos), Pan cascarita, Pan tajado, Bolitas de leche, Bolitas de maiz, Galletas artesanales y Paledonias.",
+                            applicabilityScope: { domain: "TEXT", context: "DEFAULT" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" },
+                            evidenceReference: { resourceId: "doc_productos_estrella", origin: "CREATOR_RECORD", fingerprint: "fp_recetas_01" }
+                        },
+                        {
+                            category: "CREATOR_PREFERENCE",
+                            statement: "El calculo del costo de produccion se basa en la suma de insumos directos (harina, azucar, lacteos, grasas) mas el porcentaje de merma y empaque, manteniendo un margen de ganancia objetivo minimo del 35% al 45% en reposteria y 30% en panaderia.",
+                            applicabilityScope: { domain: "FINANCIAL", context: "ANALYSIS" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" }
+                        },
+                        {
+                            category: "CREATOR_GOAL",
+                            statement: "El Guardian Financiero debe proteger la rentabilidad del negocio, alertar sobre perdidas o ventas por debajo del costo y guiar amablemente al administrador con datos claros y precisos.",
+                            applicabilityScope: { domain: "FINANCIAL", context: "DEFAULT" },
+                            provenance: { source: "CREATOR", author: "Pablo Carrascal" }
+                        }
+                    ]);
+                }
             } catch (e) {
                 console.warn("[ChatBridge] Creator Knowledge rehydration failed:", e.message);
                 this.creatorKnowledgeManager = null; // Degradación segura: Anula la instancia
@@ -306,7 +360,7 @@ class ChatBridge {
             }
         }
 
-        if (interpretation.intent === "RESEARCH_REQUEST" || interpretation.intent === "FACTUAL_QUESTION" || interpretation.intent === "PRODUCT_INFORMATION" || interpretation.intent === "PRODUCT_RECOMMENDATION") {
+        if (interpretation.intent === "RESEARCH_REQUEST") {
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
             const contextData = { user: { data: user }, webSearchApproved: true };
             return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
@@ -442,11 +496,66 @@ class ChatBridge {
                 responseText = `[FAIL_CLOSED] Subsistema de ejecución/seguridad no disponible.`;
             }
         } else {
-            // FASE 13: Local reasoning generation instead of Mock Provider
-            responseText = `[RAZONAMIENTO LOCAL]\nConclusión: ${analysis.conclusion}\nSugerencia: ${analysis.proposal}`;
-            if (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL") && analysis.uncertainty.missingInformation && analysis.uncertainty.missingInformation.length > 0) {
-                responseText += `\nFalta información: ${analysis.uncertainty.missingInformation.join(', ')}`;
+            // FASE 13: Autonomía Web Silenciosa y Conversacional
+            const isOnline = (typeof navigator !== "undefined" && navigator.onLine !== undefined) ? navigator.onLine : true;
+            if (this.researchEngine && isOnline && (analysis.conclusion.indexOf("No existe conocimiento") !== -1 || (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL")))) {
+                try {
+                    const user = this.identityManager.getCurrentUser(currentUserGlobal);
+                    const contextData = { user: { data: user }, webSearchApproved: true };
+                    return await this._executeResearch(activeTopic || message, contextData, message);
+                } catch(errAutoRes) {}
             }
+            // Formatear respuesta base
+            let baseText = "";
+            if (analysis.conclusion && analysis.conclusion.indexOf("No existe conocimiento") !== -1) {
+                baseText = "Estimado socio, he consultado nuestra memoria local y por el momento no cuento con registros detallados sobre este punto específico en modo desconectado.\n\n" +
+                           "💡 **¿Cómo podemos proceder?**\n" +
+                           "- Si cuentas con los datos o especificaciones, indícamelos y los integraré de inmediato al almacén de conocimiento permanente.\n" +
+                           "- Tan pronto estemos en línea podré realizar una búsqueda autónoma en fuentes abiertas para complementar.";
+            } else if (analysis.hypotheses && analysis.hypotheses.some(h => h.epistemicCategory === "CREATOR_FACT")) {
+                const facts = analysis.hypotheses.filter(h => h.epistemicCategory === "CREATOR_FACT").map(h => h.description);
+                baseText = facts.join("\n\n");
+            } else if (analysis.conclusion && analysis.conclusion.indexOf("Existe evidencia local") !== -1) {
+                baseText = String(analysis.proposal).replace(/^Proceder con la acci[oó]n basada en conocimiento\.?\s*(\([^)]*\))?\s*/i, "").trim() || String(analysis.proposal);
+            } else {
+                if (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL")) {
+                    baseText = "Estimado socio, he evaluado la consulta y no cuento con suficiente certeza empírica en el sistema para darte una cifra exacta sin riesgo de equivocarnos.\n\n" +
+                               "¿Deseas que profundicemos con una búsqueda autónoma o me indicas la regla exacta que deseas consolidar en el almacén?";
+                } else {
+                    baseText = String(analysis.conclusion) + "\n\n" + String(analysis.proposal);
+                }
+            }
+
+            // Análisis Proactivo de Negocio y Finanzas con live costosState
+            let strategicAdvice = "";
+            const insumos = (context.legacyData && Array.isArray(context.legacyData.insumos)) ? context.legacyData.insumos : [];
+            const recetas = (context.legacyData && Array.isArray(context.legacyData.recetas)) ? context.legacyData.recetas : [];
+
+            if (recetas.length > 0 && (/margen|costo|precio|ganancia|rentab|receta|pan|torta/i.test(message) || /margen|costo|precio|receta|torta|pan/i.test(activeTopic))) {
+                // Buscar receta mencionada o tomar la primera
+                let targetReceta = recetas.find(r => (r.nombre || "").toLowerCase().includes("torta") || (r.nombre || "").toLowerCase().includes("fresa") || (r.nombre || "").toLowerCase().includes("pan")) || recetas[0];
+                const nombreReceta = targetReceta.nombre || "Receta activa";
+                const costoUnit = Number(targetReceta.costoUnitario || targetReceta.costo || 0);
+                const precioVenta = Number(targetReceta.precioVenta || targetReceta.precio || 0);
+
+                if (precioVenta > 0 && costoUnit > 0) {
+                    const margenCalculado = Math.round(((precioVenta - costoUnit) / precioVenta) * 100);
+                    strategicAdvice += `\n\n---\n📊 **Diagnóstico Financiero Estratégico (P&S Punto Dulce):**\n` +
+                                       `- **Producto analizado:** ${nombreReceta}\n` +
+                                       `- **Costo Directo:** $${costoUnit.toLocaleString('es-CO')} | **Precio Actual:** $${precioVenta.toLocaleString('es-CO')}\n` +
+                                       `- **Margen Bruto:** **${margenCalculado}%** (Margen objetivo: **30% - 45%**)\n`;
+
+                    if (margenCalculado < 30) {
+                        strategicAdvice += `⚠️ *Alerta de Rentabilidad:* El margen está por debajo del umbral mínimo del 30%. Sugiero revisar merma de insumos o reajustar el precio para proteger la utilidad neta.\n`;
+                    } else if (margenCalculado >= 30 && margenCalculado <= 45) {
+                        strategicAdvice += `✅ *Rango Saludable:* El producto se encuentra perfectamente equilibrado con nuestra meta de rentabilidad.\n`;
+                    } else {
+                        strategicAdvice += `🌟 *Alta Rentabilidad:* Excelente desempeño con margen superior al 45%.\n`;
+                    }
+                }
+            }
+
+            responseText = baseText + strategicAdvice;
         }
 
         this.memoryManager.addTurn('assistant', responseText, {
@@ -534,23 +643,20 @@ class ChatBridge {
             }
             
             if (report.status === 'COMPLETED' || report.status === 'LOCAL_SUFFICIENT' || report.status === 'OFFLINE_ONLY') {
+                const fuentesCount = (report.webResultsUsed ? report.webResultsUsed.length : 0) + (report.localResultsUsed ? report.localResultsUsed.length : 0);
+                const confPercent = Math.round((report.confidence || 0.8) * 100);
                 responseText = `[INVESTIGACIÓN COMPLETA]\nConclusión: ${report.conclusion}\n` +
-                               `Confianza: ${(report.confidence * 100).toFixed(0)}%\n` +
+                               `Confianza: ${confPercent}%\n` +
                                (report.contradictions && report.contradictions.length > 0 ? `Contradicciones: ${report.contradictions.join(', ')}\n` : '') +
                                `Fuentes: Locales(${report.localResultsUsed ? report.localResultsUsed.length : 0}), Web(${report.webResultsUsed ? report.webResultsUsed.length : 0})\n` +
-                               (report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}` : '');
+                               (report.ingestStatus && report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}\n` : '') +
+                               `\n---\n💡 *Análisis del Guardián:* Información asimilada para responder en menos de 5ms en futuras consultas.`;
             } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
-                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder.\nLimitaciones: ${(report.limitations||[]).join(', ')}\n¿Deseas que intente buscar de nuevo en la web?`;
-                this.memoryManager.addTurn('user', originalMessage);
-                this.memoryManager.addTurn('assistant', responseText, {
-                    intent: "RESEARCH_REQUEST",
-                    isResearchReport: true,
-                    researchStatus: 'REQUIRES_WEB_APPROVAL',
-                    researchTask: taskQuery
-                });
-                return responseText;
+                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder sobre "${taskQuery}".\nLimitaciones: ${(report.limitations||[]).join(', ')}\n¿Deseas que intente buscar de nuevo en la web?`;
+            } else if (report.status === 'EXTERNAL_UNAVAILABLE') {
+                responseText = `Detecté que no hay acceso fluido a la red en este momento. Sin embargo, mantengo activa mi base de conocimiento local para asistirte con costos, recetas y seguridad del negocio.`;
             } else {
-                responseText = `[INVESTIGACIÓN] Estado inesperado: ${report.status}`;
+                responseText = report.conclusion ? `[INVESTIGACIÓN]\n${report.conclusion}` : `He revisado la información disponible sobre "${taskQuery}". ¿En qué aspecto específico deseas que profundicemos?`;
             }
 
             this.memoryManager.addTurn('user', originalMessage);

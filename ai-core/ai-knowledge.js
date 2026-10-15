@@ -279,23 +279,126 @@ class KnowledgeManager {
     }
 
     /**
-     * Encuentra documentos por categoría.
+     * Sincroniza y rehidrata conocimiento desde un objeto o archivo repositorio persistente.
+     * Categorías soportadas: insumos, recetas_tecnicas, finanzas_punto_dulce, mercado_cucuta, conocimiento_general.
      */
-    async findByCategory(category) {
+    async syncFromRepository(repoData) {
+        if (!repoData || typeof repoData !== 'object') return 0;
         await this._ensureLoaded();
-        return this._cache.filter(doc => doc.category === category);
+        let syncedCount = 0;
+        const categories = repoData.categories || repoData;
+
+        for (const catKey of Object.keys(categories)) {
+            const items = Array.isArray(categories[catKey]) ? categories[catKey] : [];
+            for (const item of items) {
+                if (!item || !item.id || !item.content) continue;
+                const existingIdx = this._cache.findIndex(d => d.id === item.id);
+                const docToSave = {
+                    id: String(item.id).trim(),
+                    title: String(item.title || item.id).trim(),
+                    content: String(item.content).trim(),
+                    category: String(item.category || catKey).trim(),
+                    tags: Array.isArray(item.tags) ? item.tags : [catKey],
+                    source: String(item.source || 'KNOWLEDGE_VAULT_SEED').trim(),
+                    confidence: typeof item.confidence === 'number' ? item.confidence : 0.95,
+                    version: typeof item.version === 'number' ? item.version : 1,
+                    createdAt: item.createdAt || new Date().toISOString(),
+                    updatedAt: item.updatedAt || new Date().toISOString(),
+                    knowledgeType: item.knowledgeType || 'FACT',
+                    status: item.status || 'ACTIVE',
+                    learnedAt: item.learnedAt || new Date().toISOString(),
+                    provenance: item.provenance || {
+                        sourceType: 'LOCAL_REPOSITORY',
+                        sourceId: 'knowledge-repository.json',
+                        extractionMethod: 'VAULT_SYNC',
+                        ingestedAt: new Date().toISOString()
+                    }
+                };
+
+                try {
+                    const validDoc = KnowledgeSchema.validate(docToSave);
+                    if (existingIdx >= 0) {
+                        this._cache[existingIdx] = validDoc;
+                    } else {
+                        this._cache.push(validDoc);
+                    }
+                    syncedCount++;
+                } catch(errValidate) {
+                    console.warn(`[KnowledgeManager] Saltando documento inválido (${item.id}):`, errValidate.message);
+                }
+            }
+        }
+
+        if (syncedCount > 0) {
+            await this.store.save(this.collectionName, this._cache);
+        }
+        return syncedCount;
     }
 
     /**
-     * Encuentra documentos que contengan TODOS los tags especificados.
+     * Exporta el conocimiento agrupado en categorías de repositorio temático.
      */
-    async findByTags(tagsArray) {
+    async exportRepository() {
         await this._ensureLoaded();
-        if (!Array.isArray(tagsArray) || tagsArray.length === 0) return [];
-        
-        return this._cache.filter(doc => 
-            tagsArray.every(tag => doc.tags.includes(tag))
-        );
+        const categories = {
+            insumos: [],
+            recetas_tecnicas: [],
+            finanzas_punto_dulce: [],
+            mercado_cucuta: [],
+            conocimiento_general: []
+        };
+
+        for (const doc of this._cache) {
+            const cat = doc.category || 'conocimiento_general';
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(doc);
+        }
+
+        return {
+            version: "1.0.0",
+            exportedAt: new Date().toISOString(),
+            totalDocuments: this._cache.length,
+            categories: categories
+        };
+    }
+}
+
+/**
+ * KnowledgeVault: Bóveda de persistencia redundante para asegurar
+ * que el conocimiento nunca se pierda aunque se limpie la caché del navegador.
+ */
+class KnowledgeVault {
+    constructor(knowledgeManager, storageKey = 'pd_knowledge_vault_backup') {
+        this.km = knowledgeManager;
+        this.storageKey = storageKey;
+    }
+
+    async backup() {
+        if (!this.km) return null;
+        const dump = await this.km.exportRepository();
+        try {
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(this.storageKey, JSON.stringify(dump));
+            }
+        } catch(e) {
+            console.warn('[KnowledgeVault] No se pudo guardar en localStorage secundario:', e.message);
+        }
+        return dump;
+    }
+
+    async restore(seedJson = null) {
+        if (!this.km) return 0;
+        let dataToLoad = seedJson;
+        if (!dataToLoad && typeof localStorage !== 'undefined') {
+            const raw = localStorage.getItem(this.storageKey);
+            if (raw) {
+                try { dataToLoad = JSON.parse(raw); } catch(e) {}
+            }
+        }
+        if (dataToLoad) {
+            return await this.km.syncFromRepository(dataToLoad);
+        }
+        return 0;
     }
 }
 
@@ -467,7 +570,20 @@ class RelationshipRegistry {
 
 window.AI_CORE.KnowledgeSchema = KnowledgeSchema;
 window.AI_CORE.KnowledgeManager = KnowledgeManager;
+window.AI_CORE.KnowledgeVault = KnowledgeVault;
 window.AI_CORE.ConceptSchema = ConceptSchema;
 window.AI_CORE.ConceptRegistry = ConceptRegistry;
 window.AI_CORE.RelationshipSchema = RelationshipSchema;
 window.AI_CORE.RelationshipRegistry = RelationshipRegistry;
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        KnowledgeSchema,
+        KnowledgeManager,
+        KnowledgeVault,
+        ConceptSchema,
+        ConceptRegistry,
+        RelationshipSchema,
+        RelationshipRegistry
+    };
+}

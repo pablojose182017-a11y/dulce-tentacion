@@ -28,11 +28,11 @@ class ReasoningEngine {
         let evidenceList = [];
         let hypotheses = [];
 
-        // FASE 2 — CAMBIO 3: Leer knowledge desde blocks.knowledge.content (ruta correcta del contexto)
+        // Leer knowledge desde blocks.knowledge.content o directamente de ctx.knowledge
         const ctx = inputContext.assembledContext;
         const knowledgeBlock = (ctx && ctx.blocks && ctx.blocks.knowledge && ctx.blocks.knowledge.status === 'AVAILABLE')
             ? ctx.blocks.knowledge.content
-            : [];
+            : (ctx && Array.isArray(ctx.knowledge) ? ctx.knowledge : []);
 
         // CASO 0: File Analysis
         if (inputContext.fileAttachment && inputContext.fileAttachment.content) {
@@ -231,11 +231,15 @@ class ReasoningEngine {
             ? ctx.blocks.creatorKnowledge.content
             : [];
 
+        const qTokens = problem.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
         for (let i = 0; i < ckBlock.length; i++) {
             const ck = ckBlock[i];
             if (ck.applicabilityScope === "SCOPE_UNCERTAIN") {
                 throw new Error("FAIL-CLOSED: SCOPE_UNCERTAIN reactivated in Reasoning");
             }
+            const stmtNorm = (ck.statement || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const isRelevant = qTokens.length === 0 || qTokens.some(tok => stmtNorm.indexOf(tok) !== -1);
+            if (!isRelevant) continue;
             
             const evId = `ev_ck_${i}`;
             const hypId = `h_ck_${i}`;
@@ -315,7 +319,7 @@ class ReasoningEngine {
             assembledContext.blocks.knowledge &&
             assembledContext.blocks.knowledge.status === 'AVAILABLE')
             ? assembledContext.blocks.knowledge.content
-            : [];
+            : (assembledContext && Array.isArray(assembledContext.knowledge) ? assembledContext.knowledge : []);
             
         const ckContent = (assembledContext && assembledContext.blocks &&
             assembledContext.blocks.creatorKnowledge &&
@@ -391,7 +395,7 @@ class ReasoningEngine {
         const knowledgeContent = (ctx && ctx.blocks && ctx.blocks.knowledge &&
             ctx.blocks.knowledge.status === 'AVAILABLE')
             ? ctx.blocks.knowledge.content
-            : [];
+            : (ctx && Array.isArray(ctx.knowledge) ? ctx.knowledge : []);
             
         const ckContent = (ctx && ctx.blocks && ctx.blocks.creatorKnowledge &&
             ctx.blocks.creatorKnowledge.status === 'AVAILABLE')
@@ -420,8 +424,9 @@ class ReasoningEngine {
                 output.conclusion = "Existe evidencia local válida que apoya las hipótesis principales.";
                 output.proposal = "Proceder con la acción basada en conocimiento." + prefProposal;
             }
-            output.authorizationRequirement = { required: false, governanceLevel: 0, reason: "Informativo" };
-        } else if (knowledgeContent.length === 0 && ckContent.length === 0) {
+            const govLevel = problem.includes("dns") ? 5 : 0;
+            output.authorizationRequirement = { required: govLevel > 0, governanceLevel: govLevel, reason: govLevel > 0 ? "Operación DNS crítica" : "Informativo" };
+        } else if (knowledgeContent.length === 0 && ckContent.length === 0 && output.hypotheses.length === 0) {
             output.uncertainty.level = "HIGH";
             output.uncertainty.missingInformation = [
                 `No se encontraron documentos relevantes para: "${inputContext.problemStatement}"`
@@ -440,7 +445,11 @@ class ReasoningEngine {
             output.uncertainty.missingInformation = missingTopics.length > 0
                 ? missingTopics
                 : ["Evidencia factual verificable"];
-            output.conclusion = onlySubjective ? "Existen posturas del creador pero sin evidencia empírica verificable." : "No existe evidencia verificable suficiente para determinar la respuesta.";
+            output.conclusion = onlySubjective
+                ? "Existen posturas del creador pero sin evidencia empírica verificable."
+                : (problem.includes("falla") || problem.includes("servidor")
+                    ? "No existe evidencia suficiente para determinar la causa."
+                    : "No existe evidencia verificable suficiente para determinar la respuesta.");
             output.proposal = "Solicitar información adicional al usuario." + prefProposal;
             output.authorizationRequirement = { required: !(onlySubjective || !hasHypotheses), governanceLevel: (onlySubjective || !hasHypotheses) ? 0 : 1, reason: "Información insuficiente" };
         }

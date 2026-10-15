@@ -1,6 +1,7 @@
 *.bak
 backup_*
 _backup*/
+ai-core/_historial_backups/
 
 # Firebase Emulator Suite (local only — never commit)
 .firebase/

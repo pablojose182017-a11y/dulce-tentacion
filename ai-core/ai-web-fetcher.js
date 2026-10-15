@@ -307,9 +307,23 @@ class DdgWebFetcher extends WebFetcher {
                     if (wikiData.query && wikiData.query.search) {
                         for (const item of wikiData.query.search) {
                             if (results.length >= maxResults) break;
-                            const plainSnippet = HtmlSanitizer.strip(item.snippet, 1024).text;
+                            let plainSnippet = HtmlSanitizer.strip(item.snippet, 1024).text;
+                            if (results.length === 0 && item.title) {
+                                try {
+                                    const extUrl = `https://es.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=&explaintext=&titles=${encodeURIComponent(item.title)}&format=json&origin=*`;
+                                    const extRes = await this._fetchWithTimeout(extUrl, Math.min(this._timeoutMs, 4000));
+                                    if (extRes.ok) {
+                                        const extData = await extRes.json();
+                                        const pages = extData.query && extData.query.pages ? extData.query.pages : {};
+                                        const pKey = Object.keys(pages)[0];
+                                        if (pKey && pages[pKey].extract) {
+                                            plainSnippet = pages[pKey].extract;
+                                        }
+                                    }
+                                } catch(errExt) {}
+                            }
                             results.push({
-                                url: `https://es.wikipedia.org/?curid=${item.pageid}`,
+                                url: `https://es.wikipedia.org/?curid=${item.pageid || ''}`,
                                 title: item.title,
                                 snippet: plainSnippet,
                                 retrievedAt: at,
