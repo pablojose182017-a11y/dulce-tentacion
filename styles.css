@@ -1038,7 +1038,7 @@
             background: rgba(255, 255, 255, 0.82);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 245, 235, 0.9);
+            border: 1px solid rgba(229, 169, 60, 0.25);
             border-radius: 24px;
             padding: 24px;
             text-align: center;
@@ -1048,6 +1048,12 @@
             z-index: 2;
             box-shadow: 0 15px 35px -10px rgba(136, 19, 55, 0.08);
             margin: 0 auto;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hero-welcome-card:hover {
+            border-color: rgba(229, 169, 60, 0.55);
+            box-shadow: 0 16px 40px rgba(197, 139, 43, 0.12), 0 15px 35px -10px rgba(136, 19, 55, 0.08);
         }
 
         .hero::before {
@@ -4823,7 +4829,7 @@
                 justify-content: center !important;
                 box-sizing: border-box !important;
                 font-size: 0.95rem !important;
-                border-radius: 14px !important;
+                border-radius: 50px !important;
                 text-align: center !important;
             }
 
@@ -5195,28 +5201,33 @@
     align-items: center;
     gap: 10px;
     width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
 }
 
 .btn-hero-primary, .btn-hero-secondary {
     position: relative !important;
     overflow: hidden !important;
-    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    transition: all 0.3s ease !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
     width: 100% !important;
-    max-width: 320px !important;
+    max-width: 380px !important;
     border-radius: 50px !important;
     text-decoration: none !important;
     font-family: 'Quicksand', sans-serif !important;
     letter-spacing: 0.2px !important;
     cursor: pointer !important;
-    border: none;
+    border: 1.5px solid rgba(229, 169, 60, 0.35) !important; /* Filito dorado sutil en reposo */
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
 }
 
+/* Botón 1: Naranja original con orillo y glow dorado */
 .btn-hero-primary {
-    padding: 13px 24px !important;
+    padding: 13px 22px !important;
     font-size: 15.5px !important;
     font-weight: 800 !important;
     color: #FFFFFF !important;
@@ -5224,8 +5235,9 @@
     box-shadow: 0 6px 18px rgba(216, 86, 6, 0.35) !important;
 }
 
+/* Botón 2: Vino / Magenta original con orillo y glow dorado */
 .btn-hero-secondary {
-    padding: 11px 22px !important;
+    padding: 12px 20px !important;
     font-size: 14px !important;
     font-weight: 700 !important;
     color: #FFFFFF !important;
@@ -5233,47 +5245,45 @@
     box-shadow: 0 5px 16px rgba(136, 14, 79, 0.28) !important;
 }
 
-.btn-hero-primary:hover, .btn-hero-secondary:hover {
+/* Al pasar el mouse o tocar en móvil (:hover, :active, :focus-visible) */
+.btn-hero-primary:hover,
+.btn-hero-secondary:hover,
+.btn-hero-primary:active,
+.btn-hero-secondary:active,
+.btn-hero-primary:focus-visible,
+.btn-hero-secondary:focus-visible {
+    border-color: #FFD571 !important;
+    box-shadow: 0 0 18px rgba(229, 169, 60, 0.65), 0 6px 16px rgba(197, 139, 43, 0.35) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28) !important;
 }
 
-.btn-hero-primary:active, .btn-hero-secondary:active {
-    transform: translateY(2px) scale(0.98) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+.btn-hero-primary:active,
+.btn-hero-secondary:active {
+    transform: translateY(0px) scale(0.98) !important;
 }
 
-.btn-hero-primary::after, .btn-hero-secondary::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -130%;
-    width: 70%;
-    height: 100%;
-    background: linear-gradient(
-        115deg,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.25) 45%,
-        rgba(255, 250, 235, 0.35) 50%,
-        rgba(255, 255, 255, 0.25) 55%,
-        rgba(255, 255, 255, 0) 100%
-    );
-    filter: blur(2px);
-    transform: skewX(-25deg);
-    animation: reflejoSol 6s infinite ease-in-out;
-    pointer-events: none;
+/* Rayo de luz dorado al rozar (Shimmer Effect con ::after) */
+.btn-hero-primary::after,
+.btn-hero-secondary::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 60% !important;
+    height: 100% !important;
+    background: linear-gradient(120deg, transparent, rgba(255, 235, 160, 0.45), transparent) !important;
+    transform: skewX(-20deg) !important;
+    transition: left 0.6s ease !important;
+    pointer-events: none !important;
 }
 
-@keyframes reflejoSol {
-    0% {
-        left: -130%;
-    }
-    35% {
-        left: 160%;
-    }
-    100% {
-        left: 160%;
-    }
+.btn-hero-primary:hover::after,
+.btn-hero-secondary:hover::after,
+.btn-hero-primary:active::after,
+.btn-hero-secondary:active::after,
+.btn-hero-primary:focus-visible::after,
+.btn-hero-secondary:focus-visible::after {
+    left: 140% !important;
 }
 
 @media (max-width: 768px) {
@@ -5288,7 +5298,7 @@
     .btn-hero-primary,
     .btn-hero-secondary {
         width: 100% !important;
-        max-width: 100% !important;
+        max-width: 380px !important;
         min-height: 48px !important;
         height: auto !important;
         padding: 13px 18px !important;
@@ -5296,9 +5306,19 @@
         align-items: center !important;
         justify-content: center !important;
         box-sizing: border-box !important;
-        font-size: 0.96rem !important;
-        border-radius: 14px !important;
+        font-size: 0.94rem !important;
+        border-radius: 50px !important;
         text-align: center !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn-hero-primary,
+    .btn-hero-secondary {
+        max-width: 100% !important;
+        white-space: normal !important;
+        font-size: 0.90rem !important;
+        padding: 12px 14px !important;
     }
 }
 
