@@ -4113,7 +4113,7 @@ function filterCategory(cat, el) {
         }
         return p.cat === cat;
     }));
-    renderFeatured(cat);
+    requestAnimationFrame(() => renderFeatured(cat));
 }
 function showSearchHelp(title, message, actionLabel, action) {
     const panel = document.getElementById('searchHelp');
@@ -4149,85 +4149,89 @@ function clearProductSearch() {
     renderFeatured('todos');
 }
 
+let _searchDebounceTimer = null;
 function filterProductsBySearch(inputId) {
-    const inputEl = document.getElementById(inputId);
-    const rawVal = inputEl ? inputEl.value : '';
-    const normalizeText = (str) => (str || '').normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim()
-        .replace(/\s+/g, ' ');
-    const q = normalizeText(rawVal);
+    clearTimeout(_searchDebounceTimer);
+    _searchDebounceTimer = setTimeout(() => {
+        const inputEl = document.getElementById(inputId);
+        const rawVal = inputEl ? inputEl.value : '';
+        const normalizeText = (str) => (str || '').normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim()
+            .replace(/\s+/g, ' ');
+        const q = normalizeText(rawVal);
 
-    // Sincronizar inputs móvil y desktop
-    const deskInp = document.getElementById('searchInputDesktop');
-    const mobInp = document.getElementById('searchInputMobile');
-    if (deskInp && deskInp !== inputEl) deskInp.value = rawVal;
-    if (mobInp && mobInp !== inputEl) mobInp.value = rawVal;
-    document.querySelectorAll('.search-clear-btn').forEach(button => { button.hidden = !q; });
+        // Sincronizar inputs móvil y desktop
+        const deskInp = document.getElementById('searchInputDesktop');
+        const mobInp = document.getElementById('searchInputMobile');
+        if (deskInp && deskInp !== inputEl) deskInp.value = rawVal;
+        if (mobInp && mobInp !== inputEl) mobInp.value = rawVal;
+        document.querySelectorAll('.search-clear-btn').forEach(button => { button.hidden = !q; });
 
-    const helpPanel = document.getElementById('searchHelp');
-    if (helpPanel) { helpPanel.hidden = true; helpPanel.replaceChildren(); }
+        const helpPanel = document.getElementById('searchHelp');
+        if (helpPanel) { helpPanel.hidden = true; helpPanel.replaceChildren(); }
 
-    // Si el campo queda vacío, restaurar catálogo completo y chip 'todos'
-    if (!q) {
-        document.querySelectorAll('.cat-chip').forEach(c => {
-            c.classList.toggle('active', c.getAttribute('onclick')?.includes("'todos'"));
+        // Si el campo queda vacío, restaurar catálogo completo y chip 'todos'
+        if (!q) {
+            document.querySelectorAll('.cat-chip').forEach(c => {
+                c.classList.toggle('active', c.getAttribute('onclick')?.includes("'todos'"));
+            });
+            renderProducts(products);
+            renderFeatured('todos');
+            return;
+        }
+
+        const terms = q.split(' ').filter(Boolean);
+        const deliveryQuestion = /\b(donde|entrega|entregan|domicilio|domicilios|cobertura|zona|zonas)\b/.test(q);
+        const orderQuestion = /\b(como|hago|hacer|realizar|pedir|comprar)\b/.test(q)
+            && /\b(pedido|pedidos|compra|comprar|carrito|orden)\b/.test(q);
+
+        if (deliveryQuestion) {
+            renderProducts(products);
+            renderFeatured('todos');
+            showSearchHelp(
+                'Entregas en Cúcuta',
+                'Cubrimos la zona urbana de Cúcuta. El domicilio es gratis en compras desde $10.000 COP; en pedidos menores cuesta $5.000 COP.',
+                'Ver zonas y condiciones',
+                () => window.openDeliveryCoverageModal?.()
+            );
+            showSection('productos', document.querySelectorAll('.nav-link')[1]);
+            return;
+        }
+
+        if (orderQuestion) {
+            renderProducts(products);
+            renderFeatured('todos');
+            showSearchHelp(
+                'Haz tu pedido en línea',
+                'Elige tus productos, agrégalos al carrito y continúa con la entrega para indicar tus datos y forma de pago. Al final podrás confirmar el pedido.',
+                'Ver catálogo',
+                () => showSection('productos', document.querySelectorAll('.nav-link')[1])
+            );
+            showSection('productos', document.querySelectorAll('.nav-link')[1]);
+            return;
+        }
+
+        // Buscar por frase o por todos los términos, sin depender de tildes o signos.
+        const filtered = products.filter(p => {
+            const name = normalizeText(p.name);
+            const desc = normalizeText(p.desc);
+            const cat = normalizeText(p.cat);
+            const searchable = `${name} ${desc} ${cat}`;
+            return searchable.includes(q) || terms.every(term => searchable.includes(term));
         });
-        renderProducts(products);
-        renderFeatured('todos');
-        return;
-    }
 
-    const terms = q.split(' ').filter(Boolean);
-    const deliveryQuestion = /\b(donde|entrega|entregan|domicilio|domicilios|cobertura|zona|zonas)\b/.test(q);
-    const orderQuestion = /\b(como|hago|hacer|realizar|pedir|comprar)\b/.test(q)
-        && /\b(pedido|pedidos|compra|comprar|carrito|orden)\b/.test(q);
+        renderProducts(filtered);
 
-    if (deliveryQuestion) {
-        renderProducts(products);
-        renderFeatured('todos');
-        showSearchHelp(
-            'Entregas en Cúcuta',
-            'Cubrimos la zona urbana de Cúcuta. El domicilio es gratis en compras desde $10.000 COP; en pedidos menores cuesta $5.000 COP.',
-            'Ver zonas y condiciones',
-            () => window.openDeliveryCoverageModal?.()
-        );
-        showSection('productos', document.querySelectorAll('.nav-link')[1]);
-        return;
-    }
-
-    if (orderQuestion) {
-        renderProducts(products);
-        renderFeatured('todos');
-        showSearchHelp(
-            'Haz tu pedido en línea',
-            'Elige tus productos, agrégalos al carrito y continúa con la entrega para indicar tus datos y forma de pago. Al final podrás confirmar el pedido.',
-            'Ver catálogo',
-            () => showSection('productos', document.querySelectorAll('.nav-link')[1])
-        );
-        showSection('productos', document.querySelectorAll('.nav-link')[1]);
-        return;
-    }
-
-    // Buscar por frase o por todos los términos, sin depender de tildes o signos.
-    const filtered = products.filter(p => {
-        const name = normalizeText(p.name);
-        const desc = normalizeText(p.desc);
-        const cat = normalizeText(p.cat);
-        const searchable = `${name} ${desc} ${cat}`;
-        return searchable.includes(q) || terms.every(term => searchable.includes(term));
-    });
-
-    renderProducts(filtered);
-
-    // Navegar a productos si no está activo, manteniendo el foco en el buscador
-    const prodSec = document.getElementById('productos');
-    if (!prodSec || !prodSec.classList.contains('active')) {
-        showSection('productos', document.querySelectorAll('.nav-link')[1]);
-        if (inputEl) inputEl.focus();
-    }
+        // Navegar a productos si no está activo, manteniendo el foco en el buscador
+        const prodSec = document.getElementById('productos');
+        if (!prodSec || !prodSec.classList.contains('active')) {
+            showSection('productos', document.querySelectorAll('.nav-link')[1]);
+            if (inputEl) inputEl.focus();
+        }
+    }, 220);
 }
 
 // ===== QTY =====
@@ -5843,10 +5847,12 @@ document.addEventListener('click', function (e) {
 });
 
 window.addEventListener('resize', function () {
-    const dd = document.getElementById('adminNotifDropdown');
-    if (dd && dd.style.display === 'block' && typeof window.adjustNotifDropdownPosition === 'function') {
-        window.adjustNotifDropdownPosition();
-    }
+    requestAnimationFrame(() => {
+        const dd = document.getElementById('adminNotifDropdown');
+        if (dd && dd.style.display === 'block' && typeof window.adjustNotifDropdownPosition === 'function') {
+            window.adjustNotifDropdownPosition();
+        }
+    });
 });
 
 // ===== ARRASTRE MULTI-DISPOSITIVO (MOUSE Y TOUCH) PARA LA CAMPANA DE NOTIFICACIONES =====

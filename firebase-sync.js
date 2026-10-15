@@ -77,13 +77,26 @@ window.fetchAdminAsset = window.fetchAdminAsset || async function(path) {
     if (!user || user.isAnonymous) throw new Error('Inicia sesión con una cuenta autorizada.');
 
     const idToken = (typeof user.getIdToken === 'function') ? await user.getIdToken() : '';
-    const response = await fetch(path, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${idToken}` },
-        cache: 'no-store'
-    });
-    if (!response.ok) throw new Error(`Acceso al recurso administrativo denegado (HTTP ${response.status}).`);
-    return response;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    try {
+        const response = await fetch(path, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${idToken}` },
+            cache: 'no-store',
+            signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`Acceso al recurso administrativo denegado (HTTP ${response.status}).`);
+        return response;
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            throw new Error(`Tiempo de espera agotado (timeout) al cargar el recurso administrativo: ${path}`);
+        }
+        throw err;
+    } finally {
+        clearTimeout(timeoutId);
+    }
 };
 
 window.loadProtectedAdminScript = window.loadProtectedAdminScript || async function(path, marker) {

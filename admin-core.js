@@ -902,6 +902,7 @@ window.eliminarProducto = function (pId) {
 };
 
 // Extracted from control-roles.js
+let _adminClaimsUnsub = null;
 window.renderAdminClaims = function() {
     const db = window.db || (window.firebase && window.firebase.firestore ? window.firebase.firestore() : null);
     if (!db) return;
@@ -909,7 +910,12 @@ window.renderAdminClaims = function() {
     const tbody = document.getElementById('admin-claims-table');
     if (!container || !tbody) return;
 
-    db.collection('solicitudes_puntos').where('estado', '==', 'Pendiente').onSnapshot(snap => {
+    if (_adminClaimsUnsub) {
+        _adminClaimsUnsub();
+        _adminClaimsUnsub = null;
+    }
+
+    _adminClaimsUnsub = db.collection('solicitudes_puntos').where('estado', '==', 'Pendiente').onSnapshot(snap => {
         if (snap.empty) {
             container.style.display = 'none';
             tbody.innerHTML = '';

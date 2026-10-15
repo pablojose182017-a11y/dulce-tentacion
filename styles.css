@@ -4032,7 +4032,7 @@
             border-radius: 12px;
             padding: 20px;
             width: calc(33.333% - 14px);
-            min-width: 300px;
+            min-width: min(100%, 300px);
             max-width: 95vw;
             box-sizing: border-box;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -5512,7 +5512,7 @@
 }
 .admin-tab-btn {
     flex: 1;
-    min-width: 200px;
+    min-width: min(100%, 200px);
     background: transparent;
     color: #64748b;
     border: none;
