@@ -6717,10 +6717,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 /* ==========================================================================
    BOUTIQUE & EDITORIAL ARTISANAL REFACTORING (UI / CSS ONLY)
-   Palette: Dorado (#C58B2B), Café Cacao Profundo (#2C1E18), Cálido (#FAF6F0)
+   Palette: Dorado (#C58B2B, #E2AC48), Café Cacao Profundo (#2C1E18), Cálido (#FAF6F0)
    ========================================================================== */
 
-/* 1. Desktop Navigation Links (Clean Text Links with Refined Centered Underline) */
+/* 1. Animación Dorada Premium en el Menú Superior (Efecto Video Mejorado) */
+html {
+    scroll-behavior: smooth !important;
+}
+
 header nav {
     display: flex;
     align-items: center;
@@ -6730,158 +6734,191 @@ header nav {
     border: none;
 }
 
+header nav .nav-indicator,
+.nav-indicator {
+    display: none !important;
+}
+
 header nav .nav-link,
-header nav #nav-club-puntos.nav-link {
+header nav #nav-club-puntos.nav-link,
+.nav-link {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px 4px !important;
+    margin: 0 12px !important;
+    transform: none !important;
     background: transparent !important;
-    color: #6E5A4F !important;
-    font-weight: 600 !important;
-    font-size: 0.92rem !important;
-    padding: 8px 12px 10px 12px !important;
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    position: relative;
-    cursor: pointer;
+    color: #5C493E !important;
+    font-weight: 500 !important;
+    font-size: 0.92rem !important;
+    cursor: pointer !important;
     text-decoration: none !important;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: color 0.2s ease !important;
+    transition: color 0.3s ease !important;
 }
 
-/* Indicador de línea inferior refinado, centrado y con puntas redondeadas */
-header nav .nav-link::after,
-header nav #nav-club-puntos.nav-link::after {
-    content: '' !important;
-    display: block !important;
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0%;
-    height: 3px;
-    background-color: #6E5A4F !important;
-    border-radius: 4px !important;
-    transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease !important;
-}
-
-/* Hover: texto sutilmente más oscuro y línea discreta */
 header nav .nav-link:hover,
-header nav #nav-club-puntos.nav-link:hover {
+header nav #nav-club-puntos.nav-link:hover,
+header nav .nav-link.active,
+.nav-link.active {
     background: transparent !important;
-    color: #2C1E18 !important;
+    color: #C58B2B !important;
     box-shadow: none !important;
     transform: none !important;
 }
 
+/* Línea inferior animada milimétrica anclada a cada enlace */
+header nav .nav-link::after,
+header nav #nav-club-puntos.nav-link::after,
+.nav-link::after,
+.nav-link.active::after {
+    content: '' !important;
+    display: block !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    transform: none !important; /* Elimina cualquier translateX viejo */
+    width: 0% !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, #C58B2B, #E2AC48) !important;
+    border-radius: 2px !important;
+    transition: width 0.3s ease !important;
+}
+
 header nav .nav-link:hover::after,
-header nav #nav-club-puntos.nav-link:hover::after {
-    width: 60% !important;
-    background-color: #A89587 !important;
+header nav #nav-club-puntos.nav-link:hover::after,
+header nav .nav-link.active::after,
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100% !important;
+    left: 0 !important;
+    transform: none !important;
 }
 
-/* Active: Sin fondo/cápsula, texto en marrón/terracota principal y línea centrada al 90% */
-header nav .nav-link.active {
-    background: transparent !important;
-    color: #2C1E18 !important;
-    font-weight: 700 !important;
-    box-shadow: none !important;
-    border: none !important;
-}
-
-header nav .nav-link.active::after {
-    width: 88% !important;
-    background-color: #6E5A4F !important;
-}
-
-/* 2. Header Action Buttons Hierarchy (Cart protagonist & Google Login subtle) */
-/* Botón Carrito: Protagonista en café cacao profundo #2C1E18 y badge dorado */
+/* Unificación definitiva del botón Carrito en el Header a Café Cacao y Dorado */
 header .cart-btn,
-#headerCartBtn {
+#headerCartBtn,
+button.cart-btn {
     background: #2C1E18 !important;
     color: #FFFFFF !important;
     border: none !important;
     border-radius: 50px !important;
     padding: 9px 20px !important;
-    font-weight: 700;
-    font-size: 0.88rem;
+    font-weight: 700 !important;
+    font-size: 0.88rem !important;
     box-shadow: 0 4px 14px rgba(44, 30, 24, 0.22) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
 }
 
 header .cart-btn:hover,
-#headerCartBtn:hover {
-    transform: translateY(-2px);
+#headerCartBtn:hover,
+button.cart-btn:hover {
+    background: #3D2B23 !important;
+    transform: translateY(-2px) !important;
     box-shadow: 0 8px 22px rgba(44, 30, 24, 0.32) !important;
 }
 
 header .cart-badge,
-#cartCount {
+#cartCount,
+.cart-btn .cart-badge {
     background: #C58B2B !important;
     color: #FFFFFF !important;
-    font-weight: 800;
-    font-size: 0.75rem;
-    padding: 2px 8px;
+    font-weight: 800 !important;
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
     border-radius: 50px !important;
 }
 
-/* Botón Ingresar (Google): Fondo blanco limpio, borde sutil con hover dorado */
-header .btn-google-login,
-#btn-google-login {
-    background: #FFFFFF !important;
+/* 2. Encabezados de Sección estilo Alta Pastelería */
+.section-pretitle {
+    display: block;
+    text-transform: uppercase !important;
+    letter-spacing: 2.5px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    color: #C58B2B !important;
+    margin-bottom: 8px !important;
+    text-align: center;
+}
+
+.section-title,
+section#productos h2,
+section#nosotros h2,
+.info-card h2 {
+    font-family: 'Playfair Display', Georgia, serif !important;
     color: #2C1E18 !important;
-    border: 1px solid #E6E0D6 !important;
+    font-size: 2.4rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    text-align: center;
+}
+
+.section-title em,
+section#productos h2 em,
+section#nosotros h2 em,
+.info-card h2 em {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-style: italic !important;
+    color: #C58B2B !important;
+}
+
+/* 3. Buscador Centrado y Píldoras de Categorías del Catálogo */
+.search-box {
+    max-width: 480px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #EAE2D7 !important;
     border-radius: 50px !important;
-    padding: 8px 16px !important;
-    font-weight: 600;
-    font-size: 0.84rem;
-    box-shadow: 0 2px 6px rgba(44, 30, 24, 0.04);
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+    padding: 3px 14px 3px 18px !important;
+    box-shadow: 0 4px 20px rgba(44, 30, 24, 0.04) !important;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+    display: flex;
+    align-items: center;
 }
 
-header .btn-google-login:hover,
-#btn-google-login:hover {
+.search-box:focus-within {
     border-color: #C58B2B !important;
-    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.15) !important;
-    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(197, 139, 43, 0.15) !important;
+    filter: none !important;
 }
 
-/* 3. Buscador del Header y Filtros del Catálogo */
-/* Input del Buscador con fondo cálido y focus dorado */
 .search-box input#searchInputDesktop,
 .search-box input {
-    background: #FAF6F0 !important;
-    border: 1.5px solid #EAE2D7 !important;
-    border-radius: 50px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
     color: #2C1E18 !important;
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+    padding: 9px 12px 9px 36px !important;
+    font-size: 0.88rem !important;
+    box-shadow: none !important;
 }
 
 .search-box:focus-within input,
 .search-box input:focus {
-    background: #FFFFFF !important;
-    border-color: #C58B2B !important;
-    box-shadow: 0 0 0 3px rgba(197, 139, 43, 0.16) !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
-.search-box:focus-within {
-    filter: drop-shadow(0 4px 14px rgba(197, 139, 43, 0.12)) !important;
-}
-
-/* Píldoras de Categorías en el Catálogo */
+/* Píldoras de filtro de categorías */
 .cat-chip {
     background: #FFFFFF !important;
-    color: #6E5A4F !important;
-    border: 1.5px solid #EAE2D7 !important;
-    font-weight: 600;
-    transition: all 0.22s ease !important;
+    border: 1px solid #EAE2D7 !important;
+    color: #4A3A31 !important;
+    border-radius: 50px !important;
+    padding: 8px 18px !important;
+    font-weight: 500 !important;
+    transition: all 0.25s ease !important;
+    box-shadow: none !important;
 }
 
 .cat-chip:hover:not(.active) {
     border-color: #C58B2B !important;
     color: #C58B2B !important;
-    transform: translateY(-2px);
+    transform: translateY(-1px) !important;
     box-shadow: 0 4px 12px rgba(197, 139, 43, 0.12) !important;
 }
 
@@ -6889,10 +6926,166 @@ header .btn-google-login:hover,
     background: #2C1E18 !important;
     color: #FFFFFF !important;
     border-color: #2C1E18 !important;
-    box-shadow: 0 4px 14px rgba(44, 30, 24, 0.25) !important;
+    box-shadow: 0 4px 12px rgba(44, 30, 24, 0.20) !important;
 }
 
-/* 4. Banner 'Torta para Celebración (Bajo Pedido)' Boutique */
+/* 4. Tarjetas de Producto (Product Cards) de Lujo */
+.grid .card,
+.card {
+    background: #FFFFFF !important;
+    border-radius: 20px !important;
+    border: 1px solid #F0EAE1 !important;
+    overflow: hidden !important;
+    box-shadow: 0 8px 28px rgba(44, 30, 24, 0.05) !important;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
+}
+
+.grid .card:hover,
+.card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 14px 34px rgba(197, 139, 43, 0.14) !important;
+    border-color: #E6D5B8 !important;
+}
+
+/* Imagen superior con zoom suave en hover */
+.card .card-img-wrap {
+    height: 220px !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #FAF6F0 !important;
+}
+
+.card .card-img-wrap img {
+    height: 100% !important;
+    width: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card:hover .card-img-wrap img {
+    transform: scale(1.05) !important;
+}
+
+/* Badges flotantes sobre la foto */
+.card .product-badges-row {
+    position: absolute !important;
+    top: 12px !important;
+    left: 12px !important;
+    right: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 3 !important;
+    pointer-events: none !important;
+}
+
+.card .badge-status,
+.card .badge-discount,
+.card .card-tag {
+    background: rgba(34, 23, 17, 0.78) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    border-radius: 50px !important;
+    padding: 5px 14px !important;
+    border: 1px solid rgba(229, 169, 60, 0.25) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    color: #E5A93C !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Tipografía del Nombre y Precio del Producto */
+.card h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: #2C1E18 !important;
+    margin-bottom: 6px !important;
+}
+
+.card .price-row .price {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: #C58B2B !important;
+}
+
+.card .price-row .price-label {
+    background: #FAF3E6 !important;
+    color: #8A5A19 !important;
+    border: 1px solid #E6D2B5 !important;
+    border-radius: 6px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    padding: 2px 6px !important;
+}
+
+/* Selector de cantidad dentro de la tarjeta */
+.card .quantity-control {
+    background: #FAF6F0 !important;
+    border: 1px solid #EDE5DA !important;
+    border-radius: 10px !important;
+    padding: 3px 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    margin: 6px auto 12px auto !important;
+}
+
+.card .qty-btn {
+    background: transparent !important;
+    border: none !important;
+    width: 28px !important;
+    height: 28px !important;
+    color: #2C1E18 !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    border-radius: 6px !important;
+    transition: background 0.2s ease !important;
+}
+
+.card .qty-btn:hover {
+    background: #EAE2D7 !important;
+    color: #2C1E18 !important;
+}
+
+.card .qty-input {
+    background: transparent !important;
+    border: none !important;
+    width: 44px !important;
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    color: #2C1E18 !important;
+    text-align: center !important;
+    box-shadow: none !important;
+}
+
+/* Botón de agregar al carrito en cada tarjeta */
+.card .btn-add {
+    background: #2C1E18 !important;
+    color: #FFFFFF !important;
+    border-radius: 50px !important;
+    width: 100% !important;
+    padding: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(44, 30, 24, 0.16) !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.card .btn-add:hover {
+    background: #C58B2B !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 6px 16px rgba(197, 139, 43, 0.3) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* 5. Banner 'Torta para Celebración (Bajo Pedido)' Boutique */
 .cake-custom-banner-editorial {
     background: linear-gradient(135deg, #FFF9F3 0%, #FDF3E7 50%, #FBECE8 100%) !important;
     border: 1px solid #EED6C4 !important;
