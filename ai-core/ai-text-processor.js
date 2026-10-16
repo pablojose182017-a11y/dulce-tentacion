@@ -72,6 +72,19 @@ class TextProcessor {
             [/\bano\b/gi, (m) => m[0] === 'A' ? 'Año' : 'año'],
             [/\banos\b/gi, (m) => m[0] === 'A' ? 'Años' : 'años'],
             [/\bcucuta\b/gi, 'Cúcuta'],
+            // Correcciones exactas solicitadas
+            [/\bproxima\b/gi, (m) => m[0] === 'P' ? 'Próxima' : 'próxima'],
+            [/\bproximas\b/gi, (m) => m[0] === 'P' ? 'Próximas' : 'próximas'],
+            [/\bproximo\b/gi, (m) => m[0] === 'P' ? 'Próximo' : 'próximo'],
+            [/\bproximos\b/gi, (m) => m[0] === 'P' ? 'Próximos' : 'próximos'],
+            [/\bconosimiento\b/gi, (m) => m[0] === 'C' ? 'Conocimiento' : 'conocimiento'],
+            [/\bconosimientos\b/gi, (m) => m[0] === 'C' ? 'Conocimientos' : 'conocimientos'],
+            [/\boprotunidad\b/gi, (m) => m[0] === 'O' ? 'Oportunidad' : 'oportunidad'],
+            [/\boprotunidades\b/gi, (m) => m[0] === 'O' ? 'Oportunidades' : 'oportunidades'],
+            [/\boportunidad\b/gi, (m) => m[0] === 'O' ? 'Oportunidad' : 'oportunidad'],
+            [/\boportunidades\b/gi, (m) => m[0] === 'O' ? 'Oportunidades' : 'oportunidades'],
+            // Salvaguarda: deshacer cualquier deformación errónea 'un aproxima' -> 'una próxima'
+            [/\bun\s+aproxima\b/gi, 'una próxima'],
             // Preguntas y pronombres
             [/\bque\b(?=\s+(?:quieres|hacer|recomiendas|opinas|tal|paso|pasó|es|son|lleva|contiene|cuesta|vale)\b)/gi, (m) => m[0] === 'Q' ? 'Qué' : 'qué'],
             [/\bcomo\b(?=\s+(?:estas|vamos|hacer|te|funciona|haces|lograr|preparar)\b)/gi, (m) => m[0] === 'C' ? 'Cómo' : 'cómo'],
@@ -161,7 +174,16 @@ class TextProcessor {
 
             for (const match of matches) {
                 if (match.replacements && match.replacements.length > 0) {
-                    const best = match.replacements[0].value;
+                    let best = match.replacements[0].value;
+                    const originalSnippet = text.substring(match.offset, match.offset + match.length);
+
+                    // Si el original contenía "una proxima" y la primera opción es "un aproxima",
+                    // seleccionar preferentemente "una próxima"
+                    if (/\buna\s+proxima\b/i.test(originalSnippet) || /\buna\s+proxima\b/i.test(match.context.text || '')) {
+                        const goodOpt = match.replacements.find(r => /\buna\s+próxima\b/i.test(r.value));
+                        if (goodOpt) best = goodOpt.value;
+                    }
+
                     const offset = match.offset;
                     const length = match.length;
                     textArray.splice(offset, length, best);

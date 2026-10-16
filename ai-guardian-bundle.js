@@ -6829,9 +6829,10 @@ class LanguageUnderstandingEngine {
                 for (let j = 0; j < phraseWords.length; j++) {
                     const tw = textWords[i + j];
                     const pw = phraseWords[j];
+                    // Strict threshold: do not allow distance 2 for single short words (e.g. 'buenas' matching 'cuentas')
                     let allowedDist = 0;
-                    if (pw.length > 5) allowedDist = 2;
-                    else if (pw.length >= 4) allowedDist = maxDistancePerWord;
+                    if (pw.length >= 7) allowedDist = Math.min(maxDistancePerWord, 1);
+                    else if (pw.length >= 4) allowedDist = Math.min(maxDistancePerWord, 1);
                     if (!this._isSimilar(tw, pw, allowedDist)) {
                         match = false;
                         break;
@@ -6961,10 +6962,50 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
-        // Intent prioritario: Preparación para corregir / procesar texto
-        const isTextPrep = this._containsPhrase(normalized, this.dictionaries.TEXT_PROCESS_PREPARATION) ||
-                           (/\b(?:te voy a pasar|te paso|te comparto|voy a pasar|voy a pegarte)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|escrito)\b/i.test(normalized)) ||
-                           (/\b(?:corrijas|corregir|correccion|ortograficos?|ortografia)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|errores)\b/i.test(normalized));
+        // Intent Prioritario 0A: Cancelación y Cambio de Planes (CANCEL_TASK)
+        const isCancellation = /\b(?:cancelar|cancela|cancelacorreccion|olvidalo|olvida eso|dejemoslo asi|vamos a hacer otra cosa|cambiemos de tema|ya no|no mejor|no quiero)\b/i.test(normalized) ||
+                               /^cancel[a-z]*$/i.test(normalized.trim());
+        
+        // Intent Prioritario 0B: Guardar en Bóveda / Aprender Conocimiento (SAVE_TO_KNOWLEDGE_VAULT)
+        const isSaveKnowledge = /\b(?:guarda(?:r)?\s+(?:este|ese|esta|la|el|dicho)?\s*(?:conocimiento|informacion|info|dato|receta|secreto|nota)|aprende\s+(?:este|esto|ese|esa)|memoriza\s+(?:esto|este|ese)|boveda\s+local|knowledgevault)\b/i.test(normalized) ||
+                                (/\bguarda\b/i.test(normalized) && /\b(?:conosimiento|conocimiento|memoria)\b/i.test(normalized));
+
+        if (isSaveKnowledge) {
+            interpretation.intent = "SAVE_TO_KNOWLEDGE_VAULT";
+            interpretation.confidence = 0.98;
+            interpretation.topic = "SAVE_KNOWLEDGE";
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        if (isCancellation) {
+            interpretation.intent = "CANCEL_TASK";
+            interpretation.confidence = 0.98;
+            interpretation.topic = "CANCEL_CURRENT_TASK";
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        // Gatekeeper Prioritario 0C: Texto Largo / Documento Pegado (> 25 palabras o > 180 chars con párrafos)
+        // NUNCA debe ser tratado como un saludo ('buenas' por 'cuentas') ni como una pregunta fáctica
+        const wordCount = text.trim().split(/\s+/).length;
+        const isLongText = wordCount > 25 || (wordCount > 15 && text.includes('\n'));
+        if (isLongText) {
+            interpretation.intent = "LONG_TEXT_INPUT";
+            interpretation.confidence = 0.95;
+            interpretation.topic = text;
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        // Intent prioritario: Preparación para corregir / procesar / implementar texto (NUNCA si contiene cancelación)
+        const isTextPrep = !isCancellation && (
+            this._containsPhrase(normalized, this.dictionaries.TEXT_PROCESS_PREPARATION) ||
+            (/\b(?:te voy a pasar|te paso|te comparto|voy a pasar|voy a pegarte|voy a comprtir|te voy a comprtir|voy a compartir|te voy a mandar|te mando|te envio|te voy a enviar)\b/i.test(normalized)) ||
+            (/\b(?:compartir|comprtir|pasar|mandar|pegar|implementar|revisar|analizar)\b/i.test(normalized) && /\b(?:un|el|eun|este)?\s*(?:texto|parrafo|mensaje|escrito|articulo|resumen)\b/i.test(normalized)) ||
+            (/\b(?:texto|parrafo|mensaje|escrito|articulo|resumen)\b/i.test(normalized) && /\b(?:compartir|comprtir|pasar|mandar|pegar|implementar|corregir)\b/i.test(normalized)) ||
+            (/\b(?:corrijas|corregir|correccion|ortograficos?|ortografia)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|errores)\b/i.test(normalized))
+        );
         if (isTextPrep) {
             interpretation.intent = "TEXT_PROCESS_PREPARATION";
             interpretation.confidence = 0.95;
@@ -7027,7 +7068,7 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
-        if (this._containsPhrase(normalized, this.dictionaries.SOCIAL_GREETING)) {
+        if (tokens.length <= 6 && this._containsPhrase(normalized, this.dictionaries.SOCIAL_GREETING)) {
             interpretation.intent = "SOCIAL_GREETING";
             interpretation.confidence = 0.95;
             return interpretation;
@@ -7189,18 +7230,6 @@ class LanguageUnderstandingEngine {
 
         const isQuestion = normalized.includes('?') || this._containsPhrase(normalized, ['cual', 'como', 'donde', 'cuando', 'quien', 'porque', 'por que', 'que es', 'que son', 'que significa', 'que hace']);
         
-        const wordCount = text.trim().split(/\s+/).length;
-        const isLongText = wordCount > 25;
-        
-        // Gatekeeper: Si es un texto largo (> 25 palabras) no puede ser una búsqueda de investigación automática
-        if (isLongText) {
-            interpretation.intent = "LONG_TEXT_INPUT";
-            interpretation.confidence = 0.95;
-            interpretation.topic = text;
-            interpretation.isClarificationNeeded = false;
-            return interpretation;
-        }
-
         if (isQuestion) {
             // Verificar si es pregunta abierta conversacional
             if (/^(?:que\s+(?:me\s+)?(?:recomiendas|sugieres|aconsejas)|que\s+hacer|que\s+hago|como\s+vamos|que\s+opinas)\b/i.test(normalized.trim())) {
@@ -7268,7 +7297,7 @@ class LanguageUnderstandingEngine {
         
         const missing = interpretation.missingInformation[0] || 'más detalles';
         const ambiguo = interpretation.ambiguity[0] || 'la solicitud no es clara';
-        return `[CLARIFICACIÓN] Necesito un poco de ayuda para entenderte bien. Detecté que ${ambiguo}. ¿Podrías indicarme ${missing}?`;
+        return `Para poder ayudarte de la mejor manera, detecté que ${ambiguo}. ¿Podrías indicarme ${missing}?`;
     }
 }
 
@@ -9263,6 +9292,19 @@ class TextProcessor {
             [/\bano\b/gi, (m) => m[0] === 'A' ? 'Año' : 'año'],
             [/\banos\b/gi, (m) => m[0] === 'A' ? 'Años' : 'años'],
             [/\bcucuta\b/gi, 'Cúcuta'],
+            // Correcciones exactas solicitadas
+            [/\bproxima\b/gi, (m) => m[0] === 'P' ? 'Próxima' : 'próxima'],
+            [/\bproximas\b/gi, (m) => m[0] === 'P' ? 'Próximas' : 'próximas'],
+            [/\bproximo\b/gi, (m) => m[0] === 'P' ? 'Próximo' : 'próximo'],
+            [/\bproximos\b/gi, (m) => m[0] === 'P' ? 'Próximos' : 'próximos'],
+            [/\bconosimiento\b/gi, (m) => m[0] === 'C' ? 'Conocimiento' : 'conocimiento'],
+            [/\bconosimientos\b/gi, (m) => m[0] === 'C' ? 'Conocimientos' : 'conocimientos'],
+            [/\boprotunidad\b/gi, (m) => m[0] === 'O' ? 'Oportunidad' : 'oportunidad'],
+            [/\boprotunidades\b/gi, (m) => m[0] === 'O' ? 'Oportunidades' : 'oportunidades'],
+            [/\boportunidad\b/gi, (m) => m[0] === 'O' ? 'Oportunidad' : 'oportunidad'],
+            [/\boportunidades\b/gi, (m) => m[0] === 'O' ? 'Oportunidades' : 'oportunidades'],
+            // Salvaguarda: deshacer cualquier deformación errónea 'un aproxima' -> 'una próxima'
+            [/\bun\s+aproxima\b/gi, 'una próxima'],
             // Preguntas y pronombres
             [/\bque\b(?=\s+(?:quieres|hacer|recomiendas|opinas|tal|paso|pasó|es|son|lleva|contiene|cuesta|vale)\b)/gi, (m) => m[0] === 'Q' ? 'Qué' : 'qué'],
             [/\bcomo\b(?=\s+(?:estas|vamos|hacer|te|funciona|haces|lograr|preparar)\b)/gi, (m) => m[0] === 'C' ? 'Cómo' : 'cómo'],
@@ -9352,7 +9394,16 @@ class TextProcessor {
 
             for (const match of matches) {
                 if (match.replacements && match.replacements.length > 0) {
-                    const best = match.replacements[0].value;
+                    let best = match.replacements[0].value;
+                    const originalSnippet = text.substring(match.offset, match.offset + match.length);
+
+                    // Si el original contenía "una proxima" y la primera opción es "un aproxima",
+                    // seleccionar preferentemente "una próxima"
+                    if (/\buna\s+proxima\b/i.test(originalSnippet) || /\buna\s+proxima\b/i.test(match.context.text || '')) {
+                        const goodOpt = match.replacements.find(r => /\buna\s+próxima\b/i.test(r.value));
+                        if (goodOpt) best = goodOpt.value;
+                    }
+
                     const offset = match.offset;
                     const length = match.length;
                     textArray.splice(offset, length, best);
@@ -9680,8 +9731,141 @@ class ChatBridge {
         const isLongText = wordCount > 25 || message.length > 180;
         const currentPendingTask = (this.conversationState && this.conversationState.pendingTask) || null;
 
-        // Si el usuario tenía pendiente entregar un texto para corrección / mejora,
-        // o si en este turno pegó un texto largo o contenido con la intención de procesar:
+        // 0. DETECTOR DE CANCELACIÓN Y CAMBIO DE PLANES (Prioridad Máxima)
+        const isCancelMsg = interpretation.intent === "CANCEL_TASK" ||
+            /\b(?:cancelar|cancela|cancelacorreccion|olvidalo|olvida eso|dejemoslo asi|vamos a hacer otra cosa|cambiemos de tema|ya no|no quiero)\b/i.test(message) ||
+            /^cancel[a-z]*$/i.test(message.trim().toLowerCase());
+
+        // DETECTOR DE GUARDAR EN MEMORIA / APRENDER CONOCIMIENTO
+        const isSaveKnowledgeMsg = interpretation.intent === "SAVE_TO_KNOWLEDGE_VAULT" ||
+            /\b(?:guarda(?:r)?\s+(?:este|ese|esta|la|el|dicho)?\s*(?:conocimiento|informacion|info|dato|receta|secreto|nota)|aprende\s+(?:este|esto|ese|esa)|memoriza\s+(?:esto|este|ese)|boveda\s+local|knowledgevault)\b/i.test(message) ||
+            (/\bguarda\b/i.test(message) && /\b(?:conosimiento|conocimiento|memoria)\b/i.test(message));
+
+        if (isCancelMsg) {
+            this.conversationState.pendingTask = null;
+            this.conversationState.pendingData = null;
+            this.conversationState.updatedAt = Date.now();
+
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const isCreator = user && user.email === 'pablojose182017@gmail.com';
+            const name = isCreator ? "Pablo" : "socio";
+            const responseText = `¡Listo, ${name}! Cancelamos la corrección de texto. Cuéntame, ¿qué hacemos o revisamos ahora?`;
+            
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, {
+                intent: "CANCEL_TASK",
+                isGeneratedResponse: true
+            });
+            return responseText;
+        }
+
+        if (isSaveKnowledgeMsg) {
+            // Limpiar cualquier pendingTask previo
+            this.conversationState.pendingTask = null;
+            this.conversationState.updatedAt = Date.now();
+
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const isCreator = user && user.email === 'pablojose182017@gmail.com';
+            const name = isCreator ? "Pablo" : "socio";
+
+            // Buscar si en el historial reciente ya hay un texto largo pegado por el usuario
+            const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
+            const lastLongUserMsg = history.slice().reverse().find(m => m.role === 'user' && m.text !== message && (m.text.split(/\s+/).length > 25 || m.text.length > 150));
+
+            // Si hay un texto largo previo o si este mismo mensaje contiene el texto largo a guardar:
+            const textToSave = (wordCount > 25) ? message : (lastLongUserMsg ? lastLongUserMsg.text : null);
+
+            if (textToSave) {
+                if (this.knowledgeManager) {
+                    try {
+                        await this.knowledgeManager._ensureLoaded();
+                        const docId = `user_taught_${Date.now()}`;
+                        await this.knowledgeManager.add({
+                            id: docId,
+                            title: `Conocimiento Aportado por ${name}`,
+                            content: textToSave,
+                            category: "conocimiento_general",
+                            tags: ["usuario", "punto_dulce", "estrategia"],
+                            source: "USER_TAUGHT",
+                            confidence: 1.0,
+                            version: 1,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+                        if (this.knowledgeVault) {
+                            await this.knowledgeVault.backup();
+                        }
+                    } catch(eSave) {
+                        console.warn("[ChatBridge] Error al guardar en KnowledgeVault:", eSave.message);
+                    }
+                }
+
+                const responseText = `¡Entendido, ${name}! He guardado este conocimiento en mi Bóveda Local (KnowledgeVault) para tenerlo bien claro y aplicarlo en futuros consejos y análisis de Punto Dulce. ¿Qué más revisamos hoy?`;
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    intent: "SAVE_TO_KNOWLEDGE_VAULT",
+                    isGeneratedResponse: true,
+                    action: "KNOWLEDGE_SAVED"
+                });
+                return responseText;
+            } else {
+                // Aún no ha pasado el dato a guardar
+                this.conversationState.pendingTask = 'AWAITING_KNOWLEDGE_TO_SAVE';
+                this.conversationState.updatedAt = Date.now();
+                const responseText = `¡De una, ${name}! Pásame aquí el dato o texto que quieres que memorice y lo guardo bajo llave en mi bóveda para futuras consultas.`;
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', responseText, {
+                    intent: "SAVE_TO_KNOWLEDGE_VAULT",
+                    isGeneratedResponse: true,
+                    pendingTask: 'AWAITING_KNOWLEDGE_TO_SAVE'
+                });
+                return responseText;
+            }
+        }
+
+        // Si la tarea pendiente era esperar conocimiento para guardar
+        if (currentPendingTask === 'AWAITING_KNOWLEDGE_TO_SAVE') {
+            this.conversationState.pendingTask = null;
+            this.conversationState.updatedAt = Date.now();
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const isCreator = user && user.email === 'pablojose182017@gmail.com';
+            const name = isCreator ? "Pablo" : "socio";
+
+            if (this.knowledgeManager) {
+                try {
+                    await this.knowledgeManager._ensureLoaded();
+                    const docId = `user_taught_${Date.now()}`;
+                    await this.knowledgeManager.add({
+                        id: docId,
+                        title: `Conocimiento Aportado por ${name}`,
+                        content: message,
+                        category: "conocimiento_general",
+                        tags: ["usuario", "punto_dulce", "estrategia"],
+                        source: "USER_TAUGHT",
+                        confidence: 1.0,
+                        version: 1,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                    if (this.knowledgeVault) {
+                        await this.knowledgeVault.backup();
+                    }
+                } catch(eSave) {
+                    console.warn("[ChatBridge] Error al guardar en KnowledgeVault:", eSave.message);
+                }
+            }
+
+            const responseText = `¡Entendido, ${name}! He guardado este conocimiento en mi Bóveda Local (KnowledgeVault) para tenerlo bien claro y aplicarlo en futuros consejos y análisis de Punto Dulce. ¿Qué más revisamos hoy?`;
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, {
+                intent: "SAVE_TO_KNOWLEDGE_VAULT",
+                isGeneratedResponse: true,
+                action: "KNOWLEDGE_SAVED"
+            });
+            return responseText;
+        }
+
+        // Si el usuario tenía pendiente entregar un texto para corrección / mejora:
         if (currentPendingTask === 'CORRECT_AND_IMPROVE_TEXT' || currentPendingTask === 'AWAITING_TEXT_TO_CORRECT') {
             // Limpiar estado pendiente
             this.conversationState.pendingTask = null;
@@ -9718,7 +9902,15 @@ class ChatBridge {
         if (interpretation.intent === "TEXT_PROCESS_PREPARATION") {
             this.conversationState.pendingTask = 'CORRECT_AND_IMPROVE_TEXT';
             this.conversationState.updatedAt = Date.now();
-            const responseText = "¡Claro que sí, Pablo! Pásame el texto aquí abajo y enseguida le corrijo la ortografía, puntuación y estilo (y si quieres también lo adapto a Punto Dulce).";
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const isCreator = user && user.email === 'pablojose182017@gmail.com';
+            const name = isCreator ? "Pablo" : "socio";
+
+            const isImplement = /\b(?:implementar|aplicar|ejecutar|usar)\b/i.test(message);
+            const responseText = isImplement
+                ? `¡Claro que sí, ${name}! Pásame el texto aquí abajo y lo revisamos en detalle para adaptarlo e implementarlo directamente en la operación de Punto Dulce.`
+                : `¡Claro que sí, ${name}! Pásame el texto aquí abajo y enseguida le corrijo la ortografía, puntuación y estilo (y si quieres también lo adaptamos a Punto Dulce).`;
+
             this.memoryManager.addTurn('user', message);
             this.memoryManager.addTurn('assistant', responseText, {
                 intent: "TEXT_PROCESS_PREPARATION",
@@ -9891,7 +10083,7 @@ class ChatBridge {
                 const contextData = { user: { data: user }, webSearchApproved: true };
                 return await this._executeResearch(pendingTask, contextData, message);
             } else {
-                const responseText = "[CLARIFICACIÓN] Me autorizaste o afirmaste algo, pero no tengo ninguna consulta pendiente. ¿En qué deseas que te ayude exactamente?";
+                const responseText = "Me autorizaste o afirmaste algo, pero no tengo ninguna consulta pendiente en este momento. ¿En qué deseas que te ayude exactamente?";
                 this.memoryManager.addTurn('user', message);
                 this.memoryManager.addTurn('assistant', responseText, {
                     intent: "AUTHORIZATION_GRANTED",
@@ -9954,7 +10146,7 @@ class ChatBridge {
                 this.memoryManager.addTurn('assistant', responseText, { isGeneratedResponse: true, intent: interpretation.intent });
                 return responseText;
             } else {
-                const responseText = "[CLARIFICACIÓN] De acuerdo, no lo haré. Pero no estoy seguro a qué te refieres, ya que no tenía nada pendiente. ¿Hay algo en lo que te pueda ayudar?";
+                const responseText = "De acuerdo, no lo haré. Pero no estoy seguro a qué te refieres, ya que no tenía nada pendiente. ¿Hay algo en lo que te pueda ayudar?";
                 this.memoryManager.addTurn('user', message);
                 this.memoryManager.addTurn('assistant', responseText, {
                     intent: "AUTHORIZATION_DENIED",

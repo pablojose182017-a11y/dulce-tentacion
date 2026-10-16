@@ -31,7 +31,9 @@ window.AI_CORE.IdentityManager = class {
 window.AI_CORE.PermissionManager = class { getGovernanceRules() { return {}; } };
 window.AI_CORE.LocalStorageKnowledgeStore = class { load() { return []; } save() {} };
 window.AI_CORE.KnowledgeManager = class { 
-    constructor() {} 
+    constructor() { this.docs = []; } 
+    async _ensureLoaded() { return true; }
+    async add(doc) { this.docs.push(doc); return doc; }
     async search() { return []; } 
 };
 
@@ -113,10 +115,98 @@ Si me cuentas en que ciudad o zona estas podemos ajustar la propuesta.`;
     assert(resFallida.includes("He consultado minuciosamente las fuentes disponibles"), "Debe responder con mensaje cálido y constructivo");
     console.log("✅ TEST 5 PASADO: Mensaje frío sustituido por respuesta conversacional.");
 
-    console.log("\n🎉 ¡TODOS LOS TESTS (1 a 5) PASARON CON ÉXITO TOTAL!");
+    // TEST 6: Cambio de planes a Guardar Conocimiento ('no mejor guarda ese conosimiento para en una proxima oprotunidad...')
+    console.log("\n[TEST 6] Cambio de planes a Guardar Conocimiento a mitad de camino");
+    // Activamos un pendingTask de corrección primero
+    await bridge.receiveMessage("te voy a pasar un texto para corregir", pabloUser, null);
+    assert.strictEqual(bridge.conversationState.pendingTask, 'CORRECT_AND_IMPROVE_TEXT');
+
+    const res6 = await bridge.receiveMessage("no mejor guarda ese conosimiento para en una proxima oprotunidad o consejo que te pida ya la tengas clara", pabloUser, null);
+    console.log("Respuesta obtenida:", res6);
+    assert(res6.includes("He guardado este conocimiento en mi Bóveda Local (KnowledgeVault)") || res6.includes("Bóveda Local"), "Debe guardar el conocimiento");
+    assert(!res6.includes("un aproxima"), "PROHIBIDO el error 'un aproxima'");
+    assert(bridge.conversationState.pendingTask === null || bridge.conversationState.pendingTask === 'AWAITING_KNOWLEDGE_TO_SAVE', "pendingTask previo debe cancelarse");
+    console.log("✅ TEST 6 PASADO: Interrupción por 'guardar conocimiento' procesada limpiamente.");
+
+    // TEST 7: Cancelación explícita con palabras de corrección ('cancelar correccion de texto vamos a hacer otra cosa')
+    console.log("\n[TEST 7] Cancelación con frase mixta");
+    // Volvemos a activar pendingTask
+    await bridge.receiveMessage("ayudame a corregir esto", pabloUser, null);
+    assert.strictEqual(bridge.conversationState.pendingTask, 'CORRECT_AND_IMPROVE_TEXT');
+
+    const res7 = await bridge.receiveMessage("cancelar correccion de texto vamos a hacer otra cosa", pabloUser, null);
+    console.log("Respuesta obtenida:", res7);
+    assert(res7.includes("Cancelamos la corrección de texto"), "Debe confirmar la cancelación cordialmente");
+    assert(bridge.conversationState.pendingTask === null, "pendingTask debe quedar en null");
+    // TEST 8: Reproducción exacta del reporte en vivo del usuario
+    console.log("\n[TEST 8] Reproducción exacta de la conversación reportada en vivo");
+    // Turno 1: "dime como podemos implementar eun texto que te voy a comprtir en la panaderia"
+    const turn1Msg = "dime como podemos implementar eun texto que te voy a comprtir en la panaderia";
+    const resTurn1 = await bridge.receiveMessage(turn1Msg, pabloUser, null);
+    console.log("Respuesta Turno 1:", resTurn1);
+    assert.strictEqual(bridge.conversationState.pendingTask, 'CORRECT_AND_IMPROVE_TEXT', "Debe activar pendingTask = CORRECT_AND_IMPROVE_TEXT en turno 1");
+    assert(!resTurn1.includes("P y S Punto Dulce es una panaderia y reposteria artesanal"), "NO debe responder con la ficha estática del KnowledgeVault");
+    assert(resTurn1.includes("Pásame el texto") || resTurn1.includes("pasame el texto"), "Debe pedir el texto de forma cordial");
+
+    // Turno 2: El texto largo de marketing pegado con 'cuentas' en el cuerpo
+    const marketingReporte = `Resumen de marketing para una panadería nueva
+
+Con mucha competencia, no ganas por ser “una panadería más”, sino por ser memorable y fácil de elegir. Estas son las claves.
+
+1. Define qué te hace diferente
+Elige una o dos cosas en las que seas el mejor y comunícalas siempre: masa madre, pan artesanal, productos sin gluten o veganos, recetas de la región, pan caliente a toda hora, repostería personalizada. Si intentas ser todo para todos, nadie te recuerda.
+
+2. Cuida la marca y el local
+Un nombre, logo y colores coherentes en bolsas, vitrinas, redes y letrero.
+Un escaparate limpio, bien iluminado y con producto a la vista. El aroma a pan recién horneado es tu mejor publicidad.
+Una fachada que se note desde lejos.
+3. Domina lo local
+Crea y optimiza tu perfil de Google Maps (Google Business): fotos buenas, horarios, teléfono y dirección. Es de lo que más clientes trae.
+Pide reseñas a los clientes satisfechos y responde todas, incluso las malas.
+Colabora con negocios cercanos: cafeterías, oficinas, colegios, restaurantes y tiendas.
+4. Redes sociales
+Instagram, Facebook y TikTok funcionan muy bien para panadería porque la comida entra por los ojos.
+Publica videos cortos: sacando el pan del horno, el proceso de amasado, el relleno de un producto.
+Muestra a tu equipo y tu historia. La gente compra a personas, no a logos.
+Publica con regularidad (3 a 5 veces por semana) y usa WhatsApp Business para pedidos.
+5. Ofertas que generan hábito
+Pan del día o producto estrella con precio atractivo.
+Tarjeta de fidelidad: cada cierto número de compras, un producto gratis.
+Descuentos en la última hora del día, para reducir desperdicio y atraer público.
+Combos de desayuno y onces (pan + bebida).
+Cuando abras, una inauguración con degustaciones gratis, para que la gente pruebe.
+6. Amplía tus canales de venta
+Pedidos por WhatsApp y domicilios (propios o con apps).
+Pedidos por encargo para cumpleaños, eventos y empresas.
+Suscripciones o pedidos fijos semanales para oficinas y cafeterías.
+7. Servicio y consistencia
+Un buen producto que a veces falla pierde clientes. Mantén calidad constante, atención amable, recordar el nombre o el pedido habitual de los clientes, y rapidez en caja. El voz a voz es el marketing más barato y poderoso.
+
+8. Mide y ajusta
+Revisa cada mes qué productos se venden más, qué horas tienen más movimiento y qué publicaciones atraen más gente. Invierte más en lo que funciona y elimina lo que no.
+
+Plan rápido para los primeros 30 días
+Termina tu perfil de Google Maps y redes富 social.
+Haz una inauguración con degustaciones.
+Lanza tu producto estrella y una promoción de apertura.
+Empieza a pedir reseñas y a publicar videos a diario.
+Habla con 5 negocios cercanos para posibles alianzas.
+
+Si me cuentas en qué ciudad o zona estás, qué tipo de panadería es y tu presupuesto aproximado, puedo adaptarte estas ideas a tu caso.`;
+
+    const resTurn2 = await bridge.receiveMessage(marketingReporte, pabloUser, null);
+    console.log("Respuesta Turno 2 (primeros 350 caracteres):\n", resTurn2.substring(0, 350) + "...\n");
+    assert(resTurn2.includes("Texto Corregido y Optimizado"), "Debe devolver el texto corregido y formateado");
+    assert(resTurn2.includes("Adaptación Directa para P&S Punto Dulce en Cúcuta"), "Debe incluir el plan estratégico adaptado a Punto Dulce");
+    assert(!resTurn2.includes("P y S Punto Dulce es una panaderia y reposteria artesanal fundada por Pablo Carrascal"), "PROHIBIDO responder con la ficha estática del KnowledgeVault");
+    assert.strictEqual(bridge.conversationState.pendingTask, null, "pendingTask debe ser null tras procesar el texto");
+    console.log("✅ TEST 8 PASADO: Caso en vivo del usuario resuelto impecablemente.");
+
+    console.log("\n🎉 ¡TODOS LOS TESTS (1 a 8) PASARON CON ÉXITO TOTAL!");
 }
 
 runTests().catch(err => {
     console.error("❌ Error en tests:", err);
     process.exit(1);
 });
+

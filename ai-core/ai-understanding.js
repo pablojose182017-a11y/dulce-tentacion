@@ -69,9 +69,10 @@ class LanguageUnderstandingEngine {
                 for (let j = 0; j < phraseWords.length; j++) {
                     const tw = textWords[i + j];
                     const pw = phraseWords[j];
+                    // Strict threshold: do not allow distance 2 for single short words (e.g. 'buenas' matching 'cuentas')
                     let allowedDist = 0;
-                    if (pw.length > 5) allowedDist = 2;
-                    else if (pw.length >= 4) allowedDist = maxDistancePerWord;
+                    if (pw.length >= 7) allowedDist = Math.min(maxDistancePerWord, 1);
+                    else if (pw.length >= 4) allowedDist = Math.min(maxDistancePerWord, 1);
                     if (!this._isSimilar(tw, pw, allowedDist)) {
                         match = false;
                         break;
@@ -201,10 +202,50 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
-        // Intent prioritario: Preparación para corregir / procesar texto
-        const isTextPrep = this._containsPhrase(normalized, this.dictionaries.TEXT_PROCESS_PREPARATION) ||
-                           (/\b(?:te voy a pasar|te paso|te comparto|voy a pasar|voy a pegarte)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|escrito)\b/i.test(normalized)) ||
-                           (/\b(?:corrijas|corregir|correccion|ortograficos?|ortografia)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|errores)\b/i.test(normalized));
+        // Intent Prioritario 0A: Cancelación y Cambio de Planes (CANCEL_TASK)
+        const isCancellation = /\b(?:cancelar|cancela|cancelacorreccion|olvidalo|olvida eso|dejemoslo asi|vamos a hacer otra cosa|cambiemos de tema|ya no|no mejor|no quiero)\b/i.test(normalized) ||
+                               /^cancel[a-z]*$/i.test(normalized.trim());
+        
+        // Intent Prioritario 0B: Guardar en Bóveda / Aprender Conocimiento (SAVE_TO_KNOWLEDGE_VAULT)
+        const isSaveKnowledge = /\b(?:guarda(?:r)?\s+(?:este|ese|esta|la|el|dicho)?\s*(?:conocimiento|informacion|info|dato|receta|secreto|nota)|aprende\s+(?:este|esto|ese|esa)|memoriza\s+(?:esto|este|ese)|boveda\s+local|knowledgevault)\b/i.test(normalized) ||
+                                (/\bguarda\b/i.test(normalized) && /\b(?:conosimiento|conocimiento|memoria)\b/i.test(normalized));
+
+        if (isSaveKnowledge) {
+            interpretation.intent = "SAVE_TO_KNOWLEDGE_VAULT";
+            interpretation.confidence = 0.98;
+            interpretation.topic = "SAVE_KNOWLEDGE";
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        if (isCancellation) {
+            interpretation.intent = "CANCEL_TASK";
+            interpretation.confidence = 0.98;
+            interpretation.topic = "CANCEL_CURRENT_TASK";
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        // Gatekeeper Prioritario 0C: Texto Largo / Documento Pegado (> 25 palabras o > 180 chars con párrafos)
+        // NUNCA debe ser tratado como un saludo ('buenas' por 'cuentas') ni como una pregunta fáctica
+        const wordCount = text.trim().split(/\s+/).length;
+        const isLongText = wordCount > 25 || (wordCount > 15 && text.includes('\n'));
+        if (isLongText) {
+            interpretation.intent = "LONG_TEXT_INPUT";
+            interpretation.confidence = 0.95;
+            interpretation.topic = text;
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        // Intent prioritario: Preparación para corregir / procesar / implementar texto (NUNCA si contiene cancelación)
+        const isTextPrep = !isCancellation && (
+            this._containsPhrase(normalized, this.dictionaries.TEXT_PROCESS_PREPARATION) ||
+            (/\b(?:te voy a pasar|te paso|te comparto|voy a pasar|voy a pegarte|voy a comprtir|te voy a comprtir|voy a compartir|te voy a mandar|te mando|te envio|te voy a enviar)\b/i.test(normalized)) ||
+            (/\b(?:compartir|comprtir|pasar|mandar|pegar|implementar|revisar|analizar)\b/i.test(normalized) && /\b(?:un|el|eun|este)?\s*(?:texto|parrafo|mensaje|escrito|articulo|resumen)\b/i.test(normalized)) ||
+            (/\b(?:texto|parrafo|mensaje|escrito|articulo|resumen)\b/i.test(normalized) && /\b(?:compartir|comprtir|pasar|mandar|pegar|implementar|corregir)\b/i.test(normalized)) ||
+            (/\b(?:corrijas|corregir|correccion|ortograficos?|ortografia)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|errores)\b/i.test(normalized))
+        );
         if (isTextPrep) {
             interpretation.intent = "TEXT_PROCESS_PREPARATION";
             interpretation.confidence = 0.95;
@@ -267,7 +308,7 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
-        if (this._containsPhrase(normalized, this.dictionaries.SOCIAL_GREETING)) {
+        if (tokens.length <= 6 && this._containsPhrase(normalized, this.dictionaries.SOCIAL_GREETING)) {
             interpretation.intent = "SOCIAL_GREETING";
             interpretation.confidence = 0.95;
             return interpretation;
@@ -429,18 +470,6 @@ class LanguageUnderstandingEngine {
 
         const isQuestion = normalized.includes('?') || this._containsPhrase(normalized, ['cual', 'como', 'donde', 'cuando', 'quien', 'porque', 'por que', 'que es', 'que son', 'que significa', 'que hace']);
         
-        const wordCount = text.trim().split(/\s+/).length;
-        const isLongText = wordCount > 25;
-        
-        // Gatekeeper: Si es un texto largo (> 25 palabras) no puede ser una búsqueda de investigación automática
-        if (isLongText) {
-            interpretation.intent = "LONG_TEXT_INPUT";
-            interpretation.confidence = 0.95;
-            interpretation.topic = text;
-            interpretation.isClarificationNeeded = false;
-            return interpretation;
-        }
-
         if (isQuestion) {
             // Verificar si es pregunta abierta conversacional
             if (/^(?:que\s+(?:me\s+)?(?:recomiendas|sugieres|aconsejas)|que\s+hacer|que\s+hago|como\s+vamos|que\s+opinas)\b/i.test(normalized.trim())) {
@@ -508,7 +537,7 @@ class LanguageUnderstandingEngine {
         
         const missing = interpretation.missingInformation[0] || 'más detalles';
         const ambiguo = interpretation.ambiguity[0] || 'la solicitud no es clara';
-        return `[CLARIFICACIÓN] Necesito un poco de ayuda para entenderte bien. Detecté que ${ambiguo}. ¿Podrías indicarme ${missing}?`;
+        return `Para poder ayudarte de la mejor manera, detecté que ${ambiguo}. ¿Podrías indicarme ${missing}?`;
     }
 }
 
