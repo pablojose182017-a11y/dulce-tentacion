@@ -356,9 +356,40 @@ window.togglePasswordVisibility = function (inputId, btn) {
     }
 };
 
-function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+function openAuthModal() {
+    // 1. Guardia de Sesión Activa: Si el usuario ya está autenticado en Punto Dulce, no abrir el formulario de login/registro
+    const hasActiveSession = !!(
+        (typeof currentUser !== 'undefined' && currentUser && currentUser.email) ||
+        (window.currentUser && window.currentUser.email)
+    );
+
+    if (hasActiveSession) {
+        // En móvil (<= 768px), abrir su perfil móvil si está disponible
+        if (window.innerWidth <= 768) {
+            if (typeof openMobileProfile === 'function') {
+                openMobileProfile();
+                return;
+            }
+        } else {
+            // En escritorio, abrir el menú desplegable del perfil en la barra superior
+            const pill = document.getElementById('user-pill-container');
+            const menu = document.getElementById('user-dropdown-menu');
+            if (pill && menu) {
+                pill.classList.add('open');
+                menu.classList.add('active');
+                return;
+            }
+        }
+        return;
+    }
+
+    const modal = document.getElementById('authModal');
+    if (modal) modal.style.display = 'flex';
+}
+
 function closeAuthModal() {
-    document.getElementById('authModal').style.display = 'none';
+    const modal = document.getElementById('authModal');
+    if (modal) modal.style.display = 'none';
     const msgEl = document.getElementById('authMsg');
     if (msgEl) {
         msgEl.style.display = 'none';
@@ -3595,7 +3626,9 @@ function syncUserUI() {
     const cIncentive = document.getElementById('cartLoginIncentive');
 
     if (currentUser) {
-        if (loginBtn) loginBtn.style.display = 'none';
+        if (loginBtn) loginBtn.style.setProperty('display', 'none', 'important');
+        if (mobileGoogleBtn) mobileGoogleBtn.style.setProperty('display', 'none', 'important');
+        if (mobilePill) mobilePill.style.setProperty('display', 'flex', 'important');
 
         const isVip = !!(currentUser.vip || currentUser.isVip || currentUser.role === 'vip' || currentUser.vipStatus === 'activo');
         const vipLabel = isVip ? ' (VIP)' : '';
@@ -3619,7 +3652,7 @@ function syncUserUI() {
         }
 
         if (pill) {
-            pill.style.display = 'flex';
+            pill.style.setProperty('display', 'flex', 'important');
             document.getElementById('user-avatar').src = currentUser.picture;
             const deskWrap = document.getElementById('header-avatar-wrap');
             const deskCrown = document.getElementById('desk-vip-crown');
@@ -3805,11 +3838,17 @@ function syncUserUI() {
         const mMsg = document.querySelector('#mobileProfileModal .dropdown-points-box small');
         if (mBar) mBar.style.width = `${pct}%`;
         if (mMsg) mMsg.innerText = msg;
+
+        // Si el usuario ya está autenticado y el modal de login/registro quedó abierto, cerrarlo de forma segura
+        const authModalEl = document.getElementById('authModal');
+        if (authModalEl && authModalEl.style.display === 'flex') {
+            closeAuthModal();
+        }
     } else {
-        if (loginBtn) loginBtn.style.display = 'inline-flex';
-        if (pill) pill.style.display = 'none';
-        if (mobileGoogleBtn) mobileGoogleBtn.style.display = 'flex';
-        if (mobilePill) mobilePill.style.display = 'none';
+        if (loginBtn) loginBtn.style.setProperty('display', 'inline-flex', 'important');
+        if (pill) pill.style.setProperty('display', 'none', 'important');
+        if (mobileGoogleBtn) mobileGoogleBtn.style.setProperty('display', 'flex', 'important');
+        if (mobilePill) mobilePill.style.setProperty('display', 'none', 'important');
         if (hIncentive) hIncentive.style.display = 'flex';
         if (cIncentive) cIncentive.style.display = 'flex';
 

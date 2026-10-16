@@ -8258,15 +8258,13 @@ section#nosotros h2 em,
 
 /* 1. Nivelación milimétrica del Header Móvil (Punto 1.1) */
 .mobile-header-actions,
-#mobile-user-area,
-#mobile-user-pill {
+#mobile-user-area {
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
 }
 
 .search-circle-btn,
-.mobile-google-btn,
 .mobile-menu-btn {
     width: 38px !important;
     height: 38px !important;
@@ -8275,6 +8273,21 @@ section#nosotros h2 em,
     max-width: 38px !important;
     max-height: 38px !important;
     display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Solo aplicar tamaño y centrado a .mobile-google-btn sin forzar su display (para permitir display: none cuando hay sesión activa) */
+.mobile-google-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
     align-items: center !important;
     justify-content: center !important;
     padding: 0 !important;
