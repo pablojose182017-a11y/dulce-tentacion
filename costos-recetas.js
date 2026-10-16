@@ -727,33 +727,6 @@ window.calcularResumenRecetaEnVivo = function() {
             </div>
         </div>
     `;
-
-    const chatHtml = 
-        '<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-top:20px;">' +
-            '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">' +
-                '<div style="font-size:2rem;">🤖</div>' +
-                '<div>' +
-                    '<h4 style="margin:0; color:#be185d;">Chat con el Guardián Financiero</h4>' +
-                    '<span style="font-size:0.8rem; color:#16a34a;">● En línea y vigilando el bolsillo</span>' +
-                '</div>' +
-            '</div>' +
-            '<div id="guardian-chat-messages" style="height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px;">' +
-                '<div style="background:#f1f5f9; padding:10px 15px; border-radius:15px 15px 15px 0; align-self:flex-start; max-width:80%; font-size:0.9rem; color:#334155;">' +
-                    '¡Hola Pablo! Pregúntame sobre tus recetas, insumos, márgenes o simula precios. Estoy aquí para cuidar tu dinero.' +
-                '</div>' +
-            '</div>' +
-            '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;">' +
-                '<button onclick="window.enviarMensajeGuardian(\'¿Cuál es el pan más rentable?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Pan más rentable?</button>' +
-                '<button onclick="window.enviarMensajeGuardian(\'¿Qué insumo es más costoso?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Insumo más costoso?</button>' +
-                '<button onclick="window.enviarMensajeGuardian(\'Consejo para mejorar márgenes\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">Consejo de márgenes</button>' +
-            '</div>' +
-            '<div style="display:flex; gap:10px;">' +
-                '<input type="text" id="guardian-chat-input" class="checkout-input" style="margin:0; flex:1;" placeholder="Pregúntale al Guardián..." onkeypress="if(event.key === \'Enter\') window.enviarMensajeGuardian()">' +
-                '<button onclick="window.enviarMensajeGuardian()" style="background:#be185d; color:#fff; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Enviar 🚀</button>' +
-            '</div>' +
-        '</div>';
-
-    container.innerHTML += chatHtml;
 };
 
 window.guardarReceta = function() {

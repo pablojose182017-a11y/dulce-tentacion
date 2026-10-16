@@ -729,33 +729,6 @@ window.calcularResumenRecetaEnVivo = function() {
             </div>
         </div>
     `;
-
-    const chatHtml = 
-        '<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-top:20px;">' +
-            '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">' +
-                '<div style="font-size:2rem;">🤖</div>' +
-                '<div>' +
-                    '<h4 style="margin:0; color:#be185d;">Chat con el Guardián Financiero</h4>' +
-                    '<span style="font-size:0.8rem; color:#16a34a;">● En línea y vigilando el bolsillo</span>' +
-                '</div>' +
-            '</div>' +
-            '<div id="guardian-chat-messages" style="height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px;">' +
-                '<div style="background:#f1f5f9; padding:10px 15px; border-radius:15px 15px 15px 0; align-self:flex-start; max-width:80%; font-size:0.9rem; color:#334155;">' +
-                    '¡Hola Pablo! Pregúntame sobre tus recetas, insumos, márgenes o simula precios. Estoy aquí para cuidar tu dinero.' +
-                '</div>' +
-            '</div>' +
-            '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;">' +
-                '<button onclick="window.enviarMensajeGuardian(\'¿Cuál es el pan más rentable?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Pan más rentable?</button>' +
-                '<button onclick="window.enviarMensajeGuardian(\'¿Qué insumo es más costoso?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Insumo más costoso?</button>' +
-                '<button onclick="window.enviarMensajeGuardian(\'Consejo para mejorar márgenes\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">Consejo de márgenes</button>' +
-            '</div>' +
-            '<div style="display:flex; gap:10px;">' +
-                '<input type="text" id="guardian-chat-input" class="checkout-input" style="margin:0; flex:1;" placeholder="Pregúntale al Guardián..." onkeypress="if(event.key === \'Enter\') window.enviarMensajeGuardian()">' +
-                '<button onclick="window.enviarMensajeGuardian()" style="background:#be185d; color:#fff; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Enviar 🚀</button>' +
-            '</div>' +
-        '</div>';
-
-    container.innerHTML += chatHtml;
 };
 
 window.guardarReceta = function() {
@@ -9958,30 +9931,150 @@ window.renderGuardianView = function() {
         </div>
     `;
 
-    const chatHtml = 
-        '<div style="background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-top:20px;">' +
-            '<div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px; margin-bottom:15px;">' +
-                '<div style="font-size:2rem;">🤖</div>' +
-                '<div style="flex:1;">' +
-                    '<h4 style="margin:0; color:#be185d;">Chat con el Guardián Financiero</h4>' +
-                    '<span style="font-size:0.8rem; color:#16a34a;">● En línea y vigilando el bolsillo</span>' +
-                '</div>' +
-                '<button onclick="window.configurarGeminiKey()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:5px; font-size:0.8rem; cursor:pointer;" title="Configurar API Key">⚙️ API Key</button>' +
-                '<button onclick="window.reiniciarChatGuardian()" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1; padding:5px 10px; border-radius:5px; font-size:0.8rem; cursor:pointer;" title="Nueva charla">🧹 Nueva charla</button>' +
-            '</div>' +
-            '<div id="guardian-chat-messages" style="height:250px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px;">' +
-                // Los mensajes se cargarán dinámicamente desde localStorage
-            '</div>' +
-            '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:10px;">' +
-                '<button onclick="window.enviarMensajeGuardian(\'¿Cuál es el pan más rentable?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Pan más rentable?</button>' +
-                '<button onclick="window.enviarMensajeGuardian(\'¿Qué insumo es más costoso?\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">¿Insumo más costoso?</button>' +
-                '<button onclick="window.enviarMensajeGuardian(\'Consejo para mejorar márgenes\')" class="stock-filter-chip" style="font-size:0.8rem; padding:4px 10px;">Consejo de márgenes</button>' +
-            '</div>' +
-            '<div style="display:flex; gap:10px;">' +
-                '<input type="text" id="guardian-chat-input" class="checkout-input" style="margin:0; flex:1;" placeholder="Pregúntale al Guardián..." onkeypress="if(event.key === \'Enter\') window.enviarMensajeGuardian()">' +
-                '<button onclick="window.enviarMensajeGuardian()" style="background:#be185d; color:#fff; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Enviar 🚀</button>' +
-            '</div>' +
-        '</div>';
+    const chatHtml = `
+        <div class="guardian-studio-wrapper">
+            <!-- CABECERA DEL ESTUDIO -->
+            <div class="guardian-studio-header">
+                <div class="guardian-studio-title">
+                    <div class="guardian-studio-avatar">🛡️</div>
+                    <div class="guardian-studio-info">
+                        <div class="guardian-studio-name">
+                            Guardián Studio
+                            <span class="guardian-status-badge"><span class="pulse-dot"></span> Autónomo • Activo</span>
+                        </div>
+                        <div class="guardian-studio-role">Copiloto Estratégico & Analista de Negocio Dulce Tentación</div>
+                    </div>
+                </div>
+                <div class="guardian-studio-actions">
+                    <button type="button" class="guardian-studio-btn" onclick="if(window.abrirGuardianDrawer) window.abrirGuardianDrawer()" title="Inspeccionar Bóveda y Trazabilidad">
+                        ⚙️ Inspector de Cognición
+                    </button>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DE MENSAJES (460px - 540px) -->
+            <div id="guardian-messages-list" class="guardian-messages-container">
+                <div class="guardian-bubble-row guardian-bubble-row-assistant">
+                    <div class="guardian-avatar-bubble">🛡️</div>
+                    <div class="guardian-bubble guardian-bubble-assistant">
+                        <div class="guardian-bubble-header">
+                            <span class="guardian-bubble-sender">Guardián</span>
+                            <span class="guardian-source-badge badge-local">🧠 Conocimiento Local</span>
+                        </div>
+                        <div class="guardian-bubble-content">
+                            ¡Hola! Soy <strong>Guardián Studio</strong>, tu copiloto financiero y operativo con cognición autónoma.
+                            Tengo acceso a la base de costos, recetas, inventario y puedo investigar en internet de forma autónoma sin depender de APIs de terceros.
+                            <br><br>
+                            ¿En qué analizamos o investigamos hoy para <em>Dulce Tentación</em>?
+                        </div>
+                        <div class="guardian-bubble-footer">
+                            <span class="guardian-bubble-time">Justo ahora</span>
+                            <div class="guardian-msg-actions">
+                                <button type="button" class="guardian-action-btn" onclick="if(window.copiarMensajeGuardian) window.copiarMensajeGuardian(this)" title="Copiar texto">📋</button>
+                                <button type="button" class="guardian-action-btn" onclick="if(window.leerMensajeGuardian) window.leerMensajeGuardian(this)" title="Escuchar mensaje">🔊</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INDICADOR DE PENSAMIENTO / INVESTIGACIÓN EN VIVO -->
+            <div id="guardian-thinking-box" class="guardian-thinking-box" style="display: none;">
+                <span class="thinking-spinner"></span>
+                <span id="guardian-thinking-text" class="thinking-text">Pensando y analizando datos...</span>
+            </div>
+
+            <!-- CHIPS DE CONSULTA RÁPIDA -->
+            <div class="guardian-chips-row">
+                <button type="button" class="guardian-chip" onclick="if(window.enviarPromptRapidoGuardian) window.enviarPromptRapidoGuardian('¿Cuál es nuestro margen promedio actual y cuál es el producto más rentable?')">📊 Margen y rentabilidad</button>
+                <button type="button" class="guardian-chip" onclick="if(window.enviarPromptRapidoGuardian) window.enviarPromptRapidoGuardian('Analiza el costo de la Torta de Chocolate de 1 Libra y sugiere mejoras')">🍫 Torta de Chocolate</button>
+                <button type="button" class="guardian-chip" onclick="if(window.enviarPromptRapidoGuardian) window.enviarPromptRapidoGuardian('Investiga precios actuales de harina de trigo pastelera en Colombia y tendencias de repostería')">🌐 Investigar Harina Web</button>
+                <button type="button" class="guardian-chip" onclick="if(window.enviarPromptRapidoGuardian) window.enviarPromptRapidoGuardian('¿Cuáles son los ingredientes con mayor impacto en el costo total?')">📉 Ingredientes críticos</button>
+            </div>
+
+            <!-- ÁREA DE ENTRADA AVANZADA -->
+            <div class="guardian-input-area">
+                <div class="guardian-input-box">
+                    <textarea id="guardian-user-input" class="guardian-textarea" rows="1" placeholder="Escribe una pregunta financiera o tema a investigar... (Enter para enviar, Shift+Enter para salto)" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); if(window.enviarMensajeGuardian) window.enviarMensajeGuardian(); }"></textarea>
+                    <div class="guardian-input-toolbar">
+                        <button type="button" id="guardian-mic-btn" class="guardian-mic-btn" onclick="if(window.toggleReconocimientoVoz) window.toggleReconocimientoVoz()" title="Dictar por voz (Español)">
+                            🎙️
+                        </button>
+                        <button type="button" id="guardian-send-btn" class="guardian-send-btn" onclick="if(window.enviarMensajeGuardian) window.enviarMensajeGuardian()" title="Enviar consulta a Guardián">
+                            <span>Enviar</span> 🚀
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDE-OVER INSPECTOR DRAWER -->
+            <div id="guardian-drawer" class="guardian-drawer">
+                <div class="guardian-drawer-backdrop" onclick="if(window.cerrarGuardianDrawer) window.cerrarGuardianDrawer()"></div>
+                <div class="guardian-drawer-panel">
+                    <div class="guardian-drawer-header">
+                        <h3>⚙️ Inspector de Cognición</h3>
+                        <button type="button" class="guardian-drawer-close" onclick="if(window.cerrarGuardianDrawer) window.cerrarGuardianDrawer()">✕</button>
+                    </div>
+                    
+                    <div class="guardian-drawer-tabs">
+                        <button type="button" class="guardian-tab-btn active" data-tab="tab-trazabilidad" onclick="if(window.cambiarTabDrawer) window.cambiarTabDrawer('tab-trazabilidad')">📡 Trazabilidad</button>
+                        <button type="button" class="guardian-tab-btn" data-tab="tab-boveda" onclick="if(window.cambiarTabDrawer) window.cambiarTabDrawer('tab-boveda')">🧠 Bóveda</button>
+                        <button type="button" class="guardian-tab-btn" data-tab="tab-motor" onclick="if(window.cambiarTabDrawer) window.cambiarTabDrawer('tab-motor')">⚡ Motor</button>
+                    </div>
+
+                    <div class="guardian-drawer-content">
+                        <!-- TAB TRAZABILIDAD -->
+                        <div id="tab-trazabilidad" class="guardian-tab-pane active">
+                            <div class="tab-pane-desc">Historial de consultas, tiempo de respuesta y origen de datos utilizados por Guardián.</div>
+                            <div id="guardian-provenance-list" class="provenance-list">
+                                <div class="provenance-empty">No hay consultas registradas en esta sesión.</div>
+                            </div>
+                        </div>
+
+                        <!-- TAB BÓVEDA -->
+                        <div id="tab-boveda" class="guardian-tab-pane">
+                            <div class="tab-pane-desc">Base de conocimiento local (KnowledgeVault) y hechos aprendidos.</div>
+                            <div class="boveda-actions-bar">
+                                <button type="button" class="boveda-btn" onclick="if(window.exportarBovedaJSON) window.exportarBovedaJSON()">📥 Descargar JSON</button>
+                                <button type="button" class="boveda-btn" onclick="if(window.mostrarFormNuevoHecho) window.mostrarFormNuevoHecho()">➕ Enseñar hecho</button>
+                            </div>
+                            <div id="form-nuevo-hecho" class="form-nuevo-hecho" style="display: none;">
+                                <input type="text" id="hecho-titulo" placeholder="Título o tema (ej. Proveedor Chocolate)" class="hecho-input" />
+                                <textarea id="hecho-contenido" placeholder="Información que Guardián debe recordar..." class="hecho-textarea" rows="2"></textarea>
+                                <button type="button" class="boveda-btn primary" onclick="if(window.guardarNuevoHecho) window.guardarNuevoHecho()">Guardar en Bóveda</button>
+                            </div>
+                            <div id="guardian-vault-list" class="vault-list">
+                                <div class="provenance-empty">Cargando elementos de la bóveda...</div>
+                            </div>
+                        </div>
+
+                        <!-- TAB MOTOR -->
+                        <div id="tab-motor" class="guardian-tab-pane">
+                            <div class="tab-pane-desc">Estado de la infraestructura autónoma de IA (cero dependencias externas).</div>
+                            <div class="motor-status-card">
+                                <div class="motor-item">
+                                    <span class="motor-label">Red / Navegación:</span>
+                                    <span id="motor-network-status" class="motor-val">Verificando...</span>
+                                </div>
+                                <div class="motor-item">
+                                    <span class="motor-label">Fuentes Web Abiertas:</span>
+                                    <span class="motor-val badge-ok">Wikipedia ES • DuckDuckGo IA • OSM</span>
+                                </div>
+                                <div class="motor-item">
+                                    <span class="motor-label">Cerebro Local:</span>
+                                    <span class="motor-val badge-ok">Cargado (ai-core / KnowledgeVault)</span>
+                                </div>
+                                <div class="motor-item">
+                                    <span class="motor-label">Modo Autónomo:</span>
+                                    <span class="motor-val badge-ok">100% Activo (Sin API Keys)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 
     container.innerHTML += chatHtml;
     window.cargarMemoriaGuardian();
@@ -10109,127 +10202,479 @@ window.reiniciarChatGuardian = function() {
     }
 };
 
-window.configurarGeminiKey = function() {
-    alert("⚠️ Configuración bloqueada: El Guardián tiene estrictamente prohibido utilizar APIs externas de IA (como Gemini o ChatGPT) de acuerdo con su directiva central de Independencia y Autonomía. Todas las operaciones deben ejecutarse en la arquitectura AI_CORE local.");
+// ============================================================================
+// GUARDIÁN STUDIO - CONTROLADOR COGNITIVO AUTÓNOMO & HELPERS DE INTERFAZ
+// ============================================================================
+
+// Registro de trazabilidad en memoria para el Inspector de Cognición
+window.guardianProvenanceLogs = window.guardianProvenanceLogs || [];
+
+// Markdown seguro: convierte encabezados, negrita, listas, código y saltos de línea
+function parseMarkdownToHtml(markdownText) {
+    if (!markdownText) return '';
+    let text = String(markdownText);
+    
+    // Escapar etiquetas HTML para evitar XSS
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // Bloques de código
+    text = text.replace(/```([a-z]*)\n?([\s\S]*?)```/g, '<pre class="guardian-code-block"><code>$2</code></pre>');
+    // Código en línea
+    text = text.replace(/`([^`]+)`/g, '<code class="guardian-inline-code">$1</code>');
+    
+    // Encabezados (###, ##, #)
+    text = text.replace(/^### (.*$)/gim, '<h4 class="guardian-h4">$1</h4>');
+    text = text.replace(/^## (.*$)/gim, '<h3 class="guardian-h3">$1</h3>');
+    text = text.replace(/^# (.*$)/gim, '<h2 class="guardian-h2">$1</h2>');
+    
+    // Negrita (**texto** o __texto__)
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+    
+    // Cursiva (*texto* o _texto_)
+    text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Listas con viñetas (- o *)
+    text = text.replace(/^\s*[-*]\s+(.*)$/gim, '<li class="guardian-list-item">$1</li>');
+    text = text.replace(/(<li class="guardian-list-item">.*<\/li>)/s, '<ul class="guardian-list">$1</ul>');
+    
+    // Saltos de línea
+    text = text.replace(/\n/g, '<br>');
+    
+    return text;
+}
+window.parseMarkdownToHtml = parseMarkdownToHtml;
+
+// Agregar mensaje a la lista visual con timestamp, badge y acciones
+window.appendMensajeGuardian = function(sender, text, sourceBadge) {
+    const list = document.getElementById('guardian-messages-list');
+    if (!list) return;
+
+    const isUser = sender === 'Tú' || sender === 'user';
+    const rowClass = isUser ? 'guardian-bubble-row-user' : 'guardian-bubble-row-assistant';
+    const bubbleClass = isUser ? 'guardian-bubble-user' : 'guardian-bubble-assistant';
+    const avatar = isUser ? '👤' : '🛡️';
+    const senderName = isUser ? 'Tú' : 'Guardián';
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Determinar badge según origen
+    let badgeHtml = '';
+    if (!isUser) {
+        if (sourceBadge) {
+            badgeHtml = sourceBadge;
+        } else if (text.includes('Wikipedia') || text.includes('DuckDuckGo') || text.includes('investigación web') || text.includes('fuente abierta')) {
+            badgeHtml = '<span class="guardian-source-badge badge-web">🌐 Web Abierta • Auto-aprendido</span>';
+        } else if (text.includes('margen') || text.includes('rentabilidad') || text.includes('costo') || text.includes('$')) {
+            badgeHtml = '<span class="guardian-source-badge badge-financial">📊 Análisis Financiero</span>';
+        } else {
+            badgeHtml = '<span class="guardian-source-badge badge-local">🧠 KnowledgeVault Local</span>';
+        }
+    }
+
+    const parsedContent = parseMarkdownToHtml(text);
+
+    const msgRow = document.createElement('div');
+    msgRow.className = 'guardian-bubble-row ' + rowClass;
+    msgRow.innerHTML = `
+        ${!isUser ? `<div class="guardian-avatar-bubble">${avatar}</div>` : ''}
+        <div class="guardian-bubble ${bubbleClass}">
+            <div class="guardian-bubble-header">
+                <span class="guardian-bubble-sender">${senderName}</span>
+                ${badgeHtml}
+            </div>
+            <div class="guardian-bubble-content">${parsedContent}</div>
+            <div class="guardian-bubble-footer">
+                <span class="guardian-bubble-time">${timeStr}</span>
+                ${!isUser ? `
+                <div class="guardian-msg-actions">
+                    <button type="button" class="guardian-action-btn" onclick="if(window.copiarMensajeGuardian) window.copiarMensajeGuardian(this)" title="Copiar texto">📋</button>
+                    <button type="button" class="guardian-action-btn" onclick="if(window.leerMensajeGuardian) window.leerMensajeGuardian(this)" title="Escuchar mensaje">🔊</button>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+        ${isUser ? `<div class="guardian-avatar-bubble">${avatar}</div>` : ''}
+    `;
+
+    list.appendChild(msgRow);
+    list.scrollTop = list.scrollHeight;
 };
 
-window.enviarMensajeGuardian = async function(textoPredefinido = null) {
-    const input = document.getElementById('guardian-chat-input');
-    const msgTexto = textoPredefinido || input.value.trim();
-    if (!msgTexto) return;
-    
-    if (!textoPredefinido) input.value = '';
+// Envío principal con Puente Cognitivo Autónomo y telemetría en tiempo real
+window.enviarMensajeGuardian = async function(predefinedText) {
+    const input = document.getElementById('guardian-user-input');
+    const sendBtn = document.getElementById('guardian-send-btn');
+    const thinkingBox = document.getElementById('guardian-thinking-box');
+    const thinkingText = document.getElementById('guardian-thinking-text');
 
-    window.appendMensajeGuardian(msgTexto, 'user', true);
+    const texto = (typeof predefinedText === 'string' && predefinedText) ? predefinedText : (input ? input.value.trim() : '');
+    if (!texto) return;
 
-    const useNewAiCore = localStorage.getItem('USE_NEW_AI_CORE') !== 'false';
+    // Pintar mensaje del usuario y limpiar input
+    window.appendMensajeGuardian('Tú', texto);
+    if (input && !predefinedText) {
+        input.value = '';
+        input.style.height = 'auto';
+    }
 
-    if (useNewAiCore) {
-        if (window.AI_CORE && window.AI_CORE.chatBridgeInstance) {
-            const typingId = "typing-" + Date.now();
-            window.appendMensajeGuardian('<span style="font-style:italic; color:#94a3b8;">AI Core procesando... ⚙️</span>', 'bot', false, typingId);
-            try {
-                const currentUserGlobal = (typeof window.currentUser !== 'undefined') ? window.currentUser : (typeof currentUser !== 'undefined' ? currentUser : null);
-                const respuesta = await window.AI_CORE.chatBridgeInstance.receiveMessage(msgTexto, currentUserGlobal, window.costosState);
-                
-                const typingEl = document.getElementById(typingId);
-                if (typingEl) typingEl.remove();
+    if (sendBtn) sendBtn.disabled = true;
+    if (thinkingBox) {
+        thinkingBox.style.display = 'flex';
+        thinkingText.textContent = texto.toLowerCase().includes('investig') || texto.toLowerCase().includes('precio') 
+            ? '🌐 Investigando en fuentes abiertas de internet...'
+            : '🧠 Analizando costos, recetas y base de datos...';
+    }
 
-                window.appendMensajeGuardian(respuesta, 'bot', false); // memory is handled by ChatBridge, but UI needs it
-            } catch (error) {
-                console.error(error);
-                const typingEl = document.getElementById(typingId);
-                if (typingEl) typingEl.remove();
-                window.appendMensajeGuardian('Fallo en el puente cognitivo.', 'bot', false);
+    const startTime = Date.now();
+    let respuestaFinal = '';
+    let sourceBadge = null;
+    let origen = 'Local';
+
+    try {
+        // Enlazar al Cerebro Autónomo
+        let bridge = window.AI_CORE && window.AI_CORE.chatBridgeInstance;
+        if (!bridge && window.AI_CORE && window.AI_CORE.AIChatBridge) {
+            console.log('[Guardián Studio] Inicializando nueva instancia de AIChatBridge...');
+            window.AI_CORE.chatBridgeInstance = new window.AI_CORE.AIChatBridge();
+            bridge = window.AI_CORE.chatBridgeInstance;
+        }
+
+        if (bridge && typeof bridge.receiveMessage === 'function') {
+            const currentUserGlobal = (typeof window.currentUser !== 'undefined') ? window.currentUser : (typeof currentUser !== 'undefined' ? currentUser : null);
+            const resp = await bridge.receiveMessage(texto, currentUserGlobal, window.costosState);
+            if (typeof resp === 'string') {
+                respuestaFinal = resp;
+                if (resp.includes('Wikipedia') || resp.includes('DuckDuckGo') || resp.includes('investigación')) {
+                    sourceBadge = '<span class="guardian-source-badge badge-web">🌐 Web Abierta • Auto-aprendido</span>';
+                    origen = 'Web Abierta (Wikipedia/DDG)';
+                }
+            } else if (resp && resp.text) {
+                respuestaFinal = resp.text;
+                if (resp.source === 'web' || resp.webLearned) {
+                    sourceBadge = '<span class="guardian-source-badge badge-web">🌐 Web Abierta • Auto-aprendido</span>';
+                    origen = 'Web Abierta (Wikipedia/DDG)';
+                } else if (resp.source === 'financial') {
+                    sourceBadge = '<span class="guardian-source-badge badge-financial">📊 Análisis Financiero</span>';
+                    origen = 'Módulo Financiero';
+                }
+            } else {
+                respuestaFinal = JSON.stringify(resp);
+            }
+        } else if (bridge && typeof bridge.askGuardian === 'function') {
+            const resp = await bridge.askGuardian(texto);
+            if (typeof resp === 'string') {
+                respuestaFinal = resp;
+            } else if (resp && resp.text) {
+                respuestaFinal = resp.text;
+            } else {
+                respuestaFinal = JSON.stringify(resp);
+            }
+        } else if (window.AI_CORE && window.AI_CORE.KnowledgeVault) {
+            // Consulta directa a la bóveda si no hay bridge disponible
+            const hechos = window.AI_CORE.KnowledgeVault.search(texto);
+            if (hechos && hechos.length > 0) {
+                respuestaFinal = 'He encontrado esto en la base de conocimiento local:\n\n' + hechos.map(h => '• **' + (h.title || 'Dato') + '**: ' + (h.content || h.text)).join('\n');
+                origen = 'KnowledgeVault Directo';
+            } else {
+                respuestaFinal = 'No encontré información sobre "' + texto + '" en el conocimiento local. Conéctate a internet para que investigue automáticamente en fuentes abiertas.';
             }
         } else {
-            window.appendMensajeGuardian('⚠️ Error: El Chat Bridge no está cargado.', 'bot', false);
+            respuestaFinal = 'Guardián Studio está activo. Para consultar costos de recetas o simular ofertas, utiliza los paneles interactivos de la izquierda o escribe una consulta específica.';
+        }
+    } catch (err) {
+        console.error('[Guardián Studio] Error al procesar respuesta:', err);
+        respuestaFinal = 'Ocurrió una pausa al procesar tu solicitud: ' + (err.message || 'Error interno') + '. Por favor intenta de nuevo.';
+    } finally {
+        const elapsedMs = Date.now() - startTime;
+        if (thinkingBox) thinkingBox.style.display = 'none';
+        if (sendBtn) sendBtn.disabled = false;
+
+        // Pintar respuesta de Guardián
+        window.appendMensajeGuardian('Guardián', respuestaFinal, sourceBadge);
+
+        // Registrar en Trazabilidad para el Inspector
+        window.registrarLogTrazabilidad(texto, respuestaFinal, origen, elapsedMs);
+    }
+};
+
+// Acciones rápidas (Chips)
+window.enviarPromptRapidoGuardian = function(promptText) {
+    window.enviarMensajeGuardian(promptText);
+};
+
+// Copiar texto de burbuja al portapapeles
+window.copiarMensajeGuardian = function(btn) {
+    try {
+        const bubble = btn.closest('.guardian-bubble');
+        if (!bubble) return;
+        const content = bubble.querySelector('.guardian-bubble-content');
+        if (!content) return;
+        
+        const textoPlano = content.innerText || content.textContent;
+        navigator.clipboard.writeText(textoPlano).then(() => {
+            const originalIcon = btn.textContent;
+            btn.textContent = '✅';
+            setTimeout(() => { btn.textContent = originalIcon; }, 1800);
+        });
+    } catch (e) {
+        console.warn('Error al copiar:', e);
+    }
+};
+
+// Lectura de voz en español (Web Speech Synthesis)
+window.leerMensajeGuardian = function(btn) {
+    try {
+        if (!('speechSynthesis' in window)) {
+            alert('Tu navegador no soporta síntesis de voz.');
+            return;
+        }
+
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            btn.textContent = '🔊';
+            return;
+        }
+
+        const bubble = btn.closest('.guardian-bubble');
+        if (!bubble) return;
+        const content = bubble.querySelector('.guardian-bubble-content');
+        if (!content) return;
+
+        const textoPlano = (content.innerText || content.textContent).replace(/[*#`_]/g, '');
+        const utterance = new SpeechSynthesisUtterance(textoPlano);
+        utterance.lang = 'es-CO';
+        utterance.rate = 1.05;
+        
+        btn.textContent = '⏹️';
+        utterance.onend = () => { btn.textContent = '🔊'; };
+        utterance.onerror = () => { btn.textContent = '🔊'; };
+
+        window.speechSynthesis.speak(utterance);
+    } catch (e) {
+        console.warn('Error en síntesis de voz:', e);
+    }
+};
+
+// Reconocimiento de voz por micrófono (Web Speech API)
+let reconocimientoVoz = null;
+window.toggleReconocimientoVoz = function() {
+    const micBtn = document.getElementById('guardian-mic-btn');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert('El reconocimiento de voz por micrófono no está soportado en este navegador.');
+        return;
+    }
+
+    if (reconocimientoVoz) {
+        reconocimientoVoz.stop();
+        reconocimientoVoz = null;
+        if (micBtn) {
+            micBtn.classList.remove('mic-active');
+            micBtn.textContent = '🎙️';
         }
         return;
     }
 
-    // ── Interceptor local: 0ms para saludos, conversacional y datos financieros (Legacy) ──
-    const respuestaLocal = window._gf_resolverLocalmente ? window._gf_resolverLocalmente(msgTexto) : null;
-    if (respuestaLocal !== null) {
-        window.appendMensajeGuardian(respuestaLocal, 'bot', true);
-        return; // NO llama a Gemini
-    }
-
-    // Preparar contexto completo
-    const contexto = {
-        insumos: window.costosState.insumos,
-        recetas: window.costosState.recetas,
-        pedidos: JSON.parse(localStorage.getItem('pd_pedidos')) || [] // Traer info de pedidos si existe
-    };
-
-    const memoria = JSON.parse(localStorage.getItem('pd_guardian_chat_memory')) || [];
-
-    // Mostrar "Pensando..."
-    const typingId = "typing-" + Date.now();
-    window.appendMensajeGuardian('<span style="font-style:italic; color:#94a3b8;">El Guardián está pensando... 🥐</span>', 'bot', false, typingId);
-
     try {
-        const apiKey = localStorage.getItem('pd_gemini_api_key');
-        let respuesta;
+        reconocimientoVoz = new SpeechRecognition();
+        reconocimientoVoz.lang = 'es-CO';
+        reconocimientoVoz.continuous = false;
+        reconocimientoVoz.interimResults = false;
 
-        if (apiKey && !window.AI_CORE) {
-            // If they had an API key but no local AI core, inform them it's disabled.
-            respuesta = await window.enviarMensajeIA(msgTexto.toLowerCase(), contexto, memoria);
-        } else {
-            // ── FASE 3: Enrutamiento General hacia AI_CORE (Offline / Local-First) ──
-            if (window.AI_CORE && window.AI_CORE.ContextManager && window.AI_CORE.LocalMockProvider) {
-                // Instanciar managers principales
-                const im = new window.AI_CORE.IdentityManager();
-                const pm = new window.AI_CORE.PermissionManager();
-                const store = new window.AI_CORE.LocalStorageKnowledgeStore('pd_ai_core_');
-                const mm = new window.AI_CORE.MemoryManager(store, 'pd_memory');
-                
-                // Construir contexto ensamblado
-                const cm = new window.AI_CORE.ContextManager(im, pm, mm);
-                const currentUserGlobal = (typeof window.currentUser !== 'undefined') ? window.currentUser : (typeof currentUser !== 'undefined' ? currentUser : null);
-                await cm.assembleContext(currentUserGlobal);
-                
-                // Procesar con proveedor local
-                const mockProv = new window.AI_CORE.LocalMockProvider();
-                respuesta = await mockProv.generate(msgTexto, cm.buildContext());
-            } else {
-                respuesta = "⚠️ La arquitectura local AI_CORE no está lista y no tienes una API Key de Gemini configurada. Por favor, configura tu API Key o contacta al administrador.";
-            }
+        if (micBtn) {
+            micBtn.classList.add('mic-active');
+            micBtn.textContent = '🔴';
         }
-        
-        // Remover el indicador de pensando
-        const typingEl = document.getElementById(typingId);
-        if (typingEl) typingEl.remove();
 
-        window.appendMensajeGuardian(respuesta, 'bot', true);
-    } catch (error) {
-        console.error(error);
-        const typingEl = document.getElementById(typingId);
-        if (typingEl) typingEl.remove();
-        window.appendMensajeGuardian('Tuve un corto circuito mental. ¿Puedes repetir la pregunta?', 'bot', true);
+        reconocimientoVoz.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const input = document.getElementById('guardian-user-input');
+            if (input) {
+                input.value = (input.value ? input.value + ' ' : '') + transcript;
+            }
+        };
+
+        reconocimientoVoz.onerror = (event) => {
+            console.warn('[Voz] Error en reconocimiento:', event.error);
+        };
+
+        reconocimientoVoz.onend = () => {
+            reconocimientoVoz = null;
+            if (micBtn) {
+                micBtn.classList.remove('mic-active');
+                micBtn.textContent = '🎙️';
+            }
+        };
+
+        reconocimientoVoz.start();
+    } catch (err) {
+        console.error('Error al iniciar micrófono:', err);
     }
 };
 
-window.appendMensajeGuardian = function(html, sender, saveToMemory = false, customId = null) {
-    const chatContainer = document.getElementById('guardian-chat-messages');
-    if (!chatContainer) return;
-    
-    const align = sender === 'user' ? 'align-self:flex-end; border-radius:15px 15px 0 15px; background:#e0f2fe; color:#0369a1;' : 'align-self:flex-start; border-radius:15px 15px 15px 0; background:#f1f5f9; color:#334155;';
-    
-    const div = document.createElement('div');
-    if (customId) div.id = customId;
-    div.style.cssText = 'padding:10px 15px; max-width:80%; font-size:0.9rem; ' + align;
-    div.innerHTML = html;
-    
-    chatContainer.appendChild(div);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+// Auto-expand textarea
+document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'guardian-user-input') {
+        e.target.style.height = 'auto';
+        e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+    }
+});
 
-    if (saveToMemory && !customId) {
-        const memoria = JSON.parse(localStorage.getItem('pd_guardian_chat_memory')) || [];
-        memoria.push({ rol: sender, texto: html });
-        localStorage.setItem('pd_guardian_chat_memory', JSON.stringify(memoria));
+// ============================================================================
+// INSPECTOR DRAWER: CONTROLADORES DE MODAL, TABS Y TELEMETRÍA
+// ============================================================================
+
+window.abrirGuardianDrawer = function() {
+    const drawer = document.getElementById('guardian-drawer');
+    if (drawer) {
+        drawer.classList.add('open');
+        window.actualizarInfoMotor();
+        window.cargarListaBoveda();
+        window.renderizarLogsTrazabilidad();
     }
 };
+
+window.cerrarGuardianDrawer = function() {
+    const drawer = document.getElementById('guardian-drawer');
+    if (drawer) drawer.classList.remove('open');
+};
+
+window.cambiarTabDrawer = function(tabId) {
+    const tabs = document.querySelectorAll('.guardian-tab-btn');
+    const panes = document.querySelectorAll('.guardian-tab-pane');
+
+    tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === tabId));
+    panes.forEach(p => p.classList.toggle('active', p.id === tabId));
+};
+
+window.registrarLogTrazabilidad = function(query, response, source, ms) {
+    window.guardianProvenanceLogs.unshift({
+        query: query,
+        source: source,
+        ms: ms,
+        preview: response.substring(0, 100) + (response.length > 100 ? '...' : ''),
+        time: new Date().toLocaleTimeString()
+    });
+
+    if (window.guardianProvenanceLogs.length > 30) {
+        window.guardianProvenanceLogs.pop();
+    }
+
+    window.renderizarLogsTrazabilidad();
+};
+
+window.renderizarLogsTrazabilidad = function() {
+    const container = document.getElementById('guardian-provenance-list');
+    if (!container) return;
+
+    if (!window.guardianProvenanceLogs || window.guardianProvenanceLogs.length === 0) {
+        container.innerHTML = '<div class="provenance-empty">No hay consultas registradas en esta sesión.</div>';
+        return;
+    }
+
+    container.innerHTML = window.guardianProvenanceLogs.map(item => `
+        <div class="provenance-item">
+            <div class="provenance-top">
+                <span class="provenance-source badge-pill">${item.source}</span>
+                <span class="provenance-time">${item.time} (${item.ms}ms)</span>
+            </div>
+            <div class="provenance-query"><strong>Q:</strong> ${item.query}</div>
+            <div class="provenance-preview"><strong>R:</strong> ${item.preview}</div>
+        </div>
+    `).join('');
+};
+
+window.cargarListaBoveda = function() {
+    const list = document.getElementById('guardian-vault-list');
+    if (!list) return;
+
+    let items = [];
+    if (window.AI_CORE && window.AI_CORE.KnowledgeVault && typeof window.AI_CORE.KnowledgeVault.getAll === 'function') {
+        items = window.AI_CORE.KnowledgeVault.getAll();
+    } else {
+        const raw = localStorage.getItem('dt_knowledge_vault') || '[]';
+        try { items = JSON.parse(raw); } catch (e) { items = []; }
+    }
+
+    if (!items || items.length === 0) {
+        list.innerHTML = '<div class="provenance-empty">La Bóveda está lista para registrar nuevos hechos aprendidos.</div>';
+        return;
+    }
+
+    list.innerHTML = items.slice(0, 20).map(item => `
+        <div class="vault-card">
+            <div class="vault-card-title">${item.title || item.topic || 'Conocimiento'}</div>
+            <div class="vault-card-body">${item.content || item.text || JSON.stringify(item)}</div>
+            <div class="vault-card-date">${item.created_at || 'Registrado'}</div>
+        </div>
+    `).join('');
+};
+
+window.mostrarFormNuevoHecho = function() {
+    const form = document.getElementById('form-nuevo-hecho');
+    if (form) {
+        form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none';
+    }
+};
+
+window.guardarNuevoHecho = function() {
+    const titInput = document.getElementById('hecho-titulo');
+    const contInput = document.getElementById('hecho-contenido');
+    if (!titInput || !contInput) return;
+
+    const titulo = titInput.value.trim();
+    const contenido = contInput.value.trim();
+    if (!titulo || !contenido) {
+        alert('Por favor completa tanto el título como el contenido del hecho.');
+        return;
+    }
+
+    if (window.AI_CORE && window.AI_CORE.KnowledgeVault && typeof window.AI_CORE.KnowledgeVault.addFact === 'function') {
+        window.AI_CORE.KnowledgeVault.addFact({ title: titulo, content: contenido, source: 'manual_admin' });
+    } else {
+        const raw = localStorage.getItem('dt_knowledge_vault') || '[]';
+        let arr = [];
+        try { arr = JSON.parse(raw); } catch (e) { arr = []; }
+        arr.unshift({ title: titulo, content: contenido, created_at: new Date().toISOString() });
+        localStorage.setItem('dt_knowledge_vault', JSON.stringify(arr));
+    }
+
+    titInput.value = '';
+    contInput.value = '';
+    document.getElementById('form-nuevo-hecho').style.display = 'none';
+    window.cargarListaBoveda();
+    alert('¡Hecho guardado con éxito en la Bóveda de Conocimiento!');
+};
+
+window.exportarBovedaJSON = function() {
+    let items = [];
+    if (window.AI_CORE && window.AI_CORE.KnowledgeVault && typeof window.AI_CORE.KnowledgeVault.getAll === 'function') {
+        items = window.AI_CORE.KnowledgeVault.getAll();
+    } else {
+        const raw = localStorage.getItem('dt_knowledge_vault') || '[]';
+        try { items = JSON.parse(raw); } catch (e) { items = []; }
+    }
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", "guardian_knowledge_vault_backup.json");
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+};
+
+window.actualizarInfoMotor = function() {
+    const netEl = document.getElementById('motor-network-status');
+    if (netEl) {
+        const online = navigator.onLine;
+        netEl.innerHTML = online 
+            ? '<span class="badge-ok">🟢 Conectado (Búsqueda web disponible)</span>' 
+            : '<span class="badge-warn">🟡 Modo Offline (Solo Bóveda Local)</span>';
+    }
+};
+
 
 window.obtenerContextoPanaderia = function() {
     const insumos = (window.costosState && window.costosState.insumos) ? window.costosState.insumos : [];
