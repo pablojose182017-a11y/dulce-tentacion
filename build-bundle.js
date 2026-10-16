@@ -38,6 +38,7 @@ const productionSources = [
     'ai-core/ai-cyber-defense.js',
     'ai-core/ai-owner-authority.js',
     'ai-core/ai-controlled-execution.js',
+    'ai-core/ai-text-processor.js',
     'ai-core/ai-chat-bridge.js',
     'guardian-financiero.js'
 ];

@@ -23,6 +23,8 @@ class LanguageUnderstandingEngine {
             USER_COMPLAINT: ['no me respondes', 'no entiendes', 'por que no respondes', 'que te pasa', 'estas mal', 'responde bien', 'no sabes', 'error', 'que necesitas', 'por que preguntas'],
             AUTHORIZATION_GRANTED: ['si', 'autorizado', 'procede', 'adelante', 'hazlo', 'de acuerdo', 'claro', 'por supuesto', 'dale'],
             AUTHORIZATION_DENIED: ['no', 'denegado', 'cancela', 'no lo hagas', 'detente', 'espera', 'omite', 'ignora'],
+            ADVICE_REQUEST: ['que me recomiendas hacer', 'que me recomiendas', 'que recomiendas hacer', 'que recomiendas', 'que hacer', 'que hago', 'como vamos', 'como va el negocio', 'dame ideas', 'que opinas', 'que me sugieres', 'sugerencias', 'que sugerencia me das'],
+            TEXT_PROCESS_PREPARATION: ['te voy a pasar un texto', 'te paso un texto', 'te comparto un texto', 'voy a pasar un texto', 'voy a pegarte un texto', 'ayudame a corregir', 'ayudame a redactar', 'corrigeme este texto', 'corrige este texto', 'revisa este mensaje', 'revisa este texto', 'resume lo siguiente', 'te voy a mandar un texto', 'quiero que corrijas'],
             PRODUCT_INFORMATION: ['especificaciones', 'informacion de', 'procesador', 'caracteristicas', 'detalles de', 'informacion sobre'],
             PRODUCT_RECOMMENDATION: ['recomiendame', 'recomiendas', 'recomiendes', 'que tal es', 'vale la pena', 'sirve para', 'que opinas', 'es bueno', 'recomendacion', 'recomendar']
         };
@@ -199,6 +201,30 @@ class LanguageUnderstandingEngine {
             return interpretation;
         }
 
+        // Intent prioritario: Preparación para corregir / procesar texto
+        const isTextPrep = this._containsPhrase(normalized, this.dictionaries.TEXT_PROCESS_PREPARATION) ||
+                           (/\b(?:te voy a pasar|te paso|te comparto|voy a pasar|voy a pegarte)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|escrito)\b/i.test(normalized)) ||
+                           (/\b(?:corrijas|corregir|correccion|ortograficos?|ortografia)\b/i.test(normalized) && /\b(?:texto|parrafo|mensaje|errores)\b/i.test(normalized));
+        if (isTextPrep) {
+            interpretation.intent = "TEXT_PROCESS_PREPARATION";
+            interpretation.confidence = 0.95;
+            interpretation.topic = "CORRECT_AND_IMPROVE_TEXT";
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
+        // Intent prioritario: Consulta abierta de recomendación de negocio / asesoría
+        const isAdviceReq = this._containsPhrase(normalized, this.dictionaries.ADVICE_REQUEST) ||
+                            (/\bque\s+(?:me\s+)?recomiend[ao]s?\b/i.test(normalized) && !/\b(?:lenovo|moto|samsung|apple|iphone|portatil|laptop|celular|pantalla|procesador)\b/i.test(normalized)) ||
+                            /^(?:que me recomiendas hacer|que recomiendas hacer|que hacer|que hago|como vamos|dame ideas|que opinas|que me sugieres)\??$/i.test(normalized.trim());
+        if (isAdviceReq) {
+            interpretation.intent = "ADVICE_REQUEST";
+            interpretation.confidence = 0.95;
+            interpretation.topic = "BUSINESS_STRATEGY";
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
         const isProductInfo = this._containsPhrase(normalized, this.dictionaries.PRODUCT_INFORMATION);
         const isProductRec = this._containsPhrase(normalized, this.dictionaries.PRODUCT_RECOMMENDATION);
         
@@ -208,7 +234,16 @@ class LanguageUnderstandingEngine {
         const hasModel = techModelRegex.test(normalized);
         const isGenericProduct = (hasBrand && hasModel) || (hasBrand && tokens.length <= 4) || (hasModel && tokens.length <= 3);
 
-        if ((isProductInfo || isProductRec || isGenericProduct) && !hasExplicitResearchIntent) {
+        if ((isProductInfo || isProductRec || isGenericProduct) && !hasExplicitResearchIntent && !isAdviceReq) {
+            // Si la recomendación no tiene ninguna marca/modelo ni término de producto, y es una pregunta general abierta, es ADVICE_REQUEST
+            if (!hasBrand && !hasModel && (normalized.includes('hacer') || normalized.includes('negocio') || tokens.length <= 3)) {
+                interpretation.intent = "ADVICE_REQUEST";
+                interpretation.confidence = 0.9;
+                interpretation.topic = "BUSINESS_STRATEGY";
+                interpretation.isClarificationNeeded = false;
+                return interpretation;
+            }
+
             interpretation.intent = isProductRec ? "PRODUCT_RECOMMENDATION" : "PRODUCT_INFORMATION";
             const prodStops = new Set([...this.dictionaries.PRODUCT_INFORMATION, ...this.dictionaries.PRODUCT_RECOMMENDATION].flatMap(p => p.split(' ')));
             interpretation.topic = tokens.filter(t => !prodStops.has(t) && !this.stopWords.has(t) && t !== 'necesito' && t !== 'quiero').join(' ');
@@ -394,11 +429,39 @@ class LanguageUnderstandingEngine {
 
         const isQuestion = normalized.includes('?') || this._containsPhrase(normalized, ['cual', 'como', 'donde', 'cuando', 'quien', 'porque', 'por que', 'que es', 'que son', 'que significa', 'que hace']);
         
+        const wordCount = text.trim().split(/\s+/).length;
+        const isLongText = wordCount > 25;
+        
+        // Gatekeeper: Si es un texto largo (> 25 palabras) no puede ser una búsqueda de investigación automática
+        if (isLongText) {
+            interpretation.intent = "LONG_TEXT_INPUT";
+            interpretation.confidence = 0.95;
+            interpretation.topic = text;
+            interpretation.isClarificationNeeded = false;
+            return interpretation;
+        }
+
         if (isQuestion) {
+            // Verificar si es pregunta abierta conversacional
+            if (/^(?:que\s+(?:me\s+)?(?:recomiendas|sugieres|aconsejas)|que\s+hacer|que\s+hago|como\s+vamos|que\s+opinas)\b/i.test(normalized.trim())) {
+                interpretation.intent = "ADVICE_REQUEST";
+                interpretation.confidence = 0.95;
+                interpretation.topic = "BUSINESS_STRATEGY";
+                interpretation.isClarificationNeeded = false;
+                return interpretation;
+            }
             interpretation.intent = "FACTUAL_QUESTION";
             interpretation.confidence = 0.8;
             interpretation.topic = tokens.join(' ');
         } else if (tokens.length >= 3) {
+            // Query Gatekeeper: no convertir expresiones coloquiales en búsquedas a ciegas
+            if (/^(?:que\s+(?:me\s+)?(?:recomiendas|sugieres)|que\s+hacer|que\s+hago|como\s+vamos|dame\s+ideas|necesito\s+ayuda|ayudame)\b/i.test(normalized.trim())) {
+                interpretation.intent = "ADVICE_REQUEST";
+                interpretation.confidence = 0.95;
+                interpretation.topic = "BUSINESS_STRATEGY";
+                interpretation.isClarificationNeeded = false;
+                return interpretation;
+            }
             interpretation.intent = "RESEARCH_REQUEST";
             interpretation.confidence = 0.6;
             interpretation.topic = tokens.join(' ');

@@ -170,6 +170,19 @@ class ChatBridge {
         if (window.AI_CORE.SemanticStructuralValidator) {
             this.semanticValidator = new window.AI_CORE.SemanticStructuralValidator();
         }
+
+        // Habilidad Nativa de Procesamiento de Texto (Corrección, Redacción y Adaptación)
+        if (window.AI_CORE.TextProcessor) {
+            this.textProcessor = new window.AI_CORE.TextProcessor();
+        }
+
+        // Memoria de Contexto Multi-Turno y Estado Conversacional
+        this.conversationState = {
+            pendingTask: null, // ej. 'CORRECT_AND_IMPROVE_TEXT', 'AWAITING_TEXT_TO_CORRECT', 'AWAITING_TEXT_TO_SUMMARIZE', etc.
+            pendingData: null,
+            lastTopic: null,
+            updatedAt: Date.now()
+        };
     }
 
     async receiveMessage(message, currentUserGlobal, costosStateGlobal, fileAttachment = null) {
@@ -222,6 +235,95 @@ class ChatBridge {
         
         console.log("[DEBUG CHATBRIDGE] Intent detectado:", interpretation.intent, "isClarif:", interpretation.isClarificationNeeded);
         console.log("[DEBUG CHATBRIDGE] Topic final:", interpretation.topic);
+
+        // 0. MEMORIA MULTI-TURNO: Verificar si hay una tarea pendiente (pendingTask)
+        const wordCount = message.trim().split(/\s+/).length;
+        const isLongText = wordCount > 25 || message.length > 180;
+        const currentPendingTask = (this.conversationState && this.conversationState.pendingTask) || null;
+
+        // Si el usuario tenía pendiente entregar un texto para corrección / mejora,
+        // o si en este turno pegó un texto largo o contenido con la intención de procesar:
+        if (currentPendingTask === 'CORRECT_AND_IMPROVE_TEXT' || currentPendingTask === 'AWAITING_TEXT_TO_CORRECT') {
+            // Limpiar estado pendiente
+            this.conversationState.pendingTask = null;
+            this.conversationState.updatedAt = Date.now();
+
+            if (this.textProcessor) {
+                const processed = await this.textProcessor.processText(message);
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', processed, {
+                    intent: "TEXT_PROCESSED",
+                    isGeneratedResponse: true,
+                    action: "CORRECT_AND_IMPROVE_TEXT"
+                });
+                return processed;
+            }
+        }
+
+        // Si el usuario envió en un solo mensaje la orden y el texto largo juntos
+        const hasTextProcessVerb = /\b(?:corrijas|corregir|correccion|ortograficos?|ortografia|redactar|resumir|adapta(?:r)?)\b/i.test(message);
+        if (hasTextProcessVerb && isLongText && this.textProcessor) {
+            this.conversationState.pendingTask = null;
+            this.conversationState.updatedAt = Date.now();
+            const processed = await this.textProcessor.processText(message);
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', processed, {
+                intent: "TEXT_PROCESSED",
+                isGeneratedResponse: true,
+                action: "CORRECT_AND_IMPROVE_TEXT"
+            });
+            return processed;
+        }
+
+        // Si la intención detectada es preparar el procesamiento de texto (Turno 1)
+        if (interpretation.intent === "TEXT_PROCESS_PREPARATION") {
+            this.conversationState.pendingTask = 'CORRECT_AND_IMPROVE_TEXT';
+            this.conversationState.updatedAt = Date.now();
+            const responseText = "¡Claro que sí, Pablo! Pásame el texto aquí abajo y enseguida le corrijo la ortografía, puntuación y estilo (y si quieres también lo adapto a Punto Dulce).";
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, {
+                intent: "TEXT_PROCESS_PREPARATION",
+                isGeneratedResponse: true,
+                pendingTask: 'CORRECT_AND_IMPROVE_TEXT'
+            });
+            return responseText;
+        }
+
+        // Si la intención es pedir recomendación / asesoría estratégica de negocio (Query Gatekeeper)
+        if (interpretation.intent === "ADVICE_REQUEST") {
+            const user = this.identityManager.getCurrentUser(currentUserGlobal);
+            const isCreator = user && user.email === 'pablojose182017@gmail.com';
+            const saludo = isCreator ? "¡Con gusto, Pablo! Como tu socio asesor en Punto Dulce" : "¡Con gusto! Como asesor estratégico de P&S Punto Dulce";
+            
+            const responseText = `${saludo}, te planteo estas 4 recomendaciones estratégicas inmediatas basadas en la operación real de nuestro negocio:\n\n` +
+                `1. 🥐 **Optimizar Margen en Panadería Tradicional:** Revisar las recetas con margen menor al 30% (como el Pan Cascarita o Pan de Queso) ajustando gramajes o reduciendo merma de insumos lácteos para proteger la utilidad neta.\n\n` +
+                `2. ☕ **Lanzar Combo Desayuno y Tarde en Cúcuta:** Crear el 'Combo Cascarita + Café caliente' en la mañana y 'Roliqueso + Bebida' en la tarde, incentivando compra rápida en horas pico.\n\n` +
+                `3. ⭐ **Fidelización con Club Puntos VIP:** Incentivar la recurrencia premiando a clientes frecuentes que compran pan tajado o tortas con puntos redimibles en bolitas de maíz o leche.\n\n` +
+                `4. 🎂 **Impulsar Catálogo Digital de Tortas Bajo Pedido:** Promocionar en WhatsApp Business nuestras tortas artesanales personalizadas con anticipo del 50%, garantizando márgenes del 38% al 45%.\n\n` +
+                `¿Sobre cuál de estas 4 opciones te gustaría que profundicemos hoy?`;
+
+            this.memoryManager.addTurn('user', message);
+            this.memoryManager.addTurn('assistant', responseText, {
+                intent: "ADVICE_REQUEST",
+                isGeneratedResponse: true,
+                topic: "BUSINESS_STRATEGY"
+            });
+            return responseText;
+        }
+
+        // Si es un texto largo aislado pegado por el usuario sin pendingTask previo
+        if (interpretation.intent === "LONG_TEXT_INPUT" || (isLongText && interpretation.intent === "RESEARCH_REQUEST")) {
+            if (this.textProcessor) {
+                const processed = await this.textProcessor.processText(message);
+                this.memoryManager.addTurn('user', message);
+                this.memoryManager.addTurn('assistant', processed, {
+                    intent: "TEXT_PROCESSED",
+                    isGeneratedResponse: true,
+                    action: "CORRECT_AND_IMPROVE_TEXT"
+                });
+                return processed;
+            }
+        }
 
         const history = this.memoryManager.getShortTermMemory ? this.memoryManager.getShortTermMemory() : [];
         const lastAssistantMsg = history.slice().reverse().find(m => m.role === 'assistant');
@@ -361,9 +463,49 @@ class ChatBridge {
         }
 
         if (interpretation.intent === "RESEARCH_REQUEST") {
+            const queryCandidate = (interpretation.topic || interpretation.normalizedText || message).trim();
+            const qWordCount = queryCandidate.split(/\s+/).length;
+            const isDisallowed = qWordCount > 25 ||
+                /^(?:que\s+(?:me\s+)?(?:recomiendas|sugieres|aconsejas)|que\s+hacer|que\s+hago|como\s+vamos|dame\s+ideas|que\s+opinas|necesito\s+ayuda|ayudame)\b/i.test(queryCandidate.toLowerCase()) ||
+                /^(?:te\s+voy\s+a\s+pasar|voy\s+a\s+pasar|corrigeme|corrige|revisa)\b/i.test(queryCandidate.toLowerCase());
+
+            if (isDisallowed) {
+                // Si es un pedido de consejo o ayuda
+                if (/recomiend|ideas|opinas|hacer|hago|vamos/i.test(queryCandidate)) {
+                    const user = this.identityManager.getCurrentUser(currentUserGlobal);
+                    const isCreator = user && user.email === 'pablojose182017@gmail.com';
+                    const saludo = isCreator ? "¡Con gusto, Pablo! Como tu socio asesor en Punto Dulce" : "¡Con gusto! Como asesor estratégico de P&S Punto Dulce";
+                    const responseText = `${saludo}, te planteo estas 4 recomendaciones estratégicas inmediatas basadas en la operación real de nuestro negocio:\n\n` +
+                        `1. 🥐 **Optimizar Margen en Panadería Tradicional:** Revisar las recetas con margen menor al 30% (como el Pan Cascarita o Pan de Queso) ajustando gramajes o reduciendo merma de insumos lácteos para proteger la utilidad neta.\n\n` +
+                        `2. ☕ **Lanzar Combo Desayuno y Tarde en Cúcuta:** Crear el 'Combo Cascarita + Café caliente' en la mañana y 'Roliqueso + Bebida' en la tarde, incentivando compra rápida en horas pico.\n\n` +
+                        `3. ⭐ **Fidelización con Club Puntos VIP:** Incentivar la recurrencia premiando a clientes frecuentes que compran pan tajado o tortas con puntos redimibles en bolitas de maíz o leche.\n\n` +
+                        `4. 🎂 **Impulsar Catálogo Digital de Tortas Bajo Pedido:** Promocionar en WhatsApp Business nuestras tortas artesanales personalizadas con anticipo del 50%, garantizando márgenes del 38% al 45%.\n\n` +
+                        `¿Sobre cuál de estas 4 opciones te gustaría que profundicemos hoy?`;
+
+                    this.memoryManager.addTurn('user', message);
+                    this.memoryManager.addTurn('assistant', responseText, {
+                        intent: "ADVICE_REQUEST",
+                        isGeneratedResponse: true,
+                        topic: "BUSINESS_STRATEGY"
+                    });
+                    return responseText;
+                }
+
+                if (this.textProcessor && qWordCount > 25) {
+                    const processed = await this.textProcessor.processText(message);
+                    this.memoryManager.addTurn('user', message);
+                    this.memoryManager.addTurn('assistant', processed, {
+                        intent: "TEXT_PROCESSED",
+                        isGeneratedResponse: true,
+                        action: "CORRECT_AND_IMPROVE_TEXT"
+                    });
+                    return processed;
+                }
+            }
+
             const user = this.identityManager.getCurrentUser(currentUserGlobal);
             const contextData = { user: { data: user }, webSearchApproved: true };
-            return await this._executeResearch(interpretation.topic || interpretation.normalizedText, contextData, message);
+            return await this._executeResearch(queryCandidate, contextData, message);
         }
 
         if (interpretation.intent === "AUTHORIZATION_DENIED") {
@@ -496,13 +638,19 @@ class ChatBridge {
                 responseText = `[FAIL_CLOSED] Subsistema de ejecución/seguridad no disponible.`;
             }
         } else {
-            // FASE 13: Autonomía Web Silenciosa y Conversacional
+            // FASE 13: Autonomía Web Silenciosa y Conversacional con Query Gatekeeper
             const isOnline = (typeof navigator !== "undefined" && navigator.onLine !== undefined) ? navigator.onLine : true;
-            if (this.researchEngine && isOnline && (analysis.conclusion.indexOf("No existe conocimiento") !== -1 || (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL")))) {
+            const queryCandidate = (activeTopic || message).trim();
+            const qWordCount = queryCandidate.split(/\s+/).length;
+            const isDisallowedQuery = qWordCount > 25 ||
+                /^(?:que\s+(?:me\s+)?(?:recomiendas|sugieres|aconsejas)|que\s+hacer|que\s+hago|como\s+vamos|dame\s+ideas|que\s+opinas|necesito\s+ayuda|ayudame)\b/i.test(queryCandidate.toLowerCase()) ||
+                /^(?:te\s+voy\s+a\s+pasar|voy\s+a\s+pasar|corrigeme|corrige|revisa)\b/i.test(queryCandidate.toLowerCase());
+
+            if (this.researchEngine && isOnline && !isDisallowedQuery && (analysis.conclusion.indexOf("No existe conocimiento") !== -1 || (analysis.uncertainty && (analysis.uncertainty.level === "HIGH" || analysis.uncertainty.level === "CRITICAL")))) {
                 try {
                     const user = this.identityManager.getCurrentUser(currentUserGlobal);
                     const contextData = { user: { data: user }, webSearchApproved: true };
-                    return await this._executeResearch(activeTopic || message, contextData, message);
+                    return await this._executeResearch(queryCandidate, contextData, message);
                 } catch(errAutoRes) {}
             }
             // Formatear respuesta base
@@ -652,7 +800,10 @@ class ChatBridge {
                                (report.ingestStatus && report.ingestStatus !== 'SKIPPED' ? `Estado Ingesta: ${report.ingestStatus}\n` : '') +
                                `\n---\n💡 *Análisis del Guardián:* Información asimilada para responder en menos de 5ms en futuras consultas.`;
             } else if (report.status === 'INSUFFICIENT_EVIDENCE') {
-                responseText = `[INVESTIGACIÓN FALLIDA]\nNo se encontró evidencia local ni web suficiente para responder sobre "${taskQuery}".\nLimitaciones: ${(report.limitations||[]).join(', ')}\n¿Deseas que intente buscar de nuevo en la web?`;
+                responseText = `He consultado minuciosamente las fuentes disponibles y por el momento no encuentro evidencia suficiente sobre "${taskQuery}".\n\n` +
+                               `💡 **¿Cómo podemos avanzar?**\n` +
+                               `- Puedes brindarme un poco más de contexto, palabras clave o detalles específicos.\n` +
+                               `- Si lo deseas, puedo intentar realizar una búsqueda complementaria con términos más amplios. ¿Te gustaría que busquemos con otra perspectiva?`;
             } else if (report.status === 'EXTERNAL_UNAVAILABLE') {
                 responseText = `Detecté que no hay acceso fluido a la red en este momento. Sin embargo, mantengo activa mi base de conocimiento local para asistirte con costos, recetas y seguridad del negocio.`;
             } else {
@@ -670,7 +821,8 @@ class ChatBridge {
 
             return responseText;
         } catch (e) {
-            const errText = `[ERROR DE INVESTIGACIÓN] Hubo un problema al investigar: ${e.message}\n¿Deseas que intente buscar de nuevo en la web?`;
+            const errText = `Hubo un inconveniente temporal al consultar información externa: ${e.message}.\n\n` +
+                           `💡 Sin embargo, todos mis módulos locales de costos, recetas y seguridad siguen operando normalmente. ¿Deseas que reintentemos la consulta o la abordamos desde los datos locales del negocio?`;
             this.memoryManager.addTurn('user', originalMessage);
             this.memoryManager.addTurn('assistant', errText, { 
                 isGeneratedResponse: true, 
@@ -684,6 +836,12 @@ class ChatBridge {
 
     clearSession() {
         this.memoryManager.clearShortTermMemory();
+        this.conversationState = {
+            pendingTask: null,
+            pendingData: null,
+            lastTopic: null,
+            updatedAt: Date.now()
+        };
     }
 
     getEvolutionProposals() {
