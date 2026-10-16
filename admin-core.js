@@ -661,7 +661,6 @@ window.guardarEdicionProducto = function (pId) {
     const nuevoNombre = (document.getElementById('edit-prod-name')?.value || '').trim();
     const nuevoPrecioStr = document.getElementById('edit-prod-price')?.value || '0';
     const imgInput = document.querySelector('#edit-prod-img, #editProductImg, .product-img-input');
-    const nuevaImg = (window.tempProductImg || (imgInput ? imgInput.value.trim() : '') || 'logo-pys.png');
     const nuevaCategoria = document.getElementById('edit-prod-category')?.value || 'panaderia';
     const puntosInput = document.getElementById('newProductPoints');
     const nuevosPuntos = puntosInput && puntosInput.value.trim() !== '' ? Math.max(0, parseInt(puntosInput.value) || 0) : 0;
@@ -675,11 +674,21 @@ window.guardarEdicionProducto = function (pId) {
     let isNew = !pId;
     let targetId = isNew ? Date.now() : pId;
 
+    // Buscar el producto en memoria si no es nuevo
+    const existingProduct = !isNew && typeof products !== 'undefined' ? products.find(x => x.id === pId) : null;
+
     // Guardar en catálogo personalizado (preparación)
     let localCatalog = {};
     try { localCatalog = JSON.parse(localStorage.getItem('dt_catalogo_personalizado')) || {}; } catch (e) { }
 
     const existingCatalogEntry = localCatalog[targetId] || {};
+
+    // Determinar la imagen a utilizar preservando la previa si no se seleccionó una nueva
+    const inputVal = imgInput ? imgInput.value.trim() : '';
+    const previaImg = (existingCatalogEntry && existingCatalogEntry.img) || 
+                      (existingProduct && (existingProduct.img || existingProduct.originalImg)) || 
+                      '';
+    const nuevaImg = window.tempProductImg || (inputVal !== '' ? inputVal : previaImg) || 'logo-pys.png';
     
     // 1. Crear el entry exclusivo para Firestore (Whitelist estricta - Zero Leakage)
     const firestorePayload = {
@@ -726,9 +735,11 @@ window.guardarEdicionProducto = function (pId) {
     }
 
     // 2. Crear el entry completo para localStorage (conserva costos y data local privada)
+    // fullLocalEntry siempre conserva la imagen activa completa (incluso si es Base64 omitido en Firestore)
     const fullLocalEntry = {
         ...existingCatalogEntry,
-        ...firestorePayload
+        ...firestorePayload,
+        img: nuevaImg
     };
 
     // Asignar al catálogo temporalmente para validación de tamaño local
@@ -783,7 +794,7 @@ window.guardarEdicionProducto = function (pId) {
                     name: nuevoNombre,
                     price: nuevoPrecio,
                     cat: nuevaCategoria,
-                    img: firestorePayload.img,
+                    img: fullLocalEntry.img || firestorePayload.img || 'logo-pys.png',
                     points: nuevosPuntos,
                     puntos: nuevosPuntos,
                     desc: 'Producto fresco del día',
@@ -800,7 +811,8 @@ window.guardarEdicionProducto = function (pId) {
                     const badgePart = hasBadge ? p.name.substring(p.name.indexOf('[Promo:')) : '';
                     p.name = nuevoNombre + (badgePart ? ' ' + badgePart : '');
 
-                    p.img = firestorePayload.img;
+                    // Asignar imagen sin degradar a undefined si fue omitida en firestorePayload
+                    p.img = firestorePayload.img || fullLocalEntry.img || p.img || 'logo-pys.png';
                     p.cat = nuevaCategoria;
                     p.points = nuevosPuntos;
                     p.puntos = nuevosPuntos;
