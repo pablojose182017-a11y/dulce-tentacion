@@ -334,11 +334,22 @@ function showSection(id, element) {
             if (typeof window.initDragToScroll === 'function') window.initDragToScroll();
         }
         el.classList.add('active');
+        if (id === 'club-puntos' && typeof renderRewards === 'function') {
+            renderRewards();
+        }
     }
-    if (element && element.classList && element.classList.contains('nav-link')) element.classList.add('active');
+    if (element && element.classList && element.classList.contains('nav-link')) {
+        element.classList.add('active');
+    } else {
+        // Si no se proporcionó elemento explícito, sincronizar el enlace correspondiente en el nav de escritorio
+        const deskNavBtn = id === 'club-puntos' 
+            ? document.getElementById('nav-club-puntos') 
+            : Array.from(document.querySelectorAll('header nav .nav-link')).find(btn => btn.getAttribute('onclick')?.includes(`'${id}'`));
+        if (deskNavBtn) deskNavBtn.classList.add('active');
+    }
 
     // Sync bottom nav
-    const bnMap = { inicio: 'bnInicio', productos: 'bnProductos', nosotros: 'bnNosotros' };
+    const bnMap = { inicio: 'bnInicio', productos: 'bnProductos', nosotros: 'bnNosotros', 'club-puntos': 'bnClubPuntos' };
     const bnEl = document.getElementById(bnMap[id]);
     if (bnEl) bnEl.classList.add('active');
 
@@ -750,21 +761,8 @@ window.renderRewardsClub = function () {
 };
 
 function openPointsModal() {
-    renderRewards();
-    const inicioSec = document.getElementById('inicio');
-    if (inicioSec && !inicioSec.classList.contains('active')) {
-        showSection('inicio', document.querySelectorAll('.nav-link')[0]);
-    }
-    const target = document.getElementById('club-puntos');
-    if (target) {
-        const root = document.documentElement;
-        const prevBehavior = root.style.scrollBehavior;
-        root.style.scrollBehavior = 'auto';
-        target.scrollIntoView({ behavior: 'auto', block: 'start' });
-        requestAnimationFrame(() => {
-            root.style.scrollBehavior = prevBehavior;
-        });
-    }
+    const navBtn = document.getElementById('nav-club-puntos') || document.getElementById('bnClubPuntos');
+    showSection('club-puntos', navBtn);
 }
 
 function redeemReward(rewardId) {
