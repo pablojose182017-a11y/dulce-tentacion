@@ -412,8 +412,22 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
                     if (p.enOferta) {
                         p.oldPrice = newPrice;
                         if (window.dtOfertasActivas && window.dtOfertasActivas[p.id]) {
-                            window.dtOfertasActivas[p.id].precioOriginal = newPrice;
-                            if (typeof window.saveOfertas === 'function') window.saveOfertas();
+                            const isOferta = window.dtOfertasActivas[p.id];
+                            const precioOrigAnterior = isOferta.precioOriginal;
+                            isOferta.precioOriginal = newPrice;
+
+                            if (isOferta.porcentaje && isOferta.porcentaje > 0) {
+                                const nuevoPrecioOferta = Math.round(newPrice * (1 - (isOferta.porcentaje / 100)));
+                                isOferta.precioOferta = nuevoPrecioOferta;
+                                p.price = nuevoPrecioOferta;
+                            }
+
+                            // Solo guardar si realmente cambió el precioOriginal o el precioOferta para evitar escrituras cíclicas/repetitivas
+                            if (precioOrigAnterior !== newPrice) {
+                                try {
+                                    localStorage.setItem('dt_ofertas_activas', JSON.stringify(window.dtOfertasActivas));
+                                } catch (e) { /* local quota */ }
+                            }
                         }
                     } else {
                         p.price = newPrice;
