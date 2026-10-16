@@ -3770,27 +3770,30 @@ function syncUserUI() {
         }
 
         const vipHtml = isVip
-            ? `<div onclick="event.stopPropagation(); const menu = document.getElementById('user-dropdown-menu'); if (menu) { menu.classList.remove('active', 'open'); } window.showVipStatusModal();" 
-                    style="background: linear-gradient(135deg, #FFF9E6 0%, #FFF2B2 100%); 
-                           border: 1px solid #F3DA7A; 
+            ? `<div class="vip-member-card" onclick="event.stopPropagation(); const menu = document.getElementById('user-dropdown-menu'); if (menu) { menu.classList.remove('active', 'open'); } window.showVipStatusModal();" 
+                    style="background: linear-gradient(135deg, #FFF8E7 0%, #F5E1B5 100%); 
+                           border: 1px solid #C58B2B; 
                            border-radius: 12px; 
-                           padding: 12px; 
-                           margin: 10px 0; 
+                           padding: 10px 14px; 
+                           margin: 6px 0; 
                            cursor: pointer; 
                            display: flex; 
-                           flex-direction: column; 
                            align-items: center; 
-                           text-align: center; 
-                           box-shadow: 0 4px 12px rgba(138, 109, 5, 0.1); 
+                           justify-content: space-between; 
+                           gap: 10px;
+                           box-shadow: 0 3px 10px rgba(197, 139, 43, 0.15); 
                            transition: transform 0.2s ease, box-shadow 0.2s ease;"
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(138, 109, 5, 0.15)';"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(138, 109, 5, 0.1)';">
-                    <span style="font-size: 1.1rem; color: #8A6D05; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                        👑 Membresía VIP Activa
-                    </span>
-                    <span style="font-size: 0.85rem; color: #9A7B0E; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                        Ver Beneficios y Vigencia <span style="font-size: 0.9rem;">➔</span>
-                    </span>
+                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 14px rgba(197, 139, 43, 0.22)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 10px rgba(197, 139, 43, 0.15)';">
+                    <div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; min-width:0;">
+                        <span style="font-size: 0.92rem; color: #5C4108; font-weight: 800; letter-spacing: 0.2px; display: flex; align-items: center; gap: 5px; line-height: 1.2;">
+                            👑 Membresía VIP Activa
+                        </span>
+                        <span style="font-size: 0.76rem; color: #8A6D05; font-weight: 600; margin-top: 2px;">
+                            Ver Beneficios y Vigencia
+                        </span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: #8A6D05; font-weight: 800; padding: 4px 8px; background: rgba(255,255,255,0.6); border-radius: 8px; border: 1px solid rgba(197, 139, 43, 0.3); flex-shrink: 0;">➔</span>
                </div>`
             : `<button class="vip-upgrade-btn" onclick="window.openVipTermsModal && window.openVipTermsModal(event)">✨ Pasar a VIP Oro</button>`;
 

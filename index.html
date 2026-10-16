@@ -104,13 +104,15 @@
                             <span id="sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
                         </div>
 
-                        <!-- Accesos Rápidos: 2 columnas compactas -->
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:4px;">
-                            <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:0;">
-                                📊 Historial
+                        <!-- Accesos Rápidos: Lista vertical 100% ejecutiva boutique -->
+                        <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin:8px 0;">
+                            <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)">
+                                <span>📊 Historial de Puntos</span>
+                                <span class="dropdown-link-arrow">›</span>
                             </div>
-                            <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom:0;">
-                                📦 Pedidos
+                            <div class="dropdown-link-item" onclick="openOrderHistory(true)">
+                                <span>📦 Historial de Pedidos</span>
+                                <span class="dropdown-link-arrow">›</span>
                             </div>
                         </div>
 
@@ -529,7 +531,7 @@
 
     <!-- ===== MOBILE PROFILE MODAL ===== -->
     <div class="auth-modal" id="mobileProfileModal" style="display:none;" onclick="handleMobileProfileBdrop(event)">
-        <div class="auth-card" style="padding: 24px 16px; margin: auto 12px 12px 12px; align-self: flex-end;">
+        <div class="auth-card">
             <button class="auth-close-btn" onclick="closeMobileProfile()">✕</button>
             <div class="dropdown-profile-header">
                 <img id="mp-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
@@ -551,13 +553,15 @@
                 <span id="mp-sim-points-msg">Agrega productos para ver cuántos puntos ganas.</span>
             </div>
 
-            <!-- Accesos Rápidos: 2 columnas compactas (móvil) -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; margin-bottom:4px;">
-                <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)" style="margin-bottom:0;">
-                    📊 Historial
+            <!-- Accesos Rápidos: Lista vertical 100% ejecutiva boutique -->
+            <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin:8px 0;">
+                <div class="dropdown-link-item" onclick="openPointsHistoryModal(true)">
+                    <span>📊 Historial de Puntos</span>
+                    <span class="dropdown-link-arrow">›</span>
                 </div>
-                <div class="dropdown-link-item" onclick="openOrderHistory(true)" style="margin-bottom:0;">
-                    📦 Pedidos
+                <div class="dropdown-link-item" onclick="openOrderHistory(true)">
+                    <span>📦 Historial de Pedidos</span>
+                    <span class="dropdown-link-arrow">›</span>
                 </div>
             </div>
 
@@ -565,9 +569,7 @@
 
             <div id="mobile-profile-actions-slot" style="display:contents"></div>
 
-            <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();"
-                style="width:100%; justify-content:center; background:#f8fafc; margin-bottom:6px;">🛒 Ver mi Carrito
-                (<span class="dropdown-cart-qty">0</span>)</button>
+            <button class="dropdown-btn" onclick="closeMobileProfile(); toggleCart();">🛒 Ver mi Carrito (<span class="dropdown-cart-qty">0</span>)</button>
             <button class="dropdown-btn logout" onclick="closeMobileProfile(); logoutUser(event)">🚪 Cerrar Sesión</button>
         </div>
     </div>
