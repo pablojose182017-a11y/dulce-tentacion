@@ -112,6 +112,31 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         }
     } catch (e) { }
+
+    // Rehidratar inmediatamente cualquier oferta activa conocida antes del primer renderizado
+    try {
+        const ofertasActivas = window.dtOfertasActivas || JSON.parse(localStorage.getItem('dt_ofertas_activas') || '{}');
+        const localCat = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}');
+        products.forEach(p => {
+            if (ofertasActivas[p.id]) {
+                const of = ofertasActivas[p.id];
+                const catEntry = localCat[p.id] || localCat[String(p.id)];
+                const base = (catEntry && catEntry.price) ? Number(catEntry.price) : (of.precioOriginal || p.price);
+                p.oldPrice = base;
+                if (!p.originalName) p.originalName = p.name;
+                if (of.porcentaje && of.porcentaje > 0) {
+                    p.price = Math.round(base * (1 - of.porcentaje / 100));
+                } else if (of.precioOferta) {
+                    p.price = of.precioOferta;
+                }
+                p.enOferta = true;
+                if (of.badgePromo) {
+                    p.tag = of.badgePromo;
+                    p.name = `${p.originalName} [Promo: ${of.badgePromo}]`;
+                }
+            }
+        });
+    } catch (e) { }
     try { const c = localStorage.getItem('dt_cart'); if (c) cart = JSON.parse(c); } catch (e) { }
     try {
         const u = localStorage.getItem('dt_user');

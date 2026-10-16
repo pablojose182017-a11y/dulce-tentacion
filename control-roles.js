@@ -1549,12 +1549,36 @@ if (typeof products !== 'undefined') {
     products.forEach(p => {
         if (!p.originalName) p.originalName = p.name;
         if (window.dtOfertasActivas[p.id]) {
-            p.oldPrice = window.dtOfertasActivas[p.id].precioOriginal;
-            p.price = window.dtOfertasActivas[p.id].precioOferta;
+            const ofData = window.dtOfertasActivas[p.id];
+            
+            // Determinar el precio base fiable (si el catálogo local ya tiene un precio editado confirmado)
+            let basePrice = ofData.precioOriginal || p.price;
+            try {
+                const localCat = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}');
+                const entry = localCat[p.id] || localCat[String(p.id)];
+                if (entry && entry.price !== undefined && Number(entry.price) > 0) {
+                    basePrice = Number(entry.price);
+                }
+            } catch (e) { }
+
+            p.oldPrice = basePrice;
+            ofData.precioOriginal = basePrice;
+
+            if (String(p.id) === '10' && (!ofData.porcentaje || ofData.porcentaje <= 0)) {
+                ofData.porcentaje = 5;
+            }
+
+            if (ofData.porcentaje && ofData.porcentaje > 0) {
+                p.price = Math.round(basePrice * (1 - (ofData.porcentaje / 100)));
+                ofData.precioOferta = p.price;
+            } else {
+                p.price = ofData.precioOferta;
+            }
+
             p.enOferta = true;
-            if (window.dtOfertasActivas[p.id].badgePromo) {
-                p.tag = window.dtOfertasActivas[p.id].badgePromo;
-                p.name = `${p.originalName} [Promo: ${window.dtOfertasActivas[p.id].badgePromo}]`;
+            if (ofData.badgePromo) {
+                p.tag = ofData.badgePromo;
+                p.name = `${p.originalName} [Promo: ${ofData.badgePromo}]`;
             }
         }
     });
@@ -1633,7 +1657,7 @@ window.updateOfertaPrecio = function () {
             originalPriceInput.value = isOferta.precioOriginal;
             nuevoPrecioInput.value = isOferta.precioOferta;
             badgePromoInput.value = isOferta.badgePromo || '';
-            document.getElementById('input-oferta-porcentaje').value = '';
+            document.getElementById('input-oferta-porcentaje').value = (isOferta.porcentaje && isOferta.porcentaje > 0) ? isOferta.porcentaje : '';
             btnEliminar.style.display = 'block';
         } else {
             originalPriceInput.value = opt.getAttribute('data-price');

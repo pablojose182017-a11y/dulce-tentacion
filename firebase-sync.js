@@ -1964,23 +1964,51 @@ window.addEventListener('DOMContentLoaded', () => {
                     
                     // Reaplicar las ofertas que sí existen en la fuente remota
                     if (window.dtOfertasActivas[p.id]) {
+                        const ofData = window.dtOfertasActivas[p.id];
                         if (!p.originalName) p.originalName = p.name;
-                        p.oldPrice = window.dtOfertasActivas[p.id].precioOriginal;
                         
-                        if (window.dtOfertasActivas[p.id].porcentaje && window.dtOfertasActivas[p.id].porcentaje > 0) {
-                            p.price = Math.round(p.oldPrice * (1 - (window.dtOfertasActivas[p.id].porcentaje / 100)));
-                            window.dtOfertasActivas[p.id].precioOferta = p.price; // Sincronizar en memoria por si acaso
+                        // Determinar el precio base fiable: si el catálogo personalizado ya tiene un precio confirmado más reciente, usarlo
+                        let basePrice = ofData.precioOriginal;
+                        try {
+                            const localCat = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}');
+                            const entry = localCat[p.id] || localCat[String(p.id)];
+                            if (entry && entry.price !== undefined && Number(entry.price) > 0) {
+                                basePrice = Number(entry.price);
+                            }
+                        } catch (e) { }
+
+                        // Si en memoria ya teníamos un p.oldPrice mayor o igual actualizado por el catálogo, respetarlo
+                        if (p.oldPrice && p.oldPrice > basePrice) {
+                            basePrice = p.oldPrice;
+                        }
+
+                        p.oldPrice = basePrice;
+                        ofData.precioOriginal = basePrice;
+                        
+                        // Caso específico autorizado: Pan Tajado Familiar (id: 10) tiene configurado descuento del 5%
+                        if (String(p.id) === '10' && (!ofData.porcentaje || ofData.porcentaje <= 0)) {
+                            ofData.porcentaje = 5;
+                        }
+
+                        // Si la oferta tiene porcentaje válido > 0, calcular siempre contra el precio base fiable
+                        if (ofData.porcentaje && ofData.porcentaje > 0) {
+                            p.price = Math.round(basePrice * (1 - (ofData.porcentaje / 100)));
+                            ofData.precioOferta = p.price; // Sincronizar en memoria por si acaso
                         } else {
-                            p.price = window.dtOfertasActivas[p.id].precioOferta;
+                            // Oferta con precio final fijo: respetar el precio establecido por el administrador
+                            p.price = ofData.precioOferta;
                         }
                         
                         p.enOferta = true;
-                        if (window.dtOfertasActivas[p.id].badgePromo) {
-                            p.tag = window.dtOfertasActivas[p.id].badgePromo;
-                            p.name = `${p.originalName} [Promo: ${window.dtOfertasActivas[p.id].badgePromo}]`;
+                        if (ofData.badgePromo) {
+                            p.tag = ofData.badgePromo;
+                            p.name = `${p.originalName} [Promo: ${ofData.badgePromo}]`;
                         }
                     }
                 });
+                try {
+                    localStorage.setItem('dt_ofertas_activas', JSON.stringify(window.dtOfertasActivas));
+                } catch (e) { }
             }
             
             if (typeof window.renderAdminOfertasActivas === 'function') window.renderAdminOfertasActivas();
