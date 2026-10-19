@@ -10603,7 +10603,7 @@ window.renderGuardianView = function() {
                             Guardián Studio
                             <span class="guardian-status-badge"><span class="pulse-dot"></span> Autónomo • Activo</span>
                         </div>
-                        <div class="guardian-studio-role">Copiloto Estratégico & Analista de Negocio Dulce Tentación</div>
+                        <div class="guardian-studio-role">Copiloto Estratégico & Analista de Negocio P&S Punto Dulce</div>
                     </div>
                 </div>
                 <div class="guardian-studio-actions">
@@ -10626,7 +10626,7 @@ window.renderGuardianView = function() {
                             ¡Hola! Soy <strong>Guardián Studio</strong>, tu copiloto financiero y operativo con cognición autónoma.
                             Tengo acceso a la base de costos, recetas, inventario y puedo investigar en internet de forma autónoma sin depender de APIs de terceros.
                             <br><br>
-                            ¿En qué analizamos o investigamos hoy para <em>Dulce Tentación</em>?
+                            ¿En qué analizamos o investigamos hoy para <em>P&S Punto Dulce</em>?
                         </div>
                         <div class="guardian-bubble-footer">
                             <span class="guardian-bubble-time">Justo ahora</span>
@@ -11769,7 +11769,7 @@ window.enviarMensajeIA = async function(prompt, contexto, memoria) {
                 // ══════════════════════════════════════════════════════
                 "PERFIL DEL USUARIO:\n\n" +
                 "  Área principal:          Telecomunicaciones (soporte técnico).\n" +
-                "  Área secundaria:         Gestión y administración de la panadería 'Dulce Tentación'.\n\n" +
+                "  Área secundaria:         Gestión y administración de la panadería 'P&S Punto Dulce'.\n\n" +
                 "  Preferencias de redacción:\n" +
                 "    - Idioma:              Español.\n" +
                 "    - Tono general:        Formal, natural y claro.\n" +
@@ -11966,7 +11966,7 @@ window.enviarMensajeIA = async function(prompt, contexto, memoria) {
     }
 
     if (prompt.includes('quien eres') || prompt.includes('quién eres') || prompt.includes('creador') || prompt.includes('reglas')) {
-        return 'Soy el Guardián Financiero de Dulce Tentación. Fui creado para obedecer a Pablo, proteger la información del negocio y asegurarme de que nunca vendas a pérdida. ¡Cero tratos ilícitos en mi reloj!';
+        return 'Soy el Guardián Financiero de P&S Punto Dulce. Fui creado para obedecer a Pablo, proteger la información del negocio y asegurarme de que nunca vendas a pérdida. ¡Cero tratos ilícitos en mi reloj!';
     }
 
     return 'Como tu leal Guardián Financiero, te sugiero ser más directo, Pablo. Pregúntame sobre "cuál es más rentable", "el costo de algún insumo" o pídeme un "consejo". ¡Mi constitución me exige cuidar el dinero!';

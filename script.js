@@ -483,7 +483,7 @@ function requestPasswordRecovery() {
     }
 
     const waLink = document.getElementById('recoveryWhatsAppLink');
-    const msg = `Hola Dulce Tentación, olvidé la contraseña de mi cuenta: ${email}. ¿Me ayudan a restablecerla, por favor?`;
+    const msg = `Hola P&S Punto Dulce, olvidé la contraseña de mi cuenta: ${email}. ¿Me ayudan a restablecerla, por favor?`;
     waLink.href = `https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`;
 
     document.getElementById('recoveryWhatsAppContainer').style.display = 'block';
@@ -1321,7 +1321,7 @@ function renderKitchenOrders(tabId) {
                         ${order.status === 'Pendiente' ? `<button class="k-btn k-btn-horno" onclick="updateKitchenOrderState('${order.id}', 'En Horno')">👨‍🍳 En Horno</button>` : ''}
                         ${(order.status === 'Pendiente' || order.status === 'En Horno') ? `<button class="k-btn k-btn-camino" onclick="updateKitchenOrderState('${order.id}', 'En Camino')">🛵 En Camino</button>` : ''}
                         <button class="k-btn k-btn-entregado" onclick="updateKitchenOrderState('${order.id}', 'Entregado')">✅ Entregado</button>
-                        <a href="https://wa.me/${cPhone}?text=¡Hola!%20Te%20escribimos%20de%20Dulce%20Tentación.%20Tu%20pedido%20${order.id}%20tiene%20una%20novedad." target="_blank" class="k-btn k-btn-whatsapp">💬 WA</a>
+                        <a href="https://wa.me/${cPhone}?text=¡Hola!%20Te%20escribimos%20de%20P%26S%20Punto%20Dulce.%20Tu%20pedido%20${order.id}%20tiene%20una%20novedad." target="_blank" class="k-btn k-btn-whatsapp">💬 WA</a>
                     </div>`;
         }
 
@@ -1585,7 +1585,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const normSa = saEmail.toLowerCase().trim();
         if (!adminEmails.includes(normSa)) adminEmails.push(normSa);
         workerEmails = workerEmails.filter(e => (e || '').toLowerCase().trim() !== normSa);
-        const adminName = (normSa === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'Dulce Tentación';
+        const adminName = (normSa === 'pablojose182017@gmail.com') ? 'Pablo Carrascal' : 'P&S Punto Dulce';
         let saUser = db_users.find(u => (u.email || '').toLowerCase().trim() === normSa);
         if (saUser) {
             saUser.name = saUser.name || adminName;
@@ -1720,7 +1720,7 @@ function loginUserObj(userObj) {
     const orderName = document.getElementById('orderName');
     if (orderName && !orderName.value) orderName.value = currentUser.name;
     const firstName = (currentUser.name || '').split(' ')[0];
-    showToast(`¡Hola, ${firstName}! Qué delicia tenerte de vuelta en Dulce Tentación ✨`, '🎉', 4000);
+    showToast(`¡Hola, ${firstName}! Qué delicia tenerte de vuelta en P&S Punto Dulce ✨`, '🎉', 4000);
 }
 
 
@@ -2357,7 +2357,7 @@ function renderLiveOrders() {
                         
                         <button onclick="markOrderState('${p.id}', 'En Camino')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'En Camino' ? '#7c3aed' : '#ddd6fe'}; background:${p.status === 'En Camino' ? '#ddd6fe' : '#fff'}; color:#5b21b6; transition:all 0.2s;">🛵 En Camino</button>
                         
-                        ${(p.phone && p.phone !== 'N/A' && /\d{7,}/.test(p.phone)) ? `<a href="https://wa.me/57${p.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('¡Hola! Tu pedido #' + p.id + ' de Panadería Dulce Tentación ya va en camino con nuestro domiciliario 🛵💨')}" target="_blank" rel="noopener noreferrer" style="flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; padding:10px 12px; border-radius:8px; font-weight:bold; font-size:0.8rem; background:#25D366; color:#fff; text-decoration:none; border:none;">💬 WhatsApp</a>` : ''}
+                        ${(p.phone && p.phone !== 'N/A' && /\d{7,}/.test(p.phone)) ? `<a href="https://wa.me/57${p.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('¡Hola! Tu pedido #' + p.id + ' de Panadería P&S Punto Dulce ya va en camino con nuestro domiciliario 🛵💨')}" target="_blank" rel="noopener noreferrer" style="flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; padding:10px 12px; border-radius:8px; font-weight:bold; font-size:0.8rem; background:#25D366; color:#fff; text-decoration:none; border:none;">💬 WhatsApp</a>` : ''}
                         
                         <button onclick="markOrderState('${p.id}', 'Entregado')" style="flex:1; padding:10px 5px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.8rem; border:2px solid ${p.status === 'Entregado' ? '#22c55e' : '#bbf7d0'}; background:${p.status === 'Entregado' ? '#bbf7d0' : '#fff'}; color:#15803d; transition:all 0.2s;">🟢 Entregado</button>
                     </div>
@@ -5342,7 +5342,7 @@ function sendOrder() {
 function openWhatsAppChat() {
     const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
     const bread = isMobile ? ' \u{1F956}' : '';
-    const g = `¡Hola! Vengo desde la página web de Dulce Tentación P y S${bread}. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!`;
+    const g = `¡Hola! Vengo desde la página web de P&S Punto Dulce${bread}. Quiero consultar los productos disponibles hoy en Cúcuta. ¡Gracias!`;
     let cleanPhone = typeof PHONE !== 'undefined' ? PHONE : '573123456789';
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(g)}`;
     console.log("TEXTO PURO (CHAT GENERAL):", g);
@@ -5552,7 +5552,7 @@ window.showWelcomeGreeting = function (opts) {
     const borderColor = '#d81b60'; // fucsia corporativo Dulce Tentación
     const title = isReturning
         ? `¡Hola, ${name || 'amigo'}!`
-        : '¡Bienvenido a Dulce Tentación!';
+        : '¡Bienvenido a P&S Punto Dulce!';
     const subtitle = isReturning
         ? `¡Qué alegría tenerte de vuelta! ¿Qué se te antoja hoy?`
         : `Nos alegra tenerte por aquí. ¿Qué se te antoja hoy?`;
@@ -6067,7 +6067,7 @@ function requestVipWhatsApp() {
     const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : {};
     const msg = encodeURIComponent(
         `¡Hola Punto Dulce! Quiero solicitar mi Membresía VIP para mi cuenta ${user.email || ''}.` +
-        ` 👑 Activar VIP Oro en Dulce Tentación para acceder al 5% de descuento y los beneficios exclusivos.`
+        ` 👑 Activar VIP Oro en P&S Punto Dulce para acceder al 5% de descuento y los beneficios exclusivos.`
     );
     window.open(`https://wa.me/${vipPhone}?text=${msg}`, '_blank');
 }
