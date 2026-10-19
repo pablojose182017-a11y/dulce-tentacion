@@ -4069,18 +4069,18 @@ function createCardHTML(p) {
     const btnClass = isOut ? 'btn-add disabled' : `btn-add badd-${p.id}`;
     const btnAction = isOut ? '' : `onclick="addToCart(${p.id},event)"`;
     const cardAction = isOut ? '' : `addToCart(${p.id},event);`;
-    const outBadge = isOut ? `<span class="badge-status" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">🚫 Agotado</span>` : '';
-    const tagBadge = (p.tag && p.tag.trim() !== '') ? `<span class="badge-status" style="background:#dbeafe; color:#1e40af; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">${p.tag}</span>` : '';
+    const outBadge = isOut ? `<span class="badge-status badge-agotado">🚫 Agotado</span>` : '';
+    const tagBadge = (p.tag && p.tag.trim() !== '') ? `<span class="badge-status">${p.tag}</span>` : '';
 
     let discountBadge = '';
     if (!p.tag && p.oldPrice && p.oldPrice > p.price) {
         const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-        discountBadge = `<span class="badge-discount" style="background:#881337; color:#fff; padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:bold;">📉 -${pct}%</span>`;
+        discountBadge = `<span class="badge-discount">📉 -${pct}%</span>`;
     }
 
     const badgesHTML = `
                 <div class="product-badges-row">
-                    <div style="display:flex; flex-direction:row; gap:6px; align-items:flex-start;">
+                    <div style="display:flex; flex-direction:row; gap:6px; align-items:flex-start; flex-wrap:wrap;">
                         ${outBadge}
                         ${tagBadge}
                     </div>
@@ -4088,20 +4088,30 @@ function createCardHTML(p) {
                 </div>
             `;
 
+    // Micro-etiqueta de categoría en estilo editorial boutique
+    const categoryLabels = {
+        'panaderia': 'Pan del Día',
+        'pasteleria': 'Tortas & Postres',
+        'antojos': 'Antojos & Galletería',
+        'paquetes': 'Paquetes Especiales',
+        'combos': 'Ofertas & Combos',
+        'ofertas': 'Ofertas & Combos',
+        'eventos': 'Eventos & Fiestas'
+    };
+    const categoryName = categoryLabels[p.cat] || (p.cat ? p.cat.toUpperCase() : 'PANADERÍA ARTESANAL');
+
     let fillingSelectHTML = '';
     let priceHTML = `
-                <div class="price-row" style="opacity:${opac};">
-                    <span class="price">$${p.price.toLocaleString()}</span>
-                    <span class="price-label">COP c/u</span>
+                <div id="price-${p.id}" class="price-row" style="opacity:${opac};">
+                    <span class="price">$${p.price.toLocaleString('es-CO')}</span>
                 </div>
             `;
     if (p.oldPrice && p.oldPrice > p.price) {
         priceHTML = `
-                <div class="price-row" style="opacity:${opac}; flex-direction:column; align-items:flex-start; gap:0;">
-                    <span style="text-decoration:line-through; color:#999; font-size:0.8rem;">$${p.oldPrice.toLocaleString()}</span>
+                <div id="price-${p.id}" class="price-row" style="opacity:${opac}; flex-direction:column; align-items:flex-start; gap:0;">
+                    <span style="text-decoration:line-through; color:#999; font-size:0.8rem;">$${p.oldPrice.toLocaleString('es-CO')}</span>
                     <div>
-                        <span class="price" style="color:#e11d48;">$${p.price.toLocaleString()}</span>
-                        <span class="price-label">COP c/u</span>
+                        <span class="price" style="color:#e11d48;">$${p.price.toLocaleString('es-CO')}</span>
                     </div>
                 </div>`;
     }
@@ -4120,7 +4130,7 @@ function createCardHTML(p) {
                 `;
         const baseR = OPCIONES_RELLENO['queso'];
         priceHTML = `
-                    <div id="price-${p.id}" class="price-row" style="opacity:${opac}; flex-direction:column; align-items:flex-start; margin-top:8px;">
+                    <div id="price-${p.id}" class="price-row" style="opacity:${opac}; flex-direction:column; align-items:flex-start;">
                         <span class="current-price">$${(units * baseR.precioUnitario).toLocaleString('es-CO')}</span>
                     </div>
                 `;
@@ -4133,16 +4143,19 @@ function createCardHTML(p) {
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
+                    <div class="card-category">${categoryName}</div>
                     <h3>${p.name}</h3>
                     <p class="card-desc">${p.desc}</p>
                     ${fillingSelectHTML}
                 </div>
-                <div>
-                    ${priceHTML}
-                    <div class="quantity-control" style="opacity:${opac}; pointer-events:${isOut ? 'none' : 'auto'};">
-                        <button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button>
-                        <input type="number" class="qty-input qinp-${p.id}" id="qty-${p.id}" value="1" min="1" max="999" onblur="validateQty(this)" oninput="if(parseInt(this.value)>999) this.value=999; if(this.value.length>3) this.value=this.value.slice(0,3);">
-                        <button class="qty-btn" onclick="changeQty(${p.id},1)">+</button>
+                <div class="card-footer-area">
+                    <div class="card-price-qty-row">
+                        ${priceHTML}
+                        <div class="quantity-control" style="opacity:${opac}; pointer-events:${isOut ? 'none' : 'auto'};">
+                            <button class="qty-btn" onclick="changeQty(${p.id},-1)">−</button>
+                            <input type="number" class="qty-input qinp-${p.id}" id="qty-${p.id}" value="1" min="1" max="999" onblur="validateQty(this)" oninput="if(parseInt(this.value)>999) this.value=999; if(this.value.length>3) this.value=this.value.slice(0,3);">
+                            <button class="qty-btn" onclick="changeQty(${p.id},1)">+</button>
+                        </div>
                     </div>
                     <button class="${btnClass}" ${btnAction} style="${isOut ? 'background:#cbd5e1; color:#475569; pointer-events:none;' : ''}">
                         <span>${btnText}</span>
