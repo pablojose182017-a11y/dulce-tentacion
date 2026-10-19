@@ -15,7 +15,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="stylesheet" href="styles.css?v=21">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -299,6 +299,7 @@
 
         <div class="cat-chip-scroll">
             <button class="cat-chip active" onclick="filterCategory('todos', this)">🔥 Todos</button>
+            <button class="cat-chip" onclick="filterCategory('favoritos', this)">❤️ Mis Favoritos <span class="fav-chip-count" id="favCountInicio" style="display:none; margin-left:4px; font-size:0.75rem; background:#E11D48; color:#fff; border-radius:999px; padding:1px 6px;">0</span></button>
             <button class="cat-chip" onclick="filterCategory('panaderia', this)">🥖 Pan</button>
             <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
             <button class="cat-chip" onclick="filterCategory('combos', this)">🔥 Ofertas</button>
@@ -386,6 +387,7 @@
         </div>
         <div class="cat-chip-scroll">
             <button class="cat-chip active" onclick="filterCategory('todos', this)">🔥 Todos</button>
+            <button class="cat-chip" onclick="filterCategory('favoritos', this)">❤️ Mis Favoritos <span class="fav-chip-count" id="favCountProductos" style="display:none; margin-left:4px; font-size:0.75rem; background:#E11D48; color:#fff; border-radius:999px; padding:1px 6px;">0</span></button>
             <button class="cat-chip" onclick="filterCategory('panaderia', this)">🥖 Pan</button>
             <button class="cat-chip" onclick="filterCategory('pasteleria', this)">🎂 Tortas & Postres</button>
             <button class="cat-chip" onclick="filterCategory('combos', this)">🔥 Ofertas</button>
@@ -1391,7 +1393,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js" defer></script>
     
-    <script src="script.js?v=18" defer></script>
+    <script src="script.js?v=21" defer></script>
     <script src="control-roles.js?v=17" defer></script>
     <!-- Firebase Sync Module -->
     <script src="firebase-sync.js?v=17" defer></script>

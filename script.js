@@ -196,6 +196,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderProducts(products);
     updateCart();
     syncUserUI();
+    if (typeof updateFavoritesUIBadges === 'function') updateFavoritesUIBadges();
     if (window.renderAdminNotifList) window.renderAdminNotifList();
     if (typeof window.checkRemoteUserSession === 'function') window.checkRemoteUserSession();
 
@@ -4061,32 +4062,141 @@ window.updateProductPrice = function (productId, selectEl) {
     }
 };
 
+// ===== SISTEMA DE PRODUCTOS FAVORITOS =====
+const FAVORITES_STORAGE_KEY = 'pd_user_favorites';
+
+function getUserFavorites() {
+    try {
+        const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveUserFavorites(favs) {
+    try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favs));
+    } catch (e) { }
+}
+
+function updateFavoritesUIBadges() {
+    const favs = getUserFavorites();
+    const count = favs.length;
+    const badgeInicio = document.getElementById('favCountInicio');
+    const badgeProds = document.getElementById('favCountProductos');
+    if (badgeInicio) {
+        badgeInicio.textContent = count;
+        badgeInicio.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    if (badgeProds) {
+        badgeProds.textContent = count;
+        badgeProds.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+}
+
+window.toggleFavoriteProduct = function(productId, btnEl) {
+    const idStr = String(productId);
+    let favs = getUserFavorites();
+    const isFav = favs.includes(idStr);
+
+    if (isFav) {
+        favs = favs.filter(id => id !== idStr);
+    } else {
+        favs.push(idStr);
+    }
+    saveUserFavorites(favs);
+    updateFavoritesUIBadges();
+
+    // Sincronizar estado visual en todos los botones de este producto en el DOM
+    document.querySelectorAll(`.fav-btn-${idStr}`).forEach(btn => {
+        btn.classList.toggle('is-fav', !isFav);
+        btn.setAttribute('aria-label', !isFav ? 'Quitar de favoritos' : 'Agregar a favoritos');
+        btn.setAttribute('title', !isFav ? 'Quitar de favoritos' : 'Agregar a favoritos');
+    });
+
+    // Si la vista activa actual es 'favoritos', re-renderizar para reflejar el cambio en vivo
+    if (window.currentActiveCategory === 'favoritos') {
+        renderProducts(products.filter(p => favs.includes(String(p.id))));
+        renderFeatured('favoritos');
+    }
+};
+
+function renderFavEmptyState() {
+    return `
+        <div class="fav-empty-state-card">
+            <div class="fav-empty-icon-wrap">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </div>
+            <h3 class="fav-empty-title">¡Aún no tienes favoritos!</h3>
+            <p class="fav-empty-desc">Agrega los productos que más te gusten haciendo clic en el corazón de la foto para encontrarlos rápido aquí.</p>
+            <button type="button" class="fav-empty-btn-cta" onclick="filterCategory('todos', null)">
+                <span>🥐 Ver Catálogo Completo</span>
+            </button>
+        </div>
+    `;
+}
+
 function createCardHTML(p) {
     const isOut = stockConfig[p.id] === true;
     const opac = isOut ? '0.5' : '1';
     const filt = isOut ? 'grayscale(100%)' : 'none';
-    const btnText = isOut ? '🚫 Agotado por hoy' : '🛒 Agregar al Carrito';
+    const btnText = isOut ? '🚫 Agotado por hoy' : '+ AGREGAR AL CARRITO';
     const btnClass = isOut ? 'btn-add disabled' : `btn-add badd-${p.id}`;
     const btnAction = isOut ? '' : `onclick="addToCart(${p.id},event)"`;
     const cardAction = isOut ? '' : `addToCart(${p.id},event);`;
-    const outBadge = isOut ? `<span class="badge-status badge-agotado">🚫 Agotado</span>` : '';
-    const tagBadge = (p.tag && p.tag.trim() !== '') ? `<span class="badge-status">${p.tag}</span>` : '';
+    // ===== REGLA DE NO SATURACIÓN DE ETIQUETAS (Exclusión Mutua Estricta) =====
+    // Máximo 1 sola insignia en la esquina superior izquierda
+    let singleBadgeHTML = '';
 
-    let discountBadge = '';
-    if (!p.tag && p.oldPrice && p.oldPrice > p.price) {
+    if (isOut) {
+        // Prioridad 1: Agotado
+        singleBadgeHTML = `<span class="badge-status badge-agotado">🚫 AGOTADO</span>`;
+    } else if (p.oldPrice && p.oldPrice > p.price) {
+        // Prioridad 2: Descuento u Oferta activa
         const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-        discountBadge = `<span class="badge-discount">📉 -${pct}%</span>`;
+        singleBadgeHTML = `<span class="badge-discount">📉 -${pct}% DTO</span>`;
+    } else if (p.tag && p.tag.trim() !== '') {
+        // Si tiene etiqueta personalizada definida en administración
+        singleBadgeHTML = `<span class="badge-status">${p.tag.toUpperCase()}</span>`;
+    } else {
+        // Prioridad 3: Disponible y sin descuento -> 1 sola etiqueta entre Popular, Más pedido o Favorito
+        const numId = Number(p.id) || 1;
+        const variantMod = numId % 3;
+
+        if (variantMod === 0) {
+            singleBadgeHTML = `<span class="badge-status badge-fresh-popular">⭐ POPULAR</span>`;
+        } else if (variantMod === 1) {
+            singleBadgeHTML = `<span class="badge-status badge-fresh-pedido">❤️ MÁS PEDIDO</span>`;
+        } else {
+            singleBadgeHTML = `<span class="badge-status badge-fresh-hoy">✨ FAVORITO</span>`;
+        }
     }
 
-    const badgesHTML = `
+    const badgesHTML = singleBadgeHTML ? `
                 <div class="product-badges-row">
-                    <div style="display:flex; flex-direction:row; gap:6px; align-items:flex-start; flex-wrap:wrap;">
-                        ${outBadge}
-                        ${tagBadge}
+                    <div>
+                        ${singleBadgeHTML}
                     </div>
-                    ${discountBadge}
                 </div>
-            `;
+            ` : '';
+
+    // Botón de Favoritos (Corazón flotante)
+    const favs = getUserFavorites();
+    const isFav = favs.includes(String(p.id));
+    const favBtnHTML = `
+        <button type="button" class="fav-heart-btn fav-btn-${p.id} ${isFav ? 'is-fav' : ''}" 
+            onclick="event.stopPropagation(); window.toggleFavoriteProduct('${p.id}', this);" 
+            title="${isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}" 
+            aria-label="${isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+        </button>
+    `;
 
     // Micro-etiqueta de categoría en estilo editorial boutique
     const categoryLabels = {
@@ -4139,6 +4249,7 @@ function createCardHTML(p) {
     return `<div class="card" id="card-${p.id}" onclick="if(!event.target.closest('button') && !event.target.closest('input') && !event.target.closest('select')){ ${cardAction} }" style="position:relative;">
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt}; cursor:pointer;" onclick="event.stopPropagation(); const img = this.querySelector('img'); if(img) window.openProductImageModal(img.src, img.alt);" title="Ver foto ampliada">
+                ${favBtnHTML}
                 <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); window.openProductImageModal(this.src, this.alt);">
             </div>
             <div class="card-body">
@@ -4165,26 +4276,54 @@ function createCardHTML(p) {
         </div>`;
 }
 
+window.currentActiveCategory = 'todos';
+
 function renderProducts(items = products) {
     const g = document.getElementById('productGrid');
     if (!g) return;
+    if (window.currentActiveCategory === 'favoritos' && items.length === 0) {
+        g.innerHTML = renderFavEmptyState();
+        return;
+    }
     g.innerHTML = items.length === 0
         ? "<p style='grid-column:1/-1;text-align:center;color:var(--text-soft);padding:40px 0;font-size:1rem;'>No encontramos productos con esa búsqueda.</p>"
         : items.map(createCardHTML).join('');
 }
+
 function renderFeatured(cat = 'todos') {
     const g = document.getElementById('featuredGrid');
     if (!g) return;
     const isTodos = !cat || cat === 'todos' || cat === 'all' || cat === '';
-    let list = isTodos
-        ? products
-        : products.filter(p => p.cat === cat || (cat === 'ofertas' && p.enOferta) || (cat === 'combos' && p.enOferta));
+    let list = [];
+    if (cat === 'favoritos') {
+        const favs = getUserFavorites();
+        list = products.filter(p => favs.includes(String(p.id)));
+        if (list.length === 0) {
+            g.innerHTML = renderFavEmptyState();
+            return;
+        }
+    } else if (isTodos) {
+        list = products;
+    } else {
+        list = products.filter(p => p.cat === cat || (cat === 'ofertas' && p.enOferta) || (cat === 'combos' && p.enOferta));
+    }
     g.innerHTML = list.map(createCardHTML).join('');
 }
+
 function filterCategory(cat, el) {
+    window.currentActiveCategory = cat;
     document.querySelectorAll('.cat-chip').forEach(c => {
         c.classList.toggle('active', c.getAttribute('onclick')?.includes(`'${cat}'`));
     });
+
+    if (cat === 'favoritos') {
+        const favs = getUserFavorites();
+        const favList = products.filter(p => favs.includes(String(p.id)));
+        renderProducts(favList);
+        requestAnimationFrame(() => renderFeatured('favoritos'));
+        return;
+    }
+
     renderProducts(cat === 'todos' ? products : products.filter(p => {
         if (cat === 'combos' || cat === 'ofertas') {
             return Boolean(p.enOferta || (p.descuento && p.descuento > 0) || p.precioOferta || p.cat === cat);

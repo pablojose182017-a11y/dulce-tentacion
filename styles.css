@@ -6949,7 +6949,26 @@ section#nosotros h2 em,
     box-shadow: 0 4px 12px rgba(44, 30, 24, 0.20) !important;
 }
 
-/* 4. Tarjetas de Producto (Product Cards) Estilo Editorial Boutique */
+/* 4. Grilla de Productos y Tarjetas Estilo Editorial Boutique */
+.grid {
+    display: grid !important;
+    gap: 22px !important;
+    margin-bottom: 40px !important;
+}
+
+@media (min-width: 1024px) {
+    #productos .grid,
+    #inicio #featuredGrid,
+    .grid#productGrid,
+    .grid#featuredGrid {
+        max-width: 1120px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        gap: 28px !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
 .grid .card,
 .card {
     background: #FFFFFF !important;
@@ -6988,22 +7007,23 @@ section#nosotros h2 em,
     height: 100% !important;
     width: 100% !important;
     object-fit: cover !important;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    filter: contrast(1.05) saturate(1.1) brightness(1.02) !important;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease !important;
 }
 
 .card:hover .card-img-wrap img {
     transform: scale(1.05) !important;
+    filter: contrast(1.08) saturate(1.15) brightness(1.03) !important;
 }
 
 /* Badges como píldoras flotantes en la esquina superior izquierda */
 .card .product-badges-row {
     position: absolute !important;
-    top: 12px !important;
-    left: 12px !important;
-    right: 12px !important;
+    top: 10px !important;
+    left: 10px !important;
+    max-width: calc(100% - 62px) !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
     z-index: 3 !important;
     pointer-events: none !important;
 }
@@ -7011,8 +7031,9 @@ section#nosotros h2 em,
 .card .product-badges-row > div:first-child {
     display: flex !important;
     flex-direction: row !important;
-    gap: 6px !important;
+    gap: 4px !important;
     align-items: flex-start !important;
+    max-width: 100% !important;
 }
 
 .card .badge-status,
@@ -7022,17 +7043,40 @@ section#nosotros h2 em,
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
     border-radius: 999px !important;
-    padding: 5px 12px !important;
-    font-size: 0.72rem !important;
+    padding: 3px 9px !important;
+    font-size: 0.62rem !important;
     font-weight: 700 !important;
     letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
     color: #FFFFFF !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18) !important;
     border: 1px solid rgba(255, 255, 255, 0.18) !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+}
+
+/* Variantes refinadas de insignias de frescura y estado */
+.card .badge-fresh-hoy {
+    background: #0E7C86 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.card .badge-fresh-pedido {
+    background: #C92A63 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.card .badge-fresh-popular {
+    background: #C58B2B !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
 }
 
 .card .badge-discount {
@@ -7041,9 +7085,142 @@ section#nosotros h2 em,
     border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
+.card .badge-status.badge-agotado,
 .card .badge-status.badge-out {
     background: rgba(185, 28, 28, 0.92) !important;
     color: #FFFFFF !important;
+}
+
+/* Botón flotante de Favoritos en la esquina superior derecha de la foto */
+.card .fav-heart-btn {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    z-index: 4 !important;
+    padding: 0 !important;
+    color: #7A6F68 !important;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease, color 0.2s ease !important;
+    outline: none !important;
+}
+
+.card .fav-heart-btn:hover {
+    transform: scale(1.12) !important;
+    background: #FFFFFF !important;
+    color: #E11D48 !important;
+}
+
+.card .fav-heart-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: transparent !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    transition: fill 0.2s ease, stroke 0.2s ease, transform 0.2s ease !important;
+}
+
+.card .fav-heart-btn.is-fav {
+    color: #E11D48 !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(225, 29, 72, 0.22) !important;
+}
+
+.card .fav-heart-btn.is-fav svg {
+    fill: #E11D48 !important;
+    stroke: #E11D48 !important;
+    animation: heartBeatFav 0.35s ease forwards !important;
+}
+
+@keyframes heartBeatFav {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+
+/* Tarjeta de Estado Vacío (Empty State) para Favoritos */
+.fav-empty-state-card {
+    grid-column: 1 / -1 !important;
+    background: #FFFFFF !important;
+    border: 1.5px dashed rgba(197, 139, 43, 0.35) !important;
+    border-radius: 24px !important;
+    padding: 48px 24px !important;
+    text-align: center !important;
+    box-shadow: 0 10px 28px rgba(44, 30, 24, 0.04) !important;
+    max-width: 560px !important;
+    margin: 20px auto 40px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.fav-empty-icon-wrap {
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 50% !important;
+    background: #FFF5F7 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 18px !important;
+    border: 1px solid #FFE4EA !important;
+}
+
+.fav-empty-icon-wrap svg {
+    width: 36px !important;
+    height: 36px !important;
+    fill: none !important;
+    stroke: #E11D48 !important;
+    stroke-width: 1.8 !important;
+}
+
+.fav-empty-title {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #1E1612 !important;
+    margin-bottom: 10px !important;
+}
+
+.fav-empty-desc {
+    color: #6E6259 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    max-width: 440px !important;
+    margin-bottom: 24px !important;
+}
+
+.fav-empty-btn-cta {
+    background: linear-gradient(135deg, #B81D5A 0%, #9F1239 100%) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 999px !important;
+    padding: 13px 28px !important;
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em !important;
+    cursor: pointer !important;
+    box-shadow: 0 6px 18px rgba(184, 29, 90, 0.28) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.fav-empty-btn-cta:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(184, 29, 90, 0.38) !important;
 }
 
 /* Cuerpo de texto alineado a la izquierda (Estilo Boutique) */
@@ -7143,12 +7320,12 @@ section#nosotros h2 em,
     display: none !important;
 }
 
-/* Selector de cantidad compacto en la misma línea */
+/* Selector de cantidad compacto, nítido y refinado */
 .card .quantity-control {
-    background: #FAF6F0 !important;
-    border: 1px solid #EDE5DA !important;
+    background: #FAF6F2 !important;
+    border: 1px solid rgba(44, 30, 24, 0.12) !important;
     border-radius: 999px !important;
-    padding: 2px 4px !important;
+    padding: 2px 5px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -7171,8 +7348,9 @@ section#nosotros h2 em,
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: background 0.2s ease, transform 0.15s ease !important;
+    transition: background 0.2s ease, transform 0.15s ease, color 0.2s ease !important;
     padding: 0 !important;
+    line-height: 1 !important;
 }
 
 .card .qty-btn:hover {
@@ -7194,36 +7372,48 @@ section#nosotros h2 em,
     margin: 0 !important;
 }
 
-/* Botón de acción en formato píldora moderna */
+/* Botón de acción '+ AGREGAR AL CARRITO' con Orillo Dorado e Interior Rosa Elegante */
 .card .btn-add {
-    background: #2C1E18 !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(135deg, #FFF7FA 0%, #FCE8F0 100%) !important;
+    color: #B81D5A !important;
+    border: 1.8px solid #C58B2B !important;
     border-radius: 999px !important;
     width: 100% !important;
-    padding: 11px 18px !important;
+    height: 40px !important;
+    padding: 0 14px !important;
+    font-size: 0.76rem !important;
     font-weight: 700 !important;
-    font-size: 0.9rem !important;
-    letter-spacing: 0.03em !important;
-    border: none !important;
-    box-shadow: 0 4px 14px rgba(44, 30, 24, 0.12) !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 8px rgba(197, 139, 43, 0.14) !important;
     cursor: pointer !important;
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
-    transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease !important;
+    gap: 6px !important;
+    transition: all 0.25s ease !important;
+    box-sizing: border-box !important;
 }
 
-.card .btn-add:hover {
-    background: #B8336A !important;
+.card .btn-add span {
+    color: inherit !important;
+    white-space: nowrap !important;
+}
+
+.card .btn-add:hover,
+.card .btn-add:active {
+    background: #B81D5A !important;
     color: #FFFFFF !important;
-    box-shadow: 0 6px 18px rgba(184, 51, 106, 0.28) !important;
-    transform: translateY(-2px) !important;
+    border: 1.8px solid #D4AF37 !important;
+    box-shadow: 0 6px 16px rgba(184, 29, 90, 0.25) !important;
+    transform: translateY(-1px) !important;
 }
 
 .card .btn-add.disabled {
-    background: #E2E8F0 !important;
-    color: #64748B !important;
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    border-color: #CBD5E1 !important;
     box-shadow: none !important;
     cursor: not-allowed !important;
     transform: none !important;
