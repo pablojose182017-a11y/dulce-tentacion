@@ -4158,7 +4158,7 @@ function createCardHTML(p) {
     } else if (p.oldPrice && p.oldPrice > p.price) {
         // Prioridad 2: Descuento u Oferta activa
         const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-        singleBadgeHTML = `<span class="badge-discount">📉 -${pct}% DTO</span>`;
+        singleBadgeHTML = `<span class="badge-discount">🔥 ¡OFERTA! -${pct}%</span>`;
     } else if (p.tag && p.tag.trim() !== '') {
         // Si tiene etiqueta personalizada definida en administración
         singleBadgeHTML = `<span class="badge-status">${p.tag.toUpperCase()}</span>`;

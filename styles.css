@@ -1414,16 +1414,14 @@
         }
 
         .badge-discount {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: linear-gradient(135deg, #e11d48, #be123c);
+            position: relative;
+            background: linear-gradient(135deg, #D48817 0%, #B86B11 100%);
             color: #ffffff;
-            font-weight: 800;
-            font-size: 0.72rem;
-            padding: 4px 11px;
+            font-weight: 700;
+            font-size: 0.62rem;
+            padding: 3px 9px;
             border-radius: var(--r-full);
-            box-shadow: 0 2px 8px rgba(190, 18, 60, 0.25);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
             z-index: 2;
         }
 
@@ -7079,10 +7077,19 @@ section#nosotros h2 em,
     border-color: rgba(255, 255, 255, 0.28) !important;
 }
 
-.card .badge-discount {
-    background: #881337 !important;
+.card .badge-discount,
+.badge-discount {
+    background: linear-gradient(135deg, #D48817 0%, #B86B11 100%) !important;
     color: #FFFFFF !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 4px 10px rgba(184, 107, 17, 0.35) !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    width: auto !important;
 }
 
 .card .badge-status.badge-agotado,
