@@ -270,7 +270,7 @@ window.PDMembershipAdapter = {
   },
 
   /**
-   * Inicializa el adaptador y verifica que todas las dependencias estén lisas.
+   * Inicializa el adaptador y verifica que todas las dependencias estén listas.
    * Se llama automáticamente en DOMContentLoaded.
    */
   initialize: function() {
@@ -287,19 +287,7 @@ window.PDMembershipAdapter = {
     }
 
     console.log('✓ PDMembershipAdapter: Listo para usar');
-  }
-};
-
-// Inicializar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    window.PDMembershipAdapter.initialize();
-  });
-} else {
-  window.PDMembershipAdapter.initialize();
-}
-
-console.log('✓ Adaptador PDMembershipAdapter cargado y disponible en window.PDMembershipAdapter');
+  },
 
   /**
    * Verifica si es la primera compra del usuario
@@ -329,3 +317,14 @@ console.log('✓ Adaptador PDMembershipAdapter cargado y disponible en window.PD
     return 3;
   }
 };
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    window.PDMembershipAdapter.initialize();
+  });
+} else {
+  window.PDMembershipAdapter.initialize();
+}
+
+console.log('✓ Adaptador PDMembershipAdapter cargado y disponible en window.PDMembershipAdapter');

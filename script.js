@@ -3835,15 +3835,12 @@ function syncUserUI() {
             mobBtn.setAttribute('onclick', isAdmin ? adminOnclickMob : workerOnclickMob);
         }
 
+        // Solo ocultar el dashboard si NO es admin/worker
         const adminDash = document.getElementById('admin-dashboard');
-        if (!isAdmin && !isWorker) {
-            if (adminDash) {
-                adminDash.style.display = 'none';
-                adminDash.classList.remove('active');
-            }
-            if (deskBtn) deskBtn.style.display = 'none';
-            if (mobBtn) mobBtn.style.display = 'none';
-            if (adminDash && adminDash.classList.contains('active')) {
+        if (!isAdmin && !isWorker && adminDash) {
+            adminDash.style.display = 'none';
+            adminDash.classList.remove('active');
+            if (adminDash.classList.contains('active')) {
                 if (typeof showSection === 'function') showSection('inicio');
             }
         }
@@ -7209,20 +7206,25 @@ window.renderRewards = function() {
 };
 
 /**
- * Sincronizar visibilidad cada vez que el usuario actualiza su estado (login, cambios de perfil)
+ * FASE 2: Hook para sincronizar visibilidad del banner VIP legacy
+ * Envuelto en IIFE para evitar colisión de variables globales
  */
-const originalSyncUserUI = (typeof window.syncUserUI === 'function')
-  ? window.syncUserUI
-  : function() {};
+(function() {
+  const _pdPhase2OriginalSyncUserUI = (typeof window.syncUserUI === 'function')
+    ? window.syncUserUI
+    : function() {};
 
-window.syncUserUI = function() {
-  // Ejecutar la función original
-  if (typeof originalSyncUserUI === 'function') {
-    originalSyncUserUI.apply(this, arguments);
-  }
+  window.syncUserUI = function() {
+    // Ejecutar la función original
+    if (typeof _pdPhase2OriginalSyncUserUI === 'function') {
+      _pdPhase2OriginalSyncUserUI.apply(this, arguments);
+    }
 
-  // Sincronizar visibilidad del banner VIP
-  window.syncLegacyVipVisibility();
-};
+    // Sincronizar visibilidad del banner VIP
+    if (typeof window.syncLegacyVipVisibility === 'function') {
+      window.syncLegacyVipVisibility();
+    }
+  };
 
-console.log('✓ Funciones de control de feature flag de Membresía VIP cargadas');
+  console.log('✓ Funciones de control de feature flag de Membresía VIP cargadas');
+})();
