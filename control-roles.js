@@ -1172,7 +1172,23 @@ window.handleCredentialResponse = function (response) {
             }
         }
 
-        db.collection('usuarios').doc(emailLower).set(firestoreData, { merge: true });
+        // Guardar en Firestore de forma segura (con validación de db)
+        if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
+            db.collection('usuarios').doc(emailLower).set(firestoreData, { merge: true }).catch(err => {
+                console.warn("Firestore async write fallido, pero usuario admin ya está en local:", err);
+            });
+        } else {
+            console.warn("Firestore no disponible aún, pero usuario admin autenticado localmente");
+        }
+        
+        // ✅ CRÍTICO: Aplicar UI de roles INMEDIATAMENTE para Super Admin
+        // Esto garantiza que el botón Panel Admin aparezca incluso si Firestore falla
+        if (typeof window._crRolesApplyUI === 'function') {
+            setTimeout(() => {
+                window._crRolesApplyUI();
+                console.log("✅ UI de roles aplicada post-Google Sign-In");
+            }, 100);
+        }
     } catch (e) {
         console.error("Error procesando token de Google:", e);
     }
@@ -1180,6 +1196,12 @@ window.handleCredentialResponse = function (response) {
 
 // 3. TABLA DE USUARIOS DEL ADMINISTRADOR EN TIEMPO REAL
 window.renderUsersTable = function () {
+    // Proteger contra db no definido
+    if (typeof db === 'undefined' || !db || typeof db.collection !== 'function') {
+        console.warn("⚠️ Firestore no disponible aún para renderizar tabla de usuarios");
+        return null;
+    }
+    
     return db.collection('usuarios').onSnapshot((snapshot) => {
         const listaUsuarios = [];
         snapshot.forEach(doc => {

@@ -13,6 +13,9 @@ window.MembershipPlansEngine = {
   // CONFIGURACIÓN BASE (Editable desde Admin Panel)
   // ============================================================================
   
+  // Descuento de bienvenida para nuevos usuarios (primera compra)
+  firstPurchaseDiscountPercent: 3,  // 3% en la primera compra al registrarse
+  
   defaultPlans: {
     plus: {
       tier: 'plus',
@@ -189,18 +192,34 @@ window.MembershipPlansEngine = {
 
   /**
    * Calcula el descuento exacto en carrito
-   * Respeta MAX(oferta, tier%) para proteger margen
+   * Incluye descuento de primera compra (3%)
+   * REGLA: Prevalece descuento mayor entre: oferta, tier%, o primera compra
+   * Respeta MAX(oferta, tier%, primeraCompra%) para proteger margen
    */
-  calculateDiscount: function(subtotal, userTier, productOfferPercent = 0) {
+  calculateDiscount: function(subtotal, userTier, productOfferPercent = 0, isFirstPurchase = false) {
+    // Si no tiene tier, verificar si es primera compra
     if (!userTier || !this.currentPlans[userTier]) {
+      if (isFirstPurchase) {
+        const firstPurchaseDiscount = Math.floor(subtotal * (this.firstPurchaseDiscountPercent / 100));
+        return { 
+          discount: firstPurchaseDiscount, 
+          appliedBy: 'firstPurchase', 
+          reason: `Descuento de bienvenida ${this.firstPurchaseDiscountPercent}%`,
+          maxDiscount: this.firstPurchaseDiscountPercent
+        };
+      }
       return { discount: 0, appliedBy: 'none', reason: 'Cliente normal' };
     }
 
     const plan = this.currentPlans[userTier];
     const tierDiscount = plan.discount_percent;
     
-    // Aplicar MAX: descuento mayor entre oferta y tier
-    const maxDiscount = Math.max(productOfferPercent, tierDiscount);
+    // Aplicar MAX: descuento mayor entre oferta, tier y primera compra
+    let maxDiscount = Math.max(productOfferPercent, tierDiscount);
+    if (isFirstPurchase) {
+      maxDiscount = Math.max(maxDiscount, this.firstPurchaseDiscountPercent);
+    }
+    
     const discount = Math.floor(subtotal * (maxDiscount / 100));
 
     return {

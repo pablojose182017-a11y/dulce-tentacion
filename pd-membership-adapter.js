@@ -300,3 +300,32 @@ if (document.readyState === 'loading') {
 }
 
 console.log('✓ Adaptador PDMembershipAdapter cargado y disponible en window.PDMembershipAdapter');
+
+  /**
+   * Verifica si es la primera compra del usuario
+   * @returns {boolean} true si el usuario nunca ha completado un pedido
+   */
+  isFirstPurchase: function() {
+    const user = (typeof window.currentUser !== 'undefined') ? window.currentUser : null;
+    if (!user) return false;
+    
+    // Verificar si tiene historial de pedidos
+    const hasOrderHistory = user.orderHistory && Array.isArray(user.orderHistory) && user.orderHistory.length > 0;
+    
+    // Si no tiene historial, es primera compra
+    return !hasOrderHistory;
+  },
+
+  /**
+   * Obtiene el descuento de primera compra (3%)
+   * @returns {number} Porcentaje de descuento de bienvenida
+   */
+  getFirstPurchaseDiscountPercent: function() {
+    // Verificar si el motor de planes está disponible
+    if (typeof window.MembershipPlansEngine !== 'undefined' && window.MembershipPlansEngine.firstPurchaseDiscountPercent) {
+      return window.MembershipPlansEngine.firstPurchaseDiscountPercent;
+    }
+    // Fallback: 3% por defecto
+    return 3;
+  }
+};

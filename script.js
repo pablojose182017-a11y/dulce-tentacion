@@ -3768,7 +3768,12 @@ function syncUserUI() {
             }
         }
 
-        const vipHtml = isVip
+        // FASE 2: Ocultar tarjeta de Membresía VIP Activa si el flag SHOW_LEGACY_VIP_PROMOTION está deshabilitado
+        const showLegacyVipPromo = (typeof window.PDFeatureFlags !== 'undefined') 
+            ? window.PDFeatureFlags.SHOW_LEGACY_VIP_PROMOTION 
+            : false;
+        
+        const vipHtml = (isVip && showLegacyVipPromo)
             ? `<div class="vip-member-card" onclick="event.stopPropagation(); const menu = document.getElementById('user-dropdown-menu'); if (menu) { menu.classList.remove('active', 'open'); } window.showVipStatusModal();" 
                     style="background: linear-gradient(135deg, #FFF8E7 0%, #F5E1B5 100%); 
                            border: 1px solid #C58B2B; 
@@ -3794,7 +3799,7 @@ function syncUserUI() {
                     </div>
                     <span style="font-size: 0.85rem; color: #8A6D05; font-weight: 800; padding: 4px 8px; background: rgba(255,255,255,0.6); border-radius: 8px; border: 1px solid rgba(197, 139, 43, 0.3); flex-shrink: 0;">➔</span>
                </div>`
-            : `<button class="vip-upgrade-btn" onclick="window.openVipTermsModal && window.openVipTermsModal(event)">✨ Pasar a VIP Oro</button>`;
+            : ''; // Oculta el botón VIP upgrade también si el flag está deshabilitado
 
         const dArea = document.getElementById('vip-dropdown-area-desk');
         if (dArea) dArea.innerHTML = vipHtml;
