@@ -4704,8 +4704,9 @@
                 height: 120px;
             }
 
-            .card-body {
-                padding: 11px 10px;
+            .card-body,
+            .card .card-body {
+                padding: 12px 12px 14px !important;
             }
 
             .card h3 {
@@ -4717,37 +4718,52 @@
                 margin-bottom: 8px;
             }
 
-            .price {
-                font-size: 1.15rem;
+            .price,
+            .card .price-row .price,
+            .card .price-row .current-price {
+                font-size: 1.15rem !important;
             }
 
             .price-label {
                 font-size: 0.62rem;
             }
 
-            .quantity-control {
-                gap: 4px;
-                margin-bottom: 8px;
+            .quantity-control,
+            .card .quantity-control {
+                height: 30px !important;
+                padding: 0 6px !important;
+                gap: 4px !important;
+                margin-bottom: 0 !important;
             }
 
-            .qty-btn {
-                width: 30px;
-                height: 30px;
-                font-size: 1rem;
-                border-radius: 7px;
+            .qty-btn,
+            .card .qty-btn {
+                width: 22px !important;
+                height: 22px !important;
+                font-size: 0.95rem !important;
+                border-radius: 50% !important;
             }
 
-            .qty-input {
-                width: 44px;
-                height: 30px;
-                font-size: 0.88rem;
-                border-radius: 7px;
+            .qty-input,
+            .card .qty-input {
+                width: 28px !important;
+                height: 24px !important;
+                font-size: 0.85rem !important;
+                border-radius: 4px !important;
             }
 
-            .btn-add {
-                padding: 8px 6px;
-                font-size: 0.78rem;
-                border-radius: 8px;
+            .btn-add,
+            .card .btn-add {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 36px !important;
+                padding: 0 10px !important;
+                font-size: 0.74rem !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.04em !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+                white-space: nowrap !important;
             }
 
             .card-tag {
@@ -4768,9 +4784,35 @@
                 padding: 7px 14px;
             }
 
-            .section-title {
-                font-size: 1.55rem;
-                margin: 18px 0 10px;
+            .section-title-wrapper {
+                margin: 18px 0 12px 0 !important;
+                text-align: center !important;
+            }
+
+            .section-title,
+            section#productos h2,
+            section#nosotros h2,
+            .info-card h2 {
+                display: block !important;
+                text-align: center !important;
+                font-size: 1.45rem !important;
+                line-height: 1.25 !important;
+                padding: 8px 12px !important;
+                margin: 0 auto !important;
+                overflow: visible !important;
+            }
+
+            .section-title em,
+            section#productos h2 em,
+            section#nosotros h2 em,
+            .info-card h2 em {
+                display: inline !important;
+                float: none !important;
+            }
+
+            .toast,
+            .cart-toast-notification {
+                bottom: 78px !important;
             }
 
             /* Top bar compact */

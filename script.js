@@ -4144,7 +4144,7 @@ function createCardHTML(p) {
     const isOut = stockConfig[p.id] === true;
     const opac = isOut ? '0.5' : '1';
     const filt = isOut ? 'grayscale(100%)' : 'none';
-    const btnText = isOut ? '🚫 Agotado por hoy' : '+ AGREGAR AL CARRITO';
+    const btnText = isOut ? '🚫 Agotado por hoy' : '+ AGREGAR';
     const btnClass = isOut ? 'btn-add disabled' : `btn-add badd-${p.id}`;
     const btnAction = isOut ? '' : `onclick="addToCart(${p.id},event)"`;
     const cardAction = isOut ? '' : `addToCart(${p.id},event);`;
@@ -4520,7 +4520,7 @@ function addToCart(id, e) {
     flyAnimation(id);
     document.querySelectorAll(`.badd-${id}`).forEach(b => {
         b.classList.add('added'); b.innerHTML = '<span>✓ ¡Agregado!</span>';
-        setTimeout(() => { b.classList.remove('added'); b.innerHTML = '<span>➕ Agregar al Carrito</span>'; }, 1100);
+        setTimeout(() => { b.classList.remove('added'); b.innerHTML = '<span>+ AGREGAR</span>'; }, 1100);
     });
     if (inp) inp.value = 1;
     updateCart(); saveCart();
