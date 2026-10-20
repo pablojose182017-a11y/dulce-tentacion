@@ -7147,7 +7147,7 @@ window.openAdminPanelFlow = async function(el) {
     
     if (typeof cambiarPestanaAdmin === 'function') {
         const lastTab = (typeof localStorage !== 'undefined') ? localStorage.getItem('dt_last_admin_tab') : null;
-        const validTabs = ['pedidos', 'productos', 'contabilidad', 'usuarios', 'costos'];
+        const validTabs = ['pedidos', 'productos', 'membresias', 'contabilidad', 'usuarios', 'costos'];
         const targetTab = (lastTab && validTabs.includes(lastTab)) ? lastTab : 'pedidos';
         cambiarPestanaAdmin(targetTab);
     }

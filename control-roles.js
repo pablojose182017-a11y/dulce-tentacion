@@ -834,8 +834,8 @@ window.cambiarPestanaAdmin = function (tab) {
         return;
     }
 
-    // 2. Bloqueo de secciones para trabajador
-    if (isWorker && !isAdmin && (tab === 'contabilidad' || tab === 'usuarios' || tab === 'costos')) {
+    // 2. Bloqueo de secciones para trabajador (membresias solo para admin)
+    if (isWorker && !isAdmin && (tab === 'contabilidad' || tab === 'usuarios' || tab === 'costos' || tab === 'membresias')) {
         tab = 'pedidos'; // Redirección defensiva
         if (typeof showToast === 'function') showToast('Acceso denegado: Área exclusiva de administración.', '🚫');
     }
@@ -848,7 +848,7 @@ window.cambiarPestanaAdmin = function (tab) {
         selected.style.setProperty('display', 'block', 'important');
     }
 
-    const btnIds = ['pedidos', 'productos', 'contabilidad', 'usuarios', 'costos'];
+    const btnIds = ['pedidos', 'productos', 'membresias', 'contabilidad', 'usuarios', 'costos'];
     btnIds.forEach(id => {
         const btn = document.getElementById('admin-tab-btn-' + id);
         if (btn) btn.classList.remove('active');
@@ -857,9 +857,20 @@ window.cambiarPestanaAdmin = function (tab) {
     const activeBtn = document.getElementById('admin-tab-btn-' + tab);
     if (activeBtn) activeBtn.classList.add('active');
 
+    // Inicialización específica por pestaña
     if (tab === 'usuarios') {
         const vPriceEl = document.getElementById('adminVipPrice');
         if (vPriceEl) vPriceEl.value = (window.vipConfig && window.vipConfig.precioMensual) ? window.vipConfig.precioMensual : 20000;
+    } else if (tab === 'membresias') {
+        // Inicializar UI de membresías cuando se abre la pestaña
+        if (typeof window.MembershipAdminUI !== 'undefined' && typeof window.MembershipAdminUI.init === 'function') {
+            window.MembershipAdminUI.init();
+        }
+    }
+
+    // Guardar última pestaña activa
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('dt_last_admin_tab', tab);
     }
 };
 document.addEventListener('DOMContentLoaded', () => {
@@ -874,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof cambiarPestanaAdmin === 'function') {
         const lastTab = (typeof localStorage !== 'undefined') ? localStorage.getItem('dt_last_admin_tab') : null;
-        const validTabs = ['pedidos', 'productos', 'contabilidad', 'usuarios', 'costos'];
+        const validTabs = ['pedidos', 'productos', 'membresias', 'contabilidad', 'usuarios', 'costos'];
         const targetTab = (lastTab && validTabs.includes(lastTab)) ? lastTab : 'pedidos';
         cambiarPestanaAdmin(targetTab);
     }
@@ -1491,7 +1502,7 @@ if (originalShowSectionAdmin) {
             setTimeout(() => {
                 if (typeof window.cambiarPestanaAdmin === 'function') {
                     const lastTab = (typeof localStorage !== 'undefined') ? localStorage.getItem('dt_last_admin_tab') : null;
-                    const validTabs = ['pedidos', 'productos', 'contabilidad', 'usuarios', 'costos'];
+                    const validTabs = ['pedidos', 'productos', 'membresias', 'contabilidad', 'usuarios', 'costos'];
                     const targetTab = (lastTab && validTabs.includes(lastTab)) ? lastTab : 'pedidos';
                     window.cambiarPestanaAdmin(targetTab);
                 }
