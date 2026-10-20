@@ -56,7 +56,7 @@
             <button class="nav-link active" onclick="showSection('inicio', this)">Inicio</button>
             <button class="nav-link" onclick="showSection('productos', this)">Productos</button>
             <button class="nav-link" onclick="showSection('nosotros', this)">Nosotros</button>
-            <button class="nav-link nav-club-highlight" id="nav-club-puntos" onclick="showSection('club-puntos', this)">🎟️ Club Puntos & VIP</button>
+            <button class="nav-link nav-club-highlight" id="nav-club-puntos" onclick="showSection('club-puntos', this)">🎟️ Club de Puntos</button>
         </nav>
 
         <div class="header-actions">
@@ -350,7 +350,7 @@
     <section id="club-puntos" class="section club-puntos-section">
         <div class="club-puntos-header">
             <span class="club-puntos-tag">🌟 Beneficios Exclusivos</span>
-            <h2 class="club-puntos-title">🎟️ Club Puntos &amp; Recompensas VIP</h2>
+            <h2 class="club-puntos-title">🎟️ Club de Puntos &amp; Recompensas</h2>
             <div class="club-points-balance-card">
                 <span class="cp-balance-icon">✨</span>
                 <div class="cp-balance-text">
@@ -365,12 +365,12 @@
             <!-- Recompensas inyectadas vía JS con fotos grandes y botones de canje -->
         </div>
 
-        <div class="vip-perks-banner" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+        <div class="vip-perks-banner" id="legacyVipPromoBanner" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
             <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:250px;">
                 <div class="vip-perks-icon">👑</div>
                 <div class="vip-perks-info">
-                    <strong>Beneficios Club VIP:</strong>
-                    <p>Recibe 5% de descuento preferencial en cada pedido, despacho prioritario en cocina y sorpresas en tu cumpleaños.</p>
+                    <strong>Membresía VIP Oro (Legado):</strong>
+                    <p>Descuento automático en tus pedidos, despacho prioritario y sorpresas en tu cumpleaños. Vigencia de 30 días. ¡Únete a nuestro club exclusivo!</p>
                 </div>
             </div>
             <button type="button" id="btnVipBannerAction" class="btn-vip-action btn-vip-banner-action" onclick="window.openVipTermsModal && window.openVipTermsModal(event)" style="background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
@@ -996,7 +996,7 @@
             <button class="bottom-nav-btn" id="bnClubPuntos" onclick="showSection('club-puntos', this)"
                 data-section="club-puntos">
                 <span class="bn-icon">🎟️</span>
-                <span class="bn-label">Club VIP</span>
+                <span class="bn-label">Puntos</span>
             </button>
             <button class="bottom-nav-btn" id="bnNosotros" onclick="showSection('nosotros', this)"
                 data-section="nosotros">
@@ -1392,11 +1392,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-storage-compat.js" defer></script>
+    <!-- FASE 2: Feature Flags y Adaptador de Membresía -->
+    <script src="membership-feature-flags.js" defer></script>
+    <script src="pd-membership-adapter.js" defer></script>
     
+    <!-- FASE 4: Membership Plans Engine y Admin Panel (sandbox mode, admin-only) -->
+    <script src="membership-plans-engine.js" defer></script>
+    <script src="membership-admin-panel.js" defer></script>
+
     <script src="script.js?v=23" defer></script>
     <script src="control-roles.js?v=17" defer></script>
     <!-- Firebase Sync Module -->
     <script src="firebase-sync.js?v=17" defer></script>
+    
+    <!-- FASE 2: Script de Validación de No-Regresión (solo en desarrollo, remover en producción si es necesario) -->
+    <script src="PHASE2_REGRESSION_TEST.js" defer></script>
 
 </body>
 </html>

@@ -7151,3 +7151,73 @@ window.openAdminPanelFlow = async function(el) {
     }
 };
 
+
+
+// ============================================================================
+// FASE 2: CONTROL DE FEATURE FLAG PARA MEMBRESÍA VIP ANTIGUA
+// ============================================================================
+
+/**
+ * Controla la visibilidad del banner de promoción de Membresía VIP antigua
+ * basado en el feature flag PDFeatureFlags.SHOW_LEGACY_VIP_PROMOTION.
+ * 
+ * Se llama automáticamente cuando se abre la sección club-puntos.
+ * Mantiene intactos:
+ * - El modal vipPromoModal (puede ser abierto por admin o usuarios con vip=true)
+ * - Los datos históricos de usuarios con vip=true
+ * - La lectura de vip status y aplicación de descuentos
+ */
+window.syncLegacyVipVisibility = function() {
+  const bannerEl = document.getElementById('legacyVipPromoBanner');
+  if (!bannerEl) return;
+
+  // Verificar feature flag
+  const shouldShowPromo = (typeof window.PDFeatureFlags !== 'undefined')
+    ? window.PDFeatureFlags.shouldShowLegacyVipPromotion()
+    : false;
+
+  if (shouldShowPromo) {
+    bannerEl.style.display = 'flex';
+    console.log('ℹ️ Membresía VIP antigua: Promoción VISIBLE (feature flag habilitado)');
+  } else {
+    bannerEl.style.display = 'none';
+    console.log('ℹ️ Membresía VIP antigua: Promoción OCULTA (feature flag deshabilitado en FASE 2)');
+  }
+};
+
+/**
+ * Hook que se ejecuta cuando se abre la sección club-puntos.
+ * Renderiza recompensas, sincroniza visibilidad del banner VIP, etc.
+ */
+const originalRenderRewards = (typeof window.renderRewards === 'function') 
+  ? window.renderRewards 
+  : function() {};
+
+window.renderRewards = function() {
+  // Ejecutar la función original
+  if (typeof originalRenderRewards === 'function') {
+    originalRenderRewards.apply(this, arguments);
+  }
+
+  // Sincronizar visibilidad del banner VIP basado en feature flag
+  window.syncLegacyVipVisibility();
+};
+
+/**
+ * Sincronizar visibilidad cada vez que el usuario actualiza su estado (login, cambios de perfil)
+ */
+const originalSyncUserUI = (typeof window.syncUserUI === 'function')
+  ? window.syncUserUI
+  : function() {};
+
+window.syncUserUI = function() {
+  // Ejecutar la función original
+  if (typeof originalSyncUserUI === 'function') {
+    originalSyncUserUI.apply(this, arguments);
+  }
+
+  // Sincronizar visibilidad del banner VIP
+  window.syncLegacyVipVisibility();
+};
+
+console.log('✓ Funciones de control de feature flag de Membresía VIP cargadas');
