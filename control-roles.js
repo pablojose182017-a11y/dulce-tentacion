@@ -1440,7 +1440,7 @@ window.addToCart = function (productId, arg2) {
                 clearTimeout(parseInt(btn.dataset.timeoutId));
             }
             const tid = setTimeout(() => {
-                btn.innerHTML = '<span>➕ Agregar al Carrito</span>';
+                btn.innerHTML = '<span>+ AGREGAR</span>';
             }, 800);
             btn.dataset.timeoutId = tid;
         }

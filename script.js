@@ -4470,19 +4470,83 @@ function validateQty(inp) {
 
 // ===== ADD TO CART =====
 function flyAnimation(id) {
-    const img = document.querySelector(`.pimg-${id}`);
-    const cart = document.getElementById('headerCartBtn') || document.querySelector('.cart-nav-btn');
-    if (!img || !cart) return;
-    const ir = img.getBoundingClientRect(), cr = cart.getBoundingClientRect();
-    const fi = document.createElement('img');
-    fi.src = img.src; fi.className = 'flying-img';
-    fi.style.cssText = `top:${ir.top}px;left:${ir.left}px;width:${ir.width}px;height:${ir.height}px;`;
-    document.body.appendChild(fi);
+    const img = document.querySelector(`.pimg-${id}`) || document.querySelector(`#card-${id} img`);
+    const isMobile = window.innerWidth <= 768 || window.matchMedia('(max-width: 768px)').matches;
+    
+    // En móvil apuntar al icono del carrito de la barra inferior; en desktop al header
+    let target = null;
+    if (isMobile) {
+        target = document.querySelector('.mobile-bottom-nav .cart-nav-btn .bn-icon') || 
+                 document.getElementById('bnCarrito') || 
+                 document.querySelector('.cart-nav-btn');
+    } else {
+        target = document.getElementById('headerCartBtn') || 
+                 document.querySelector('.nav-cart-btn') || 
+                 document.querySelector('.cart-nav-btn');
+    }
+
+    if (!img || !target) return;
+
+    const ir = img.getBoundingClientRect();
+    const cr = target.getBoundingClientRect();
+
+    // Crear mini-tarjeta boutique elegante con borde dorado
+    const pill = document.createElement('div');
+    pill.className = 'cart-fly-pill';
+
+    const pillImg = document.createElement('img');
+    pillImg.src = img.src;
+    pillImg.alt = 'Producto';
+
+    const badge = document.createElement('span');
+    badge.className = 'cart-fly-badge';
+    badge.textContent = '+1';
+
+    pill.appendChild(pillImg);
+    pill.appendChild(badge);
+
+    const startX = Math.max(10, ir.left + (ir.width / 2) - 24);
+    const startY = Math.max(10, ir.top + (ir.height / 2) - 24);
+
+    pill.style.cssText = `
+        position: fixed;
+        top: ${startY}px;
+        left: ${startX}px;
+        z-index: 10001;
+        pointer-events: none;
+    `;
+
+    document.body.appendChild(pill);
+
+    // Activar animación fluida hacia el icono exacto
     requestAnimationFrame(() => {
-        fi.style.top = `${cr.top + 6}px`; fi.style.left = `${cr.left + 10}px`;
-        fi.style.width = '24px'; fi.style.height = '24px'; fi.style.opacity = '0.3';
+        requestAnimationFrame(() => {
+            const destX = cr.left + (cr.width / 2) - 12;
+            const destY = cr.top + (cr.height / 2) - 12;
+            pill.style.top = `${destY}px`;
+            pill.style.left = `${destX}px`;
+            pill.style.transform = 'scale(0.35) rotate(15deg)';
+            pill.style.opacity = '0.15';
+        });
     });
-    setTimeout(() => { fi.remove(); document.getElementById('headerCartBtn')?.classList.add('bounce'); setTimeout(() => document.getElementById('headerCartBtn')?.classList.remove('bounce'), 450); }, 750);
+
+    // Efecto de recepción elástico y brillante en el carrito
+    setTimeout(() => {
+        pill.remove();
+
+        const receiveTargets = isMobile ? 
+            [document.getElementById('bnCarrito'), document.querySelector('.cart-nav-btn')] : 
+            [document.getElementById('headerCartBtn'), document.querySelector('.cart-nav-btn')];
+
+        receiveTargets.forEach(el => {
+            if (el) {
+                el.classList.remove('cart-receive-pulse');
+                void el.offsetWidth; // Forzar reflow
+                el.classList.add('cart-receive-pulse');
+                setTimeout(() => el.classList.remove('cart-receive-pulse'), 450);
+            }
+        });
+    }, 620);
 }
 
 function addToCart(id, e) {
