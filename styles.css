@@ -1848,20 +1848,27 @@
         }
 
         .auth-card {
-            background: transparent !important;
-            background-color: #fff !important;
-            padding: 28px;
-            border-radius: 16px 16px 16px 16px !important; /* Asegura bordes redondeados */
+            background: #FFFDFB !important;
+            padding: 30px 26px 24px !important;
+            border-radius: 26px !important;
             width: 100%;
-            max-width: 420px;
-            box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.25);
+            max-width: 440px;
+            box-shadow: 0 25px 60px rgba(42, 20, 15, 0.25), 0 4px 16px rgba(197, 139, 43, 0.08) !important;
             position: relative !important;
-            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden !important;
-            border: none !important;
+            animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1.5px solid rgba(197, 139, 43, 0.45) !important;
             z-index: 1050 !important;
             max-height: 90vh !important;
             overflow-y: auto !important;
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE y Edge */
+            box-sizing: border-box !important;
+        }
+
+        .auth-card::-webkit-scrollbar {
+            display: none !important; /* Chrome, Safari, Opera */
+            width: 0 !important;
+            height: 0 !important;
         }
 
         @keyframes modalPop {
@@ -2060,59 +2067,91 @@
         }
 
         .form-group label {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            color: #475569;
+            color: #4A3528;
+            letter-spacing: 0.02em;
+        }
+
+        .form-group label.label-birthday {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .form-group input {
-            padding: 10px 13px 10px 38px;
-            border-radius: 11px;
-            border: 1.5px solid #cbd5e1;
+            padding: 11px 14px 11px 40px;
+            border-radius: 14px;
+            border: 1.5px solid #E6D7C8;
             font-size: 0.9rem;
             outline: none;
-            transition: var(--ease);
+            background: #FFFFFF;
+            color: #2C1E18;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-group input::placeholder {
+            color: #A89689;
+            font-size: 0.86rem;
         }
 
         .form-group input:focus {
-            border-color: var(--brand-pink);
-            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
+            border-color: #C58B2B;
+            box-shadow: 0 0 0 3px rgba(197, 139, 43, 0.15);
+            background: #FFFEFD;
         }
 
+        /* Botón Joya Corporativo Principal */
         .btn-auth-submit {
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 13px;
-            font-weight: 800;
-            font-size: 0.94rem;
-            cursor: pointer;
-            margin-top: 6px;
-            transition: var(--ease);
-            box-shadow: 0 6px 16px rgba(216, 27, 96, 0.3);
-            width: 100%;
+            background: linear-gradient(135deg, #B81D5A 0%, #881337 100%) !important;
+            color: #FFFFFF !important;
+            border: 1.5px solid #C58B2B !important;
+            padding: 12px 20px !important;
+            border-radius: 999px !important;
+            font-weight: 800 !important;
+            font-size: 0.88rem !important;
+            letter-spacing: 0.05em !important;
+            text-transform: uppercase !important;
+            cursor: pointer !important;
+            margin-top: 6px !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            box-shadow: 0 6px 18px rgba(184, 29, 90, 0.28), 0 2px 6px rgba(197, 139, 43, 0.2) !important;
+            width: 100% !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
         }
 
         .btn-auth-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(216, 27, 96, 0.45);
+            transform: translateY(-2px) !important;
+            box-shadow: 0 10px 24px rgba(184, 29, 90, 0.38), 0 4px 10px rgba(197, 139, 43, 0.3) !important;
+            background: linear-gradient(135deg, #C58B2B 0%, #B81D5A 100%) !important;
+            border-color: #D4AF37 !important;
+        }
+
+        .btn-auth-submit:active {
+            transform: translateY(0) !important;
         }
 
         .input-wrap {
             position: relative;
             display: flex;
             align-items: center;
+            width: 100%;
         }
 
         .input-wrap .field-icon {
             position: absolute;
-            left: 12px;
-            font-size: 1.1rem;
-            color: #94a3b8;
+            left: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             pointer-events: none;
             z-index: 1;
+            line-height: 1;
         }
 
         .password-wrapper {
@@ -2124,28 +2163,28 @@
 
         .password-wrapper input {
             width: 100%;
-            padding-right: 42px !important;
+            padding-right: 44px !important;
         }
 
         .btn-toggle-password {
             position: absolute;
-            right: 10px;
+            right: 12px;
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1.1rem;
             padding: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0.6;
-            transition: opacity 0.2s;
+            opacity: 0.7;
+            transition: opacity 0.2s, transform 0.2s;
             user-select: none;
             z-index: 2;
         }
 
         .btn-toggle-password:hover {
             opacity: 1;
+            transform: scale(1.1);
         }
 
         .btn-admin-action {
@@ -2188,80 +2227,282 @@
             pointer-events: auto !important;
         }
 
-        .auth-incentive-banner {
-            background: linear-gradient(135deg, #fff0f5, #fce7f3);
-            border: 1.5px dashed var(--brand-pink);
-            border-radius: 12px;
-            padding: 10px 14px;
+        /* ===== COMPONENTES CORPORATIVOS BOUTIQUE DEL MODAL DE AUTENTICACIÓN ===== */
+        .auth-card-boutique {
+            text-align: center;
+        }
+
+        /* 1. Cabecera Corporativa y Anillo Dorado */
+        .auth-header-corporate {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             margin-bottom: 18px;
-            font-size: 0.85rem;
-            color: #831843;
-            font-weight: 600;
+        }
+
+        .auth-logo-ring {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FFFDF8 100%);
+            border: 2px solid #C58B2B;
+            box-shadow: 0 6px 18px rgba(197, 139, 43, 0.25), 0 0 0 3px rgba(197, 139, 43, 0.12);
             display: flex;
             align-items: center;
-            gap: 8px;
-            text-align: left;
+            justify-content: center;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .auth-logo-ring:hover {
+            transform: scale(1.05);
+        }
+
+        .auth-brand-logo {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .auth-brand-title {
+            font-family: 'Quicksand', 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #2C1E18;
+            margin: 0 0 3px 0;
+            letter-spacing: -0.01em;
+        }
+
+        .auth-brand-subtitle {
+            font-size: 0.8rem;
+            color: #7A5C4F;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: 0.02em;
+        }
+
+        .auth-security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #FFF9F0;
+            border: 1px solid rgba(197, 139, 43, 0.35);
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #92400E;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        /* 2. Pestañas Estilo Cápsula Ejecutiva (Segmented Control) */
+        .auth-tabs-capsule {
+            display: flex !important;
+            gap: 4px !important;
+            background: #F8F1EB !important;
+            padding: 5px !important;
+            border-radius: 999px !important;
+            border: 1px solid #EADCCF !important;
+            margin-bottom: 16px !important;
+        }
+
+        .auth-tabs-capsule .auth-tab {
+            flex: 1;
+            padding: 8px 14px !important;
+            background: transparent !important;
+            border: 1px solid transparent !important;
+            border-radius: 999px !important;
+            font-size: 0.84rem !important;
+            font-weight: 700 !important;
+            color: #7A5C4F !important;
+            cursor: pointer !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            position: relative;
+            outline: none;
+        }
+
+        .auth-tabs-capsule .auth-tab::after {
+            display: none !important;
+        }
+
+        .auth-tabs-capsule .auth-tab:hover:not(.active) {
+            color: #2C1E18 !important;
+        }
+
+        .auth-tabs-capsule .auth-tab.active {
+            background: #FFFFFF !important;
+            color: #B81D5A !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(197, 139, 43, 0.45) !important;
+            box-shadow: 0 3px 10px rgba(44, 30, 24, 0.08), 0 1px 3px rgba(197, 139, 43, 0.15) !important;
+        }
+
+        /* 3. Cintilla de Beneficio en Dorado Imperial */
+        .auth-incentive-gold {
+            background: linear-gradient(135deg, #FFFDF9 0%, #FBF3E4 100%) !important;
+            border: 1px solid rgba(197, 139, 43, 0.45) !important;
+            border-radius: 14px !important;
+            padding: 9px 13px !important;
+            margin-bottom: 16px !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            text-align: left !important;
+            box-shadow: 0 3px 12px rgba(197, 139, 43, 0.08) !important;
+        }
+
+        .auth-incentive-gold .aib-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(197, 139, 43, 0.3));
+        }
+
+        .auth-incentive-gold .aib-text {
+            font-size: 0.78rem;
+            color: #5A3E2B;
+            line-height: 1.35;
+        }
+
+        .auth-incentive-gold .aib-text strong {
+            color: #B81D5A;
+        }
+
+        /* 4. Enlace de Recuperación */
+        .auth-recovery-link {
+            font-size: 0.78rem;
+            color: #8C5E28;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 5px;
+            text-align: right;
+            transition: color 0.2s ease;
+        }
+
+        .auth-recovery-link:hover {
+            color: #B81D5A;
+            text-decoration: underline;
+        }
+
+        /* 5. Grid de 2 Columnas para Registrarse */
+        .auth-form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .auth-form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .auth-card {
+                padding: 24px 18px 20px !important;
+                border-radius: 22px !important;
+            }
+        }
+
+        /* 6. Checkbox de Términos Alineado */
+        .auth-terms-group {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+            text-align: left !important;
+            margin: 8px 0 12px !important;
+        }
+
+        .auth-terms-group input[type="checkbox"] {
+            width: 17px !important;
+            height: 17px !important;
+            min-width: 17px !important;
+            margin-top: 2px !important;
+            accent-color: #C58B2B !important;
+            cursor: pointer !important;
+            border-radius: 4px !important;
+        }
+
+        .auth-terms-group label {
+            font-size: 0.75rem !important;
+            color: #6B5244 !important;
+            line-height: 1.35 !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            margin: 0 !important;
+        }
+
+        /* 7. Google Auth Wrapper */
+        .google-auth-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        /* 8. Micro-sello de Respaldo Corporativo al Pie */
+        .auth-footer-guarantee {
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px dashed #EEDDC9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            color: #8C5E28;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .recovery-header {
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .recovery-title {
+            color: #B81D5A;
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin: 0 0 4px 0;
+        }
+
+        .recovery-sub {
+            font-size: 0.8rem;
+            color: #7A5C4F;
+            margin: 0;
+            line-height: 1.35;
         }
 
         .auth-close-btn {
             position: absolute !important;
-            top: 15px !important;
-            right: 15px !important;
-            z-index: 1051 !important; /* Más alto que el modal-content */
-            background: #f1f5f9;
-            border: none;
+            top: 14px !important;
+            right: 14px !important;
+            z-index: 1051 !important;
+            background: #F8F1EB !important;
+            border: 1px solid #EADCCF !important;
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             font-weight: bold;
-            color: var(--text-soft);
+            color: #7A5C4F;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--ease);
+            transition: all 0.2s ease;
         }
 
         .auth-close-btn:hover {
-            background: #ffe4e6;
-            color: var(--brand-pink);
-        }
-
-        /* Tabs and Panes */
-        .auth-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f1f5f9;
-        }
-
-        .auth-tab {
-            flex: 1;
-            padding: 10px;
-            background: none;
-            border: none;
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: var(--ease);
-            position: relative;
-        }
-
-        .auth-tab.active {
-            color: var(--brand-pink);
-        }
-
-        .auth-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--brand-pink);
-            border-radius: 3px 3px 0 0;
+            background: #FFF0F5 !important;
+            border-color: #B81D5A !important;
+            color: #B81D5A !important;
+            transform: scale(1.08);
         }
 
         .auth-pane {

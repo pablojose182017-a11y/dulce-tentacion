@@ -15,7 +15,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=20261021c">
+    <link rel="stylesheet" href="styles.css?v=20261021d">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -570,100 +570,142 @@
 
     <!-- ===== AUTH MODAL ===== -->
     <div class="auth-modal" id="authModal" onclick="handleAuthBdrop(event)">
-        <div class="auth-card" style="padding:24px; text-align:center;">
-            <button class="auth-close-btn" onclick="closeAuthModal()">✕</button>
-            <img src="logo-pys.png" alt="Logo P&S Punto Dulce"
-                style="width:80px; height:80px; border-radius:50%; margin-bottom:15px; border:2px solid var(--brand-pink);">
-
-            <div class="auth-tabs">
-                <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar Sesión</button>
-                <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
+        <div class="auth-card auth-card-boutique">
+            <button class="auth-close-btn" onclick="closeAuthModal()" aria-label="Cerrar modal de autenticación">✕</button>
+            
+            <!-- Cabecera Corporativa con Logo Enmarcado en Oro -->
+            <div class="auth-header-corporate">
+                <div class="auth-logo-ring">
+                    <img src="logo-pys.png" alt="Logo P&S Punto Dulce" class="auth-brand-logo">
+                </div>
+                <h3 class="auth-brand-title">P&amp;S Punto Dulce</h3>
+                <p class="auth-brand-subtitle">Portal Oficial de Clientes • Cúcuta</p>
+                <div class="auth-security-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span>Acceso Seguro y Encriptado</span>
+                </div>
             </div>
 
-            <div class="auth-incentive-banner">
-                <span style="font-size: 1.4rem;">🥐</span>
-                <span>¡Únete al Club P&S Punto Dulce y acumula puntos en tus pedidos favoritos! 🍰</span>
+            <!-- Selector de Pestañas Tipo Cápsula Ejecutiva -->
+            <div class="auth-tabs auth-tabs-capsule">
+                <button type="button" class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar Sesión</button>
+                <button type="button" class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
+            </div>
+
+            <!-- Cintilla de Beneficio en Dorado Imperial -->
+            <div class="auth-incentive-banner auth-incentive-gold">
+                <div class="aib-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </div>
+                <div class="aib-text">
+                    <strong>Beneficio Oficial:</strong> Recibe <strong>3% de descuento</strong> en tu 1ra compra y acumula Puntos Dulce en cada pedido.
+                </div>
             </div>
 
             <div id="authMsg" class="auth-msg"></div>
 
+            <!-- PANEL INICIAR SESIÓN -->
             <div id="paneLogin" class="auth-pane active">
                 <form class="custom-form" onsubmit="loginCustomUser(event)">
                     <div class="form-group">
-                        <label>Correo Electrónico o Usuario</label>
+                        <label for="loginEmail">Correo Electrónico o Usuario</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
-                            <input type="text" id="loginEmail" placeholder="ejemplo@correo.com">
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </span>
+                            <input type="text" id="loginEmail" placeholder="ejemplo@correo.com" autocomplete="username">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Contraseña</label>
+                        <label for="loginPassword">Contraseña</label>
                         <div class="input-wrap">
-                            <span class="field-icon">🔒</span>
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </span>
                             <div class="password-wrapper">
-                                <input type="password" id="loginPassword" placeholder="••••••••">
-                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar contraseña">👁️</button>
+                                <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar contraseña">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
                             </div>
                         </div>
-                        <a href="#" onclick="showRecoveryForm(event)" style="font-size: 0.8rem; color: var(--brand-pink); text-decoration: none; display: block; margin-top: 5px; text-align: right;">¿Olvidaste tu contraseña?</a>
+                        <a href="#" onclick="showRecoveryForm(event)" class="auth-recovery-link">¿Olvidaste tu contraseña?</a>
                     </div>
                     <button type="submit" class="btn-auth-submit">Iniciar Sesión</button>
                 </form>
 
                 <div class="auth-divider"><span>o accede rápidamente con</span></div>
 
-                <div style="display:flex; justify-content:center; align-items:center;">
-                    
+                <div class="google-auth-wrapper">
                     <div class="custom_google_btn" data-type="standard" data-size="large" data-theme="outline"
                         data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left">
                     </div>
                 </div>
             </div>
 
+            <!-- PANEL REGISTRARSE -->
             <div id="paneRegister" class="auth-pane">
                 <form class="custom-form" onsubmit="registerCustomUser(event)">
+                    <div class="auth-form-grid-2">
+                        <div class="form-group">
+                            <label for="regName">Nombre Completo</label>
+                            <div class="input-wrap">
+                                <span class="field-icon" aria-hidden="true">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                </span>
+                                <input type="text" id="regName" placeholder="Juan Pérez" autocomplete="name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPhone">Teléfono / WhatsApp</label>
+                            <div class="input-wrap">
+                                <span class="field-icon" aria-hidden="true">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                </span>
+                                <input type="tel" id="regPhone" placeholder="313 000 0000" autocomplete="tel">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
-                        <label>Nombre Completo</label>
+                        <label for="regEmail">Correo Electrónico</label>
                         <div class="input-wrap">
-                            <span class="field-icon">👤</span>
-                            <input type="text" id="regName" placeholder="Juan Pérez">
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </span>
+                            <input type="email" id="regEmail" placeholder="ejemplo@correo.com" autocomplete="email">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Teléfono / WhatsApp</label>
+                        <label for="regPassword">Contraseña</label>
                         <div class="input-wrap">
-                            <span class="field-icon">📱</span>
-                            <input type="tel" id="regPhone" placeholder="313 000 0000">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Correo Electrónico</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
-                            <input type="email" id="regEmail" placeholder="ejemplo@correo.com">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña</label>
-                        <div class="input-wrap">
-                            <span class="field-icon">🔒</span>
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </span>
                             <div class="password-wrapper">
-                                <input type="password" id="regPassword" placeholder="••••••••">
-                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Mostrar contraseña">👁️</button>
+                                <input type="password" id="regPassword" placeholder="••••••••" autocomplete="new-password">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('regPassword', this)" aria-label="Mostrar contraseña">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>🎂 Fecha de Cumpleaños (Descuento especial en tu día)</label>
+                        <label for="reg-birthday" class="label-birthday">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <span>Fecha de Cumpleaños (Descuento especial en tu día)</span>
+                        </label>
                         <div class="input-wrap">
-                            <span class="field-icon">🎁</span>
-                            <input type="text" id="reg-birthday" placeholder="Selecciona tu fecha">
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+                            </span>
+                            <input type="text" id="reg-birthday" placeholder="Selecciona tu fecha de nacimiento">
                         </div>
                     </div>
-                    <div class="form-group" style="display: flex; align-items: start; gap: 8px; margin-top: 10px; margin-bottom: 15px;">
-                        <input type="checkbox" id="reg-terms" required style="margin-top: 4px; accent-color: var(--brand-pink);">
-                        <label for="reg-terms" style="font-size: 0.75rem; color: #555; line-height: 1.3; font-weight: 500;">
-                            Acepto los Términos y Condiciones y la autorización de uso de datos para gestión de pedidos y beneficios exclusivos.
+                    <div class="form-group auth-terms-group">
+                        <input type="checkbox" id="reg-terms" required>
+                        <label for="reg-terms">
+                            Acepto los <a href="#" style="color:#C58B2B; font-weight:700; text-decoration:underline;">Términos y Condiciones</a> y la autorización de uso de datos para gestión de pedidos y beneficios exclusivos.
                         </label>
                     </div>
                     <button type="submit" class="btn-auth-submit">Crear Cuenta</button>
@@ -671,8 +713,7 @@
 
                 <div class="auth-divider"><span>o regístrate con</span></div>
 
-                <div style="display:flex; justify-content:center; align-items:center;">
-                    <!-- Google sign in button replicates here to keep logic simple -->
+                <div class="google-auth-wrapper">
                     <div class="custom_google_btn" data-type="standard" data-size="large" data-theme="outline"
                         data-text="signup_with" data-shape="rectangular" data-logo_alignment="left">
                     </div>
@@ -681,16 +722,21 @@
 
             <!-- RECUPERAR CONTRASEÑA -->
             <div class="auth-pane" id="paneRecovery" style="display: none;">
-                <h3 style="text-align: center; color: var(--brand-pink); margin-bottom: 15px;">Recuperar Contraseña</h3>
+                <div class="recovery-header">
+                    <h3 class="recovery-title">Recuperar Contraseña</h3>
+                    <p class="recovery-sub">Ingresa tu correo para verificar tu cuenta y reestablecer tu acceso de forma segura.</p>
+                </div>
                 <div class="custom-form">
                     <div class="form-group">
-                        <label>Correo Electrónico Registrado</label>
+                        <label for="recoveryEmail">Correo Electrónico Registrado</label>
                         <div class="input-wrap">
-                            <span class="field-icon">✉️</span>
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            </span>
                             <input type="email" id="recoveryEmail" placeholder="tucorreo@ejemplo.com">
                         </div>
                     </div>
-                    <button onclick="requestPasswordRecovery()" class="btn-auth-submit" style="margin-top:10px;">Verificar Cuenta</button>
+                    <button type="button" onclick="requestPasswordRecovery()" class="btn-auth-submit" style="margin-top:10px;">Verificar Cuenta</button>
                     
                     <div id="recoveryWhatsAppContainer" style="display:none; margin-top: 15px; text-align: center;">
                         <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:10px;">Hemos verificado tu cuenta. Solicita el restablecimiento contactándonos por WhatsApp:</p>
@@ -698,9 +744,15 @@
                     </div>
                     
                     <div style="text-align: center; margin-top: 20px;">
-                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: var(--text-dark); text-decoration: none;">⬅ Volver a Iniciar Sesión</a>
+                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: #78350F; font-weight:700; text-decoration: none;">⬅ Volver a Iniciar Sesión</a>
                     </div>
                 </div>
+            </div>
+
+            <!-- Micro-sello de Respaldo Corporativo al Pie -->
+            <div class="auth-footer-guarantee">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>P&amp;S Punto Dulce • Garantía de Calidad y Privacidad de Datos</span>
             </div>
         </div>
     </div>
@@ -1337,7 +1389,7 @@
     <script src="membership-admin-panel.js?v=20261021" defer></script>
     <script src="membership-admin-ui.js?v=20261021" defer></script>
 
-    <script src="script.js?v=20261021c" defer></script>
+    <script src="script.js?v=20261021d" defer></script>
     <script src="control-roles.js?v=20261021" defer></script>
     <!-- Firebase Sync Module -->
     <script src="firebase-sync.js?v=20261021" defer></script>
