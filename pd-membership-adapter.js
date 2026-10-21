@@ -45,14 +45,12 @@ window.PDMembershipAdapter = {
     
     let state = {
       userEmail: (user && user.email) ? user.email : 'anonymous',
-      hasMembership: !!(user && user.vip),
-      membershipType: (user && user.vip) ? 'legacy_vip' : 'none',
-      monthlyPrice: (typeof window.vipConfig !== 'undefined' && window.vipConfig.precioMensual) 
-        ? window.vipConfig.precioMensual 
-        : 20000,
-      discountPercent: (user && user.vip) ? 6 : 0,
-      pointsMultiplier: (user && user.vip) ? 1.0 : 1.0,  // Placeholder para future tiers
-      expiresAt: (user && user.vipExpiresAt) ? user.vipExpiresAt : null,
+      hasMembership: false,
+      membershipType: 'none',
+      monthlyPrice: 0,
+      discountPercent: 0,
+      pointsMultiplier: 1.0,
+      expiresAt: null,
       source: 'adapter_default'
     };
 

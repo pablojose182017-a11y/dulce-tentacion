@@ -1584,13 +1584,49 @@ window.addEventListener('DOMContentLoaded', () => {
                         nuevoPedido.id = currentOrderId;
                         nuevoPedido.idDoc = currentOrderId;
 
-                        await db.collection('pedidos').doc(currentOrderId).set(nuevoPedido);
+                        const userEmailNorm = (currentUser && currentUser.email) ? currentUser.email.toLowerCase().trim() : (auth.currentUser?.email ? auth.currentUser.email.toLowerCase().trim() : null);
+
+                        if (nuevoPedido.firstPurchaseDiscountApplied && userEmailNorm && !auth.currentUser.isAnonymous) {
+                            // TRANSACCIÓN ATÓMICA OBLIGATORIA: Pedido + Consumo de Primera Compra
+                            await db.runTransaction(async (transaction) => {
+                                const userRef = db.collection('usuarios').doc(userEmailNorm);
+                                const orderRef = db.collection('pedidos').doc(currentOrderId);
+
+                                const userDoc = await transaction.get(userRef);
+                                if (userDoc.exists) {
+                                    const uData = userDoc.data();
+                                    if (uData.firstPurchaseDiscountUsed === true) {
+                                        throw new Error("El descuento de primera compra ya fue utilizado anteriormente en otra orden.");
+                                    }
+                                }
+
+                                transaction.set(orderRef, nuevoPedido);
+                                transaction.update(userRef, {
+                                    firstPurchaseDiscountUsed: true,
+                                    firstPurchaseOrderId: currentOrderId,
+                                    firstPurchaseDiscountDate: new Date().toISOString()
+                                });
+                            });
+                            if (currentUser) {
+                                currentUser.firstPurchaseDiscountUsed = true;
+                                currentUser.firstPurchaseOrderId = currentOrderId;
+                                if (typeof saveUser === 'function') saveUser();
+                            }
+                        } else {
+                            await db.collection('pedidos').doc(currentOrderId).set(nuevoPedido);
+                        }
+
                         writeSuccess = true;
                         console.log(`[Checkout] Pedido ${currentOrderId} guardado en Firestore con éxito (intento ${attempt}).`);
                         break;
                     } catch (err) {
                         lastError = err;
                         console.warn(`[Checkout] Error al guardar pedido ${currentOrderId} en Firestore (intento ${attempt}):`, err);
+
+                        if (err && err.message && err.message.includes("El descuento de primera compra ya fue utilizado")) {
+                            alert(err.message);
+                            break;
+                        }
 
                         const isPermissionDenied = err && (err.code === 'permission-denied' || (err.message && err.message.includes('permission-denied')));
                         const isCreationCollision = isPermissionDenied &&
@@ -2405,9 +2441,7 @@ window.calcularPuntosPedido = function(pedido, usuario) {
     if (!usuario || !usuario.email || usuario.isAnonymous) return 0;
     
     const minPurchase = (typeof adminConfig !== 'undefined' && adminConfig.minPurchase) ? adminConfig.minPurchase : 0;
-    const vipEnabled = (typeof adminConfig !== 'undefined' && adminConfig.vipEnabled !== undefined) ? adminConfig.vipEnabled : true;
-    
-    if (!vipEnabled) return 0;
+    // Club de Puntos Universal: No depende de ninguna membresía ni flag VIP
     
     const bruto = pedido.subtotal || 0;
     const descuento = pedido.discount || pedido.descuento || 0;

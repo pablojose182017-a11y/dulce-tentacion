@@ -43,13 +43,15 @@ service cloud.firestore {
                'nombre', 'name', 'username', 'email', 'foto', 'photo',
                'role', 'rol', 'isAdmin', 'vip', 'isVip', 'vipStatus', 'vipExpiresAt', 'points', 'puntos',
                'telefono', 'phone', 'direccion', 'address', 'estado', 'blocked',
-               'ultimaSincronizacion', 'ultimoIngreso', 'birthday'
+               'ultimaSincronizacion', 'ultimoIngreso', 'birthday',
+               'firstPurchaseDiscountUsed', 'firstPurchaseOrderId', 'firstPurchaseDiscountDate'
              ])
              && ownProfileRoleMatchesAuthority()
              && request.resource.data.get('vip', false) == false
              && request.resource.data.get('isVip', false) == false
              && request.resource.data.get('vipStatus', 'inactivo') == 'inactivo'
              && !('vipExpiresAt' in request.resource.data)
+             && request.resource.data.get('firstPurchaseDiscountUsed', false) == false
              && request.resource.data.get('blocked', false) == false
              && request.resource.data.get('estado', 'activo') == 'activo'
              && request.resource.data.get('points', 0) is number
@@ -103,6 +105,18 @@ service cloud.firestore {
       // Actualización: Admin+ tiene control. El propio usuario está RESTRINGIDO.
       allow update: if isCreator() || getRol() >= 50 || 
                     (request.auth != null && request.auth.token.email == email &&
+                     // Regla atómica del descuento de primera compra:
+                     // Solo puede alterar firstPurchaseDiscountUsed si pasa de false a true,
+                     // y OBLIGATORIAMENTE debe existir en la misma transacción el pedido correspondiente.
+                     (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['firstPurchaseDiscountUsed', 'firstPurchaseOrderId', 'firstPurchaseDiscountDate']) ||
+                      (
+                        resource.data.get('firstPurchaseDiscountUsed', false) == false &&
+                        request.resource.data.firstPurchaseDiscountUsed == true &&
+                        request.resource.data.firstPurchaseOrderId is string &&
+                        existsAfter(/databases/$(database)/documents/pedidos/$(request.resource.data.firstPurchaseOrderId)) &&
+                        getAfter(/databases/$(database)/documents/pedidos/$(request.resource.data.firstPurchaseOrderId)).data.ownerId == request.auth.uid
+                      )
+                     ) &&
                      // Bloqueo estricto de campos sensibles para el cliente:
                      !request.resource.data.diff(resource.data).affectedKeys().hasAny([
                        'role', 'rol', 'isAdmin', 'nivel',
@@ -122,11 +136,19 @@ service cloud.firestore {
       // Lectura: El dueño del pedido o Trabajador+
       allow read: if (request.auth != null && resource.data.ownerId == request.auth.uid) || getRol() >= 20;
       
-      // Creación: Solo si el pedido NO existe previamente, el ownerId coincide y el estado arranca como Pendiente
+      // Creación: Solo si el pedido NO existe previamente, el ownerId coincide y el estado arranca como Pendiente.
+      // Validación matemática e integridad: total == (subtotal - discount) + deliveryCost, con discount >= 0.
       allow create: if request.auth != null 
                     && !exists(/databases/$(database)/documents/pedidos/$(pedidoId))
                     && request.resource.data.ownerId == request.auth.uid 
-                    && request.resource.data.estado == "Pendiente";
+                    && request.resource.data.estado == "Pendiente"
+                    && request.resource.data.subtotal is int
+                    && request.resource.data.subtotal > 0
+                    && request.resource.data.discount is int
+                    && request.resource.data.discount >= 0
+                    && request.resource.data.discount <= request.resource.data.subtotal
+                    && request.resource.data.deliveryCost in [0, 5000]
+                    && request.resource.data.total == (request.resource.data.subtotal - request.resource.data.discount) + request.resource.data.deliveryCost;
 
       // Actualización: 
       allow update: if (isCreator() || getRol() >= 50)

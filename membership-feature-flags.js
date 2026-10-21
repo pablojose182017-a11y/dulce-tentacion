@@ -33,10 +33,9 @@ window.PDFeatureFlags = {
 
   /**
    * Controla si los datos de VIP leído del usuario pueden aplicar descuento.
-   * IMPORTANTE: Esto es LECTURA solamente. Nunca escribimos aquí.
-   * Los usuarios con vip=true en Firebase mantienen su descuento hasta Fase 3.
+   * En Fase 4/Limpieza final, el VIP antiguo está erradicado por completo.
    */
-  APPLY_LEGACY_VIP_DISCOUNT: true,
+  APPLY_LEGACY_VIP_DISCOUNT: false,
 
   /**
    * Controla si se muestra el "Adaptador de Membresía" (PDMembershipAdapter).

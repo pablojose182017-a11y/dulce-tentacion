@@ -79,7 +79,6 @@
                     onclick="toggleUserDropdown(event)">
                     <div id="header-avatar-wrap" style="position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%;">
                         <img id="user-avatar" src="logo-pys.png" alt="Avatar" class="user-avatar-img" onerror="this.onerror=null; this.src='logo-pys.png';">
-                        <span id="desk-vip-crown" class="vip-crown-badge" style="display:none;">👑</span>
                     </div>
                     <span id="user-name" class="user-pill-name"></span>
                     <span class="user-pill-arrow">▼</span>
@@ -169,7 +168,6 @@
                     onclick="handleMobilePillClick()">
                     <div id="mobile-avatar-wrap" style="position:relative; display:flex; align-items:center; justify-content:center; border-radius:50%;">
                         <img id="mobile-user-avatar" src="logo-pys.png" style="width:32px;height:32px;border-radius:50%;border:2px solid var(--brand-pink);" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
-                        <span id="mob-vip-crown" class="vip-crown-badge" style="display:none;">👑</span>
                     </div>
                 </div>
             </div>
@@ -223,9 +221,6 @@
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('club-puntos', document.getElementById('bnClubPuntos'))">
                     <span class="mmi-icon">🎟️</span> <span>Club Puntos &amp; Recompensas</span>
-                </button>
-                <button class="mobile-menu-item" onclick="closeMobileMenu(); if(typeof openVipTermsModal==='function') openVipTermsModal();">
-                    <span class="mmi-icon">👑</span> <span>Membresía VIP Oro</span>
                 </button>
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('nosotros', document.getElementById('bnNosotros'))">
                     <span class="mmi-icon">❤️</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
@@ -362,19 +357,6 @@
 
         <div id="rewards-container" class="rewards-grid">
             <!-- Recompensas inyectadas vía JS con fotos grandes y botones de canje -->
-        </div>
-
-        <div class="vip-perks-banner" id="legacyVipPromoBanner" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
-            <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:250px;">
-                <div class="vip-perks-icon">👑</div>
-                <div class="vip-perks-info">
-                    <strong>Membresía VIP Oro (Legado):</strong>
-                    <p>Descuento automático en tus pedidos, despacho prioritario y sorpresas en tu cumpleaños. Vigencia de 30 días. ¡Únete a nuestro club exclusivo!</p>
-                </div>
-            </div>
-            <button type="button" id="btnVipBannerAction" class="btn-vip-action btn-vip-banner-action" onclick="window.openVipTermsModal && window.openVipTermsModal(event)" style="background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-                👑 Activar Membresía VIP
-            </button>
         </div>
     </section>
 
@@ -740,7 +722,7 @@
                         <div class="sum-row"><span>Total Unidades:</span><span id="sumQty">0</span></div>
                         <div class="sum-row" id="subtotalRow"><span>Subtotal:</span><span id="sumSubtotal">$0 COP</span></div>
                         <div class="sum-row" id="discountRow" style="display:none; color:var(--brand-pink); font-weight:700;">
-                            <span id="discountLabel">Descuento VIP (6%):</span><span id="sumDiscount">- $0 COP</span>
+                            <span id="discountLabel">Descuento Primera Compra (3%):</span><span id="sumDiscount">- $0 COP</span>
                         </div>
                         <div class="sum-row" id="deliveryRow" style="color:#059669; font-weight:700;">
                             <span>Domicilio:</span><span id="sumDelivery">¡GRATIS!</span>
@@ -951,27 +933,6 @@
                 d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.09 2.53.73 2.99.69.45-.04 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.3" />
         </svg>
     </a>
-
-    <!-- ===== VIP PROMO MODAL ===== -->
-    <div class="auth-modal" id="vipPromoModal"
-        style="display:none; align-items:center; justify-content:center; z-index:2000;"
-        onclick="if(event.target===this) closeVipModal()">
-        <div class="vip-modal-content">
-            <button class="auth-close-btn" onclick="closeVipModal()" style="top:10px; right:10px;">✕</button>
-            <h3>👑 Membresía VIP Oro</h3>
-            <p style="color:#64748b; margin-bottom:20px; font-size:0.95rem;">Accede al club exclusivo de P&S Punto Dulce
-                y disfruta de beneficios de por vida por solo <strong id="uiVipPricePromo" style="color:#d81b60;">$20.000 COP</strong> al mes.</p>
-            <ul>
-                <li><span>✅</span> 10% de descuento automático en TODAS tus compras.</li>
-                <li><span>🎁</span> Una muestra sorpresa artesanal en cada pedido.</li>
-                <li><span>⏱️</span> Atención y horneado prioritario (tu pedido sale primero).</li>
-            </ul>
-            <button class="btn-gold-shimmer" style="width:100%; padding:12px; font-size:1rem;"
-                onclick="requestVipWhatsApp()">
-                Quiero ser VIP por WhatsApp
-            </button>
-        </div>
-    </div>
 
     <!-- ===== MOBILE BOTTOM NAV ===== -->
     <div class="mobile-bottom-nav">
@@ -1294,40 +1255,6 @@
             </div>
 
         </div>
-    </div>
-
-    <!-- ===== MODAL TÉRMINOS Y BENEFICIOS VIP ===== -->
-    <div class="auth-modal" id="modalVipTerms" style="display:none; align-items:center; justify-content:center; z-index:999999;" onclick="if(event.target===this) window.closeVipTermsModal && window.closeVipTermsModal()">
-       <div class="auth-modal-content" style="max-width: 520px; width: 92%; padding: 25px; text-align: center; border-radius: 20px; background: #fff; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
-         <button type="button" class="auth-close-btn close-modal-btn" onclick="window.closeVipTermsModal && window.closeVipTermsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;">×</button>
-         <span style="font-size: 2.2rem;">👑</span>
-         <h3 style="color: #b71c1c; margin: 10px 0; font-size: 1.3rem; font-weight: 800;">Membresía Club VIP Oro</h3>
-         <p style="font-size: 0.9rem; color: #555; margin: 0 0 4px 0;">Disfruta de beneficios exclusivos creados especialmente para nuestros clientes más dulces por solo <strong id="uiVipPriceTerms" style="color:#d81b60;">$20.000 COP</strong> mensual.</p>
-         <p style="font-size: 0.8rem; color: #888; margin: 0 0 12px 0; font-style: italic;">(Vigencia de 30 días continuos a partir del momento de activación)</p>
-
-         <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 15px; text-align: left; font-size: 0.88rem; margin: 0 0 12px 0; color: #5d4037;">
-           <strong>✨ Beneficios Exclusivos:</strong>
-           <ul style="margin: 8px 0 0 18px; padding: 0;">
-             <li>Acumulación de 10 Pts por cada $1.000 COP en compras.</li>
-             <li>Descuentos exclusivos aplicados directamente en tus compras.</li>
-             <li>Bono y detalle sorpresa en el mes de tu cumpleaños.</li>
-             <li>Acceso a promociones flash, canjes especiales y lanzamientos anticipados.</li>
-           </ul>
-         </div>
-
-         <p style="font-size: 0.78rem; color: #888; text-align: left; margin: 0 0 14px 0; line-height: 1.4;">📌 Pago único mensual por transferencia o en tienda. Sin cargos automáticos recurrentes ni cláusulas de permanencia.</p>
-
-         <div style="text-align: left; font-size: 0.85rem; margin: 0 0 15px 0; color: #666;">
-           <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
-             <input type="checkbox" id="checkAcceptVipTerms" style="margin-top: 3px;">
-             <span>He leído y acepto los Términos y Condiciones y la política de beneficios del Club VIP de P&S Punto Dulce.</span>
-           </label>
-         </div>
-
-         <button type="button" id="btnConfirmVipMembership" onclick="window.confirmVipMembership && window.confirmVipMembership()" class="btn-vip-action" style="width: 100%; padding: 12px; font-weight: bold; background: linear-gradient(135deg, #d81b60, #ff4081); color: white; border: none; border-radius: 25px; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 12px rgba(216,27,96,0.3); transition: all 0.2s;">
-           👑 Aceptar y Solicitar Activación VIP
-         </button>
-       </div>
     </div>
 
     <!-- ===== MODAL COBERTURA Y POLÍTICAS DE DOMICILIO ===== -->

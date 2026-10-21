@@ -3771,19 +3771,6 @@
             order: 1;
         }
 
-        /* --- CART VIP MODE --- */
-        .cart-vip-mode {
-            border: 2px solid #f59e0b;
-            box-shadow: 0 20px 45px rgba(245, 158, 11, 0.18);
-        }
-        .cart-vip-mode .cart-header h3::after {
-            content: " 👑 Exclusivo";
-            font-size: 1rem;
-            color: #d97706;
-        }
-        .cart-vip-mode #discountRow span {
-            color: #d97706 !important;
-        }
         .custom-cake-banner {
             background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
             border: 2px dashed #f472b6;
@@ -4312,98 +4299,6 @@
 
         #productos {
             scroll-margin-top: 80px;
-        }
-
-        /* ===== VIP SYSTEM CSS ===== */
-        .vip-card-golden {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #fff;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 10px;
-            text-align: center;
-            font-size: 0.85rem;
-            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.3);
-            border: 1px solid #fcd34d;
-        }
-
-        .vip-card-golden strong {
-            display: block;
-            font-size: 1.05rem;
-            margin-bottom: 4px;
-        }
-
-        .vip-upgrade-btn {
-            background: #fff;
-            color: #d97706;
-            border: 1px solid #f59e0b;
-            width: calc(100% - 20px);
-            margin: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .vip-upgrade-btn:hover {
-            background: #fef3c7;
-        }
-
-        .cart-vip-discount {
-            color: #15803d;
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-        }
-
-        .cart-vip-priority {
-            background: #fef3c7;
-            border: 1px solid #fde68a;
-            color: #b45309;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            text-align: center;
-            margin-bottom: 12px;
-            font-weight: 600;
-            display: none;
-        }
-
-        /* VIP Modal */
-        .vip-modal-content {
-            background: #fff;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 400px;
-            padding: 24px;
-            position: relative;
-            text-align: center;
-            border: 2px solid #f59e0b;
-            box-shadow: 0 10px 30px rgba(217, 119, 6, 0.2);
-        }
-
-        .vip-modal-content h3 {
-            color: #d97706;
-            font-size: 1.5rem;
-            margin-bottom: 16px;
-        }
-
-        .vip-modal-content ul {
-            text-align: left;
-            margin-bottom: 20px;
-            padding-left: 0;
-            list-style: none;
-        }
-
-        .vip-modal-content ul li {
-            margin-bottom: 10px;
-            color: #475569;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         /* ===== CLUB DULCE RECOMPENSA ===== */

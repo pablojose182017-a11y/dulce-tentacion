@@ -4708,45 +4708,29 @@ function updateCart() {
     const dRow = document.getElementById('discountRow');
     const pRow = document.getElementById('cart-vip-priority');
     const cartContent = document.querySelector('#cartModal .cart-content');
-    if (currentUser && totalPrice > 0 && adminConfig.vipEnabled && totalPrice >= adminConfig.minPurchase) {
-        let isCumple = false;
-        if (currentUser.birthday) {
-            const parts = currentUser.birthday.split('-');
-            if (parts.length === 3) {
-                const hoy = new Date();
-                const bDay = parseInt(parts[2], 10);
-                const bMonth = parseInt(parts[1], 10) - 1;
-                if (hoy.getDate() === bDay && hoy.getMonth() === bMonth) {
-                    isCumple = true;
-                }
-            }
-        }
+    
+    // REGLA INDEPENDIENTE DE PRIMERA COMPRA (3%):
+    // Motiva el registro e inicio de sesión. Aplica solo si el usuario no ha utilizado su beneficio.
+    const hasUsedFirstPurchase = !!(currentUser && (currentUser.firstPurchaseDiscountUsed || (Array.isArray(currentUser.history) && currentUser.history.length > 0)));
+    const isFirstPurchaseEligible = !!(currentUser && !currentUser.isAnonymous && !hasUsedFirstPurchase);
 
-        if (isCumple) {
-            discount = Math.floor(totalPrice * (currentUser.vip ? 0.08 : 0.04));
-        } else {
-            discount = currentUser.vip ? Math.floor(totalPrice * 0.05) : 0;
-        }
-
-        if (cartContent) {
-            if (currentUser.vip) cartContent.classList.add('cart-vip-mode');
-            else cartContent.classList.remove('cart-vip-mode');
-        }
-
+    if (currentUser && totalPrice > 0 && isFirstPurchaseEligible) {
+        discount = Math.floor(totalPrice * 0.03);
         if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
 
-        if (currentUser.vip) {
-            if (dRow) { dRow.style.display = 'flex'; document.getElementById('discountLabel').innerText = 'Descuento VIP Oro:'; document.getElementById('sumDiscount').innerText = `- $${discount.toLocaleString('es-CO')} COP`; }
-            if (pRow) pRow.style.display = 'block';
-        } else {
-            if (dRow) { dRow.style.display = 'flex'; document.getElementById('discountLabel').innerText = 'Descuento Base:'; document.getElementById('sumDiscount').innerText = `- $${discount.toLocaleString('es-CO')} COP`; }
-            if (pRow) pRow.style.display = 'none';
+        if (dRow) {
+            dRow.style.display = 'flex';
+            const lbl = document.getElementById('discountLabel');
+            if (lbl) lbl.innerText = 'Descuento Primera Compra (3%):';
+            const sumDisc = document.getElementById('sumDiscount');
+            if (sumDisc) sumDisc.innerText = `- $${discount.toLocaleString('es-CO')} COP`;
         }
     } else {
-        if (cartContent) cartContent.classList.remove('cart-vip-mode');
         if (dRow) dRow.style.display = 'none';
-        if (pRow) pRow.style.display = 'none';
     }
+
+    if (cartContent) cartContent.classList.remove('cart-vip-mode');
+    if (pRow) pRow.style.display = 'none';
 
     const curDelivery = (typeof window.deliveryType !== 'undefined') ? window.deliveryType : 'delivery';
     const threshold = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
@@ -5331,38 +5315,15 @@ function sendOrder() {
 
     let discount = 0;
     let costoDomicilio = 0;
+    let firstPurchaseApplied = false;
 
-    if (currentUser && typeof adminConfig !== 'undefined' && adminConfig.vipEnabled && tp >= adminConfig.minPurchase) {
-        let isCumple = false;
-        if (currentUser.birthday) {
-            const parts = currentUser.birthday.split('-');
-            if (parts.length === 3) {
-                const hoy = new Date();
-                const bDay = parseInt(parts[2], 10);
-                const bMonth = parseInt(parts[1], 10) - 1;
-                if (hoy.getDate() === bDay && hoy.getMonth() === bMonth) {
-                    isCumple = true;
-                }
-            }
-        }
+    const hasUsedFirstPurchase = !!(currentUser && (currentUser.firstPurchaseDiscountUsed || (Array.isArray(currentUser.history) && currentUser.history.length > 0)));
+    const isFirstPurchaseEligible = !!(currentUser && !currentUser.isAnonymous && !hasUsedFirstPurchase);
 
-        if (isCumple) {
-            discount = Math.floor(tp * (currentUser.vip ? 0.08 : 0.04));
-        } else {
-            discount = currentUser.vip ? Math.floor(tp * 0.05) : 0;
-        }
-
+    if (currentUser && tp > 0 && isFirstPurchaseEligible) {
+        discount = Math.floor(tp * 0.03);
         if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
-
-        // Puntos eliminados
-
-        if (false) {
-            currentUser.points = (currentUser.points || 0) + ptsEarned;
-            const uidx = db_users.findIndex(u => u.email === currentUser.email);
-            if (uidx !== -1) { db_users[uidx].points = currentUser.points; saveUsersDB(); }
-            saveUser();
-            syncUserUI();
-        }
+        firstPurchaseApplied = discount > 0;
     }
 
     const baseProductos = Math.max(0, tp - discount);
@@ -5392,6 +5353,7 @@ function sendOrder() {
         metodoPago: selectedPay,
         subtotal: tp,
         discount: discount,
+        firstPurchaseDiscountApplied: firstPurchaseApplied,
         total: finalTotal,
         status: 'Pendiente',
         payStatus: 'Pendiente - ' + selectedPay,
@@ -5423,7 +5385,6 @@ function sendOrder() {
     const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
 
     // Símbolos dinámicos
-    const symVIP = isMobile ? '\u{2B50}' : '★';
     const symOrder = isMobile ? '\u{1F4F2}' : '[NUEVO PEDIDO]';
     const symCake = isMobile ? '\u{1F382}' : '•';
     const symDate = isMobile ? '\u{1F4C5}' : '•';
@@ -5445,16 +5406,10 @@ function sendOrder() {
     const symPray = isMobile ? '\u{1F64F}' : '';
 
     let msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
-    if (currentUser && currentUser.vip) {
-        msg += `${symVIP} *PEDIDO PRIORITARIO VIP* ${symVIP}\n\n`;
-    }
     msg += `${symOrder} *${isMobile ? 'NUEVO PEDIDO ' : 'ID: '}${orderId}*\n`;
 
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         msg = '¡Hola P&S Punto Dulce! Quiero agendar este pedido para mi celebración:\n\n';
-        if (currentUser && currentUser.vip) {
-            msg += `${symVIP} *PEDIDO PRIORITARIO VIP* ${symVIP}\n\n`;
-        }
         msg += `${isMobile ? '\u{1F382} *ENCARGO ESPECIAL DE TORTA PERSONALIZADA*' : '[ENCARGO ESPECIAL DE TORTA PERSONALIZADA]'}\n`;
         const evtItem = cart.find(i => i.type === 'evento' || i.id.toString().startsWith('custom'));
 
@@ -5848,43 +5803,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
-function toggleVIP() {
-    if (!currentUser) return alert('Debes iniciar sesión primero.');
-    currentUser.vip = !currentUser.vip;
-    const uidx = db_users.findIndex(u => u.email === currentUser.email);
-    if (uidx !== -1) { db_users[uidx].vip = currentUser.vip; saveUsersDB(); }
-    saveUser();
-    syncUserUI();
-    updateCart();
-    showToast(currentUser.vip ? '¡Membresía VIP Oro activada!' : 'Membresía VIP desactivada.', '👑', 3000);
-}
-
-// ===== MODAL DE TÉRMINOS Y BENEFICIOS VIP =====
-window.openVipTermsModal = function (e) {
-    if (e) {
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-        if (typeof e.stopPropagation === 'function') e.stopPropagation();
-    }
-    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || 'null');
-    if (!user) {
-        alert("Por favor inicia sesión o regístrate para conocer y solicitar tu membresía VIP.");
-        if (typeof openAuthModal === 'function') openAuthModal();
-        else if (typeof window.openLoginModal === 'function') window.openLoginModal();
-        return;
-    }
-    const m = document.getElementById('modalVipTerms');
-    if (m) {
-        m.style.display = 'flex';
-        m.classList.add('active');
-        m.style.zIndex = '999999';
-        m.style.visibility = 'visible';
-        m.style.opacity = '1';
-    }
-    const dMenu = document.getElementById('user-dropdown-menu');
-    if (dMenu) dMenu.classList.remove('active');
-    if (typeof closeMobileProfile === 'function') closeMobileProfile();
-};
-
+// ===== MODALES Y UTILIDADES DE USUARIO =====
 window.closeVipTermsModal = function () {
     const m = document.getElementById('modalVipTerms');
     if (m) {
@@ -5894,73 +5813,7 @@ window.closeVipTermsModal = function () {
     }
 };
 
-window.confirmVipMembership = function () {
-    const check = document.getElementById('checkAcceptVipTerms');
-    if (!check || !check.checked) {
-        alert("Debes marcar la casilla para aceptar los Términos y Condiciones.");
-        return;
-    }
 
-    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : JSON.parse(localStorage.getItem('dt_user') || '{}');
-    user.isVip = true;
-    user.vipStatus = 'solicitado';
-    user.vip = true;
-    localStorage.setItem('dt_user', JSON.stringify(user));
-    if (typeof currentUser !== 'undefined' && currentUser) {
-        currentUser.isVip = true;
-        currentUser.vipStatus = 'solicitado';
-        currentUser.vip = true;
-        if (typeof syncUserUI === 'function') syncUserUI();
-    }
-
-    // Notificación para panel de administración y trabajador (dt_notifications, dt_live_alerts y Firestore)
-    const vipNotif = {
-        id: 'notif_vip_' + Date.now(),
-        type: 'solicitud_vip',
-        title: '👑 Nueva Solicitud VIP',
-        message: `${user.name || 'Cliente'} (${user.email || 'N/A'})`,
-        time: 'Hace un momento',
-        read: false,
-        timestamp: Date.now()
-    };
-    try {
-        let notifs = JSON.parse(localStorage.getItem('dt_notifications') || '[]');
-        notifs.unshift(vipNotif);
-        if (notifs.length > 50) notifs = notifs.slice(0, 50);
-        localStorage.setItem('dt_notifications', JSON.stringify(notifs));
-    } catch (e) { }
-    try {
-        let alerts = JSON.parse(localStorage.getItem('dt_live_alerts') || '[]');
-        alerts.unshift({
-            type: 'solicitud_vip',
-            title: '👑 Nueva Solicitud VIP',
-            user: user.name || 'Cliente',
-            email: user.email || '',
-            date: new Date().toLocaleString('es-CO')
-        });
-        localStorage.setItem('dt_live_alerts', JSON.stringify(alerts));
-    } catch (e) { }
-    if (window.renderAdminNotifList) window.renderAdminNotifList();
-
-    if (window.db && typeof window.db.collection === 'function') {
-        window.db.collection('solicitudes_vip').add(vipNotif).catch(err => console.warn(err));
-    }
-
-    window.closeVipTermsModal();
-    alert("¡Excelente! Solicitud registrada. Te contactaremos por WhatsApp para confirmar tu activación.");
-
-    // Redirección a WhatsApp del negocio usando el número global del negocio
-    const vipPhone = (typeof PHONE !== 'undefined' && PHONE) ? PHONE : '573229512693';
-    const tarifa = window.vipConfig && window.vipConfig.precioMensual ? window.vipConfig.precioMensual : 20000;
-    const formattedTarifa = `$${tarifa.toLocaleString('es-CO')} COP`;
-    const vipMsg = encodeURIComponent(
-        `¡Hola Punto Dulce! 👋 Quiero solicitar mi Membresía VIP para mi cuenta ${user.email || 'N/A'}. ` +
-        `\n\n👤 *Nombre:* ${user.name || 'Cliente'}` +
-        `\n📧 *Correo:* ${user.email || 'N/A'}` +
-        `\n\n👑 Acabo de aceptar los Términos y Condiciones del Club VIP y deseo activar mi Membresía VIP Oro (Tarifa mensual: ${formattedTarifa}) ✨`
-    );
-    window.open(`https://wa.me/${vipPhone}?text=${vipMsg}`, '_blank');
-};
 
 // ===== CENTRO DE NOTIFICACIONES (ADMIN / TRABAJADOR) =====
 window.adjustNotifDropdownPosition = function () {
@@ -7169,62 +7022,9 @@ window.openAdminPanelFlow = async function(el) {
  * - Los datos históricos de usuarios con vip=true
  * - La lectura de vip status y aplicación de descuentos
  */
-window.syncLegacyVipVisibility = function() {
-  const bannerEl = document.getElementById('legacyVipPromoBanner');
-  if (!bannerEl) return;
-
-  // Verificar feature flag
-  const shouldShowPromo = (typeof window.PDFeatureFlags !== 'undefined')
-    ? window.PDFeatureFlags.shouldShowLegacyVipPromotion()
-    : false;
-
-  if (shouldShowPromo) {
-    bannerEl.style.display = 'flex';
-    console.log('ℹ️ Membresía VIP antigua: Promoción VISIBLE (feature flag habilitado)');
-  } else {
-    bannerEl.style.display = 'none';
-    console.log('ℹ️ Membresía VIP antigua: Promoción OCULTA (feature flag deshabilitado en FASE 2)');
-  }
-};
-
-/**
- * Hook que se ejecuta cuando se abre la sección club-puntos.
- * Renderiza recompensas, sincroniza visibilidad del banner VIP, etc.
- */
-const originalRenderRewards = (typeof window.renderRewards === 'function') 
-  ? window.renderRewards 
-  : function() {};
-
 window.renderRewards = function() {
-  // Ejecutar la función original
   if (typeof originalRenderRewards === 'function') {
     originalRenderRewards.apply(this, arguments);
   }
-
-  // Sincronizar visibilidad del banner VIP basado en feature flag
-  window.syncLegacyVipVisibility();
 };
 
-/**
- * FASE 2: Hook para sincronizar visibilidad del banner VIP legacy
- * Envuelto en IIFE para evitar colisión de variables globales
- */
-(function() {
-  const _pdPhase2OriginalSyncUserUI = (typeof window.syncUserUI === 'function')
-    ? window.syncUserUI
-    : function() {};
-
-  window.syncUserUI = function() {
-    // Ejecutar la función original
-    if (typeof _pdPhase2OriginalSyncUserUI === 'function') {
-      _pdPhase2OriginalSyncUserUI.apply(this, arguments);
-    }
-
-    // Sincronizar visibilidad del banner VIP
-    if (typeof window.syncLegacyVipVisibility === 'function') {
-      window.syncLegacyVipVisibility();
-    }
-  };
-
-  console.log('✓ Funciones de control de feature flag de Membresía VIP cargadas');
-})();
