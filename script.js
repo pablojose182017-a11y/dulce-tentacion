@@ -683,6 +683,17 @@ function renderRewards() {
     const ticketValEl = document.getElementById('modal-ticket-val');
     if (ticketValEl) ticketValEl.innerText = pts.toLocaleString('es-CO');
 
+    // Sincronización del cajón superior: Invitado (banner interactivo) vs Socio Autenticado (tarjeta joya)
+    const guestBannerEl = document.getElementById('club-points-guest-banner');
+    const userCardEl = document.getElementById('club-points-user-card');
+    if (currentUser) {
+        if (guestBannerEl) guestBannerEl.style.display = 'none';
+        if (userCardEl) userCardEl.style.display = 'inline-flex';
+    } else {
+        if (guestBannerEl) guestBannerEl.style.display = 'flex';
+        if (userCardEl) userCardEl.style.display = 'none';
+    }
+
     const container = document.getElementById('rewards-container');
     if (!container) return;
 
