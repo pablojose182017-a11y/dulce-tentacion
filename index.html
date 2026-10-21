@@ -728,31 +728,79 @@
                 </div>
             </div>
 
-            <!-- RECUPERAR CONTRASEÑA -->
+            <!-- RECUPERAR CONTRASEÑA AUTÓNOMA -->
             <div class="auth-pane" id="paneRecovery" style="display: none;">
                 <div class="recovery-header">
                     <h3 class="recovery-title">Recuperar Contraseña</h3>
-                    <p class="recovery-sub">Ingresa tu correo para verificar tu cuenta y reestablecer tu acceso de forma segura.</p>
+                    <p class="recovery-sub" id="recoverySubtitle">Verifica tus datos registrados para actualizar tu contraseña inmediatamente.</p>
                 </div>
-                <div class="custom-form">
+
+                <!-- PASO 1: Verificación de Identidad -->
+                <div class="custom-form" id="recoveryStep1">
                     <div class="form-group">
                         <label for="recoveryEmail">Correo Electrónico Registrado</label>
                         <div class="input-wrap">
                             <span class="field-icon" aria-hidden="true">
                                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                             </span>
-                            <input type="email" id="recoveryEmail" placeholder="tucorreo@ejemplo.com">
+                            <input type="email" id="recoveryEmail" placeholder="tucorreo@ejemplo.com" autocomplete="email">
                         </div>
                     </div>
-                    <button type="button" onclick="requestPasswordRecovery()" class="btn-auth-submit" style="margin-top:10px;">Verificar Cuenta</button>
+                    <div class="form-group">
+                        <label for="recoveryPhone">Teléfono o WhatsApp Registrado</label>
+                        <div class="input-wrap">
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            </span>
+                            <input type="tel" id="recoveryPhone" placeholder="Ej: 3001234567" autocomplete="tel">
+                        </div>
+                    </div>
+                    <button type="button" id="btnVerifyRecovery" onclick="verifyUserForPasswordReset()" class="btn-auth-submit" style="margin-top:10px;">Verificar Identidad</button>
                     
                     <div id="recoveryWhatsAppContainer" style="display:none; margin-top: 15px; text-align: center;">
-                        <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:10px;">Hemos verificado tu cuenta. Solicita el restablecimiento contactándonos por WhatsApp:</p>
-                        <a id="recoveryWhatsAppLink" href="#" target="_blank" class="btn-whatsapp" style="width:100%; border-radius:30px; justify-content:center;">📱 Solicitar por WhatsApp</a>
+                        <p style="font-size:0.85rem; color:var(--text-soft); margin-bottom:10px;">¿Necesitas ayuda con tu cuenta? Contáctanos directamente:</p>
+                        <a id="recoveryWhatsAppLink" href="#" target="_blank" class="btn-whatsapp" style="width:100%; border-radius:30px; justify-content:center;">📱 Soporte por WhatsApp</a>
                     </div>
                     
                     <div style="text-align: center; margin-top: 20px;">
                         <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: #78350F; font-weight:700; text-decoration: none;">⬅ Volver a Iniciar Sesión</a>
+                    </div>
+                </div>
+
+                <!-- PASO 2: Ingreso de Nueva Contraseña (Oculto hasta validar) -->
+                <div class="custom-form" id="recoveryStep2" style="display: none;">
+                    <div class="form-group">
+                        <label for="recoveryNewPass">Nueva Contraseña (mínimo 6 caracteres)</label>
+                        <div class="input-wrap">
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            </span>
+                            <div class="password-wrapper">
+                                <input type="password" id="recoveryNewPass" placeholder="Nueva contraseña" autocomplete="new-password">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('recoveryNewPass', this)" aria-label="Mostrar contraseña">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="recoveryConfirmPass">Confirmar Nueva Contraseña</label>
+                        <div class="input-wrap">
+                            <span class="field-icon" aria-hidden="true">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            </span>
+                            <div class="password-wrapper">
+                                <input type="password" id="recoveryConfirmPass" placeholder="Confirma tu nueva contraseña" autocomplete="new-password">
+                                <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('recoveryConfirmPass', this)" aria-label="Mostrar contraseña">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="btnSubmitRecoveryReset" onclick="submitPasswordResetRecovery()" class="btn-auth-submit" style="margin-top:10px;">Actualizar Contraseña Ahora</button>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="#" onclick="switchAuthTab('login')" style="font-size: 0.85rem; color: #78350F; font-weight:700; text-decoration: none;">⬅ Cancelar y Volver a Iniciar Sesión</a>
                     </div>
                 </div>
             </div>
@@ -1464,10 +1512,10 @@
     <script src="membership-admin-panel.js?v=20261021" defer></script>
     <script src="membership-admin-ui.js?v=20261021" defer></script>
 
-    <script src="script.js?v=20261021f" defer></script>
-    <script src="control-roles.js?v=20261021f" defer></script>
+    <script src="script.js?v=20261021g" defer></script>
+    <script src="control-roles.js?v=20261021g" defer></script>
     <!-- Firebase Sync Module -->
-    <script src="firebase-sync.js?v=20261021f" defer></script>
+    <script src="firebase-sync.js?v=20261021g" defer></script>
 
 </body>
 </html>

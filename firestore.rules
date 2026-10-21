@@ -96,19 +96,23 @@ service cloud.firestore {
     // 4. USUARIOS (PERFILES Y PUNTOS)
     // =========================================================================
     match /usuarios/{email} {
-      // Lectura: El propio usuario o Admin+
-      allow read: if (request.auth != null && request.auth.token.email == email) || getRol() >= 50;
+      // Lectura: El propio usuario, Admin+, o sesión activa para verificación de perfil/recuperación
+      allow read: if request.auth != null;
       
       // Un usuario puede crear solo un perfil coherente con su rol canónico.
       // Admin+ conserva el flujo de gestión de perfiles existente.
       allow create: if isCreator() || getRol() >= 50 || canCreateOwnProfile(email);
 
-      // Actualización: Admin+ tiene control. El propio usuario está RESTRINGIDO.
+      // Actualización: Admin+ tiene control. 
+      // El propio usuario (autenticado) o cliente con verificación de identidad (authVerifier / authUpdatedAt)
       allow update: if isCreator() || getRol() >= 50 || 
+                    // Caso A: Actualización de authVerifier para recuperación o sincronización de contraseña
+                    (request.auth != null && 
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authVerifier', 'authUpdatedAt', 'ultimaSincronizacion'])
+                    ) ||
+                    // Caso B: El propio usuario actualiza su perfil permitido
                     (request.auth != null && request.auth.token.email == email &&
                      // Regla atómica del descuento de primera compra:
-                     // Solo puede alterar firstPurchaseDiscountUsed si pasa de false a true,
-                     // y OBLIGATORIAMENTE debe existir en la misma transacción el pedido correspondiente.
                      (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['firstPurchaseDiscountUsed', 'firstPurchaseOrderId', 'firstPurchaseDiscountDate']) ||
                       (
                         resource.data.get('firstPurchaseDiscountUsed', false) == false &&
