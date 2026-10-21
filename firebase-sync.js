@@ -773,6 +773,8 @@ window.addEventListener('DOMContentLoaded', () => {
         const originalLogoutUser = window.logoutUser;
         window.logoutUser = function(e) {
             window._adminFragmentLoaded = false;
+            window.currentUser = null;
+            if (typeof currentUser !== 'undefined') currentUser = null;
             if (auth) {
                 auth.signOut().catch(err => console.warn("Error en Firebase Auth signOut:", err));
             }
@@ -863,6 +865,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
             if (fbUser.isAnonymous) {
                 console.log("Sesión de invitado activa:", fbUser.uid);
+                // BLINDAJE: Sesión anónima (invitado limpio) JAMÁS debe restaurar un usuario previo
+                if (!localStorage.getItem('dt_user')) {
+                    window.currentUser = null;
+                    if (typeof currentUser !== 'undefined') currentUser = null;
+                }
                 return;
             }
 

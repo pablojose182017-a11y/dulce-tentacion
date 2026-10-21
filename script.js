@@ -477,21 +477,162 @@ function showRecoveryForm(e) {
     if (msgEl) { msgEl.style.display = 'none'; msgEl.className = 'auth-msg'; }
 }
 
-function requestPasswordRecovery() {
-    const email = document.getElementById('recoveryEmail').value.trim().toLowerCase();
-    if (!email) return showAuthMessage('Por favor, ingresa tu correo electrónico.', 'error');
-
-    const user = db_users.find(u => u.email === email);
-    if (!user) {
-        return showAuthMessage('No encontramos ninguna cuenta con ese correo.', 'error');
+// ===== CAMBIAR CONTRASEÑA DE CLIENTE DESDE EL PERFIL =====
+window.openChangePasswordModal = function (fromMobile = false) {
+    if (fromMobile && typeof closeMobileProfile === 'function') {
+        closeMobileProfile();
+    } else {
+        const pill = document.getElementById('user-pill-container');
+        if (pill) pill.classList.remove('open');
+        const menu = document.getElementById('user-dropdown-menu');
+        if (menu) menu.classList.remove('active');
     }
 
-    const waLink = document.getElementById('recoveryWhatsAppLink');
-    const msg = `Hola P&S Punto Dulce, olvidé la contraseña de mi cuenta: ${email}. ¿Me ayudan a restablecerla, por favor?`;
-    waLink.href = `https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`;
+    const modal = document.getElementById('userChangePasswordModal');
+    if (!modal) return;
 
-    document.getElementById('recoveryWhatsAppContainer').style.display = 'block';
-    showAuthMessage('Cuenta encontrada. Usa el botón de abajo para solicitarla.', 'success');
+    // Limpiar campos y mensajes
+    const currPass = document.getElementById('changeCurrentPass');
+    const newPass = document.getElementById('changeNewPass');
+    const confPass = document.getElementById('changeConfirmPass');
+    const msgEl = document.getElementById('changePassMsg');
+    if (currPass) currPass.value = '';
+    if (newPass) newPass.value = '';
+    if (confPass) confPass.value = '';
+    if (msgEl) {
+        msgEl.style.display = 'none';
+        msgEl.className = 'auth-msg';
+        msgEl.innerText = '';
+    }
+
+    // Si el usuario inició sesión con Google (proveedor google.com), no tiene contraseña de email
+    const fbUser = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth().currentUser : null;
+    const isGoogleUser = fbUser && fbUser.providerData && fbUser.providerData.some(p => p.providerId === 'google.com');
+    const grpCurr = document.getElementById('grpCurrentPassword');
+    if (grpCurr) {
+        grpCurr.style.display = isGoogleUser ? 'none' : 'flex';
+    }
+
+    modal.style.display = 'flex';
+};
+
+window.closeChangePasswordModal = function () {
+    const modal = document.getElementById('userChangePasswordModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.submitChangeUserPassword = async function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const msgEl = document.getElementById('changePassMsg');
+    const showChangeMsg = (text, type) => {
+        if (!msgEl) return;
+        msgEl.innerText = text;
+        msgEl.className = 'auth-msg ' + type;
+        msgEl.style.display = 'block';
+    };
+
+    const currentPass = document.getElementById('changeCurrentPass')?.value || '';
+    const newPass = document.getElementById('changeNewPass')?.value || '';
+    const confirmPass = document.getElementById('changeConfirmPass')?.value || '';
+
+    if (!newPass || newPass.length < 6) {
+        return showChangeMsg('La nueva contraseña debe tener al menos 6 caracteres.', 'error');
+    }
+    if (newPass !== confirmPass) {
+        return showChangeMsg('Las nuevas contraseñas no coinciden.', 'error');
+    }
+
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+        return showChangeMsg('El servicio de autenticación no está disponible.', 'error');
+    }
+
+    const fbUser = firebase.auth().currentUser;
+    if (!fbUser) {
+        return showChangeMsg('No hay una sesión activa de Firebase. Inicia sesión nuevamente.', 'error');
+    }
+
+    const isPasswordUser = fbUser.providerData && fbUser.providerData.some(p => p.providerId === 'password');
+
+    const submitBtn = document.getElementById('btnSubmitChangePass');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'Actualizando contraseña...';
+    }
+
+    try {
+        // Re-autenticar si es usuario de correo/contraseña
+        if (isPasswordUser && fbUser.email) {
+            if (!currentPass) {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Guardar Nueva Contraseña'; }
+                return showChangeMsg('Por favor escribe tu contraseña actual para confirmar tu identidad.', 'error');
+            }
+            const credential = firebase.auth.EmailAuthProvider.credential(fbUser.email, currentPass);
+            await fbUser.reauthenticateWithCredential(credential);
+        }
+
+        // Actualizar contraseña en Firebase Auth
+        await fbUser.updatePassword(newPass);
+
+        showChangeMsg('✅ Contraseña actualizada exitosamente. Tu cuenta está protegida.', 'success');
+        if (typeof showToast === 'function') showToast('Contraseña actualizada correctamente', '🔑');
+
+        setTimeout(() => {
+            closeChangePasswordModal();
+        }, 1800);
+
+    } catch (err) {
+        console.warn("Error cambiando contraseña:", err);
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+            showChangeMsg('La contraseña actual ingresada es incorrecta.', 'error');
+        } else if (err.code === 'auth/requires-recent-login') {
+            showChangeMsg('Por seguridad, por favor cierra sesión y vuelve a ingresar antes de cambiar tu clave.', 'error');
+        } else if (err.code === 'auth/weak-password') {
+            showChangeMsg('La nueva contraseña es demasiado débil.', 'error');
+        } else {
+            showChangeMsg('No se pudo actualizar: ' + (err.message || err.code), 'error');
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Guardar Nueva Contraseña';
+        }
+    }
+};
+
+async function requestPasswordRecovery() {
+    const email = (document.getElementById('recoveryEmail')?.value || '').trim().toLowerCase();
+    if (!email) return showAuthMessage('Por favor, ingresa tu correo electrónico registrado.', 'error');
+
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        try {
+            firebase.auth().languageCode = 'es';
+            await firebase.auth().sendPasswordResetEmail(email);
+
+            showAuthMessage('📩 Te hemos enviado un correo con el enlace oficial para restablecer tu contraseña. Revisa tu bandeja de entrada o spam.', 'success');
+
+            // Enlace de soporte WhatsApp como ayuda complementaria
+            const waLink = document.getElementById('recoveryWhatsAppLink');
+            if (waLink) {
+                const msg = `Hola P&S Punto Dulce, solicité restablecer la contraseña de mi cuenta (${email}). ¿Me podrían confirmar si tienen registro de mi usuario, por favor?`;
+                waLink.href = `https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`;
+            }
+            const waContainer = document.getElementById('recoveryWhatsAppContainer');
+            if (waContainer) waContainer.style.display = 'block';
+
+        } catch (err) {
+            console.warn("Error en sendPasswordResetEmail:", err);
+            if (err.code === 'auth/user-not-found') {
+                return showAuthMessage('No encontramos ninguna cuenta registrada con este correo electrónico.', 'error');
+            } else if (err.code === 'auth/invalid-email') {
+                return showAuthMessage('El formato del correo electrónico no es válido.', 'error');
+            } else if (err.code === 'auth/too-many-requests') {
+                return showAuthMessage('Demasiadas solicitudes. Por favor, espera unos minutos e inténtalo de nuevo.', 'error');
+            }
+            return showAuthMessage('No se pudo enviar el correo: ' + (err.message || err.code), 'error');
+        }
+    } else {
+        showAuthMessage('El servicio de autenticación no está disponible en este momento.', 'error');
+    }
 }
 
 function showAuthMessage(msg, type) {
@@ -516,15 +657,44 @@ async function loginCustomUser(e) {
         try {
             await firebase.auth().signInWithEmailAndPassword(email, pass);
             
-            // Buscar perfil local para hidratar
+            // Buscar perfil local e hidratar con Firestore para soporte multi-dispositivo real
             let dbUsers = [];
             try { dbUsers = JSON.parse(localStorage.getItem('dt_users_db') || '[]'); } catch (err) {}
             if (!Array.isArray(dbUsers) || dbUsers.length === 0) dbUsers = (typeof db_users !== 'undefined' && Array.isArray(db_users)) ? db_users : [];
             
-            let foundUser = dbUsers.find(u => u && u.email && u.email.trim().toLowerCase() === email);
-            if (!foundUser) {
-                // Generar perfil base si no existe localmente pero sí autenticó
-                foundUser = { email: email, name: email.split('@')[0] };
+            let foundUser = dbUsers.find(u => u && u.email && u.email.trim().toLowerCase() === email) || {};
+
+            // Consulta inmediata a Firestore para multi-dispositivo (nuevo PC / móvil)
+            if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
+                try {
+                    const snap = await db.collection('usuarios').doc(email).get();
+                    if (snap.exists) {
+                        const cloudData = snap.data();
+                        foundUser = {
+                            ...foundUser,
+                            name: cloudData.nombre || cloudData.name || foundUser.name,
+                            nombre: cloudData.nombre || cloudData.name || foundUser.nombre,
+                            phone: cloudData.telefono || cloudData.phone || foundUser.phone,
+                            telefono: cloudData.telefono || cloudData.phone || foundUser.telefono,
+                            birthday: cloudData.birthday || foundUser.birthday || '',
+                            role: cloudData.rol || cloudData.role || foundUser.role || 'cliente',
+                            rol: cloudData.rol || cloudData.role || foundUser.rol || 'cliente',
+                            points: (cloudData.points !== undefined && cloudData.points !== null) ? Number(cloudData.points) : foundUser.points,
+                            vip: !!(cloudData.vip || cloudData.isVip || foundUser.vip),
+                            isVip: !!(cloudData.vip || cloudData.isVip || foundUser.isVip),
+                            firstPurchaseDiscountUsed: !!(cloudData.firstPurchaseDiscountUsed || foundUser.firstPurchaseDiscountUsed),
+                            estado: cloudData.estado || foundUser.estado || 'activo',
+                            blocked: !!(cloudData.blocked || foundUser.blocked)
+                        };
+                    }
+                } catch (fsErr) {
+                    console.warn("Aviso consultando Firestore en login:", fsErr);
+                }
+            }
+
+            if (!foundUser.name && !foundUser.nombre) {
+                foundUser.name = email.split('@')[0];
+                foundUser.nombre = email.split('@')[0];
             }
 
             if (foundUser.blocked || foundUser.estado === 'bloqueado') {
@@ -539,10 +709,12 @@ async function loginCustomUser(e) {
                 nombre: foundUser.name || foundUser.nombre || (email.split('@')[0]),
                 email: email,
                 phone: foundUser.phone || foundUser.telefono || '',
+                birthday: foundUser.birthday || '',
                 role: resolvedRole, rol: resolvedRole, isAdmin: (resolvedRole === 'admin'),
                 isVip: isVip, vip: isVip, vipStatus: foundUser.vipStatus || (isVip ? 'activo' : 'inactivo'),
-                points: (foundUser.points !== undefined && foundUser.points !== null) ? foundUser.points : (foundUser.puntos || 15),
+                points: (foundUser.points !== undefined && foundUser.points !== null) ? Number(foundUser.points) : 15,
                 picture: foundUser.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(foundUser.name || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+                firstPurchaseDiscountUsed: !!foundUser.firstPurchaseDiscountUsed,
                 blocked: false
             };
 
@@ -3595,6 +3767,7 @@ function logoutUser(e) {
         }
     } catch (err) { }
     currentUser = null;
+    window.currentUser = null;
     saveUser();
 
     // Ocultar inmediatamente el panel administrativo y todas las secciones administrativas
@@ -3610,18 +3783,26 @@ function logoutUser(e) {
     const deskBtn = document.getElementById('desk-admin-btn');
     const mobBtn = document.getElementById('mob-admin-btn');
     if (deskBtn) deskBtn.style.display = 'none';
+    if (mobBtn) mobBtn.style.display = 'none';
+
     // Ocultar explícitamente el badge / botón VIP
     const vipBadge = document.getElementById('navVipBadge') || document.getElementById('vip-header-badge') || document.querySelector('.btn-vip-badge');
     if (vipBadge) vipBadge.style.display = 'none';
+
+    // Cerrar forzosamente menús y modales de perfil (Desktop y Móvil)
+    const deskPill = document.getElementById('user-pill-container');
+    if (deskPill) deskPill.classList.remove('open');
+    const deskMenu = document.getElementById('user-dropdown-menu');
+    if (deskMenu) deskMenu.classList.remove('active');
+    const mobProfile = document.getElementById('mobileProfileModal');
+    if (mobProfile) mobProfile.style.setProperty('display', 'none', 'important');
+    const mobPillEl = document.getElementById('mobile-user-pill');
+    if (mobPillEl) mobPillEl.style.setProperty('display', 'none', 'important');
 
     // Redirigir a la vista de catálogo/inicio (#inicio o #productos)
     if (typeof showSection === 'function') {
         showSection('inicio', document.querySelector('.nav-link'));
     }
-
-    // Cerrar menús de perfil
-    document.getElementById('user-dropdown-menu')?.classList.remove('active');
-    document.getElementById('mobileProfileModal')?.style.setProperty('display', 'none');
 
     syncUserUI();
     if (typeof window.renderRewardsClub === 'function') window.renderRewardsClub();

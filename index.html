@@ -15,7 +15,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=20261021d">
+    <link rel="stylesheet" href="styles.css?v=20261021e">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -111,6 +111,10 @@
                             </div>
                             <div class="dropdown-link-item" onclick="openOrderHistory(true)">
                                 <span>📦 Historial de Pedidos</span>
+                                <span class="dropdown-link-arrow">›</span>
+                            </div>
+                            <div class="dropdown-link-item" onclick="openChangePasswordModal(false)">
+                                <span>🔑 Cambiar Contraseña</span>
                                 <span class="dropdown-link-arrow">›</span>
                             </div>
                         </div>
@@ -557,6 +561,10 @@
                     <span>📦 Historial de Pedidos</span>
                     <span class="dropdown-link-arrow">›</span>
                 </div>
+                <div class="dropdown-link-item" onclick="openChangePasswordModal(true)">
+                    <span>🔑 Cambiar Contraseña</span>
+                    <span class="dropdown-link-arrow">›</span>
+                </div>
             </div>
 
             <div id="vip-dropdown-area-mob"></div>
@@ -754,6 +762,73 @@
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 <span>P&amp;S Punto Dulce • Garantía de Calidad y Privacidad de Datos</span>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL: CAMBIAR CONTRASEÑA DE CLIENTE ===== -->
+    <div class="auth-modal" id="userChangePasswordModal" onclick="if(event.target===this) closeChangePasswordModal()">
+        <div class="auth-card auth-card-boutique" style="max-width: 400px;">
+            <button class="auth-close-btn" onclick="closeChangePasswordModal()" aria-label="Cerrar modal">✕</button>
+            <div class="auth-header-corporate" style="margin-bottom: 14px;">
+                <div class="auth-logo-ring" style="width: 58px; height: 58px;">
+                    <span style="font-size: 1.5rem;">🔑</span>
+                </div>
+                <h3 class="auth-brand-title" style="font-size: 1.2rem;">Actualizar Contraseña</h3>
+                <p class="auth-brand-subtitle">Protege tu cuenta de P&amp;S Punto Dulce</p>
+            </div>
+
+            <div id="changePassMsg" class="auth-msg" style="display:none; margin-bottom:12px;"></div>
+
+            <form class="custom-form" onsubmit="submitChangeUserPassword(event)">
+                <div class="form-group" id="grpCurrentPassword">
+                    <label for="changeCurrentPass">Contraseña Actual</label>
+                    <div class="input-wrap">
+                        <span class="field-icon" aria-hidden="true">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </span>
+                        <div class="password-wrapper">
+                            <input type="password" id="changeCurrentPass" placeholder="Tu contraseña actual" autocomplete="current-password">
+                            <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('changeCurrentPass', this)" aria-label="Mostrar contraseña">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="changeNewPass">Nueva Contraseña</label>
+                    <div class="input-wrap">
+                        <span class="field-icon" aria-hidden="true">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </span>
+                        <div class="password-wrapper">
+                            <input type="password" id="changeNewPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6">
+                            <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('changeNewPass', this)" aria-label="Mostrar contraseña">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="changeConfirmPass">Confirmar Nueva Contraseña</label>
+                    <div class="input-wrap">
+                        <span class="field-icon" aria-hidden="true">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </span>
+                        <div class="password-wrapper">
+                            <input type="password" id="changeConfirmPass" placeholder="Repite tu nueva contraseña" autocomplete="new-password" required minlength="6">
+                            <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('changeConfirmPass', this)" aria-label="Mostrar contraseña">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C58B2B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmitChangePass" class="btn-auth-submit" style="margin-top: 10px;">
+                    Guardar Nueva Contraseña
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1389,10 +1464,10 @@
     <script src="membership-admin-panel.js?v=20261021" defer></script>
     <script src="membership-admin-ui.js?v=20261021" defer></script>
 
-    <script src="script.js?v=20261021d" defer></script>
+    <script src="script.js?v=20261021e" defer></script>
     <script src="control-roles.js?v=20261021" defer></script>
     <!-- Firebase Sync Module -->
-    <script src="firebase-sync.js?v=20261021" defer></script>
+    <script src="firebase-sync.js?v=20261021e" defer></script>
 
 </body>
 </html>
