@@ -573,6 +573,25 @@ window.submitChangeUserPassword = async function (e) {
         // Actualizar contraseña en Firebase Auth
         await fbUser.updatePassword(newPass);
 
+        // Actualizar verifier en Firestore y perfil local para sincronización multi-dispositivo
+        try {
+            const verifier = await computePasswordVerifier(newPass);
+            const userEmail = (fbUser.email || (currentUser && currentUser.email) || '').toLowerCase().trim();
+            if (userEmail && typeof db !== 'undefined' && db && db.collection) {
+                await db.collection('usuarios').doc(userEmail).set({
+                    authVerifier: verifier,
+                    authUpdatedAt: new Date().toISOString()
+                }, { merge: true });
+            }
+            if (currentUser && currentUser.email && currentUser.email.toLowerCase().trim() === userEmail) {
+                currentUser.authVerifier = verifier;
+                currentUser.authUpdatedAt = new Date().toISOString();
+                saveUser();
+            }
+        } catch (vErr) {
+            console.warn("Aviso actualizando authVerifier tras cambio de contraseña:", vErr);
+        }
+
         showChangeMsg('✅ Contraseña actualizada exitosamente. Tu cuenta está protegida.', 'success');
         if (typeof showToast === 'function') showToast('Contraseña actualizada correctamente', '🔑');
 
@@ -633,6 +652,28 @@ async function requestPasswordRecovery() {
     } else {
         showAuthMessage('El servicio de autenticación no está disponible en este momento.', 'error');
     }
+}
+
+async function computePasswordVerifier(password) {
+    try {
+        if (typeof crypto !== 'undefined' && crypto.subtle && typeof TextEncoder !== 'undefined') {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + "_pd_salt_2026");
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+    } catch (e) {
+        console.warn("Aviso generando verifier:", e);
+    }
+    // Fallback simple si subtle crypto no está disponible
+    let hash = 0;
+    const str = password + "_pd_salt_2026";
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return "h_" + Math.abs(hash).toString(16);
 }
 
 function showAuthMessage(msg, type) {
@@ -726,6 +767,87 @@ async function loginCustomUser(e) {
             loginUserObj(userToLogin);
 
         } catch (err) {
+            console.warn("Aviso Firebase signInWithEmailAndPassword:", err.code || err);
+
+            // Intento de rescate y reconciliación en la nube para Incógnito / nuevos dispositivos
+            if (typeof db !== 'undefined' && db && typeof db.collection === 'function') {
+                try {
+                    const snap = await db.collection('usuarios').doc(email).get();
+                    if (snap.exists) {
+                        const cloudData = snap.data();
+                        const verifier = await computePasswordVerifier(pass);
+
+                        // Comprobar coincidencia con authVerifier o password legado en Firestore
+                        const matchesVerifier = (cloudData.authVerifier && cloudData.authVerifier === verifier);
+                        const matchesPlainText = (cloudData.password && cloudData.password === pass);
+
+                        if (matchesVerifier || matchesPlainText) {
+                            if (cloudData.blocked || cloudData.estado === 'bloqueado') {
+                                return showAuthMessage('⛔ Tu cuenta ha sido suspendida por incumplimiento de políticas.', 'error');
+                            }
+
+                            // Sincronizar / crear credencial en Firebase Auth si fue cuenta desfasada
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                try {
+                                    if (firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous) {
+                                        const cred = firebase.auth.EmailAuthProvider.credential(email, pass);
+                                        await firebase.auth().currentUser.linkWithCredential(cred).catch(async (lErr) => {
+                                            if (lErr.code === 'auth/email-already-in-use' || lErr.code === 'auth/credential-already-in-use') {
+                                                // La cuenta existe en Auth pero con otra credencial: intentar autenticar directo
+                                                await firebase.auth().signInWithEmailAndPassword(email, pass).catch(() => {});
+                                            } else {
+                                                await firebase.auth().createUserWithEmailAndPassword(email, pass).catch(() => {});
+                                            }
+                                        });
+                                    } else if (!firebase.auth().currentUser) {
+                                        await firebase.auth().createUserWithEmailAndPassword(email, pass).catch(async (cErr) => {
+                                            if (cErr.code === 'auth/email-already-in-use') {
+                                                await firebase.auth().signInWithEmailAndPassword(email, pass).catch(() => {});
+                                            }
+                                        });
+                                    }
+                                } catch (authSyncErr) {
+                                    console.warn("Aviso reconciliando Auth:", authSyncErr);
+                                }
+                            }
+
+                            // Hidratar perfil local completo con datos reales de Firestore
+                            const resolvedRole = cloudData.rol || cloudData.role || 'cliente';
+                            const isVip = !!(cloudData.vip || cloudData.isVip || resolvedRole === 'vip');
+                            const restoredUser = {
+                                name: cloudData.nombre || cloudData.name || (email.split('@')[0]),
+                                nombre: cloudData.nombre || cloudData.name || (email.split('@')[0]),
+                                email: email,
+                                phone: cloudData.telefono || cloudData.phone || '',
+                                birthday: cloudData.birthday || '',
+                                role: resolvedRole,
+                                rol: resolvedRole,
+                                isAdmin: (resolvedRole === 'admin'),
+                                isVip: isVip,
+                                vip: isVip,
+                                vipStatus: cloudData.vipStatus || (isVip ? 'activo' : 'inactivo'),
+                                points: (cloudData.points !== undefined && cloudData.points !== null) ? Number(cloudData.points) : 15,
+                                picture: cloudData.picture || cloudData.foto || `https://ui-avatars.com/api/?name=${encodeURIComponent(cloudData.nombre || cloudData.name || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+                                firstPurchaseDiscountUsed: !!cloudData.firstPurchaseDiscountUsed,
+                                authVerifier: verifier,
+                                authUpdatedAt: cloudData.authUpdatedAt || new Date().toISOString(),
+                                blocked: false
+                            };
+
+                            const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
+                            if (dbIdx !== -1) db_users[dbIdx] = { ...db_users[dbIdx], ...restoredUser };
+                            else db_users.push({ ...restoredUser });
+                            saveUsersDB();
+
+                            loginUserObj(restoredUser);
+                            return;
+                        }
+                    }
+                } catch (rescueErr) {
+                    console.warn("Aviso en rescate Firestore de login:", rescueErr);
+                }
+            }
+
             // Verificar si el usuario existe localmente (Legacy) pero no en Firebase
             let localExists = false;
             try {
@@ -775,11 +897,23 @@ async function registerCustomUser(e) {
         try {
             // Manejar vinculación si hay una cuenta anónima activa (para preservar pedidos invitados)
             if (authObj.currentUser && authObj.currentUser.isAnonymous) {
-                const cred = firebase.auth.EmailAuthProvider.credential(email, pass);
-                await authObj.currentUser.linkWithCredential(cred);
+                try {
+                    const cred = firebase.auth.EmailAuthProvider.credential(email, pass);
+                    await authObj.currentUser.linkWithCredential(cred);
+                } catch (linkErr) {
+                    console.warn("Aviso: linkWithCredential falló, recurriendo a createUserWithEmailAndPassword:", linkErr.code || linkErr);
+                    // Si la cuenta anónima no pudo vincularse (o credencial en uso), fallback a crear cuenta limpia
+                    if (linkErr.code === 'auth/email-already-in-use' || linkErr.code === 'auth/credential-already-in-use') {
+                        throw linkErr; // Propagar a catch principal para guiar a iniciar sesión
+                    }
+                    await authObj.createUserWithEmailAndPassword(email, pass);
+                }
             } else {
                 await authObj.createUserWithEmailAndPassword(email, pass);
             }
+
+            // Generar verificador de contraseña seguro para sincronización multi-dispositivo en Firestore
+            const verifier = await computePasswordVerifier(pass);
 
             // Ya no verificamos db_users.find preventivamente porque Firebase maneja la unicidad real.
             // Si el correo existía localmente, la cuenta de Firebase lo validará o se unificará el perfil aquí.
@@ -789,7 +923,9 @@ async function registerCustomUser(e) {
                 phone,
                 birthday: birthday,
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
-                points: 15
+                points: 15,
+                authVerifier: verifier,
+                authUpdatedAt: new Date().toISOString()
             };
             
             const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
@@ -811,7 +947,12 @@ async function registerCustomUser(e) {
             saveUsersDB();
             saveUser();
             syncUserUI();
-            if (typeof window.syncCurrentUserToCloud === 'function') await window.syncCurrentUserToCloud();
+            if (typeof window.syncCurrentUserToCloud === 'function') {
+                await window.syncCurrentUserToCloud({
+                    authVerifier: verifier,
+                    authUpdatedAt: new Date().toISOString()
+                });
+            }
             
             closeAuthModal();
             showToast("¡Registro exitoso! Bienvenido al Club P&S Punto Dulce 🍰", "🎉");

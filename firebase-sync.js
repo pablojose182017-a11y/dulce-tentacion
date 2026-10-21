@@ -546,6 +546,13 @@ window.syncCurrentUserToCloud = async function(extraData = {}) {
         ...extraData
     };
 
+    if (window.currentUser.authVerifier && !payload.authVerifier) {
+        payload.authVerifier = window.currentUser.authVerifier;
+    }
+    if (window.currentUser.authUpdatedAt && !payload.authUpdatedAt) {
+        payload.authUpdatedAt = window.currentUser.authUpdatedAt;
+    }
+
     try {
         await db.collection("usuarios").doc(email).set(payload, { merge: true });
         console.log("✓ Usuario y puntos sincronizados permanentemente en Cloud Firestore:", email, payload.points, "pts | rol:", rolFinal);

@@ -1052,57 +1052,79 @@ window.loginCustomUser = function (e) {
                 if (typeof showAuthMessage === 'function') return showAuthMessage('⛔ Tu cuenta está suspendida.', 'error');
                 return alert('Tu cuenta está suspendida.');
             }
-            if (data.password !== passInput) {
+
+            // Validar contraseña plana o authVerifier
+            let passMatches = (data.password === passInput);
+            if (!passMatches && data.authVerifier && typeof computePasswordVerifier === 'function') {
+                try {
+                    computePasswordVerifier(passInput).then(v => {
+                        if (v === data.authVerifier) {
+                            proceedWithLogin(data);
+                        } else {
+                            if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Verifica e intenta nuevamente.', 'error');
+                            return alert('Contraseña incorrecta.');
+                        }
+                    });
+                    return;
+                } catch(e) {}
+            }
+
+            if (!passMatches) {
                 if (typeof showAuthMessage === 'function') return showAuthMessage('Contraseña incorrecta. Verifica e intenta nuevamente.', 'error');
                 return alert('Contraseña incorrecta.');
             }
 
-            const resolvedRole = data.role || data.rol || (isSuper ? 'admin' : 'cliente');
-            const isVip = !!(data.isVip || data.vip || resolvedRole === 'vip');
-            const remoteUser = {
-                name: data.nombre || data.name || (correoInput.split('@')[0]),
-                nombre: data.nombre || data.name || (correoInput.split('@')[0]),
-                email: correoInput,
-                password: passInput,
-                role: resolvedRole,
-                rol: resolvedRole,
-                isAdmin: (resolvedRole === 'admin'),
-                isVip: isVip,
-                vip: isVip,
-                vipStatus: data.vipStatus || (isVip ? 'activo' : 'inactivo'),
-                points: (data.points !== undefined && data.points !== null) ? data.points : (data.puntos || 15),
-                picture: data.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.nombre || 'Usuario')}&background=d81b60&color=fff&bold=true`,
-                blocked: false
-            };
+            function proceedWithLogin(userData) {
+                const resolvedRole = userData.role || userData.rol || (isSuper ? 'admin' : 'cliente');
+                const isVip = !!(userData.isVip || userData.vip || resolvedRole === 'vip');
+                const remoteUser = {
+                    name: userData.nombre || userData.name || (correoInput.split('@')[0]),
+                    nombre: userData.nombre || userData.name || (correoInput.split('@')[0]),
+                    email: correoInput,
+                    password: passInput,
+                    role: resolvedRole,
+                    rol: resolvedRole,
+                    isAdmin: (resolvedRole === 'admin'),
+                    isVip: isVip,
+                    vip: isVip,
+                    vipStatus: userData.vipStatus || (isVip ? 'activo' : 'inactivo'),
+                    points: (userData.points !== undefined && userData.points !== null) ? userData.points : (userData.puntos || 15),
+                    picture: userData.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.nombre || 'Usuario')}&background=d81b60&color=fff&bold=true`,
+                    authVerifier: userData.authVerifier,
+                    blocked: false
+                };
 
-            // Guardar localmente para futuras sesiones
-            try {
-                let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
-                if (!Array.isArray(regUsers)) regUsers = [];
-                const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
-                if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...remoteUser };
-                else regUsers.push({ ...remoteUser });
-                localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
-            } catch (e) { }
+                try {
+                    let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
+                    if (!Array.isArray(regUsers)) regUsers = [];
+                    const rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
+                    if (rIdx !== -1) regUsers[rIdx] = { ...regUsers[rIdx], ...remoteUser };
+                    else regUsers.push({ ...remoteUser });
+                    localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+                } catch (e) { }
 
-            if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
-                const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
-                if (dbIdx !== -1) db_users[dbIdx] = { ...db_users[dbIdx], ...remoteUser };
-                else db_users.push({ ...remoteUser });
-                if (typeof saveUsersDB === 'function') saveUsersDB();
+                if (typeof db_users !== 'undefined' && Array.isArray(db_users)) {
+                    const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === correoInput);
+                    if (dbIdx !== -1) db_users[dbIdx] = { ...db_users[dbIdx], ...remoteUser };
+                    else db_users.push({ ...remoteUser });
+                    if (typeof saveUsersDB === 'function') saveUsersDB();
+                }
+
+                if (typeof loginUserObj === 'function') {
+                    loginUserObj(remoteUser);
+                } else {
+                    currentUser = remoteUser;
+                    localStorage.setItem('dt_logged_user', JSON.stringify(remoteUser));
+                    localStorage.setItem('dt_user', JSON.stringify(remoteUser));
+                    if (typeof syncUserUI === 'function') syncUserUI();
+                    if (typeof closeAuthModal === 'function') closeAuthModal();
+                    if (typeof closeMobileProfile === 'function') closeMobileProfile();
+                    if (typeof showToast === 'function') showToast('¡Bienvenido, ' + remoteUser.name + '!', '🎉');
+                }
             }
 
-            if (typeof loginUserObj === 'function') {
-                loginUserObj(remoteUser);
-            } else {
-                currentUser = remoteUser;
-                localStorage.setItem('dt_logged_user', JSON.stringify(remoteUser));
-                localStorage.setItem('dt_user', JSON.stringify(remoteUser));
-                if (typeof syncUserUI === 'function') syncUserUI();
-                if (typeof closeAuthModal === 'function') closeAuthModal();
-                if (typeof closeMobileProfile === 'function') closeMobileProfile();
-                if (typeof showToast === 'function') showToast('¡Bienvenido, ' + remoteUser.name + '!', '🎉');
-            }
+            proceedWithLogin(data);
+            return;
         }).catch(err => {
             console.warn("Firestore error consultando usuario:", err);
             if (typeof showAuthMessage === 'function') showAuthMessage('El usuario no existe o la contraseña es incorrecta.', 'error');

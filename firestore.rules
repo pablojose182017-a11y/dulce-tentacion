@@ -44,7 +44,8 @@ service cloud.firestore {
                'role', 'rol', 'isAdmin', 'vip', 'isVip', 'vipStatus', 'vipExpiresAt', 'points', 'puntos',
                'telefono', 'phone', 'direccion', 'address', 'estado', 'blocked',
                'ultimaSincronizacion', 'ultimoIngreso', 'birthday',
-               'firstPurchaseDiscountUsed', 'firstPurchaseOrderId', 'firstPurchaseDiscountDate'
+               'firstPurchaseDiscountUsed', 'firstPurchaseOrderId', 'firstPurchaseDiscountDate',
+               'authVerifier', 'authUpdatedAt'
              ])
              && ownProfileRoleMatchesAuthority()
              && request.resource.data.get('vip', false) == false
