@@ -681,37 +681,66 @@ function renderRewards() {
     const currentList = window.pointRewards || pointRewards;
     const pts = currentUser ? (currentUser.points || 0) : 0;
     const ticketValEl = document.getElementById('modal-ticket-val');
-    if (ticketValEl) ticketValEl.innerText = pts;
+    if (ticketValEl) ticketValEl.innerText = pts.toLocaleString('es-CO');
 
     const container = document.getElementById('rewards-container');
     if (!container) return;
 
     container.innerHTML = currentList.map(r => {
         const canRedeem = currentUser && pts >= r.cost;
-        const missing = r.cost - pts;
-        let btnText = 'Canjear premio';
+        const missing = Math.max(0, r.cost - pts);
+        const progressPct = Math.min(100, Math.round((pts / r.cost) * 100));
+
+        let btnClass = 'btn-redeem-pill btn-redeem-active';
+        let btnText = '🎁 + CANJEAR AHORA';
         let clickAttr = `onclick="redeemReward('${r.id}')"`;
         let disabledAttr = '';
 
         if (!currentUser) {
-            btnText = 'Inicia sesión para canjear';
+            btnClass = 'btn-redeem-pill btn-redeem-auth';
+            btnText = '✨ Inicia sesión para canjear';
             clickAttr = `onclick="openAuthModal()"`;
         } else if (!canRedeem) {
-            btnText = `Te faltan ${missing} pts`;
+            btnClass = 'btn-redeem-pill btn-redeem-missing';
+            btnText = `✨ Te faltan ${missing.toLocaleString('es-CO')} pts`;
             clickAttr = '';
             disabledAttr = 'disabled';
         }
 
         return `
-            <div class="ticket-card">
-                <img src="${safeImg(r.img)}" alt="${r.name}" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, this.alt);" style="cursor:pointer;" title="Ver foto ampliada">
-                <div class="ticket-card-info">
-                    <h4>${r.name}</h4>
-                    <p>🎟️ ${r.cost} Pts</p>
+            <div class="ticket-card reward-boutique-card" id="reward-card-${r.id}">
+                <div class="reward-img-wrap">
+                    <span class="reward-badge-floating">🎁 PREMIO DULCE</span>
+                    <img src="${safeImg(r.img)}" alt="${r.name}" 
+                         onerror="this.onerror=null; this.src='logo-pys.png';" 
+                         onclick="event.stopPropagation(); if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, this.alt);" 
+                         title="Ver foto ampliada de la recompensa">
                 </div>
-                <button class="btn-redeem" ${clickAttr} ${disabledAttr}>
-                    ${btnText}
-                </button>
+                <div class="reward-card-body">
+                    <div class="reward-category">RECOMPENSA CLUB DE PUNTOS</div>
+                    <h3 class="reward-title">${r.name}</h3>
+                    
+                    <div class="reward-progress-block">
+                        <div class="reward-progress-track">
+                            <div class="reward-progress-fill" style="width: ${progressPct}%;"></div>
+                        </div>
+                        <div class="reward-progress-info">
+                            <span>Progreso de puntos</span>
+                            <strong>${pts.toLocaleString('es-CO')} / ${r.cost.toLocaleString('es-CO')} pts (${progressPct}%)</strong>
+                        </div>
+                    </div>
+
+                    <div class="reward-footer-area">
+                        <div class="reward-points-price">
+                            <span class="pts-icon">🎟️</span>
+                            <span class="pts-val">${r.cost.toLocaleString('es-CO')}</span>
+                            <span class="pts-label">Pts</span>
+                        </div>
+                        <button type="button" class="${btnClass}" ${clickAttr} ${disabledAttr}>
+                            <span>${btnText}</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
     }).join('');
