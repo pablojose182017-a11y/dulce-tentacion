@@ -6855,23 +6855,3 @@ window.openAdminPanelFlow = async function(el) {
 
 
 
-// ============================================================================
-// FASE 2: CONTROL DE FEATURE FLAG PARA MEMBRESÍA VIP ANTIGUA
-// ============================================================================
-
-/**
- * Controla la visibilidad del banner de promoción de Membresía VIP antigua
- * basado en el feature flag PDFeatureFlags.SHOW_LEGACY_VIP_PROMOTION.
- * 
- * Se llama automáticamente cuando se abre la sección club-puntos.
- * Mantiene intactos:
- * - El modal vipPromoModal (puede ser abierto por admin o usuarios con vip=true)
- * - Los datos históricos de usuarios con vip=true
- * - La lectura de vip status y aplicación de descuentos
- */
-window.renderRewards = function() {
-  if (typeof originalRenderRewards === 'function') {
-    originalRenderRewards.apply(this, arguments);
-  }
-};
-
