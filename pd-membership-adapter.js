@@ -174,10 +174,8 @@ window.PDMembershipAdapter = {
       ];
     } else if (membershipState.membershipType === 'legacy_vip') {
       benefits = [
-        `${membershipState.discountPercent}% de descuento en todas tus compras`,
         'Acumula puntos con cada pedido',
-        'Despacho prioritario en cocina',
-        'Sorpresas en tu cumpleaños'
+        'Acceso al Club de Puntos y Recompensas'
       ];
     }
 

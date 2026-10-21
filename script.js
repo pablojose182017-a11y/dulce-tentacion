@@ -1812,10 +1812,6 @@ window.saveVipPriceOnly = function () {
     try { localStorage.setItem('vipConfig_precioMensual', vipPrice); } catch (lsErr) { console.warn('localStorage error:', lsErr); }
     if (!window.vipConfig) window.vipConfig = {};
     window.vipConfig.precioMensual = vipPrice;
-    const promoEl = document.getElementById('uiVipPricePromo');
-    const termsEl = document.getElementById('uiVipPriceTerms');
-    if (promoEl) promoEl.innerText = formatted;
-    if (termsEl) termsEl.innerText = formatted;
 
     // 2. BLOQUEAR UI
     input.disabled = true;
@@ -3661,18 +3657,7 @@ function syncUserUI() {
         // Control de visibilidad y acción del botón / badge VIP en la barra
         const vipBadge = document.getElementById('navVipBadge') || document.getElementById('vip-header-badge') || document.querySelector('.btn-vip-badge');
         if (vipBadge) {
-            if (isVip) {
-                vipBadge.style.display = 'inline-flex';
-                vipBadge.onclick = (e) => {
-                    if (e && e.preventDefault) e.preventDefault();
-                    if (typeof window.openVipModal === 'function') window.openVipModal(e);
-                    else if (typeof window.openVipTermsModal === 'function') window.openVipTermsModal(e);
-                    else if (typeof window.openPointsModal === 'function') window.openPointsModal();
-                    else if (typeof showSection === 'function') showSection('vip');
-                };
-            } else {
-                vipBadge.style.display = 'none';
-            }
+            vipBadge.style.display = 'none';
         }
 
         if (pill) {
@@ -3768,43 +3753,10 @@ function syncUserUI() {
             }
         }
 
-        // FASE 2: Ocultar tarjeta de Membresía VIP Activa si el flag SHOW_LEGACY_VIP_PROMOTION está deshabilitado
-        const showLegacyVipPromo = (typeof window.PDFeatureFlags !== 'undefined') 
-            ? window.PDFeatureFlags.SHOW_LEGACY_VIP_PROMOTION 
-            : false;
-        
-        const vipHtml = (isVip && showLegacyVipPromo)
-            ? `<div class="vip-member-card" onclick="event.stopPropagation(); const menu = document.getElementById('user-dropdown-menu'); if (menu) { menu.classList.remove('active', 'open'); } window.showVipStatusModal();" 
-                    style="background: linear-gradient(135deg, #FFF8E7 0%, #F5E1B5 100%); 
-                           border: 1px solid #C58B2B; 
-                           border-radius: 12px; 
-                           padding: 10px 14px; 
-                           margin: 6px 0; 
-                           cursor: pointer; 
-                           display: flex; 
-                           align-items: center; 
-                           justify-content: space-between; 
-                           gap: 10px;
-                           box-shadow: 0 3px 10px rgba(197, 139, 43, 0.15); 
-                           transition: transform 0.2s ease, box-shadow 0.2s ease;"
-                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 14px rgba(197, 139, 43, 0.22)';"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 10px rgba(197, 139, 43, 0.15)';">
-                    <div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; min-width:0;">
-                        <span style="font-size: 0.92rem; color: #5C4108; font-weight: 800; letter-spacing: 0.2px; display: flex; align-items: center; gap: 5px; line-height: 1.2;">
-                            👑 Membresía VIP Activa
-                        </span>
-                        <span style="font-size: 0.76rem; color: #8A6D05; font-weight: 600; margin-top: 2px;">
-                            Ver Beneficios y Vigencia
-                        </span>
-                    </div>
-                    <span style="font-size: 0.85rem; color: #8A6D05; font-weight: 800; padding: 4px 8px; background: rgba(255,255,255,0.6); border-radius: 8px; border: 1px solid rgba(197, 139, 43, 0.3); flex-shrink: 0;">➔</span>
-               </div>`
-            : ''; // Oculta el botón VIP upgrade también si el flag está deshabilitado
-
         const dArea = document.getElementById('vip-dropdown-area-desk');
-        if (dArea) dArea.innerHTML = vipHtml;
+        if (dArea) dArea.innerHTML = '';
         const mArea = document.getElementById('vip-dropdown-area-mob');
-        if (mArea) mArea.innerHTML = vipHtml;
+        if (mArea) mArea.innerHTML = '';
         const on = document.getElementById('orderName'); if (on && !on.value) on.value = currentUser.name;
         if (hIncentive) hIncentive.style.display = 'none';
         if (cIncentive) cIncentive.style.display = 'none';
@@ -4831,11 +4783,7 @@ function updateCart() {
 
     const cartVipPriority = document.getElementById('cart-vip-priority');
     if (cartVipPriority) {
-        if (currentUser && currentUser.vip) {
-            cartVipPriority.style.display = 'flex';
-        } else {
-            cartVipPriority.style.display = 'none';
-        }
+        cartVipPriority.style.display = 'none';
     }
 
     const depositRow = document.getElementById('eventDepositRow');
@@ -6116,31 +6064,17 @@ window.addEventListener('resize', function () {
 })();
 
 function openVipModal(e) {
-    if (window.openVipTermsModal) {
-        window.openVipTermsModal(e);
-    } else {
-        const m = document.getElementById('vipPromoModal');
-        if (m) m.style.display = 'flex';
-        const dMenu = document.getElementById('user-dropdown-menu');
-        if (dMenu) dMenu.classList.remove('active');
-        if (typeof closeMobileProfile === 'function') closeMobileProfile();
-    }
+    // Membresía VIP retirada en producción
+    return;
 }
 
 function closeVipModal() {
     const m = document.getElementById('vipPromoModal');
-    if (m) m.style.display = 'none';
-    if (window.closeVipTermsModal) window.closeVipTermsModal();
+    if (m) m.remove();
 }
 
 function requestVipWhatsApp() {
-    const vipPhone = (typeof PHONE !== 'undefined' && PHONE) ? PHONE : '573229512693';
-    const user = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : {};
-    const msg = encodeURIComponent(
-        `¡Hola Punto Dulce! Quiero solicitar mi Membresía VIP para mi cuenta ${user.email || ''}.` +
-        ` 👑 Activar VIP Oro en P&S Punto Dulce para acceder al 5% de descuento y los beneficios exclusivos.`
-    );
-    window.open(`https://wa.me/${vipPhone}?text=${msg}`, '_blank');
+    return;
 }
 
 // ===== ASISTENTE DE TORTAS PERSONALIZADAS (WIZARD POR PASOS) =====
@@ -6838,95 +6772,8 @@ window.validateWizardDateNew = validateWizardDateNew;
 window.addCustomCakeToCartNew = addCustomCakeToCartNew;
 
 window.showVipStatusModal = function () {
-    if (!currentUser || (!currentUser.vip && !currentUser.isVip)) {
-        if (typeof window.openVipTermsModal === 'function') window.openVipTermsModal();
-        return;
-    }
-
-    if (!currentUser.vipEndDate) {
-        const now = new Date();
-        const endDate = new Date();
-        endDate.setDate(now.getDate() + 30);
-        currentUser.vipStartDate = now.toISOString();
-        currentUser.vipEndDate = endDate.toISOString();
-        saveUser();
-    }
-
-    const startDate = new Date(currentUser.vipStartDate || new Date());
-    const endDate = new Date(currentUser.vipEndDate);
-    const today = new Date();
-
-    const diffTime = endDate - today;
-    const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-
-    const formatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    const startStr = startDate.toLocaleDateString('es-CO', formatOptions);
-    const endStr = endDate.toLocaleDateString('es-CO', formatOptions);
-
-    let modal = document.getElementById('vip-status-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'vip-status-modal';
-        modal.className = 'modal-overlay';
-
-        // Estilos del Overlay Fijo
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100vw';
-        modal.style.height = '100vh';
-        modal.style.height = '100dvh';
-        modal.style.backgroundColor = 'rgba(0, 0, 0, 0.65)';
-        modal.style.backdropFilter = 'blur(3px)';
-        modal.style.display = 'none';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.zIndex = '100001';
-        modal.style.padding = '16px';
-        modal.style.boxSizing = 'border-box';
-
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width:min(92vw, 420px); background:linear-gradient(135deg, #fffbeb, #fef3c7); border:2px solid #fbbf24; border-radius:16px; padding:24px; text-align:center; max-height:88vh; max-height:88dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-sizing:border-box;">
-                <h2 style="color:#b45309; margin-top:0; margin-bottom:8px; font-size:1.5rem;">👑 Tu Membresía VIP</h2>
-                <div style="background:#f59e0b; color:white; display:inline-block; padding:4px 12px; border-radius:20px; font-size:0.85rem; font-weight:bold; margin-bottom:16px;">
-                    <span id="vip-status-badge"></span>
-                </div>
-                
-                <div style="background:white; border-radius:12px; padding:16px; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,0.05); text-align:left; font-size:0.9rem; color:#451a03;">
-                    <p style="margin:0 0 8px 0;"><strong>Fecha de inicio:</strong> <span id="vip-start-date"></span></p>
-                    <p style="margin:0;"><strong>Próxima renovación:</strong> <span id="vip-end-date"></span></p>
-                </div>
-                
-                <h3 style="color:#b45309; font-size:1.1rem; margin-bottom:12px; text-align:left;">✨ Beneficios Exclusivos Activos</h3>
-                <ul style="text-align:left; list-style:none; padding:0; margin:0 0 24px 0; font-size:0.9rem; color:#78350f; display:flex; flex-direction:column; gap:10px;">
-                    <li style="display:flex; align-items:flex-start; gap:8px;">
-                        <span>🏷️</span> <div><strong>5% de Descuento Fijo</strong> en todas tus compras del carrito.</div>
-                    </li>
-                    <li style="display:flex; align-items:flex-start; gap:8px;">
-                        <span>🎂</span> <div><strong>8% de Descuento Especial</strong> durante el día de tu cumpleaños.</div>
-                    </li>
-                    <li style="display:flex; align-items:flex-start; gap:8px;">
-                        <span>⚡</span> <div><strong>Despacho Prioritario</strong> en cocina y armado de pedidos.</div>
-                    </li>
-                </ul>
-                
-                <button onclick="document.getElementById('vip-status-modal').style.display='none'" style="width:100%; padding:12px; border:none; border-radius:8px; background:#b45309; color:white; font-weight:bold; font-size:1rem; cursor:pointer; transition:background 0.2s;">
-                    Entendido / Cerrar
-                </button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.style.display = 'none';
-        });
-    }
-
-    document.getElementById('vip-status-badge').innerText = `Activa • ${daysLeft} días restantes`;
-    document.getElementById('vip-start-date').innerText = startStr;
-    document.getElementById('vip-end-date').innerText = endStr;
-
-    modal.style.display = 'flex';
+    const existing = document.getElementById('vip-status-modal');
+    if (existing) existing.remove();
 };
 
 // ===== LISTENER CLUB PUNTOS & VIP (SALTO INMEDIATO) =====

@@ -3293,35 +3293,6 @@
             transform: none;
         }
 
-        .vip-perks-banner {
-            background: #fff8f1;
-            border: 1.5px solid #fbd38d;
-            border-radius: 14px;
-            padding: 18px 22px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            color: #9a3412;
-            font-size: 0.92rem;
-            line-height: 1.5;
-        }
-
-        .vip-perks-banner .vip-perks-icon {
-            font-size: 2.2rem;
-            flex-shrink: 0;
-        }
-
-        .vip-perks-banner strong {
-            color: #7c2d12;
-            display: block;
-            margin-bottom: 2px;
-            font-size: 0.98rem;
-        }
-
-        .vip-perks-banner p {
-            margin: 0;
-        }
-
         /* --- ESTILOS PARA MIS PEDIDOS --- */
         .dropdown-link-item {
             padding: 8px 12px;

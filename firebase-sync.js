@@ -335,12 +335,6 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
             window.vipConfig.precioMensual = Number(data.precioMensual);
         }
     }
-    // Formatear el precio para inyectarlo en la UI
-    const formattedPrice = `$${window.vipConfig.precioMensual.toLocaleString('es-CO')} COP`;
-    const promoEl = document.getElementById('uiVipPricePromo');
-    const termsEl = document.getElementById('uiVipPriceTerms');
-    if (promoEl) promoEl.innerText = formattedPrice;
-    if (termsEl) termsEl.innerText = formattedPrice;
 }, (error) => {
     console.warn("No se pudo escuchar configuración VIP:", error);
 });
