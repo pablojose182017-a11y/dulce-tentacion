@@ -5254,17 +5254,19 @@ function setDeliveryType(type) {
         // Garantizar que el botón y la dirección del punto físico sean siempre exactos
         const mapsBtn = document.getElementById('btnStoreMapsLink');
         if (mapsBtn) {
-            mapsBtn.href = 'https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6';
-            mapsBtn.setAttribute('href', 'https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6');
+            mapsBtn.href = 'https://share.google/EZhVuOJxzg8UqMHrt';
+            mapsBtn.setAttribute('href', 'https://share.google/EZhVuOJxzg8UqMHrt');
+            mapsBtn.setAttribute('target', '_blank');
+            mapsBtn.setAttribute('rel', 'noopener noreferrer');
             mapsBtn.onclick = function (e) {
                 if (e && e.preventDefault) e.preventDefault();
-                window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');
+                window.open('https://share.google/EZhVuOJxzg8UqMHrt', '_blank');
                 return false;
             };
         }
         const pickupAddr = document.querySelector('#cartPickupDetails .pickup-address') || document.querySelector('#cartPickupDetails .pickup-store-address');
         if (pickupAddr) {
-            pickupAddr.innerText = '📍 Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta';
+            pickupAddr.innerText = '📍 Calle 10, Av. 7 #10-30, Br. Doña Nidia, Cúcuta';
         }
     }
 
@@ -5274,7 +5276,7 @@ window.setDeliveryType = setDeliveryType;
 
 function openStoreMaps(e) {
     if (e && e.preventDefault) e.preventDefault();
-    window.open('https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6', '_blank');
+    window.open('https://share.google/EZhVuOJxzg8UqMHrt', '_blank');
     return false;
 }
 window.openStoreMaps = openStoreMaps;
@@ -5966,7 +5968,7 @@ function sendOrder() {
         totalFormatted: finalTotal.toLocaleString('es-CO'),
         email: currentUser?.email || 'N/A',
         phone: currentUser?.phone || 'N/A',
-        address: (curDelivery === 'delivery' ? addr : '🏪 Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia, Cúcuta'),
+        address: (curDelivery === 'delivery' ? addr : '🏪 Panadería y Pastelería P&S Punto Dulce - Calle 10, Av. 7 #10-30, Br. Doña Nidia, Cúcuta'),
         deliveryType: curDelivery,
         deliveryCost: costoDomicilio,
         products: cart.map(i => `${i.quantity}x ${i.name}`).join(', '),
@@ -6062,8 +6064,9 @@ function sendOrder() {
     if (curDelivery === 'delivery') {
         msg += `${symAddress} *${addr}*\n`;
     } else {
-        msg += `${symPoint} *Calle 10 con Avenida 7 # 10 - 30, Barrio Doña Nidia*\n`;
-        msg += `${symMap} *https://maps.app.goo.gl/6pG6PHpUaV9F8NyZ6*\n`;
+        msg += `${symPoint} *Panadería y Pastelería P&S Punto Dulce*\n`;
+        msg += `📍 *Calle 10, Av. 7 #10-30, Br. Doña Nidia, Cúcuta*\n`;
+        msg += `${symMap} *https://share.google/EZhVuOJxzg8UqMHrt*\n`;
     }
     msg += `${symPay} *${selectedPay}*\n`;
     if (selectedPay === 'Efectivo contra entrega') {
