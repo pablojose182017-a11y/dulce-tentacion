@@ -200,7 +200,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (window.renderAdminNotifList) window.renderAdminNotifList();
     if (typeof window.checkRemoteUserSession === 'function') window.checkRemoteUserSession();
 
-    // ===== UTILITARIO: DRAG TO SCROLL (Clic sostenido para desplazamiento horizontal en PC) =====
+    // ===== UTILITARIO: DRAG TO SCROLL (Clic sostenido / Touch para desplazamiento horizontal rápido) =====
     window.enableDragToScroll = function (element) {
         if (!element || element.dataset.dragScrollInit) return;
         element.dataset.dragScrollInit = 'true';
@@ -209,38 +209,51 @@ window.addEventListener('DOMContentLoaded', () => {
         let startX = 0;
         let scrollStart = 0;
         let hasDragged = false;
-        const DRAG_THRESHOLD = 6;
+        const DRAG_THRESHOLD = 5;
 
-        element.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return; // Solo clic principal
+        const onStart = (pageX) => {
             isDown = true;
             hasDragged = false;
-            startX = e.pageX;
+            startX = pageX;
             scrollStart = element.scrollLeft;
             element.style.cursor = 'grabbing';
             element.style.userSelect = 'none';
+        };
+
+        const onMove = (pageX) => {
+            if (!isDown) return;
+            const diffX = pageX - startX;
+            if (Math.abs(diffX) > DRAG_THRESHOLD) {
+                hasDragged = true;
+            }
+            // Multiplicador ágil 1.35x para respuesta rápida y sin sensación de pesadez
+            element.scrollLeft = scrollStart - (diffX * 1.35);
+        };
+
+        const onEnd = () => {
+            if (!isDown) return;
+            isDown = false;
+            element.style.cursor = 'grab';
+            element.style.userSelect = '';
+            setTimeout(() => {
+                hasDragged = false;
+            }, 60);
+        };
+
+        element.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Solo clic principal
+            onStart(e.pageX);
         });
 
         window.addEventListener('mousemove', (e) => {
             if (!isDown) return;
-            const diffX = e.pageX - startX;
-            if (Math.abs(diffX) > DRAG_THRESHOLD) {
-                hasDragged = true;
-            }
-            element.scrollLeft = scrollStart - diffX;
+            onMove(e.pageX);
         });
 
-        window.addEventListener('mouseup', () => {
-            if (!isDown) return;
-            isDown = false;
-            element.style.cursor = '';
-            element.style.userSelect = '';
-            setTimeout(() => {
-                hasDragged = false;
-            }, 50);
-        });
+        window.addEventListener('mouseup', onEnd);
+        element.addEventListener('mouseleave', onEnd);
 
-        // Prevenir clics involuntarios en botones hijos tras un arrastre
+        // Prevenir clics involuntarios en botones hijos tras un arrastre real
         element.addEventListener('click', (e) => {
             if (hasDragged) {
                 e.preventDefault();
@@ -251,7 +264,7 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     window.initDragToScroll = function (selector) {
-        const sel = selector || '.cat-chip-scroll, .admin-tabs-nav, #admin-stock-filters-container, .orders-tabs';
+        const sel = selector || '.cat-chip-scroll, .nosotros-chip-scroll, .admin-tabs-nav, #admin-stock-filters-container, .orders-tabs';
         document.querySelectorAll(sel).forEach(window.enableDragToScroll);
     };
 
@@ -345,6 +358,9 @@ function showSection(id, element) {
         el.classList.add('active');
         if (id === 'club-puntos' && typeof renderRewards === 'function') {
             renderRewards();
+        }
+        if (id === 'nosotros' && typeof window.switchNosotrosTab === 'function') {
+            window.switchNosotrosTab('quienes-somos');
         }
     }
     if (element && element.classList && element.classList.contains('nav-link')) {
@@ -7528,6 +7544,86 @@ window.openAdminPanelFlow = async function(el) {
         const validTabs = ['pedidos', 'productos', 'membresias', 'contabilidad', 'usuarios', 'costos'];
         const targetTab = (lastTab && validTabs.includes(lastTab)) ? lastTab : 'pedidos';
         cambiarPestanaAdmin(targetTab);
+    }
+};
+
+// ==========================================
+// SECCIÓN NOSOTROS: SUB-PESTAÑAS BOUTIQUE & FAQ
+// ==========================================
+window.switchNosotrosTab = function(tabId) {
+    const validTabs = ['quienes-somos', 'faq', 'contacto', 'politicas'];
+    const activeTab = validTabs.includes(tabId) ? tabId : 'quienes-somos';
+
+    let activeChip = null;
+
+    // Sincronizar botones de píldoras
+    const chips = document.querySelectorAll('.nos-chip');
+    chips.forEach(chip => {
+        const matches = chip.getAttribute('data-nos-tab') === activeTab;
+        if (matches) {
+            chip.classList.add('active');
+            chip.setAttribute('aria-selected', 'true');
+            activeChip = chip;
+        } else {
+            chip.classList.remove('active');
+            chip.setAttribute('aria-selected', 'false');
+        }
+    });
+
+    if (activeChip && typeof activeChip.scrollIntoView === 'function') {
+        activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    // Sincronizar paneles con fadeIn suave
+    const panels = document.querySelectorAll('.nos-tab-panel');
+    panels.forEach(panel => {
+        if (panel.id === `nos-panel-${activeTab}`) {
+            panel.classList.add('active');
+        } else {
+            panel.classList.remove('active');
+        }
+    });
+
+    if (typeof window.initDragToScroll === 'function') {
+        window.initDragToScroll('.nosotros-chip-scroll');
+    }
+};
+
+window.toggleFaqItem = function(buttonEl) {
+    if (!buttonEl) return;
+    const item = buttonEl.closest('.faq-item');
+    if (!item) return;
+
+    const isOpen = item.classList.contains('active');
+    const answerPanel = item.querySelector('.faq-answer-panel');
+    const toggleIcon = buttonEl.querySelector('.faq-toggle-icon');
+
+    // Cerrar otros acordeones para mantener lectura limpia y ejecutiva
+    const allItems = document.querySelectorAll('.faq-item');
+    allItems.forEach(otherItem => {
+        if (otherItem !== item && otherItem.classList.contains('active')) {
+            otherItem.classList.remove('active');
+            const otherBtn = otherItem.querySelector('.faq-question-btn');
+            const otherPanel = otherItem.querySelector('.faq-answer-panel');
+            const otherIcon = otherItem.querySelector('.faq-toggle-icon');
+            if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+            if (otherPanel) otherPanel.style.maxHeight = null;
+            if (otherIcon) otherIcon.textContent = '+';
+        }
+    });
+
+    if (isOpen) {
+        item.classList.remove('active');
+        buttonEl.setAttribute('aria-expanded', 'false');
+        if (answerPanel) answerPanel.style.maxHeight = null;
+        if (toggleIcon) toggleIcon.textContent = '+';
+    } else {
+        item.classList.add('active');
+        buttonEl.setAttribute('aria-expanded', 'true');
+        if (answerPanel) {
+            answerPanel.style.maxHeight = (answerPanel.scrollHeight + 30) + 'px';
+        }
+        if (toggleIcon) toggleIcon.textContent = '−';
     }
 };
 

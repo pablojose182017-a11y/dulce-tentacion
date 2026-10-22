@@ -9760,8 +9760,676 @@ section#nosotros h2 em,
     font-size: 0.98rem !important;
 }
 
+/* ==========================================================================
+   SECCIÓN NOSOTROS - CENTRO CORPORATIVO & SUB-PESTAÑAS BOUTIQUE
+   ========================================================================== */
+.nosotros-tabs-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    width: 100%;
+}
 
+.nosotros-chip-scroll {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 8px 16px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x !important;
+    max-width: 100%;
+    user-select: none !important;
+    cursor: grab;
+}
 
+.nosotros-chip-scroll::-webkit-scrollbar {
+    display: none !important;
+}
 
+@media (max-width: 768px) {
+    .nosotros-tabs-wrapper {
+        justify-content: flex-start !important;
+        margin-left: -12px;
+        margin-right: -12px;
+        width: calc(100% + 24px);
+    }
+    .nosotros-chip-scroll {
+        justify-content: flex-start !important;
+        padding: 6px 16px !important;
+        width: 100%;
+    }
+}
 
+.nos-chip {
+    flex: 0 0 auto !important;
+    background: #FFFFFF !important;
+    border: 1px solid #EAE2D7 !important;
+    color: #4A3A31 !important;
+    border-radius: 50px !important;
+    padding: 9px 20px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
 
+.nos-chip:hover:not(.active) {
+    border-color: #C58B2B !important;
+    color: #C58B2B !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.12) !important;
+}
+
+.nos-chip.active {
+    background: #2C1E18 !important;
+    color: #FFFFFF !important;
+    border-color: #C58B2B !important;
+    box-shadow: 0 4px 14px rgba(44, 30, 24, 0.25) !important;
+}
+
+.nos-tab-panel {
+    display: none;
+    animation: nosFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.nos-tab-panel.active {
+    display: block;
+}
+
+@keyframes nosFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Acordeón FAQ Boutique */
+.faq-accordion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.faq-item {
+    background: #FFFFFF;
+    border: 1px solid rgba(197, 139, 43, 0.25);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(44, 30, 24, 0.04);
+}
+
+.faq-item:hover {
+    border-color: rgba(197, 139, 43, 0.5);
+    box-shadow: 0 4px 14px rgba(197, 139, 43, 0.08);
+}
+
+.faq-item.open {
+    border-color: #C58B2B;
+    box-shadow: 0 6px 18px rgba(197, 139, 43, 0.12);
+}
+
+.faq-question-btn {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 16px 20px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #2C1E18;
+    transition: background 0.2s ease, color 0.2s ease;
+    gap: 14px;
+}
+
+.faq-question-btn:hover {
+    background: #FFFDF9;
+    color: #9A6B1F;
+}
+
+.faq-toggle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #FAF5EE;
+    color: #C58B2B;
+    font-size: 1.1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+.faq-item.open .faq-toggle-icon {
+    background: #2C1E18;
+    color: #FFFFFF;
+    transform: rotate(45deg);
+}
+
+.faq-answer-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #FFFEFC;
+    border-top: 1px solid transparent;
+}
+
+.faq-item.open .faq-answer-panel {
+    border-top: 1px solid rgba(197, 139, 43, 0.15);
+}
+
+.faq-answer-content {
+    padding: 16px 20px 20px 20px;
+    font-size: 0.94rem;
+    line-height: 1.65;
+    color: #4A3A31;
+}
+
+.faq-gps-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 9px 18px;
+    background: linear-gradient(135deg, #FFFDF9 0%, #F9F1E4 100%);
+    border: 1.5px solid #C58B2B;
+    border-radius: 50px;
+    color: #9A6B1F;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 3px 10px rgba(197, 139, 43, 0.12);
+}
+
+.faq-gps-btn:hover {
+    background: #2C1E18;
+    border-color: #2C1E18;
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(44, 30, 24, 0.2);
+}
+
+/* Tarjetas Ejecutivas de Contacto */
+.contacto-grid-boutique {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.contacto-card-boutique {
+    background: #FFFFFF;
+    border: 1px solid rgba(197, 139, 43, 0.25);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 3px 10px rgba(44, 30, 24, 0.04);
+    transition: all 0.25s ease;
+}
+
+.contacto-card-boutique:hover {
+    border-color: #C58B2B;
+    box-shadow: 0 8px 24px rgba(197, 139, 43, 0.15);
+    transform: translateY(-2px);
+}
+
+.contacto-card-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    display: inline-block;
+}
+
+.contacto-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2C1E18;
+    margin-bottom: 8px;
+}
+
+.contacto-card-desc {
+    font-size: 0.92rem;
+    color: #5C4B40;
+    line-height: 1.6;
+    margin-bottom: 18px;
+    flex-grow: 1;
+}
+
+.btn-contacto-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s ease;
+}
+
+.btn-contacto-wa {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+}
+
+.btn-contacto-wa:hover {
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.4);
+    transform: translateY(-2px);
+    color: #FFFFFF;
+}
+
+.btn-contacto-gold {
+    background: linear-gradient(135deg, #FFFDF9 0%, #F9F1E4 100%);
+    border: 1.5px solid #C58B2B;
+    color: #9A6B1F;
+    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.12);
+}
+
+.btn-contacto-gold:hover {
+    background: #2C1E18;
+    border-color: #2C1E18;
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(44, 30, 24, 0.2);
+}
+
+/* Tarjetas Institucionales de Políticas */
+.politicas-grid-boutique {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.politica-card-boutique {
+    background: #FFFFFF;
+    border: 1px solid rgba(197, 139, 43, 0.25);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 3px 10px rgba(44, 30, 24, 0.04);
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.politica-card-boutique:hover {
+    border-color: #C58B2B;
+    box-shadow: 0 8px 24px rgba(197, 139, 43, 0.12);
+    transform: translateY(-2px);
+}
+
+.politica-card-boutique::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #C58B2B, #2C1E18);
+}
+
+.politica-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.politica-card-icon {
+    font-size: 1.6rem;
+}
+
+.politica-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2C1E18;
+    line-height: 1.35;
+}
+
+.politica-card-body {
+    font-size: 0.91rem;
+    color: #5C4B40;
+    line-height: 1.65;
+}
+
+/* ==========================================================================
+   QUIÉNES SOMOS - REDISEÑO BOUTIQUE EJECUTIVO
+   ========================================================================== */
+.about-manifesto-box {
+    margin-bottom: 22px;
+}
+
+.about-quote-card {
+    background: #FFFCF7;
+    border-left: 4px solid #C58B2B;
+    border-top: 1px solid rgba(197, 139, 43, 0.22);
+    border-right: 1px solid rgba(197, 139, 43, 0.22);
+    border-bottom: 1px solid rgba(197, 139, 43, 0.22);
+    border-radius: 0 16px 16px 0;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 14px rgba(197, 139, 43, 0.06);
+}
+
+.about-quote-card p {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.08rem;
+    line-height: 1.7;
+    color: #2C1E18;
+    margin: 0;
+    font-weight: 500;
+}
+
+.about-quote-card strong {
+    color: #9A6B1F;
+    font-weight: 700;
+}
+
+.about-sublead-text {
+    font-size: 0.98rem;
+    line-height: 1.68;
+    color: #5C4B40;
+    margin: 0 0 20px 0;
+}
+
+/* Cintilla de 3 Sellos de Respaldo */
+.about-seals-ribbon {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 18px 0 28px 0;
+}
+
+.about-seal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #FFFFFF, #FAF5EE);
+    border: 1px solid rgba(197, 139, 43, 0.28);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(44, 30, 24, 0.04);
+    transition: all 0.25s ease;
+}
+
+.about-seal-item:hover {
+    border-color: #C58B2B;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(197, 139, 43, 0.12);
+}
+
+.about-seal-icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #2C1E18;
+    color: #C58B2B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(44, 30, 24, 0.25);
+}
+
+.about-seal-text {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #2C1E18;
+    line-height: 1.35;
+}
+
+/* Tarjetas Misión & Visión Boutique */
+.mv-boutique-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 28px 0;
+}
+
+.mv-boutique-card {
+    border-radius: 20px;
+    padding: 26px 24px;
+    border: 1px solid rgba(197, 139, 43, 0.35);
+    box-shadow: 0 6px 20px rgba(44, 30, 24, 0.05);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.mv-boutique-card.mission-card {
+    background: linear-gradient(135deg, #FFFDFB 0%, #FFF5F7 100%);
+}
+
+.mv-boutique-card.vision-card {
+    background: linear-gradient(135deg, #FFFDFB 0%, #FAF4E8 100%);
+}
+
+.mv-boutique-card:hover {
+    transform: translateY(-3px);
+    border-color: #C58B2B;
+    box-shadow: 0 10px 28px rgba(197, 139, 43, 0.16);
+}
+
+.mv-card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.mv-medallion {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #C58B2B;
+    background: #2C1E18;
+    color: #C58B2B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(44, 30, 24, 0.22);
+}
+
+.mv-boutique-card h3 {
+    margin: 0;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2C1E18;
+    letter-spacing: -0.01em;
+}
+
+.mv-boutique-card p {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.68;
+    color: #4A3A31;
+}
+
+/* 3 Pilares Corporativos */
+.pillars-boutique-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.pillar-boutique-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(197, 139, 43, 0.25);
+    border-top: 3px solid #C58B2B;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(44, 30, 24, 0.04);
+    transition: all 0.25s ease;
+}
+
+.pillar-boutique-card:hover {
+    border-color: #C58B2B;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(197, 139, 43, 0.12);
+}
+
+.pillar-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.pillar-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #FAF5EE;
+    border: 1px solid rgba(197, 139, 43, 0.3);
+    color: #C58B2B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pillar-header h4 {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: #2C1E18;
+}
+
+.pillar-boutique-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #5C4B40;
+}
+
+/* Bloque Inferior: Visítanos o Pide Domicilio Boutique */
+.visit-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.visit-info-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(197, 139, 43, 0.28);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 3px 12px rgba(44, 30, 24, 0.04);
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.visit-info-card:hover {
+    border-color: #C58B2B;
+    box-shadow: 0 8px 24px rgba(197, 139, 43, 0.12);
+    transform: translateY(-2px);
+}
+
+.visit-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.visit-icon-circle {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #2C1E18;
+    color: #C58B2B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid rgba(197, 139, 43, 0.4);
+    box-shadow: 0 2px 6px rgba(44, 30, 24, 0.18);
+}
+
+.visit-card-head h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2C1E18;
+}
+
+.visit-card-content {
+    font-size: 0.92rem;
+    line-height: 1.65;
+    color: #5C4B40;
+    flex-grow: 1;
+}
+
+.visit-badge-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #FAF5EE;
+    border: 1px solid rgba(197, 139, 43, 0.3);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #9A6B1F;
+    margin-bottom: 8px;
+}
+
+.btn-gps-joya {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #2C1E18 0%, #1A100B 100%);
+    border: 1.5px solid #C58B2B;
+    border-radius: 12px;
+    color: #FFFFFF !important;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(44, 30, 24, 0.28);
+    transition: all 0.25s ease;
+}
+
+.btn-gps-joya svg {
+    color: #C58B2B;
+    flex-shrink: 0;
+}
+
+.btn-gps-joya:hover {
+    background: linear-gradient(135deg, #3D291F 0%, #2C1E18 100%);
+    border-color: #E6B04C;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(197, 139, 43, 0.32);
+}
