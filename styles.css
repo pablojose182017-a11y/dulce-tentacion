@@ -1859,7 +1859,9 @@
             border: 1.5px solid rgba(197, 139, 43, 0.45) !important;
             z-index: 1050 !important;
             max-height: 90vh !important;
+            max-height: 90dvh !important;
             overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
             scrollbar-width: none !important; /* Firefox */
             -ms-overflow-style: none !important; /* IE y Edge */
             box-sizing: border-box !important;
@@ -3572,7 +3574,7 @@
         #rewards-container.rewards-grid,
         #rewards-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
             gap: 26px;
             margin-bottom: 28px;
             align-items: stretch;
@@ -9973,7 +9975,7 @@ section#nosotros h2 em,
 /* Tarjetas Ejecutivas de Contacto */
 .contacto-grid-boutique {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: 20px;
     margin-top: 20px;
 }
@@ -10063,7 +10065,7 @@ section#nosotros h2 em,
 /* Tarjetas Institucionales de Políticas */
 .politicas-grid-boutique {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: 20px;
     margin-top: 20px;
 }
@@ -10208,7 +10210,7 @@ section#nosotros h2 em,
 /* Tarjetas Misión & Visión Boutique */
 .mv-boutique-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
     gap: 20px;
     margin: 28px 0;
 }
@@ -10335,7 +10337,7 @@ section#nosotros h2 em,
 /* Bloque Inferior: Visítanos o Pide Domicilio Boutique */
 .visit-info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: 18px;
     margin-top: 20px;
 }
@@ -10432,4 +10434,13 @@ section#nosotros h2 em,
     border-color: #E6B04C;
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(197, 139, 43, 0.32);
+}
+
+@media (max-width: 360px) {
+    .contacto-card-boutique,
+    .politica-card-boutique,
+    .visit-info-card,
+    .mv-boutique-card {
+        padding: 16px 14px !important;
+    }
 }
