@@ -297,8 +297,16 @@ function showSection(id, element) {
                 ? window.SUPER_ADMINS.includes(normEmail)
                 : (normEmail === 'pablojose182017@gmail.com' || normEmail === 'dulcestentaciones2004@gmail.com')
         ) : false;
-        const isAdmin = isSuper || (currentUser?.role === 'admin') || (currentUser?.rol === 'admin') || (currentUser?.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser?.email));
-        const isWorker = !isSuper && !isAdmin && ((currentUser?.role === 'trabajador') || (currentUser?.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser?.email)));
+        const isAdmin = isSuper
+            || currentUser?.role === 'admin'
+            || currentUser?.rol === 'admin'
+            || currentUser?.isAdmin === true
+            || (Boolean(normEmail) && (typeof adminEmails !== 'undefined') && adminEmails.some(e => (e || '').toLowerCase().trim() === normEmail));
+        const isWorker = !isSuper && !isAdmin && (
+            currentUser?.role === 'trabajador'
+            || currentUser?.rol === 'trabajador'
+            || (Boolean(normEmail) && (typeof workerEmails !== 'undefined') && workerEmails.some(e => (e || '').toLowerCase().trim() === normEmail))
+        );
         if (!currentUser || (!isAdmin && !isWorker)) {
             id = 'inicio';
         }
@@ -1166,19 +1174,26 @@ async function registerCustomUser(e) {
                 birthday: birthday,
                 picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=d81b60&color=fff&bold=true`,
                 points: 15,
+                role: 'cliente',
+                rol: 'cliente',
+                isAdmin: false,
                 authVerifier: verifier,
                 authUpdatedAt: new Date().toISOString()
             };
             
             const dbIdx = db_users.findIndex(u => u && u.email && u.email.toLowerCase().trim() === email);
             if (dbIdx !== -1) {
-                // Preservar historial o rol legacy seguro si existía localmente, pero limpiando password
+                // Preservar historial o puntos si existía localmente, pero limpiando password
                 const legacy = db_users[dbIdx];
                 newUser.points = (legacy.points !== undefined && legacy.points !== null) ? legacy.points : 15;
-                if (legacy.role === 'admin' && !SUPER_ADMINS.includes(email)) {
-                    // No transferir privilegios de admin local automáticamente a cuentas nuevas de Firebase
+                if ((legacy.role === 'admin' || legacy.role === 'trabajador') && !SUPER_ADMINS.includes(email)) {
+                    // No transferir privilegios administrativos o de trabajador automáticamente a cuentas nuevas
+                    newUser.role = 'cliente';
+                    newUser.rol = 'cliente';
+                    newUser.isAdmin = false;
                 } else {
                     newUser.role = legacy.role || 'cliente';
+                    newUser.rol = newUser.role;
                 }
                 db_users[dbIdx] = newUser;
             } else {
@@ -4165,8 +4180,22 @@ function logoutUser(e) {
     if (adminNotifDropdown) adminNotifDropdown.style.display = 'none';
     const deskBtn = document.getElementById('desk-admin-btn');
     const mobBtn = document.getElementById('mob-admin-btn');
-    if (deskBtn) deskBtn.style.display = 'none';
-    if (mobBtn) mobBtn.style.display = 'none';
+    if (deskBtn) {
+        deskBtn.style.display = 'none';
+        deskBtn.remove();
+    }
+    if (mobBtn) {
+        mobBtn.style.display = 'none';
+        mobBtn.remove();
+    }
+    const deskKitchenBtn = document.getElementById('desk-kitchen-btn');
+    const mobKitchenBtn = document.getElementById('mob-kitchen-btn');
+    if (deskKitchenBtn) deskKitchenBtn.remove();
+    if (mobKitchenBtn) mobKitchenBtn.remove();
+    const deskSlot = document.getElementById('desktop-profile-actions-slot');
+    if (deskSlot) deskSlot.innerHTML = '';
+    const mobSlot = document.getElementById('mobile-profile-actions-slot');
+    if (mobSlot) mobSlot.innerHTML = '';
 
     // Ocultar explícitamente el badge / botón VIP
     const vipBadge = document.getElementById('navVipBadge') || document.getElementById('vip-header-badge') || document.querySelector('.btn-vip-badge');
@@ -4372,8 +4401,16 @@ function syncUserUI() {
         const isSuper = (typeof window.SUPER_ADMINS !== 'undefined')
             ? window.SUPER_ADMINS.includes(normEmail)
             : (normEmail === 'pablojose182017@gmail.com' || normEmail === 'dulcestentaciones2004@gmail.com');
-        const isAdmin = isSuper || (currentUser.role === 'admin') || (currentUser.rol === 'admin') || (currentUser.isAdmin === true) || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
-        const isWorker = !isSuper && !isAdmin && ((currentUser.role === 'trabajador') || (currentUser.rol === 'trabajador') || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email)));
+        const isAdmin = isSuper
+            || currentUser.role === 'admin'
+            || currentUser.rol === 'admin'
+            || currentUser.isAdmin === true
+            || (Boolean(normEmail) && (typeof adminEmails !== 'undefined') && adminEmails.some(e => (e || '').toLowerCase().trim() === normEmail));
+        const isWorker = !isSuper && !isAdmin && (
+            currentUser.role === 'trabajador'
+            || currentUser.rol === 'trabajador'
+            || (Boolean(normEmail) && (typeof workerEmails !== 'undefined') && workerEmails.some(e => (e || '').toLowerCase().trim() === normEmail))
+        );
         const deskBtn = document.getElementById('desk-admin-btn');
         const mobBtn = document.getElementById('mob-admin-btn');
 

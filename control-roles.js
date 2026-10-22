@@ -38,6 +38,19 @@ try {
     }
 } catch (e) { }
 
+try {
+    let storedWorkers = JSON.parse(localStorage.getItem('dt_worker_emails') || '[]');
+    if (Array.isArray(storedWorkers)) {
+        const cleanedWorkers = storedWorkers
+            .filter(e => e && typeof e === 'string' && e.trim() !== '' && e !== 'undefined' && e !== 'null')
+            .map(e => e.trim().toLowerCase());
+        const uniqueWorkers = [...new Set(cleanedWorkers)];
+        if (uniqueWorkers.length !== storedWorkers.length) {
+            localStorage.setItem('dt_worker_emails', JSON.stringify(uniqueWorkers));
+        }
+    }
+} catch (e) { }
+
 window.SUPER_ADMINS = window.SUPER_ADMINS || Object.freeze([
     'pablojose182017@gmail.com',
     'dulcestentaciones2004@gmail.com'
@@ -119,12 +132,12 @@ window.addEventListener('DOMContentLoaded', () => {
             || currentUser.role === 'admin'
             || currentUser.rol === 'admin'
             || currentUser.isAdmin === true
-            || ((typeof adminEmails !== 'undefined') && adminEmails.includes(currentUser.email));
+            || (Boolean(normEmail) && (typeof adminEmails !== 'undefined') && adminEmails.some(e => (e || '').toLowerCase().trim() === normEmail));
 
         const isWorker = !isAdmin && (
             currentUser.role === 'trabajador'
             || currentUser.rol === 'trabajador'
-            || ((typeof workerEmails !== 'undefined') && workerEmails.includes(currentUser.email))
+            || (Boolean(normEmail) && (typeof workerEmails !== 'undefined') && workerEmails.some(e => (e || '').toLowerCase().trim() === normEmail))
         );
 
         // ── Botón escritorio
@@ -795,8 +808,14 @@ window.renderKitchenUsers = function () {
 
 // === AJUSTES Y PESTAÑAS (SOBREESCRITURAS) ===
 window.cambiarPestanaAdmin = function (tab) {
-    const isWorker = (typeof currentUser !== 'undefined' && currentUser && typeof workerEmails !== 'undefined' && workerEmails.includes(currentUser.email));
-    const isAdmin = (typeof currentUser !== 'undefined' && currentUser && typeof adminEmails !== 'undefined' && adminEmails.includes(currentUser.email));
+    const userEmailNorm = (typeof currentUser !== 'undefined' && currentUser && currentUser.email) ? currentUser.email.toLowerCase().trim() : '';
+    const isSuper = typeof window.isSuperAdmin === 'function' ? window.isSuperAdmin(currentUser) : false;
+    const isAdmin = isSuper || (currentUser && (currentUser.role === 'admin' || currentUser.rol === 'admin' || currentUser.isAdmin === true))
+        || (Boolean(userEmailNorm) && typeof adminEmails !== 'undefined' && adminEmails.some(e => (e || '').toLowerCase().trim() === userEmailNorm));
+    const isWorker = !isAdmin && (
+        (currentUser && (currentUser.role === 'trabajador' || currentUser.rol === 'trabajador'))
+        || (Boolean(userEmailNorm) && typeof workerEmails !== 'undefined' && workerEmails.some(e => (e || '').toLowerCase().trim() === userEmailNorm))
+    );
 
     // 1. Bloqueo estricto para clientes comunes y VIP
     if (!isWorker && !isAdmin) {
