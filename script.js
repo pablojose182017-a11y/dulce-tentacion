@@ -5432,17 +5432,10 @@ function updateCart() {
     if (greetingDiv) {
         if (typeof currentUser !== 'undefined' && currentUser) {
             const name = currentUser.name.split(' ')[0];
-            if (currentUser.vip) {
-                greetingDiv.innerHTML = `¡Hola, ${name}! 👑 Cliente VIP (Despacho Preferencial)`;
-                greetingDiv.style.background = '#fef3c7';
-                greetingDiv.style.color = '#d97706';
-                greetingDiv.style.border = '1px solid #fde68a';
-            } else {
-                greetingDiv.innerText = `¡Hola, ${name}! Este es tu pedido de hoy:`;
-                greetingDiv.style.background = '#f8fafc';
-                greetingDiv.style.color = '#475569';
-                greetingDiv.style.border = 'none';
-            }
+            greetingDiv.innerText = `¡Hola, ${name}! Este es tu pedido de hoy:`;
+            greetingDiv.style.background = '#f8fafc';
+            greetingDiv.style.color = '#475569';
+            greetingDiv.style.border = 'none';
             greetingDiv.style.display = 'flex';
             greetingDiv.style.alignItems = 'center';
             greetingDiv.style.justifyContent = 'center';
@@ -5628,41 +5621,78 @@ function toggleCart() {
 function goToCartStep1() {
     const step1 = document.getElementById('cart-step-1');
     const step2 = document.getElementById('cart-step-2');
-    if (step1 && step2) {
-        step1.style.display = 'flex';
-        step2.style.display = 'none';
-    }
+    const stepSuccess = document.getElementById('cart-step-success');
+    if (step1) step1.style.display = 'flex';
+    if (step2) step2.style.display = 'none';
+    if (stepSuccess) stepSuccess.style.display = 'none';
 }
 
 function goToCartStep2() {
     if (cart.length === 0) return showToast("Tu carrito está vacío", "⚠️");
     const step1 = document.getElementById('cart-step-1');
     const step2 = document.getElementById('cart-step-2');
-    if (step1 && step2) {
-        step1.style.display = 'none';
-        step2.style.display = 'flex';
-    }
+    const stepSuccess = document.getElementById('cart-step-success');
+    if (step1) step1.style.display = 'none';
+    if (step2) step2.style.display = 'flex';
+    if (stepSuccess) stepSuccess.style.display = 'none';
     updateCart();
     // Sincronizar tipo de pedido y fecha/hora con las tortas del carrito
     sincronizarCheckoutConTortas();
 }
+
+function showCartSuccessView(orderId) {
+    const step1 = document.getElementById('cart-step-1');
+    const step2 = document.getElementById('cart-step-2');
+    const stepSuccess = document.getElementById('cart-step-success');
+    const orderIdEl = document.getElementById('cartSuccessOrderId');
+    if (step1) step1.style.display = 'none';
+    if (step2) step2.style.display = 'none';
+    if (stepSuccess) stepSuccess.style.display = 'flex';
+    if (orderIdEl) orderIdEl.innerText = orderId ? `#${orderId}` : '#DT-EXITO';
+
+    const modal = document.getElementById('cartModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+window.showCartSuccessView = showCartSuccessView;
+
+function viewMyOrdersFromSuccess() {
+    closeCartModal();
+    goToCartStep1();
+    if (typeof openOrderHistory === 'function') {
+        openOrderHistory(false);
+    }
+}
+window.viewMyOrdersFromSuccess = viewMyOrdersFromSuccess;
+
+function startNewPurchaseFromSuccess() {
+    goToCartStep1();
+    closeCartModal();
+    if (typeof goToCatalog === 'function') {
+        goToCatalog();
+    }
+}
+window.startNewPurchaseFromSuccess = startNewPurchaseFromSuccess;
+
 function handleCartBdrop(e) { if (e.target === document.getElementById('cartModal')) closeCartModal(); }
 
 function selectPay(el, method) {
     document.querySelectorAll('.payment-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active'); selectedPay = method;
+    el.classList.add('active');
+    selectedPay = method;
 
     const cashContainer = document.getElementById('cash-calculator-container');
     if (cashContainer) {
-        if (method === 'Efectivo contra entrega') {
-            cashContainer.style.display = 'block';
-        } else {
-            cashContainer.style.display = 'none';
-            document.getElementById('cashReceivedInput').value = '';
-            document.getElementById('changeReturnDisplay').style.display = 'none';
-            document.getElementById('cashShortageDisplay').style.display = 'none';
-        }
+        cashContainer.style.display = 'none';
     }
+    const cashInput = document.getElementById('cashReceivedInput');
+    if (cashInput) cashInput.value = '';
+    const retDisp = document.getElementById('changeReturnDisplay');
+    if (retDisp) retDisp.style.display = 'none';
+    const shortDisp = document.getElementById('cashShortageDisplay');
+    if (shortDisp) shortDisp.style.display = 'none';
 }
 
 function toggleOrderType(type) {
@@ -5987,11 +6017,7 @@ function sendOrder() {
     }
     msg += `${symCity} *Cúcuta, Norte de Santander*\n`;
     if (currentUser && discount > 0) {
-        if (currentUser.vip) {
-            msg += `${symCrown} *[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]*\n`;
-        } else {
-            msg += `${symGift} *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
-        }
+        msg += `${symGift} *[CLIENTE CLUB DULCE - APLICANDO DESCUENTO Y PUNTOS]*\n`;
     }
     msg += `—————————————————————\n`;
     msg += `${symUser} *${name}*\n`;
@@ -6038,7 +6064,7 @@ function sendOrder() {
     msg += `*Total unidades:* ${tq}\n`;
     msg += `${symMoney} *Subtotal:* $${tp.toLocaleString('es-CO')} COP\n`;
     if (discount > 0) {
-        msg += `${symGift} *Descuento ${currentUser?.vip ? 'VIP Oro' : 'Base'}:* -$${discount.toLocaleString('es-CO')} COP\n`;
+        msg += `${symGift} *Descuento 1ra Compra (3%):* -$${discount.toLocaleString('es-CO')} COP\n`;
     }
     msg += `${isMobile ? '\u{1F6F5}' : '•'} *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
     msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString('es-CO')} COP\n`;
@@ -6056,6 +6082,11 @@ function sendOrder() {
     window.mixedCartMode = null;
     if (typeof saveCart === 'function') saveCart();
     if (typeof updateCart === 'function') updateCart();
+
+    // Cambiar inmediatamente la vista del carrito a la pantalla de éxito
+    if (typeof showCartSuccessView === 'function') {
+        showCartSuccessView(orderId);
+    }
     if (typeof showToast === 'function') showToast("Procesando pedido...", "", 1500);
 
     setTimeout(() => {

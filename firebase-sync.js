@@ -1453,12 +1453,138 @@ window.addEventListener('DOMContentLoaded', () => {
     const originalSendOrder = window.sendOrder;
     if (originalSendOrder) {
         window.sendOrder = async function() {
-            // 1. FASE 5.11.2: Contexto Síncrono - Abrir ventana de WhatsApp en blanco inmediatamente
+            // 1. FASE 5.11.2: Contexto Síncrono - Abrir ventana con Loader Ejecutivo Boutique
             let whatsappWin = null;
+            const updatePopupProgress = (pct, stepText) => {
+                if (!whatsappWin || whatsappWin.closed) return;
+                try {
+                    const bar = whatsappWin.document.getElementById('pys-loader-bar');
+                    const text = whatsappWin.document.getElementById('pys-loader-step');
+                    const pctText = whatsappWin.document.getElementById('pys-loader-pct');
+                    if (bar) bar.style.width = pct + '%';
+                    if (text) text.innerText = stepText;
+                    if (pctText) pctText.innerText = pct + '%';
+                } catch(e) {}
+            };
+
             try {
                 whatsappWin = window.open('about:blank', '_blank');
                 if (whatsappWin) {
-                    whatsappWin.document.write('<div style="font-family:sans-serif; padding:20px;">Procesando pedido y preparando WhatsApp...</div>');
+                    whatsappWin.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesando Pedido | P&amp;S Punto Dulce</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #FFFDF9 0%, #F5EBE1 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #2C1E18;
+            padding: 20px;
+        }
+        .card {
+            background: #FFFFFF;
+            border: 1px solid #EFEAE2;
+            border-radius: 20px;
+            padding: 36px 28px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 12px 36px rgba(44, 30, 24, 0.08);
+            position: relative;
+        }
+        .spinner-ring {
+            width: 68px;
+            height: 68px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            border: 4px solid #F5EBE1;
+            border-top: 4px solid #C58B2B;
+            border-right: 4px solid #C58B2B;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .brand-title {
+            font-family: Georgia, serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #2C1E18;
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+        .brand-sub {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #C58B2B;
+            font-weight: 700;
+            margin-bottom: 22px;
+        }
+        .progress-container {
+            background: #F5EBE1;
+            border-radius: 999px;
+            height: 8px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 30%;
+            background: linear-gradient(90deg, #C58B2B 0%, #D4A359 100%);
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+        .step-label {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #2C1E18;
+            margin-bottom: 4px;
+            min-height: 22px;
+        }
+        .pct-label {
+            font-size: 0.8rem;
+            color: #8C786D;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+        .calm-notice {
+            background: #FAF6F0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: #6E5A4F;
+            line-height: 1.4;
+            border: 1px dashed #E6DEC8;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="spinner-ring"></div>
+        <h2 class="brand-title">P&amp;S Punto Dulce</h2>
+        <div class="brand-sub">Pastelería Artesanal</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="pys-loader-bar" style="width: 25%;"></div>
+        </div>
+        <div class="step-label" id="pys-loader-step">Paso 1 de 3: Validando tu canasta...</div>
+        <div class="pct-label" id="pys-loader-pct">25%</div>
+        <div class="calm-notice">
+            ¡Por favor no cierres esta ventana! Estamos asegurando tu pedido...
+        </div>
+    </div>
+</body>
+</html>`);
+                    whatsappWin.document.close();
                 }
             } catch(e) {
                 console.warn("No se pudo abrir la pestaña síncrona:", e);
@@ -1582,6 +1708,11 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 
+                // Actualizar progreso a Paso 2 en el Loader del popup
+                if (typeof updatePopupProgress === 'function') {
+                    updatePopupProgress(65, 'Paso 2 de 3: Registrando tu orden en cocina...');
+                }
+
                 // ESCRITURA SEGURA EN FIRESTORE CON PROTECCIÓN ANTI-COLISIÓN (Reintentos acotados a 3)
                 let writeSuccess = false;
                 let lastError = null;
@@ -1761,11 +1892,39 @@ window.addEventListener('DOMContentLoaded', () => {
                         .split(initialId).join(currentOrderId);
                 }
 
+                // Limpieza de seguridad de textos residuales de VIP en WhatsApp
+                if (targetUrl) {
+                    const vipResiduals = [
+                        '⭐ PEDIDO PRIORITARIO VIP ⭐',
+                        '[CLIENTE VIP ORO - APLICANDO DESCUENTO Y PRIORIDAD]',
+                        'Descuento VIP Oro:'
+                    ];
+                    vipResiduals.forEach(resText => {
+                        if (targetUrl.includes(encodeURIComponent(resText))) {
+                            const replacement = resText.includes('Descuento') ? encodeURIComponent('Descuento 1ra Compra (3%):') : '';
+                            targetUrl = targetUrl.split(encodeURIComponent(resText)).join(replacement);
+                        }
+                    });
+                }
+
+                // Paso 3: Abrir confirmación en WhatsApp (100%)
+                if (typeof updatePopupProgress === 'function') {
+                    updatePopupProgress(100, 'Paso 3 de 3: Abriendo confirmación en WhatsApp...');
+                }
+
                 restoreOpen();
 
                 if (targetUrl) {
                     if (whatsappWin && !whatsappWin.closed) {
-                        whatsappWin.location.href = targetUrl;
+                        setTimeout(() => {
+                            try {
+                                if (whatsappWin && !whatsappWin.closed) {
+                                    whatsappWin.location.href = targetUrl;
+                                }
+                            } catch(e) {
+                                originalOpen(targetUrl, '_blank');
+                            }
+                        }, 400);
                     } else {
                         originalOpen(targetUrl, '_blank');
                     }

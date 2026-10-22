@@ -8409,13 +8409,29 @@ section#nosotros h2 em,
    - Estiliza selectores y botón WhatsApp a la estética Boutique (#FAF3E6 / #118C5B)
    ========================================================================== */
 
-/* Cuando Paso 2 está visible (style display != none / display: flex),
+/* Cuando Paso 2 o Paso 3 (Éxito) están visibles,
    garantizar que Paso 1, saludo y banners no ocupen espacio ni se dupliquen */
 #cartModal:has(#cart-step-2:not([style*="display: none"]):not([style*="display:none"])) #cart-step-1,
 #cartModal:has(#cart-step-2:not([style*="display: none"]):not([style*="display:none"])) #cart-user-greeting,
 #cartModal:has(#cart-step-2:not([style*="display: none"]):not([style*="display:none"])) #freeShippingBanner,
-#cartModal:has(#cart-step-2:not([style*="display: none"]):not([style*="display:none"])) #cartLoginIncentive {
+#cartModal:has(#cart-step-2:not([style*="display: none"]):not([style*="display:none"])) #cartLoginIncentive,
+#cartModal:has(#cart-step-success:not([style*="display: none"]):not([style*="display:none"])) #cart-step-1,
+#cartModal:has(#cart-step-success:not([style*="display: none"]):not([style*="display:none"])) #cart-step-2,
+#cartModal:has(#cart-step-success:not([style*="display: none"]):not([style*="display:none"])) #cart-user-greeting,
+#cartModal:has(#cart-step-success:not([style*="display: none"]):not([style*="display:none"])) #freeShippingBanner,
+#cartModal:has(#cart-step-success:not([style*="display: none"]):not([style*="display:none"])) #cartLoginIncentive {
     display: none !important;
+}
+
+#cartModal #cart-step-success {
+    display: flex;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding: 24px 20px !important;
+    background: #FFFFFF !important;
 }
 
 /* Scroll único, limpio y fluido para el Paso 2 */
