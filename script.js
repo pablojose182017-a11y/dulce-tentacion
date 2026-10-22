@@ -2112,6 +2112,44 @@ function handleCredentialResponse(response) {
 
     saveUsersDB();
     loginUserObj(user);
+
+    // Rehidratación inmediata multi-dispositivo de Primera Compra desde Firestore
+    if (window.db && typeof window.db.collection === 'function' && email) {
+        window.db.collection('usuarios').doc(email).get().then(docSnap => {
+            if (docSnap.exists) {
+                const uCloud = docSnap.data();
+                if (uCloud) {
+                    let mustSave = false;
+                    if (uCloud.firstPurchaseDiscountUsed === true || (Array.isArray(uCloud.history) && uCloud.history.length > 0)) {
+                        user.firstPurchaseDiscountUsed = true;
+                        if (uCloud.firstPurchaseDiscountDate) user.firstPurchaseDiscountDate = uCloud.firstPurchaseDiscountDate;
+                        if (uCloud.firstPurchaseOrderId) user.firstPurchaseOrderId = uCloud.firstPurchaseOrderId;
+                        mustSave = true;
+                    }
+                    if (Array.isArray(uCloud.history) && uCloud.history.length > 0) {
+                        user.history = uCloud.history;
+                        mustSave = true;
+                    }
+                    if (mustSave) {
+                        saveUser();
+                        saveUsersDB();
+                        if (typeof updateCart === 'function') updateCart();
+                    }
+                }
+            }
+        }).catch(err => console.warn('handleCredentialResponse: error consultando perfil en Firestore:', err));
+
+        window.db.collection('pedidos').where('email', '==', email).limit(1).get().then(pedidosSnap => {
+            if (pedidosSnap && !pedidosSnap.empty) {
+                if (user.firstPurchaseDiscountUsed !== true) {
+                    user.firstPurchaseDiscountUsed = true;
+                    saveUser();
+                    saveUsersDB();
+                    if (typeof updateCart === 'function') updateCart();
+                }
+            }
+        }).catch(errP => console.warn('handleCredentialResponse: error consultando pedidos en Firestore:', errP));
+    }
 }
 
 window.initGoogleSignIn = function () {
@@ -4546,21 +4584,40 @@ window.checkRemoteUserSession = function () {
                         currentUser.points = newPoints;
                         changed = true;
                     }
+
+                    // Sincronizar estado de Primera Compra y pedidos
+                    const remoteFirstUsed = (data.firstPurchaseDiscountUsed === true);
+                    const remoteHistory = Array.isArray(data.history) ? data.history : [];
+                    if (remoteFirstUsed && !currentUser.firstPurchaseDiscountUsed) {
+                        currentUser.firstPurchaseDiscountUsed = true;
+                        if (data.firstPurchaseDiscountDate) currentUser.firstPurchaseDiscountDate = data.firstPurchaseDiscountDate;
+                        if (data.firstPurchaseOrderId) currentUser.firstPurchaseOrderId = data.firstPurchaseOrderId;
+                        changed = true;
+                    }
+                    if (remoteHistory.length > 0 && (!Array.isArray(currentUser.history) || currentUser.history.length === 0)) {
+                        currentUser.history = remoteHistory;
+                        currentUser.firstPurchaseDiscountUsed = true;
+                        changed = true;
+                    }
+
                     // Siempre sincronizar historial (puede haber cambiado desde otro dispositivo)
                     currentUser.historialPuntos = newHistorial;
                     currentUser.puntosActuales = newPuntosActuales;
                     localStorage.setItem('dt_user', JSON.stringify(currentUser));
+                    if (typeof saveUser === 'function') saveUser();
 
                     // Sincronizar también dt_registered_users
                     let regUsers = JSON.parse(localStorage.getItem('dt_registered_users') || '[]');
                     if (!Array.isArray(regUsers)) regUsers = [];
                     let rIdx = regUsers.findIndex(u => u && u.email && u.email.toLowerCase().trim() === uEmail);
                     if (rIdx !== -1) {
-                        regUsers[rIdx] = { ...regUsers[rIdx], ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints, historialPuntos: newHistorial, puntosActuales: newPuntosActuales };
+                        regUsers[rIdx] = { ...regUsers[rIdx], ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints, historialPuntos: newHistorial, puntosActuales: newPuntosActuales, firstPurchaseDiscountUsed: currentUser.firstPurchaseDiscountUsed };
                     } else {
-                        regUsers.push({ email: currentUser.email, ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints, historialPuntos: newHistorial, puntosActuales: newPuntosActuales });
+                        regUsers.push({ email: currentUser.email, ...data, role: newRole, isVip: newVip, vip: newVip, vipStatus: newVipStatus, points: newPoints, historialPuntos: newHistorial, puntosActuales: newPuntosActuales, firstPurchaseDiscountUsed: currentUser.firstPurchaseDiscountUsed });
                     }
                     localStorage.setItem('dt_registered_users', JSON.stringify(regUsers));
+
+                    if (typeof updateCart === 'function') updateCart();
 
                     if (changed && typeof syncUserUI === 'function') {
                         syncUserUI();
@@ -4568,6 +4625,23 @@ window.checkRemoteUserSession = function () {
                         // Refrescar historial aunque no cambie el rol/puntos (puede haber movimientos nuevos)
                         window.renderHistorialPuntos();
                     }
+
+                    // Verificar además si existen pedidos en Firestore vinculados a este correo
+                    window.db.collection('pedidos')
+                        .where('email', '==', currentUser.email)
+                        .limit(1)
+                        .get()
+                        .then(pedidosSnap => {
+                            if (pedidosSnap && !pedidosSnap.empty) {
+                                if (currentUser.firstPurchaseDiscountUsed !== true) {
+                                    currentUser.firstPurchaseDiscountUsed = true;
+                                    localStorage.setItem('dt_user', JSON.stringify(currentUser));
+                                    if (typeof saveUser === 'function') saveUser();
+                                    if (typeof updateCart === 'function') updateCart();
+                                }
+                            }
+                        })
+                        .catch(errP => console.warn('checkRemoteUserSession: verificación de pedidos:', errP));
                 }
             }
         }).catch(err => console.warn('Error consultando usuario remoto en Firestore:', err));
@@ -5325,22 +5399,38 @@ function updateCart() {
     
     // REGLA INDEPENDIENTE DE PRIMERA COMPRA (3%):
     // Motiva el registro e inicio de sesión. Aplica solo si el usuario no ha utilizado su beneficio.
-    const hasUsedFirstPurchase = !!(currentUser && (currentUser.firstPurchaseDiscountUsed || (Array.isArray(currentUser.history) && currentUser.history.length > 0)));
-    const isFirstPurchaseEligible = !!(currentUser && !currentUser.isAnonymous && !hasUsedFirstPurchase);
+    const userOrdersCount = (currentUser && Array.isArray(currentUser.history)) ? currentUser.history.length : 0;
+    const hasUsedFirstPurchase = !!(currentUser && (currentUser.firstPurchaseDiscountUsed === true || userOrdersCount > 0));
+    const isFirstPurchaseEligible = !!(
+        currentUser &&
+        currentUser.email &&
+        currentUser.isAnonymous !== true &&
+        !hasUsedFirstPurchase &&
+        userOrdersCount === 0
+    );
 
-    if (currentUser && totalPrice > 0 && isFirstPurchaseEligible) {
+    if (isFirstPurchaseEligible && totalPrice > 0) {
         discount = Math.floor(totalPrice * 0.03);
         if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
+    }
 
+    if (isFirstPurchaseEligible && discount > 0) {
         if (dRow) {
-            dRow.style.display = 'flex';
+            dRow.style.setProperty('display', 'flex', 'important');
+            dRow.classList.remove('is-hidden');
             const lbl = document.getElementById('discountLabel');
             if (lbl) lbl.innerText = 'Descuento Primera Compra (3%):';
             const sumDisc = document.getElementById('sumDiscount');
             if (sumDisc) sumDisc.innerText = `- $${discount.toLocaleString('es-CO')} COP`;
         }
     } else {
-        if (dRow) dRow.style.display = 'none';
+        discount = 0;
+        if (dRow) {
+            dRow.style.setProperty('display', 'none', 'important');
+            dRow.classList.add('is-hidden');
+            const sumDisc = document.getElementById('sumDiscount');
+            if (sumDisc) sumDisc.innerText = '- $0 COP';
+        }
     }
 
     if (cartContent) cartContent.classList.remove('cart-vip-mode');
@@ -5421,11 +5511,13 @@ function updateCart() {
     const cqsDiscRow = document.getElementById('cqsDiscountRow');
     const cqsDisc = document.getElementById('cqsDiscount');
     if (cqsDiscRow && cqsDisc) {
-        if (discount > 0) {
-            cqsDiscRow.style.display = 'flex';
+        if (isFirstPurchaseEligible && discount > 0) {
+            cqsDiscRow.style.setProperty('display', 'flex', 'important');
+            cqsDiscRow.classList.remove('is-hidden');
             cqsDisc.innerText = `- $${discount.toLocaleString('es-CO')} COP`;
         } else {
-            cqsDiscRow.style.display = 'none';
+            cqsDiscRow.style.setProperty('display', 'none', 'important');
+            cqsDiscRow.classList.add('is-hidden');
         }
     }
 
@@ -5957,13 +6049,23 @@ function sendOrder() {
     let costoDomicilio = 0;
     let firstPurchaseApplied = false;
 
-    const hasUsedFirstPurchase = !!(currentUser && (currentUser.firstPurchaseDiscountUsed || (Array.isArray(currentUser.history) && currentUser.history.length > 0)));
-    const isFirstPurchaseEligible = !!(currentUser && !currentUser.isAnonymous && !hasUsedFirstPurchase);
+    const userOrdersCount = (currentUser && Array.isArray(currentUser.history)) ? currentUser.history.length : 0;
+    const hasUsedFirstPurchase = !!(currentUser && (currentUser.firstPurchaseDiscountUsed === true || userOrdersCount > 0));
+    const isFirstPurchaseEligible = !!(
+        currentUser &&
+        currentUser.email &&
+        currentUser.isAnonymous !== true &&
+        !hasUsedFirstPurchase &&
+        userOrdersCount === 0
+    );
 
-    if (currentUser && tp > 0 && isFirstPurchaseEligible) {
+    if (isFirstPurchaseEligible && tp > 0) {
         discount = Math.floor(tp * 0.03);
         if (discount > adminConfig.maxDiscount) discount = adminConfig.maxDiscount;
         firstPurchaseApplied = discount > 0;
+    } else {
+        discount = 0;
+        firstPurchaseApplied = false;
     }
 
     const baseProductos = Math.max(0, tp - discount);
@@ -6017,8 +6119,18 @@ function sendOrder() {
     if (currentUser) {
         if (!currentUser.history) currentUser.history = [];
         currentUser.history.push(newOrder);
+        // Desvinculación definitiva: si es usuario autenticado, al enviar orden se marca como usada su primera compra
+        currentUser.firstPurchaseDiscountUsed = true;
+        currentUser.firstPurchaseDiscountDate = new Date().toISOString();
+        currentUser.firstPurchaseOrderId = orderId;
         const uidx = db_users.findIndex(u => u.email === currentUser.email);
-        if (uidx !== -1) { db_users[uidx].history = currentUser.history; saveUsersDB(); }
+        if (uidx !== -1) {
+            db_users[uidx].history = currentUser.history;
+            db_users[uidx].firstPurchaseDiscountUsed = true;
+            db_users[uidx].firstPurchaseDiscountDate = currentUser.firstPurchaseDiscountDate;
+            db_users[uidx].firstPurchaseOrderId = orderId;
+            saveUsersDB();
+        }
         saveUser();
     }
 

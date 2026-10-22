@@ -510,22 +510,37 @@ window.syncCurrentUserToCloud = async function(extraData = {}) {
     // Para el resto: consultar Firestore primero para respetar el rol asignado por el admin.
     // Solo si el documento no existe se usa el rol en memoria o 'cliente' por defecto.
     let rolFinal = isSuper ? 'admin' : (window.currentUser.role || window.currentUser.rol || 'cliente');
+    // Preservar de forma segura firstPurchaseDiscountUsed: si Firestore ya lo tenía true o en memoria es true, jamás revertir a false
+    let firstPurchaseDiscountUsedFinal = !!(window.currentUser.firstPurchaseDiscountUsed);
+    let firstPurchaseDiscountDateFinal = window.currentUser.firstPurchaseDiscountDate || null;
+    let firstPurchaseOrderIdFinal = window.currentUser.firstPurchaseOrderId || null;
+
     try {
         const existingDoc = await db.collection("usuarios").doc(email).get();
-        if (!isSuper && existingDoc.exists) {
+        if (existingDoc.exists) {
             const existingData = existingDoc.data();
             const rolEnFirestore = existingData.rol || existingData.role;
-            // Preservar el rol guardado en Firestore si es más privilegiado que 'cliente'
-            if (rolEnFirestore && rolEnFirestore !== 'cliente') {
+            if (!isSuper && rolEnFirestore && rolEnFirestore !== 'cliente') {
                 rolFinal = rolEnFirestore;
-                // Actualizar también el objeto en memoria para mantener coherencia
                 window.currentUser.role = rolFinal;
                 window.currentUser.rol = rolFinal;
                 window.currentUser.isAdmin = (rolFinal === 'admin');
             }
+            if (existingData.firstPurchaseDiscountUsed === true) {
+                firstPurchaseDiscountUsedFinal = true;
+                window.currentUser.firstPurchaseDiscountUsed = true;
+                if (existingData.firstPurchaseDiscountDate) {
+                    firstPurchaseDiscountDateFinal = existingData.firstPurchaseDiscountDate;
+                    window.currentUser.firstPurchaseDiscountDate = existingData.firstPurchaseDiscountDate;
+                }
+                if (existingData.firstPurchaseOrderId) {
+                    firstPurchaseOrderIdFinal = existingData.firstPurchaseOrderId;
+                    window.currentUser.firstPurchaseOrderId = existingData.firstPurchaseOrderId;
+                }
+            }
         }
     } catch (readErr) {
-        console.warn("syncCurrentUserToCloud: no se pudo leer el doc previo, se usará el rol en memoria.", readErr);
+        console.warn("syncCurrentUserToCloud: no se pudo leer el doc previo, se usará el estado en memoria.", readErr);
     }
 
     const payload = {
@@ -542,9 +557,13 @@ window.syncCurrentUserToCloud = async function(extraData = {}) {
         direccion: window.currentUser.address || window.currentUser.direccion || "",
         estado: 'activo',
         blocked: false,
+        firstPurchaseDiscountUsed: firstPurchaseDiscountUsedFinal,
         ultimaSincronizacion: new Date().toISOString(),
         ...extraData
     };
+
+    if (firstPurchaseDiscountDateFinal) payload.firstPurchaseDiscountDate = firstPurchaseDiscountDateFinal;
+    if (firstPurchaseOrderIdFinal) payload.firstPurchaseOrderId = firstPurchaseOrderIdFinal;
 
     if (window.currentUser.authVerifier && !payload.authVerifier) {
         payload.authVerifier = window.currentUser.authVerifier;
@@ -724,6 +743,15 @@ window.addEventListener('DOMContentLoaded', () => {
                                 window.currentUser.vip = !!data.vip;
                                 window.currentUser.isVip = !!data.vip;
                             }
+                            if (data.firstPurchaseDiscountUsed === true) {
+                                window.currentUser.firstPurchaseDiscountUsed = true;
+                                if (data.firstPurchaseDiscountDate) window.currentUser.firstPurchaseDiscountDate = data.firstPurchaseDiscountDate;
+                                if (data.firstPurchaseOrderId) window.currentUser.firstPurchaseOrderId = data.firstPurchaseOrderId;
+                            }
+                            if (Array.isArray(data.history) && data.history.length > 0) {
+                                window.currentUser.history = data.history;
+                                window.currentUser.firstPurchaseDiscountUsed = true;
+                            }
                             // FIX: Aplicar el rol guardado en Firestore para todos los usuarios
                             // (no solo para los que no son admin), respetando a los Super Admins.
                             if (isSuper) {
@@ -739,6 +767,24 @@ window.addEventListener('DOMContentLoaded', () => {
                                 }
                             }
                             localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
+                            if (typeof saveUser === 'function') saveUser();
+                            if (typeof updateCart === 'function') updateCart();
+
+                            // Chequeo secundario en colección pedidos para multi-dispositivo
+                            try {
+                                const pedidosSnap = await db.collection("pedidos").where("email", "==", email).limit(1).get();
+                                if (pedidosSnap && !pedidosSnap.empty) {
+                                    if (window.currentUser.firstPurchaseDiscountUsed !== true) {
+                                        window.currentUser.firstPurchaseDiscountUsed = true;
+                                        localStorage.setItem('dt_user', JSON.stringify(window.currentUser));
+                                        if (typeof saveUser === 'function') saveUser();
+                                        if (typeof updateCart === 'function') updateCart();
+                                    }
+                                }
+                            } catch (pedErr) {
+                                console.warn("onAuthStateChanged: verificación de pedidos:", pedErr);
+                            }
+
                             if (isSuper || window.currentUser.isAdmin) {
                                 if (typeof window.loadAdminHTMLFragment === 'function') {
                                     try {
@@ -1753,6 +1799,23 @@ window.addEventListener('DOMContentLoaded', () => {
                             }
                         } else {
                             await db.collection('pedidos').doc(currentOrderId).set(nuevoPedido);
+                            // Desvinculación definitiva: si el usuario está autenticado, registrar que ya realizó compra
+                            if (userEmailNorm && auth.currentUser && !auth.currentUser.isAnonymous) {
+                                try {
+                                    await db.collection('usuarios').doc(userEmailNorm).set({
+                                        firstPurchaseDiscountUsed: true,
+                                        firstPurchaseDiscountDate: new Date().toISOString(),
+                                        firstPurchaseOrderId: currentOrderId
+                                    }, { merge: true });
+                                } catch (uErr) {
+                                    console.warn("No se pudo actualizar firstPurchaseDiscountUsed en usuarios:", uErr);
+                                }
+                                if (currentUser) {
+                                    currentUser.firstPurchaseDiscountUsed = true;
+                                    currentUser.firstPurchaseOrderId = currentOrderId;
+                                    if (typeof saveUser === 'function') saveUser();
+                                }
+                            }
                         }
 
                         writeSuccess = true;

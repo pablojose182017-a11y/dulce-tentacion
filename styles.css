@@ -8309,7 +8309,7 @@ section#nosotros h2 em,
     box-shadow: none !important;
 }
 
-#cartModal .sum-row {
+#cartModal .sum-row:not(#discountRow):not(.is-hidden) {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
@@ -8317,6 +8317,12 @@ section#nosotros h2 em,
     font-weight: 500 !important;
     color: #6E5A4F !important;
     margin-bottom: 4px !important;
+}
+
+#cartModal .sum-row.is-hidden,
+#cartModal #discountRow.is-hidden,
+.sum-row.is-hidden {
+    display: none !important;
 }
 
 #cartModal #discountRow,
