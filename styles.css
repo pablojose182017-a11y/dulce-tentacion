@@ -653,89 +653,125 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 2px;
+            gap: 3px;
             background: none;
             border: none;
             cursor: pointer;
-            transition: var(--ease);
-            padding: 6px 1px 8px;
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 7px 1px 7px;
             position: relative;
         }
 
         .bottom-nav-btn .bn-icon {
-            font-size: 1.22rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             line-height: 1;
-            transition: transform 0.2s;
+            color: #6e564c;
+            transition: transform 0.22s ease, color 0.22s ease;
+        }
+
+        .bottom-nav-btn .bn-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 1.9;
+            stroke: currentColor;
+            display: block;
+            transition: transform 0.22s ease, stroke 0.22s ease;
         }
 
         .bottom-nav-btn .bn-label {
-            font-size: 0.71rem;
+            font-size: 0.69rem;
             font-weight: 700;
-            color: #a08070;
-            letter-spacing: -0.2px;
-            text-transform: uppercase;
+            color: #6e564c;
+            letter-spacing: 0.2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
             text-align: center;
             line-height: 1.1;
+            transition: color 0.22s ease;
         }
 
         .bottom-nav-btn.active .bn-icon {
-            transform: scale(1.12);
+            transform: translateY(-1px) scale(1.08);
+            color: #9d174d;
+        }
+
+        .bottom-nav-btn.active .bn-icon svg {
+            stroke: #9d174d;
+            filter: drop-shadow(0 2px 6px rgba(157, 23, 77, 0.25));
         }
 
         .bottom-nav-btn.active .bn-label {
-            color: var(--brand-pink);
+            color: #9d174d;
+            font-weight: 800;
         }
 
         .bottom-nav-btn.active::after {
             content: '';
             position: absolute;
             bottom: 0;
-            left: 15%;
-            right: 15%;
+            left: 22%;
+            right: 22%;
             height: 3px;
-            background: var(--brand-pink);
+            background: linear-gradient(90deg, #C58B2B 0%, #be185d 100%);
             border-radius: 3px 3px 0 0;
+            box-shadow: 0 -1px 6px rgba(197, 139, 43, 0.45);
         }
 
-        /* Cart bottom nav special style */
+        /* Cart bottom nav special style (Elevated circle boutique) */
         .bottom-nav-btn.cart-nav-btn {
             position: relative;
         }
 
         .bottom-nav-btn.cart-nav-btn .bn-icon {
-            background: linear-gradient(135deg, var(--brand-pink), var(--brand-pink-d));
-            color: #fff;
-            width: 40px;
-            height: 40px;
+            background: linear-gradient(135deg, #881337 0%, #9d174d 60%, #be185d 100%);
+            color: #ffffff;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.15rem;
-            box-shadow: 0 4px 14px rgba(216, 27, 96, 0.35);
+            border: 2px solid #C58B2B;
+            box-shadow: 0 4px 16px rgba(136, 19, 55, 0.38), 0 0 0 3px rgba(197, 139, 43, 0.18);
             margin-bottom: 2px;
+            margin-top: -10px;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .bottom-nav-btn.cart-nav-btn .bn-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2.1;
+            stroke: #ffffff;
+            filter: none;
+        }
+
+        .bottom-nav-btn.cart-nav-btn:active .bn-icon {
+            transform: scale(0.94);
         }
 
         .cart-mobile-badge {
             position: absolute;
-            top: 2px;
-            right: calc(50% - 22px);
-            background: var(--brand-gold);
-            color: var(--brand-choco);
-            font-size: 0.62rem;
+            top: -6px;
+            right: calc(50% - 24px);
+            background: linear-gradient(135deg, #C58B2B 0%, #e0a338 100%);
+            color: #24130e;
+            font-size: 0.65rem;
             font-weight: 900;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
+            min-width: 19px;
+            height: 19px;
+            padding: 0 4px;
+            border-radius: 999px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #fff;
-            z-index: 2;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 4;
         }
 
         /* ===== MOBILE HEADER (Compact) ===== */
@@ -5018,20 +5054,22 @@
             }
 
             .bottom-nav-btn .bn-icon {
-                font-size: 1.22rem !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
                 line-height: 1 !important;
             }
 
             .bottom-nav-btn.cart-nav-btn .bn-icon {
-                width: 38px !important;
-                height: 38px !important;
-                font-size: 1.1rem !important;
+                width: 44px !important;
+                height: 44px !important;
+                margin-top: -10px !important;
             }
 
             .bottom-nav-btn .bn-label {
-                font-size: 0.71rem !important;
+                font-size: 0.69rem !important;
                 font-weight: 700 !important;
-                letter-spacing: -0.2px !important;
+                letter-spacing: 0.2px !important;
                 white-space: nowrap !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
@@ -5041,7 +5079,8 @@
             }
 
             .bottom-nav-btn.cart-nav-btn .cart-mobile-badge {
-                right: calc(50% - 22px) !important;
+                right: calc(50% - 24px) !important;
+                top: -6px !important;
             }
 
             .cat-chip-scroll {
@@ -10723,103 +10762,159 @@ section#nosotros h2 em,
     gap: 16px;
 }
 
-/* Tarjeta-Botón interactiva Boutique */
+/* Tarjeta-Botón interactiva Boutique de Alta Costura */
 .especialidad-card {
-    background: linear-gradient(135deg, #fffdfa 0%, #fff5f7 100%);
-    border: 1.5px solid #C58B2B;
+    background: linear-gradient(145deg, #ffffff 0%, #fff9f5 60%, #fdf2f6 100%);
+    border: 1.5px solid rgba(197, 139, 43, 0.55);
     border-radius: 20px;
-    padding: 16px 18px;
+    padding: 20px 22px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
     position: relative;
-    box-shadow: 0 6px 18px rgba(197, 139, 43, 0.08);
-    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+    box-shadow: 0 10px 26px rgba(44, 24, 16, 0.06);
+    transition: transform 0.24s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.24s cubic-bezier(0.2, 0, 0.2, 1), border-color 0.24s ease, background 0.24s ease;
     cursor: pointer;
+    overflow: hidden;
+}
+
+/* Línea superior decorativa sutil en Dorado / Vino */
+.especialidad-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3.5px;
+    background: linear-gradient(90deg, #C58B2B 0%, #be185d 50%, #C58B2B 100%);
+    opacity: 0.85;
+    transition: opacity 0.24s ease, height 0.24s ease;
 }
 
 .especialidad-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(197, 139, 43, 0.22);
-    border-color: #B87D1E;
-    background: linear-gradient(135deg, #FFFFFF 0%, #FFF8EE 100%);
+    transform: translateY(-5px);
+    box-shadow: 0 18px 38px rgba(157, 23, 77, 0.15), 0 6px 16px rgba(197, 139, 43, 0.12);
+    border-color: #C58B2B;
+    background: linear-gradient(145deg, #ffffff 0%, #fffbf8 50%, #fdf0f5 100%);
 }
 
-/* Fila de Encabezado: Medallón de icono + Etiqueta + Flecha de acción */
+.especialidad-card:hover::before {
+    opacity: 1;
+    height: 4.5px;
+}
+
+/* Fila de Encabezado: Medallón de icono + Píldora corta */
 .esp-card-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 14px;
 }
 
+/* Medallón 46px x 46px con degradado Vino/Rosa y borde dorado */
 .esp-icon-halo {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #9d174d 0%, #be185d 100%);
     border: 1.5px solid #C58B2B;
-    color: #9d174d;
+    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(157, 23, 77, 0.12);
-    transition: transform 0.22s ease, background 0.22s ease, color 0.22s ease;
+    box-shadow: 0 4px 14px rgba(157, 23, 77, 0.28);
+    transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.esp-icon-halo svg {
+    width: 24px;
+    height: 24px;
+    stroke: #ffffff;
+    display: block;
 }
 
 .especialidad-card:hover .esp-icon-halo {
     transform: scale(1.08) rotate(3deg);
-    background: linear-gradient(135deg, #9d174d 0%, #831843 100%);
-    color: #FFFFFF;
+    box-shadow: 0 6px 18px rgba(157, 23, 77, 0.38);
 }
 
+/* Píldora corta y elegante (width: auto, NO estirada al 100%) */
 .esp-tag {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
     background: #fdf6e9;
-    border: 1px solid rgba(197, 139, 43, 0.35);
+    border: 1px solid rgba(197, 139, 43, 0.45);
     color: #8a5a10;
     font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 0.5px;
-    padding: 3px 9px;
+    letter-spacing: 0.6px;
+    padding: 5px 12px;
     border-radius: 999px;
     line-height: 1.2;
-    flex-grow: 1;
-}
-
-.esp-arrow-indicator {
-    font-size: 1.1rem;
-    color: #C58B2B;
-    font-weight: 800;
-    line-height: 1;
-    margin-left: auto;
-    transition: transform 0.22s ease, color 0.22s ease;
-}
-
-.especialidad-card:hover .esp-arrow-indicator {
-    transform: translateX(4px);
-    color: #9d174d;
+    box-shadow: 0 2px 6px rgba(197, 139, 43, 0.08);
 }
 
 .esp-title {
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 1.12rem;
+    font-size: 1.18rem;
     font-weight: 800;
     color: #24130e;
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     line-height: 1.25;
+    letter-spacing: -0.2px;
 }
 
 .esp-desc {
     font-size: 0.88rem;
     color: #4a3228;
-    line-height: 1.45;
-    margin: 0;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
     flex-grow: 1;
     font-weight: 500;
+}
+
+/* Botón Píldora Interno con sello Dorado + Rosa */
+.esp-btn-pill {
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: #fff0f5;
+    border: 1.5px solid #C58B2B;
+    color: #881337;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    box-shadow: 0 3px 10px rgba(197, 139, 43, 0.12);
+    transition: all 0.24s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.esp-btn-arrow {
+    display: inline-block;
+    font-size: 1.1rem;
+    font-weight: 900;
+    line-height: 1;
+    transition: transform 0.24s cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+.especialidad-card:hover .esp-btn-pill {
+    background: linear-gradient(135deg, #881337 0%, #be185d 60%, #C58B2B 100%);
+    border-color: #B87D1E;
+    color: #ffffff;
+    box-shadow: 0 6px 20px rgba(136, 19, 55, 0.32);
+}
+
+.especialidad-card:hover .esp-btn-arrow {
+    transform: translateX(5px);
 }
 
 @media (max-width: 900px) {
@@ -10845,6 +10940,26 @@ section#nosotros h2 em,
 
     .hero-order-hint-connector {
         margin-top: 18px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 0 10px;
+    }
+
+    .hero-order-hint {
+        max-width: 95%;
+        padding: 8px 16px !important;
+        font-size: 0.86rem !important;
+        text-align: center !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        line-height: 1.35 !important;
+    }
+
+    .hero-order-hint .bouncing-hand {
+        display: inline-block !important;
+        margin-left: 2px !important;
     }
 
     .hero-col-logo {
