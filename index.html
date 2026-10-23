@@ -15,7 +15,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=20261023g">
+    <link rel="stylesheet" href="styles.css?v=20261023h">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -33,8 +33,8 @@
         <div class="logo-container brand-link" onclick="showSection('inicio', document.querySelectorAll('.nav-link')[0])">
             <img src="logo-pys.png" class="nav-logo-img" alt="Logo Punto Dulce">
             <div class="logo-text-block brand-text">
-                <h1 class="brand-title">Punto <span class="gold-italic-accent">Dulce</span></h1>
-                <span class="brand-tagline">PASTELERÍA ARTESANAL</span>
+                <div class="brand-main-title">Punto <em class="brand-gold-word">Dulce</em></div>
+                <span class="brand-sub-title">PASTELERÍA ARTESANAL</span>
             </div>
         </div>
 
@@ -139,8 +139,8 @@
         <div class="mobile-logo brand-link" onclick="showSection('inicio', null)" style="display:flex; align-items:center; gap:8px;">
             <img src="logo-pys.png" class="nav-logo-img" alt="Logo Punto Dulce">
             <div class="mobile-logo-text brand-text">
-                <h1 class="brand-title">Punto <span class="gold-italic-accent">Dulce</span></h1>
-                <span class="brand-tagline">PASTELERÍA ARTESANAL</span>
+                <div class="brand-main-title">Punto <em class="brand-gold-word">Dulce</em></div>
+                <span class="brand-sub-title">PASTELERÍA ARTESANAL</span>
             </div>
         </div>
         <div class="mobile-header-actions">
@@ -295,13 +295,10 @@
                 <div class="especialidad-card" onclick="filterCategory('panaderia', null); goToCatalog(event)" role="button" tabindex="0">
                     <div class="esp-card-header">
                         <div class="esp-icon-halo" aria-hidden="true">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                <!-- Espiga de Trigo / Pan Baguette artesanal con cortes diagonales -->
-                                <path d="M4 17.5C2.5 16 2.5 13.5 4 12l10-10c1.5-1.5 4-1.5 5.5 0s1.5 4 0 5.5l-10 10c-1.5 1.5-4 1.5-5.5 0Z"/>
-                                <path d="m8.5 7.5 3 3"/>
-                                <path d="m11.5 10.5 3 3"/>
-                                <path d="m14.5 13.5 3 3"/>
-                                <path d="M2 22l4-4"/>
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <!-- Gorro de Chef Panadero (Toque Blanche) -->
+                                <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/>
+                                <line x1="6" y1="17" x2="18" y2="17"/>
                             </svg>
                         </div>
                         <span class="esp-tag">HORNEADO DESDE LAS 6:00 AM</span>

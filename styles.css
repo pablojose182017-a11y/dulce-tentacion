@@ -113,33 +113,42 @@
         }
 
         .logo-text-block h1,
-        .brand-title {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 1.55rem;
-            font-weight: 800;
-            color: #24130e;
-            line-height: 1.05;
-            letter-spacing: -0.3px;
-            margin: 0;
+        .brand-title,
+        .brand-main-title {
+            font-family: 'Playfair Display', Georgia, serif !important;
+            font-size: 1.55rem !important;
+            font-weight: 800 !important;
+            color: #24130e !important;
+            line-height: 1.05 !important;
+            letter-spacing: -0.3px !important;
+            white-space: nowrap !important;
+            display: block !important;
+            margin: 0 !important;
         }
 
-        .gold-italic-accent {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-style: italic;
-            font-weight: 800;
-            color: #C58B2B;
+        .gold-italic-accent,
+        .brand-gold-word {
+            display: inline !important;
+            font-size: inherit !important;
+            text-transform: none !important;
+            letter-spacing: normal !important;
+            font-family: 'Playfair Display', Georgia, serif !important;
+            font-style: italic !important;
+            font-weight: 800 !important;
+            color: #C58B2B !important;
         }
 
         .logo-text-block .brand-tagline,
-        .brand-tagline {
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: #8a5a10;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-top: 2px;
-            display: block;
-            line-height: 1.1;
+        .brand-tagline,
+        .brand-sub-title {
+            font-size: 0.65rem !important;
+            font-weight: 700 !important;
+            color: #8a5a10 !important;
+            letter-spacing: 2px !important;
+            text-transform: uppercase !important;
+            margin-top: 2px !important;
+            display: block !important;
+            line-height: 1.1 !important;
         }
 
         .logo-text-block .logo-sub {
@@ -828,27 +837,40 @@
         }
 
         .mobile-logo-text h1,
-        .mobile-logo-text .brand-title {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #24130e;
-            line-height: 1.05;
-            letter-spacing: -0.3px;
-            white-space: nowrap;
-            margin: 0;
+        .mobile-logo-text .brand-title,
+        .mobile-logo-text .brand-main-title {
+            font-family: 'Playfair Display', Georgia, serif !important;
+            font-size: 1.15rem !important;
+            font-weight: 800 !important;
+            color: #24130e !important;
+            line-height: 1.05 !important;
+            letter-spacing: -0.3px !important;
+            white-space: nowrap !important;
+            display: block !important;
+            margin: 0 !important;
         }
 
-        .mobile-logo-text span,
+        .mobile-logo-text .brand-gold-word {
+            display: inline !important;
+            font-size: inherit !important;
+            text-transform: none !important;
+            letter-spacing: normal !important;
+            font-family: 'Playfair Display', Georgia, serif !important;
+            font-style: italic !important;
+            font-weight: 800 !important;
+            color: #C58B2B !important;
+        }
+
+        .mobile-logo-text .brand-sub-title,
         .mobile-logo-text .brand-tagline {
-            font-size: 0.55rem;
-            font-weight: 700;
-            color: #8a5a10;
-            text-transform: uppercase;
-            letter-spacing: 1.8px;
-            display: block;
-            margin-top: 2px;
-            line-height: 1;
+            font-size: 0.55rem !important;
+            font-weight: 700 !important;
+            color: #8a5a10 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 1.8px !important;
+            display: block !important;
+            margin-top: 2px !important;
+            line-height: 1 !important;
         }
 
         .mobile-header-actions {
