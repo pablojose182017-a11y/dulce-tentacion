@@ -112,12 +112,34 @@
             }
         }
 
-        .logo-text-block h1 {
-            font-family: 'Dancing Script', cursive;
+        .logo-text-block h1,
+        .brand-title {
+            font-family: 'Playfair Display', Georgia, serif;
             font-size: 1.55rem;
-            color: var(--brand-pink);
-            line-height: 1;
+            font-weight: 800;
+            color: #24130e;
+            line-height: 1.05;
             letter-spacing: -0.3px;
+            margin: 0;
+        }
+
+        .gold-italic-accent {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-style: italic;
+            font-weight: 800;
+            color: #C58B2B;
+        }
+
+        .logo-text-block .brand-tagline,
+        .brand-tagline {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #8a5a10;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 2px;
+            display: block;
+            line-height: 1.1;
         }
 
         .logo-text-block .logo-sub {
@@ -805,22 +827,28 @@
             box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
         }
 
-        .mobile-logo-text h1 {
-            font-family: 'Dancing Script', cursive;
-            font-size: 1.1rem;
-            color: var(--brand-pink);
-            line-height: 1;
+        .mobile-logo-text h1,
+        .mobile-logo-text .brand-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #24130e;
+            line-height: 1.05;
             letter-spacing: -0.3px;
             white-space: nowrap;
+            margin: 0;
         }
 
-        .mobile-logo-text span {
-            font-size: 0.54rem;
+        .mobile-logo-text span,
+        .mobile-logo-text .brand-tagline {
+            font-size: 0.55rem;
             font-weight: 700;
-            color: var(--brand-choco-m);
+            color: #8a5a10;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
+            letter-spacing: 1.8px;
             display: block;
+            margin-top: 2px;
+            line-height: 1;
         }
 
         .mobile-header-actions {
@@ -829,43 +857,96 @@
             gap: 8px;
         }
 
-        .search-circle-btn {
-            width: 40px;
-            height: 40px;
+        /* Botón Joya Marfil & Oro: Lupa y Hamburguesa */
+        .search-circle-btn,
+        .mobile-menu-btn {
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            border: 1.5px solid #ffe3ec;
-            background-color: #fff5f8;
-            color: #d81b60;
+            background: linear-gradient(145deg, #ffffff 0%, #fdf8ee 100%);
+            border: 1.5px solid rgba(197, 139, 43, 0.65);
+            box-shadow: 0 4px 12px rgba(44, 24, 16, 0.08);
+            color: #2c1810;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.22s cubic-bezier(0.2, 0, 0.2, 1);
             padding: 0;
-            box-shadow: 0 2px 6px rgba(216, 27, 96, 0.08);
         }
 
-        .search-circle-btn:active {
+        .search-circle-btn svg,
+        .mobile-menu-btn svg {
+            color: #2c1810;
+            stroke: #2c1810;
+            transition: stroke 0.22s ease, transform 0.22s ease;
+        }
+
+        .search-circle-btn:hover,
+        .mobile-menu-btn:hover {
+            border-color: #C58B2B;
+            box-shadow: 0 6px 16px rgba(197, 139, 43, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .search-circle-btn:hover svg,
+        .mobile-menu-btn:hover svg {
+            stroke: #9d174d;
+        }
+
+        .search-circle-btn:active,
+        .mobile-menu-btn:active {
             transform: scale(0.92);
-            background-color: #ffe3ec;
+            background: #fff8eb;
         }
 
+        /* Botón de Acceso / Usuario cuando no ha iniciado sesión */
         .mobile-google-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            border: 1.5px solid #e2e8f0;
-            background: #fff;
+            border: 1.5px solid rgba(197, 139, 43, 0.65);
+            background: linear-gradient(145deg, #ffffff 0%, #fdf8ee 100%);
+            box-shadow: 0 4px 12px rgba(44, 24, 16, 0.08);
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-            transition: var(--ease);
+            transition: all 0.22s ease;
         }
 
         .mobile-google-btn:hover {
-            border-color: var(--brand-pink);
+            border-color: #C58B2B;
+            transform: translateY(-1px);
+        }
+
+        /* Avatar de Usuario Móvil: Insignia VIP Imperial */
+        #mobile-avatar-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2c1810 0%, #7a1436 100%);
+            border: 1.8px solid #C58B2B !important;
+            box-shadow: 0 4px 12px rgba(44, 24, 16, 0.16);
+            overflow: hidden;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        #mobile-avatar-wrap:hover {
+            transform: scale(1.06);
+            box-shadow: 0 6px 16px rgba(197, 139, 43, 0.3);
+        }
+
+        #mobile-user-avatar {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            border: none !important;
         }
 
         /* Mobile Search Bar (expandable) */

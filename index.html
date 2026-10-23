@@ -15,7 +15,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=20261023f">
+    <link rel="stylesheet" href="styles.css?v=20261023g">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -31,10 +31,10 @@
     <!-- ===== DESKTOP HEADER ===== -->
     <header>
         <div class="logo-container brand-link" onclick="showSection('inicio', document.querySelectorAll('.nav-link')[0])">
-            <img src="logo-pys.png" class="nav-logo-img" alt="Logo P&S Punto Dulce">
+            <img src="logo-pys.png" class="nav-logo-img" alt="Logo Punto Dulce">
             <div class="logo-text-block brand-text">
-                <h1 class="brand-title">P&amp;S Punto Dulce</h1>
-                <span class="brand-tagline">Pastelería Artesanal</span>
+                <h1 class="brand-title">Punto <span class="gold-italic-accent">Dulce</span></h1>
+                <span class="brand-tagline">PASTELERÍA ARTESANAL</span>
             </div>
         </div>
 
@@ -137,10 +137,10 @@
     <!-- ===== MOBILE HEADER ===== -->
     <div class="mobile-header" id="mobileHeader">
         <div class="mobile-logo brand-link" onclick="showSection('inicio', null)" style="display:flex; align-items:center; gap:8px;">
-            <img src="logo-pys.png" class="nav-logo-img" alt="Logo P&S Punto Dulce">
+            <img src="logo-pys.png" class="nav-logo-img" alt="Logo Punto Dulce">
             <div class="mobile-logo-text brand-text">
-                <h1 class="brand-title">P&amp;S Punto Dulce</h1>
-                <span class="brand-tagline">Pastelería Artesanal</span>
+                <h1 class="brand-title">Punto <span class="gold-italic-accent">Dulce</span></h1>
+                <span class="brand-tagline">PASTELERÍA ARTESANAL</span>
             </div>
         </div>
         <div class="mobile-header-actions">
@@ -177,9 +177,9 @@
             </div>
             <button class="mobile-menu-btn" id="btnMobileMenu" onclick="toggleMobileMenu(event)" title="Menú de navegación" aria-label="Abrir menú de opciones">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                    <line x1="4" y1="6" x2="20" y2="6"></line>
+                    <line x1="4" y1="12" x2="16" y2="12" stroke="#C58B2B" stroke-width="2.4"></line>
+                    <line x1="4" y1="18" x2="20" y2="18"></line>
                 </svg>
             </button>
         </div>
@@ -210,8 +210,8 @@
                 <div style="display:flex; align-items:center; gap:8px;">
                     <img src="logo-pys.png" style="width:34px; height:34px; border-radius:50%; border:2px solid var(--brand-pink);" alt="Logo">
                     <div style="text-align:left;">
-                        <strong style="color:var(--brand-pink); font-size:0.95rem; display:block;">P&amp;S Punto Dulce</strong>
-                        <small style="color:#64748b; font-size:0.75rem;">Pastelería Artesanal</small>
+                        <strong style="color:#24130e; font-family:'Playfair Display', Georgia, serif; font-size:1.05rem; font-weight:800; display:block;">Punto <span class="gold-italic-accent" style="color:#C58B2B; font-style:italic;">Dulce</span></strong>
+                        <small style="color:#8a5a10; font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Pastelería Artesanal</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close-modal" onclick="closeMobileMenu()" aria-label="Cerrar menú">&times;</button>
@@ -296,13 +296,12 @@
                     <div class="esp-card-header">
                         <div class="esp-icon-halo" aria-hidden="true">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                <!-- Croissant / Pan artesanal con espiga -->
-                                <path d="M4 14c0-3.5 3-7 8-7s8 3.5 8 7-3.5 5-8 5-8-1.5-8-5Z"/>
-                                <path d="M8 8.5C9.5 10 10.5 12 11 15"/>
-                                <path d="M16 8.5c-1.5 1.5-2.5 3.5-3 6.5"/>
-                                <path d="M12 4v3"/>
-                                <path d="M9.5 4.5 11 7"/>
-                                <path d="m14.5 4.5-1.5 2.5"/>
+                                <!-- Espiga de Trigo / Pan Baguette artesanal con cortes diagonales -->
+                                <path d="M4 17.5C2.5 16 2.5 13.5 4 12l10-10c1.5-1.5 4-1.5 5.5 0s1.5 4 0 5.5l-10 10c-1.5 1.5-4 1.5-5.5 0Z"/>
+                                <path d="m8.5 7.5 3 3"/>
+                                <path d="m11.5 10.5 3 3"/>
+                                <path d="m14.5 13.5 3 3"/>
+                                <path d="M2 22l4-4"/>
                             </svg>
                         </div>
                         <span class="esp-tag">HORNEADO DESDE LAS 6:00 AM</span>
@@ -1671,22 +1670,24 @@
                 data-section="productos">
                 <span class="bn-icon">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <!-- Croissant / Pan artesanal fino boutique -->
-                        <path d="M4.5 13.5c0-3 3-6.5 7.5-6.5s7.5 3.5 7.5 6.5-3 5-7.5 5-7.5-1.5-7.5-5Z"/>
-                        <path d="M8 8.5C9.2 10 10.2 12 10.8 15"/>
-                        <path d="M16 8.5c-1.2 1.5-2.2 3.5-2.8 6.5"/>
-                        <path d="M12 4.5v2.5"/>
+                        <!-- Cuadrícula Boutique con estrella de catálogo -->
+                        <rect x="3" y="3" width="7" height="7" rx="2"/>
+                        <rect x="3" y="14" width="7" height="7" rx="2"/>
+                        <rect x="14" y="14" width="7" height="7" rx="2"/>
+                        <path d="M17.5 3v6"/>
+                        <path d="M14.5 6h6"/>
+                        <circle cx="17.5" cy="6" r="1.5" fill="currentColor"/>
                     </svg>
                 </span>
                 <span class="bn-label">Catálogo</span>
             </button>
             <button class="bottom-nav-btn cart-nav-btn" id="bnCarrito" onclick="toggleCart()">
                 <span class="bn-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                        <!-- Bolsa de compras / Canasta Boutique elegante -->
-                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
-                        <path d="M3 6h18"/>
-                        <path d="M16 10a4 4 0 0 1-8 0"/>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- Carrito de Compras moderno y estilizado -->
+                        <path d="M2 3h3l2.4 11.2a1.8 1.8 0 0 0 1.8 1.4h9.8a1.8 1.8 0 0 0 1.8-1.4l1.6-8.2H6.2"/>
+                        <circle cx="9.5" cy="19.5" r="1.5"/>
+                        <circle cx="17.5" cy="19.5" r="1.5"/>
                     </svg>
                 </span>
                 <span class="bn-label">Carrito</span>
