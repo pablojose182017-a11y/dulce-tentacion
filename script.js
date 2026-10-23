@@ -1365,6 +1365,10 @@ window.renderRewardsClub = function () {
                     Instagram
                 </a>
             </div>
+            <div class="rewards-love-motto">
+                <span class="motto-quote">“El ingrediente secreto siempre es el amor”</span>
+                <span class="motto-sub">Horneamos momentos felices para tu familia todos los días.</span>
+            </div>
         </div>
         `;
     } else {
@@ -1384,6 +1388,10 @@ window.renderRewardsClub = function () {
             </div>
             <div class="rewards-card" onclick="if(typeof PHONE!=='undefined'){ window.open('https://wa.me/'+PHONE+'?text='+encodeURIComponent('¡Hola! Ya los sigo en ambas redes sociales. Aqui les envio la captura para mi detalle dulce sorpresa artesanal.'), '_blank', 'noopener,noreferrer'); }">
                 ✨ ¿Nos sigues en ambas redes? Muéstrale la captura a nuestro equipo por WhatsApp o en tu pedido y recibe un detalle dulce sorpresa artesanal.
+            </div>
+            <div class="rewards-love-motto">
+                <span class="motto-quote">“El ingrediente secreto siempre es el amor”</span>
+                <span class="motto-sub">Horneamos momentos felices para tu familia todos los días.</span>
             </div>
         </div>
         `;
@@ -7562,6 +7570,7 @@ window.editarTortaDesdeCarrito = editarTortaDesdeCarrito;
 
 // Exponer funciones en window para acceso global directo
 window.openWizard = openWizard;
+window.openCakeWizard = openWizard;
 window.closeWizard = closeWizard;
 window.goToWizardStep = goToWizardStep;
 window.navWizardStep = navWizardStep;
