@@ -1059,14 +1059,15 @@
             position: absolute;
             top: 0;
             right: 0;
-            width: 290px;
+            width: 310px;
             max-width: 86vw;
             height: 100%;
-            background: #ffffff;
-            box-shadow: -6px 0 25px rgba(0, 0, 0, 0.18);
+            background: linear-gradient(180deg, #fffdfa 0%, #fff7f9 100%);
+            border-left: 2px solid rgba(197, 139, 43, 0.4);
+            box-shadow: -8px 0 32px rgba(44, 24, 16, 0.16);
             display: flex;
             flex-direction: column;
-            animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 2;
             padding: 18px 16px;
             box-sizing: border-box;
@@ -1081,18 +1082,44 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1.5px solid rgba(197, 139, 43, 0.22);
             padding-bottom: 14px;
             margin-bottom: 12px;
+        }
+
+        .btn-close-drawer {
+            background: #fdf8ee;
+            border: 1.5px solid #C58B2B;
+            color: #2c1810;
+            font-size: 1.25rem;
+            line-height: 1;
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(197, 139, 43, 0.15);
+            padding: 0;
+        }
+
+        .btn-close-drawer:hover,
+        .btn-close-drawer:active {
+            background: #C58B2B;
+            color: #ffffff;
+            transform: scale(1.05);
         }
 
         .mobile-menu-links {
             display: flex;
             flex-direction: column;
-            gap: 7px;
+            gap: 8px;
             overflow-y: auto;
             flex-grow: 1;
             padding-right: 2px;
+            padding-bottom: 8px;
         }
 
         .mobile-menu-item {
@@ -1100,28 +1127,104 @@
             align-items: center;
             gap: 12px;
             width: 100%;
-            padding: 12px 14px;
-            background: #f8fafc;
-            border: 1px solid #f1f5f9;
-            border-radius: 12px;
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: #334155;
+            padding: 10px 12px;
+            background: #ffffff;
+            border: 1px solid rgba(197, 139, 43, 0.35);
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #24130e;
             text-align: left;
             cursor: pointer;
             font-family: inherit;
-            transition: all 0.15s ease;
+            box-shadow: 0 2px 8px rgba(44, 24, 16, 0.04);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             box-sizing: border-box;
+            position: relative;
         }
 
         .mobile-menu-item:hover,
         .mobile-menu-item:active {
             background: #fff0f5;
-            color: var(--brand-pink, #d81b60);
-            border-color: #fbcfe8;
+            border-color: #C58B2B;
+            box-shadow: 0 4px 14px rgba(197, 139, 43, 0.18);
+            transform: translateX(4px);
+        }
+
+        /* Medallón joya para el icono de cada opción */
+        .mobile-menu-item .mmi-medallion {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #fff0f5 0%, #fdf6e9 100%);
+            border: 1px solid rgba(197, 139, 43, 0.45);
+            color: #9d174d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(157, 23, 77, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-item:hover .mmi-medallion,
+        .mobile-menu-item:active .mmi-medallion {
+            background: linear-gradient(135deg, #9d174d 0%, #7a1436 100%);
+            color: #ffffff;
+            border-color: #C58B2B;
+            transform: scale(1.05);
+        }
+
+        .mobile-menu-item .mmi-label {
+            flex: 1;
+            line-height: 1.25;
+            letter-spacing: -0.15px;
+        }
+
+        .mobile-menu-item .mmi-arrow {
+            color: #C58B2B;
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1;
+            opacity: 0.85;
+            transition: transform 0.2s ease;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .mobile-menu-item:hover .mmi-arrow,
+        .mobile-menu-item:active .mmi-arrow {
+            opacity: 1;
             transform: translateX(3px);
         }
 
+        /* Tarjeta especial WhatsApp en Menú Lateral */
+        .mobile-menu-item.mmi-whatsapp {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+            border: 1.5px solid rgba(37, 211, 102, 0.45);
+        }
+
+        .mobile-menu-item.mmi-whatsapp:hover,
+        .mobile-menu-item.mmi-whatsapp:active {
+            border-color: #25D366;
+            background: #ecfdf5;
+            box-shadow: 0 4px 14px rgba(37, 211, 102, 0.2);
+        }
+
+        .mobile-menu-item .mmi-medallion-wa {
+            background: linear-gradient(135deg, #e8f8ee 0%, #dcfce7 100%);
+            border-color: rgba(37, 211, 102, 0.5);
+            color: #15803d;
+        }
+
+        .mobile-menu-item.mmi-whatsapp:hover .mmi-medallion-wa,
+        .mobile-menu-item.mmi-whatsapp:active .mmi-medallion-wa {
+            background: #25D366;
+            color: #ffffff;
+            border-color: #1da851;
+        }
+
+        /* Compatibilidad retroactiva si algún elemento usa .mmi-icon */
         .mobile-menu-item .mmi-icon {
             font-size: 1.25rem;
             width: 26px;
@@ -5767,35 +5870,6 @@
     display: block !important;
 }
 
-.hero-order-hint {
-    font-family: 'Quicksand', sans-serif !important;
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #8C6239 !important;
-    margin: 14px 0 12px 0 !important;
-    text-align: center !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    animation: gentleFloat 2.4s ease-in-out infinite !important;
-}
-
-.bouncing-hand {
-    display: inline-block !important;
-    font-size: 17px !important;
-    animation: handBounce 1.2s ease-in-out infinite !important;
-}
-
-@keyframes gentleFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-}
-
-@keyframes handBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(4px); }
-}
 
 .hero-buttons-group {
     display: flex;
@@ -10811,46 +10885,106 @@ section#nosotros h2 em,
     max-width: 580px;
 }
 
-/* Conector directo centrado con la manita animada (👇) hacia las tarjetas */
+/* Conector Editorial Boutique Centrado hacia las tarjetas de especialidades */
 .hero-order-hint-connector {
     width: 100%;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    margin-top: 24px;
+    justify-content: center;
+    margin-top: 26px;
     position: relative;
     z-index: 3;
+    gap: 10px;
+}
+
+.hero-connector-ornament-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 620px;
+}
+
+.hero-connector-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(197, 139, 43, 0.45) 50%, transparent 100%);
+    position: relative;
+}
+
+.hero-connector-line::after {
+    content: '';
+    position: absolute;
+    top: -2.5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #C58B2B;
+    box-shadow: 0 0 6px rgba(197, 139, 43, 0.6);
 }
 
 .hero-order-hint {
     font-family: 'Quicksand', sans-serif !important;
-    font-size: 0.94rem !important;
+    font-size: 0.92rem !important;
     font-weight: 700 !important;
-    color: #7c4a10 !important;
-    background: rgba(255, 255, 255, 0.92) !important;
-    padding: 8px 22px !important;
+    color: #5c3a10 !important;
+    background: linear-gradient(135deg, rgba(255, 250, 242, 0.95) 0%, rgba(253, 242, 246, 0.95) 100%) !important;
+    padding: 8px 24px !important;
     border-radius: 999px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 10px !important;
-    border: 1.5px solid rgba(197, 139, 43, 0.35) !important;
-    box-shadow: 0 4px 16px rgba(197, 139, 43, 0.12) !important;
+    border: 1.5px solid rgba(197, 139, 43, 0.55) !important;
+    box-shadow: 0 4px 18px rgba(197, 139, 43, 0.14) !important;
+    letter-spacing: -0.15px !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
 }
 
-.bouncing-hand {
-    display: inline-block !important;
-    font-size: 1.25rem !important;
-    line-height: 1 !important;
-    animation: handBounceSubtle 1.4s ease-in-out infinite !important;
+/* Botón / Insignia Circular Joya de 38px x 38px que apunta hacia las tarjetas */
+.hero-connector-jewel-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #9d174d 0%, #7a1436 100%);
+    border: 2px solid #C58B2B;
+    box-shadow: 0 6px 16px rgba(157, 23, 77, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bounceDownSubtle 1.8s ease-in-out infinite;
+    padding: 0;
+    outline: none;
 }
 
-@keyframes handBounceSubtle {
+.hero-connector-jewel-btn svg {
+    color: #ffffff;
+    transition: transform 0.2s ease;
+}
+
+.hero-connector-jewel-btn:hover {
+    transform: scale(1.12);
+    border-color: #ffd782;
+    box-shadow: 0 8px 22px rgba(157, 23, 77, 0.38), 0 0 12px rgba(197, 139, 43, 0.4);
+}
+
+.hero-connector-jewel-btn:active {
+    transform: scale(0.94);
+}
+
+@keyframes bounceDownSubtle {
     0%, 100% {
         transform: translateY(0);
     }
     50% {
-        transform: translateY(5px);
+        transform: translateY(6px);
     }
 }
 
@@ -11045,24 +11179,30 @@ section#nosotros h2 em,
         margin-top: 18px;
         width: 100%;
         display: flex;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
         padding: 0 10px;
+        gap: 8px;
+    }
+
+    .hero-connector-ornament-row {
+        gap: 8px;
+        width: 100%;
     }
 
     .hero-order-hint {
-        max-width: 95%;
-        padding: 8px 16px !important;
-        font-size: 0.86rem !important;
+        max-width: 94%;
+        padding: 7px 16px !important;
+        font-size: 0.84rem !important;
         text-align: center !important;
-        flex-wrap: wrap !important;
         justify-content: center !important;
-        gap: 6px !important;
         line-height: 1.35 !important;
     }
 
-    .hero-order-hint .bouncing-hand {
-        display: inline-block !important;
-        margin-left: 2px !important;
+    .hero-connector-jewel-btn {
+        width: 38px;
+        height: 38px;
     }
 
     .hero-col-logo {

@@ -15,7 +15,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=20261023h">
+    <link rel="stylesheet" href="styles.css?v=20261024a">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -207,36 +207,103 @@
         <div class="mobile-menu-backdrop" onclick="closeMobileMenu()"></div>
         <div class="mobile-menu-sheet">
             <div class="mobile-menu-header">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <img src="logo-pys.png" style="width:34px; height:34px; border-radius:50%; border:2px solid var(--brand-pink);" alt="Logo">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="logo-pys.png" style="width:36px; height:36px; border-radius:50%; border:2px solid #C58B2B;" alt="Logo">
                     <div style="text-align:left;">
-                        <strong style="color:#24130e; font-family:'Playfair Display', Georgia, serif; font-size:1.05rem; font-weight:800; display:block;">Punto <span class="gold-italic-accent" style="color:#C58B2B; font-style:italic;">Dulce</span></strong>
+                        <strong style="color:#24130e; font-family:'Playfair Display', Georgia, serif; font-size:1.08rem; font-weight:800; display:block; letter-spacing:-0.2px;">Punto <span class="gold-italic-accent" style="color:#C58B2B; font-style:italic;">Dulce</span></strong>
                         <small style="color:#8a5a10; font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Pastelería Artesanal</small>
                     </div>
                 </div>
-                <button type="button" class="btn-close-modal" onclick="closeMobileMenu()" aria-label="Cerrar menú">&times;</button>
+                <button type="button" class="btn-close-drawer" onclick="closeMobileMenu()" aria-label="Cerrar menú">&times;</button>
             </div>
             <div class="mobile-menu-links">
+                <!-- 1) Inicio -->
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('inicio', document.getElementById('bnInicio'))">
-                    <span class="mmi-icon">🏠</span> <span>Inicio</span>
+                    <span class="mmi-medallion" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 10.5 12 3l9 7.5"/>
+                            <path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/>
+                            <path d="M9 21v-7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v7"/>
+                            <path d="M4 11h16"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Inicio</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
+
+                <!-- 2) Catálogo de Productos -->
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('productos', document.getElementById('bnProductos'))">
-                    <span class="mmi-icon">🥐</span> <span>Catálogo de Productos</span>
+                    <span class="mmi-medallion" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="2"/>
+                            <rect x="3" y="14" width="7" height="7" rx="2"/>
+                            <rect x="14" y="14" width="7" height="7" rx="2"/>
+                            <path d="M17.5 3v6"/>
+                            <path d="M14.5 6h6"/>
+                            <circle cx="17.5" cy="6" r="1.5" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Catálogo de Productos</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
+
+                <!-- 3) Club Puntos & Recompensas -->
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('club-puntos', document.getElementById('bnClubPuntos'))">
-                    <span class="mmi-icon">🎟️</span> <span>Club Puntos &amp; Recompensas</span>
+                    <span class="mmi-medallion" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m3 7 4.5 5.5L12 4l4.5 8.5L21 7l-2 13H5L3 7Z"/>
+                            <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Club Puntos &amp; Recompensas</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
+
+                <!-- 4) Sobre Nosotros (Historia & Sede) -->
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); showSection('nosotros', document.getElementById('bnNosotros'))">
-                    <span class="mmi-icon">❤️</span> <span>Sobre Nosotros (Historia &amp; Sede)</span>
+                    <span class="mmi-medallion" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Sobre Nosotros (Historia &amp; Sede)</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
+
+                <!-- 5) Políticas y Zonas de Entrega -->
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openDeliveryCoverageModal()">
-                    <span class="mmi-icon">🛵</span> <span>Políticas y Zonas de Entrega</span>
+                    <span class="mmi-medallion" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="m9 12 2 2 4-4"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Políticas y Zonas de Entrega</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
+
+                <!-- 6) Mis Pedidos -->
                 <button class="mobile-menu-item" onclick="closeMobileMenu(); openOrderHistory()">
-                    <span class="mmi-icon">📦</span> <span>Mis Pedidos</span>
+                    <span class="mmi-medallion" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                            <path d="M3 6h18"/>
+                            <path d="M16 10a4 4 0 0 1-8 0"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Mis Pedidos</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
-                <button class="mobile-menu-item" onclick="closeMobileMenu(); openWhatsAppChat()">
-                    <span class="mmi-icon">💬</span> <span>Escríbenos a WhatsApp</span>
+
+                <!-- 7) Escríbenos a WhatsApp -->
+                <button class="mobile-menu-item mmi-whatsapp" onclick="closeMobileMenu(); openWhatsAppChat()">
+                    <span class="mmi-medallion mmi-medallion-wa" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.09 2.53.73 2.99.69.45-.04 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.3"/>
+                        </svg>
+                    </span>
+                    <span class="mmi-label">Escríbenos a WhatsApp</span>
+                    <span class="mmi-arrow" aria-hidden="true">›</span>
                 </button>
             </div>
         </div>
@@ -279,12 +346,22 @@
                 </div>
             </div>
 
-            <!-- LETRERITO CON LA MANITA ANIMADA (👇) COMO CONECTOR DIRECTO A LAS TARJETAS -->
+            <!-- CONECTOR EDITORIAL BOUTIQUE CENTRADO HACIA LAS 3 TARJETAS DE ESPECIALIDADES -->
             <div class="hero-order-hint-connector">
-                <div class="hero-order-hint">
-                    <span>✨ Haz tu pedido fácil en línea · ¡Elige tu opción!</span>
-                    <span class="bouncing-hand" aria-hidden="true">👇</span>
+                <div class="hero-connector-ornament-row">
+                    <span class="hero-connector-line" aria-hidden="true"></span>
+                    <div class="hero-order-hint">
+                        <span>✨ Haz tu pedido fácil en línea · ¡Elige tu opción!</span>
+                    </div>
+                    <span class="hero-connector-line" aria-hidden="true"></span>
                 </div>
+                <button type="button" class="hero-connector-jewel-btn" onclick="const s = document.querySelector('.especialidades-boutique-section'); if(s) s.scrollIntoView({ behavior: 'smooth', block: 'center' });" title="Ver opciones de pedido" aria-label="Desplazarse a opciones de pedido">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <!-- Doble chevron elegante hacia abajo (︾) -->
+                        <path d="m6 8 6 5 6-5"/>
+                        <path d="m6 13 6 5 6-5"/>
+                    </svg>
+                </button>
             </div>
         </div>
 
