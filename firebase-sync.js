@@ -1970,6 +1970,44 @@ window.addEventListener('DOMContentLoaded', () => {
                     });
                 }
 
+                // SEGUNDO: Registrar puntos ganados en Firestore con blindaje de ejecución para móviles
+                // ⚠️ Se dispara la promesa inmediatamente y se espera con Promise.race (500ms timeout)
+                // para que Firestore persista el movimiento antes de que el SO suspenda la pestaña,
+                // asegurando que whatsappWin.location.href o originalOpen se ejecuten sin demoras perceptibles
+                // ni riesgo de bloqueo de popup.
+                let puntosPromise = null;
+                try {
+                    const userEmail = (typeof currentUser !== 'undefined' && currentUser && currentUser.email)
+                        ? currentUser.email : null;
+                    
+                    const ptsGanados = (typeof window.calcularPuntosPedido === 'function' && typeof currentUser !== 'undefined')
+                        ? window.calcularPuntosPedido(nuevoPedido, currentUser)
+                        : 0;
+                    
+                    if (userEmail && ptsGanados > 0 && typeof window.registrarMovimientoPuntos === 'function') {
+                        puntosPromise = window.registrarMovimientoPuntos(userEmail, {
+                            tipo: 'ganancia',
+                            cantidad: ptsGanados,
+                            motivo: `Compra completada (${nuevoPedido.id})`,
+                            orderId: nuevoPedido.id
+                        }).catch(pErr => {
+                            console.warn('[Puntos] Error no crítico al registrar puntos:', pErr);
+                        });
+                    }
+                } catch (pErr) {
+                    console.warn('[Puntos] Error no crítico al preparar registro de puntos:', pErr);
+                }
+
+                if (puntosPromise) {
+                    try {
+                        // Espera máxima de 500ms para completar Firestore sin congelar la interfaz
+                        await Promise.race([
+                            puntosPromise,
+                            new Promise(res => setTimeout(res, 500))
+                        ]);
+                    } catch(e) {}
+                }
+
                 // Paso 3: Abrir confirmación en WhatsApp (100%)
                 if (typeof updatePopupProgress === 'function') {
                     updatePopupProgress(100, 'Paso 3 de 3: Abriendo confirmación en WhatsApp...');
@@ -1987,32 +2025,10 @@ window.addEventListener('DOMContentLoaded', () => {
                             } catch(e) {
                                 originalOpen(targetUrl, '_blank');
                             }
-                        }, 400);
+                        }, 200);
                     } else {
                         originalOpen(targetUrl, '_blank');
                     }
-                }
-                  
-                // SEGUNDO (INDEPENDIENTE): Registrar puntos ganados en Firestore
-                // ⚠️ Encapsulado en try/catch: cualquier fallo aquí NO bloquea WhatsApp
-                try {
-                    const userEmail = (typeof currentUser !== 'undefined' && currentUser && currentUser.email)
-                        ? currentUser.email : null;
-                    
-                    const ptsGanados = (typeof window.calcularPuntosPedido === 'function' && typeof currentUser !== 'undefined')
-                        ? window.calcularPuntosPedido(nuevoPedido, currentUser)
-                        : 0;
-                    
-                    if (userEmail && ptsGanados > 0 && typeof window.registrarMovimientoPuntos === 'function') {
-                        window.registrarMovimientoPuntos(userEmail, {
-                            tipo: 'ganancia',
-                            cantidad: ptsGanados,
-                            motivo: `Compra completada (${nuevoPedido.id})`,
-                            orderId: nuevoPedido.id
-                        });
-                    }
-                } catch (pErr) {
-                    console.warn('[Puntos] Error no crítico al registrar puntos:', pErr);
                 }
                   
                 // Refrescar monitor si está visible

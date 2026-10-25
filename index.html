@@ -8,10 +8,11 @@
         content="Panadería y Repostería P&S Punto Dulce - Pan fresco, tortas y postres artesanales en Cúcuta. Hecho con amor, endulzamos tu día.">
     <title>P&S Punto Dulce | Tortas de Celebración en Cúcuta</title>
     <link rel="icon" type="image/jpeg" href="favicon-pys-64.jpg">
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
@@ -84,7 +85,7 @@
                     <span class="user-pill-arrow">▼</span>
                     <div id="user-dropdown-menu" class="user-dropdown-menu">
                         <div class="dropdown-profile-header">
-                            <img id="dropdown-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
+                            <img id="dropdown-avatar" src="logo-pys.png" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='logo-pys.png';">
                             <div class="dropdown-profile-info">
                                 <strong id="dropdown-name">Usuario</strong>
                                 <small id="dropdown-email"></small>
@@ -208,7 +209,7 @@
         <div class="mobile-menu-sheet">
             <div class="mobile-menu-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="logo-pys.png" style="width:36px; height:36px; border-radius:50%; border:2px solid #C58B2B;" alt="Logo">
+                    <img src="logo-pys.png" style="width:36px; height:36px; border-radius:50%; border:2px solid #C58B2B;" alt="Logo" loading="lazy" decoding="async">
                     <div style="text-align:left;">
                         <strong style="color:#24130e; font-family:'Playfair Display', Georgia, serif; font-size:1.08rem; font-weight:800; display:block; letter-spacing:-0.2px;">Punto <span class="gold-italic-accent" style="color:#C58B2B; font-style:italic;">Dulce</span></strong>
                         <small style="color:#8a5a10; font-size:0.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Pastelería Artesanal</small>
@@ -338,7 +339,7 @@
                     <div class="hero-logo-showcase">
                         <span class="hero-sparkle sp-1" aria-hidden="true">✨</span>
                         <span class="hero-sparkle sp-2" aria-hidden="true">✨</span>
-                        <img src="logo-punto-dulce.png" class="hero-logo-free" alt="Logo Panadería & Repostería Punto Dulce">
+                        <img src="logo-punto-dulce.png" class="hero-logo-free" alt="Logo Panadería & Repostería Punto Dulce" fetchpriority="high" decoding="async">
                         <div class="hero-logo-pill">
                             <span>✨ 100% Recién Horneado</span>
                         </div>
@@ -1130,7 +1131,7 @@
         <div class="auth-card">
             <button class="auth-close-btn" onclick="closeMobileProfile()">✕</button>
             <div class="dropdown-profile-header">
-                <img id="mp-avatar" src="logo-pys.png" alt="" onerror="this.onerror=null; this.src='logo-pys.png';">
+                <img id="mp-avatar" src="logo-pys.png" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='logo-pys.png';">
                 <div class="dropdown-profile-info">
                     <strong id="mp-name">Usuario</strong>
                     <small id="mp-email"></small>
@@ -1182,7 +1183,7 @@
             <!-- Cabecera Corporativa con Logo Enmarcado en Oro -->
             <div class="auth-header-corporate">
                 <div class="auth-logo-ring">
-                    <img src="logo-pys.png" alt="Logo P&S Punto Dulce" class="auth-brand-logo">
+                    <img src="logo-pys.png" alt="Logo P&S Punto Dulce" class="auth-brand-logo" loading="lazy" decoding="async">
                 </div>
                 <h3 class="auth-brand-title">P&amp;S Punto Dulce</h3>
                 <p class="auth-brand-subtitle">Portal Oficial de Clientes • Cúcuta</p>
