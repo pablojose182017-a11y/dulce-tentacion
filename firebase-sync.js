@@ -2223,8 +2223,13 @@ window.addEventListener('DOMContentLoaded', () => {
     db.collection('config').doc('tienda').onSnapshot(doc => {
         if (doc.exists) {
             const data = doc.data();
-            if (data.minFreeDelivery !== undefined) {
-                window.dt_min_free_delivery = data.minFreeDelivery;
+            const minFree = data.minFreeDelivery !== undefined ? data.minFreeDelivery : window.dt_min_free_delivery;
+            const baseCost = data.deliveryBaseCost !== undefined ? data.deliveryBaseCost : (data.costoDomicilioBase !== undefined ? data.costoDomicilioBase : window.dt_delivery_base_cost);
+            if (typeof window.applyDeliveryConfig === 'function') {
+                window.applyDeliveryConfig(minFree, baseCost);
+            } else {
+                if (minFree !== undefined) window.dt_min_free_delivery = minFree;
+                if (baseCost !== undefined) window.dt_delivery_base_cost = baseCost;
                 if (typeof updateCart === 'function') updateCart();
             }
         }

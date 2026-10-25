@@ -5104,9 +5104,11 @@ function filterProductsBySearch(inputId) {
         if (deliveryQuestion) {
             renderProducts(products);
             renderFeatured('todos');
+            const dMin = (typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000).toLocaleString('es-CO');
+            const dCost = (typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000).toLocaleString('es-CO');
             showSearchHelp(
                 'Entregas en Cúcuta',
-                'Cubrimos la zona urbana de Cúcuta. El domicilio es gratis en compras desde $10.000 COP; en pedidos menores cuesta $5.000 COP.',
+                `Cubrimos la zona urbana de Cúcuta. El domicilio es gratis en compras desde $${dMin} COP; en pedidos menores cuesta $${dCost} COP.`,
                 'Ver zonas y condiciones',
                 () => window.openDeliveryCoverageModal?.()
             );
@@ -5326,6 +5328,35 @@ function removeCartItem(cartId) {
 // ===== ENTREGA: DOMICILIO VS RECOGER EN TIENDA =====
 var deliveryType = 'delivery';
 window.deliveryType = 'delivery';
+window.dt_min_free_delivery = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
+window.dt_delivery_base_cost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
+
+// Sincronizador global de textos y valores de domicilio
+window.applyDeliveryConfig = function(minFree, baseCost) {
+    if (typeof minFree === 'number' && !isNaN(minFree) && minFree >= 0) {
+        window.dt_min_free_delivery = minFree;
+    }
+    if (typeof baseCost === 'number' && !isNaN(baseCost) && baseCost >= 0) {
+        window.dt_delivery_base_cost = baseCost;
+    }
+
+    const currentMin = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
+    const currentCost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
+    const minFormatted = `$${currentMin.toLocaleString('es-CO')} COP`;
+    const costFormatted = `$${currentCost.toLocaleString('es-CO')} COP`;
+
+    document.querySelectorAll('.js-free-delivery-min').forEach(el => {
+        el.textContent = minFormatted;
+    });
+
+    document.querySelectorAll('.js-delivery-base-cost').forEach(el => {
+        el.textContent = costFormatted;
+    });
+
+    if (typeof updateCart === 'function') {
+        updateCart();
+    }
+};
 
 function setDeliveryType(type) {
     deliveryType = type || 'delivery';
@@ -5446,11 +5477,12 @@ function updateCart() {
 
     const curDelivery = (typeof window.deliveryType !== 'undefined') ? window.deliveryType : 'delivery';
     const threshold = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
+    const baseDeliveryCost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
     const baseProductos = Math.max(0, totalPrice - discount);
 
     let costoDomicilio = 0;
     if (curDelivery === 'delivery') {
-        costoDomicilio = (baseProductos >= threshold || totalPrice === 0) ? 0 : 5000;
+        costoDomicilio = (baseProductos >= threshold || totalPrice === 0) ? 0 : baseDeliveryCost;
     } else {
         costoDomicilio = 0;
     }
@@ -5495,7 +5527,7 @@ function updateCart() {
                 sumDeliveryEl.innerHTML = '<span style="color:#059669; font-weight:800;">¡GRATIS!</span>';
             }
         } else {
-            sumDeliveryEl.innerHTML = '<span style="color:#e11d48; font-weight:800;">$5.000 COP</span> <small style="display:block; font-size:0.72rem; color:#64748b; font-weight:normal; margin-top:2px;">(Gratis a partir de $' + threshold.toLocaleString('es-CO') + ' en productos)</small>';
+            sumDeliveryEl.innerHTML = '<span style="color:#e11d48; font-weight:800;">$' + costoDomicilio.toLocaleString('es-CO') + ' COP</span> <small style="display:block; font-size:0.72rem; color:#64748b; font-weight:normal; margin-top:2px;">(Gratis a partir de $' + threshold.toLocaleString('es-CO') + ' en productos)</small>';
         }
     }
 
@@ -5508,7 +5540,7 @@ function updateCart() {
         } else {
             const falta = Math.max(0, threshold - baseProductos);
             feeBadge.className = 'delivery-fee-badge paid';
-            feeBadge.innerHTML = `🛵 Costo de domicilio: <strong>$5.000 COP</strong> <br><small>(¡Agrega <strong>$${falta.toLocaleString('es-CO')} COP</strong> más para envío gratis!)</small>`;
+            feeBadge.innerHTML = `🛵 Costo de domicilio: <strong>$${baseDeliveryCost.toLocaleString('es-CO')} COP</strong> <br><small>(¡Agrega <strong>$${falta.toLocaleString('es-CO')} COP</strong> más para envío gratis!)</small>`;
         }
     }
 
@@ -5535,7 +5567,7 @@ function updateCart() {
             cqsDel.innerText = '¡GRATIS!';
             cqsDel.style.color = '#059669';
         } else {
-            cqsDel.innerText = '$5.000 COP';
+            cqsDel.innerText = `$${costoDomicilio.toLocaleString('es-CO')} COP`;
             cqsDel.style.color = '#e11d48';
         }
     }
@@ -6076,9 +6108,11 @@ function sendOrder() {
         firstPurchaseApplied = false;
     }
 
+    const threshold = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
+    const baseDeliveryCost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
     const baseProductos = Math.max(0, tp - discount);
     if (curDelivery === 'delivery') {
-        costoDomicilio = (baseProductos >= 10000) ? 0 : 5000;
+        costoDomicilio = (baseProductos >= threshold) ? 0 : baseDeliveryCost;
     }
 
     const finalTotal = (tp - discount) + costoDomicilio;
@@ -6242,7 +6276,7 @@ function sendOrder() {
     if (discount > 0) {
         msg += `${symGift} *Descuento 1ra Compra (3%):* -$${discount.toLocaleString('es-CO')} COP\n`;
     }
-    msg += `${isMobile ? '\u{1F6F5}' : '•'} *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$5.000 COP'}\n`;
+    msg += `${isMobile ? '\u{1F6F5}' : '•'} *Domicilio:* ${costoDomicilio === 0 ? '¡GRATIS! ($0)' : '$' + costoDomicilio.toLocaleString('es-CO') + ' COP'}\n`;
     msg += `*TOTAL A PAGAR:* $${finalTotal.toLocaleString('es-CO')} COP\n`;
     if (typeof orderType !== 'undefined' && orderType === 'evento') {
         const dep = Math.ceil(finalTotal / 2);
@@ -7747,6 +7781,21 @@ window.toggleFaqItem = function(buttonEl) {
         if (toggleIcon) toggleIcon.textContent = '−';
     }
 };
+
+// Inicializar textos de domicilio en el arranque
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.applyDeliveryConfig === 'function') {
+                window.applyDeliveryConfig(window.dt_min_free_delivery, window.dt_delivery_base_cost);
+            }
+        });
+    } else {
+        if (typeof window.applyDeliveryConfig === 'function') {
+            window.applyDeliveryConfig(window.dt_min_free_delivery, window.dt_delivery_base_cost);
+        }
+    }
+}
 
 
 

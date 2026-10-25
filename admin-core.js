@@ -503,19 +503,27 @@ window.abrirModalConfigDelivery = function () {
     }
 
     const m = document.getElementById('modal-config-delivery');
+    const currentMin = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
+    const currentCost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
 
     m.innerHTML = `
-        <div class="auth-content" style="max-width:350px; width:90%; padding:20px; background:#fff; border-radius:15px; position:relative; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
-            <button class="auth-close-btn" onclick="document.getElementById('modal-config-delivery').style.display='none'" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✕</button>
-            <h3 style="margin-top:0; color:#f59e0b; text-align:center;">🛵 Domicilio Gratis</h3>
+        <div class="auth-content" style="max-width:380px; width:90%; padding:24px; background:#fff; border-radius:18px; position:relative; box-shadow:0 12px 30px rgba(0,0,0,0.22); font-family:inherit;">
+            <button class="auth-close-btn" onclick="document.getElementById('modal-config-delivery').style.display='none'" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;">✕</button>
+            <h3 style="margin-top:0; color:#d97706; text-align:center; font-size:1.25rem;">🛵 Configuración de Domicilios</h3>
             
-            <div style="margin-bottom:15px; text-align:left;">
-                <label style="display:block; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">Monto mínimo de compra (COP)</label>
-                <input type="number" id="config-delivery-min" value="${window.dt_min_free_delivery}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-size:1rem;" placeholder="Ej. 10000">
-                <small style="color:#64748b; font-size:0.8rem; display:block; margin-top:5px;">Los clientes que superen este monto no pagarán domicilio ($5.000).</small>
+            <div style="margin-bottom:14px; text-align:left;">
+                <label style="display:block; font-size:0.88rem; font-weight:700; color:#334155; margin-bottom:5px;">Monto mínimo para Envío Gratis (COP)</label>
+                <input type="number" id="config-delivery-min" value="${currentMin}" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:1rem; box-sizing:border-box;" placeholder="Ej. 10000">
+                <small style="color:#64748b; font-size:0.78rem; display:block; margin-top:4px;">Pedidos por valor igual o superior tendrán entrega gratuita.</small>
+            </div>
+
+            <div style="margin-bottom:18px; text-align:left;">
+                <label style="display:block; font-size:0.88rem; font-weight:700; color:#334155; margin-bottom:5px;">Costo de Domicilio Base (COP)</label>
+                <input type="number" id="config-delivery-cost" value="${currentCost}" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #cbd5e1; font-size:1rem; box-sizing:border-box;" placeholder="Ej. 5000">
+                <small style="color:#64748b; font-size:0.78rem; display:block; margin-top:4px;">Tarifa que pagarán clientes con pedidos menores al monto mínimo.</small>
             </div>
             
-            <button onclick="window.guardarConfigDelivery()" style="width:100%; padding:12px; background:#f59e0b; color:#fff; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer;">💾 Guardar Configuración</button>
+            <button onclick="window.guardarConfigDelivery()" style="width:100%; padding:12px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; border:none; border-radius:10px; font-weight:bold; font-size:1rem; cursor:pointer; box-shadow:0 4px 12px rgba(217, 119, 6, 0.3);">💾 Guardar Configuración</button>
         </div>
     `;
     m.style.display = 'flex';
@@ -523,27 +531,46 @@ window.abrirModalConfigDelivery = function () {
 
 // Extracted from control-roles.js
 window.guardarConfigDelivery = function () {
-    const val = parseInt(document.getElementById('config-delivery-min').value);
-    if (isNaN(val) || val < 0) {
-        if (typeof showToast === 'function') showToast('Ingresa un monto válido', '⚠️');
+    const minVal = parseInt(document.getElementById('config-delivery-min').value);
+    const costInput = document.getElementById('config-delivery-cost');
+    const costVal = costInput ? parseInt(costInput.value) : (typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000);
+
+    if (isNaN(minVal) || minVal < 0) {
+        if (typeof showToast === 'function') showToast('Ingresa un monto mínimo válido', '⚠️');
         return;
     }
 
-    window.dt_min_free_delivery = val;
+    if (isNaN(costVal) || costVal < 0) {
+        if (typeof showToast === 'function') showToast('Ingresa un costo de domicilio válido', '⚠️');
+        return;
+    }
+
+    window.dt_min_free_delivery = minVal;
+    window.dt_delivery_base_cost = costVal;
+
+    if (typeof window.applyDeliveryConfig === 'function') {
+        window.applyDeliveryConfig(minVal, costVal);
+    }
 
     if (typeof db !== 'undefined') {
-        db.collection('config').doc('tienda').set({ minFreeDelivery: val }, { merge: true })
+        db.collection('config').doc('tienda').set({ 
+            minFreeDelivery: minVal,
+            deliveryBaseCost: costVal,
+            costoDomicilioBase: costVal
+        }, { merge: true })
             .then(() => {
-                if (typeof showToast === 'function') showToast("Monto guardado con éxito", "🛵");
-                document.getElementById('modal-config-delivery').style.display = 'none';
-                if (typeof updateCart === 'function') updateCart();
+                if (typeof showToast === 'function') showToast("Configuración de domicilios guardada con éxito", "🛵");
+                const m = document.getElementById('modal-config-delivery');
+                if (m) m.style.display = 'none';
             })
             .catch(err => {
                 console.error("Error guardando config:", err);
-                if (typeof showToast === 'function') showToast("Error al guardar", "❌");
+                if (typeof showToast === 'function') showToast("Error al guardar en el servidor", "❌");
             });
     } else {
-        if (typeof showToast === 'function') showToast("No hay conexión a BD", "⚠️");
+        if (typeof showToast === 'function') showToast("Configuración aplicada localmente", "🛵");
+        const m = document.getElementById('modal-config-delivery');
+        if (m) m.style.display = 'none';
     }
 };
 
