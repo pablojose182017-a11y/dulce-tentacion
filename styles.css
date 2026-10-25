@@ -7599,14 +7599,16 @@ section#nosotros h2 em,
     border: none !important;
 }
 
-/* Píldoras de filtro de categorías */
+/* Píldoras de filtro de categorías con jerarquía Cristal & Cacao/Oro */
 .cat-chip {
-    background: #FFFFFF !important;
-    border: 1px solid #EAE2D7 !important;
-    color: #4A3A31 !important;
+    background: rgba(255, 253, 250, 0.82) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    border: 1px solid rgba(197, 139, 43, 0.35) !important;
+    color: #5c4338 !important;
     border-radius: 50px !important;
     padding: 8px 18px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     transition: all 0.25s ease !important;
     box-shadow: none !important;
 }
@@ -7615,14 +7617,14 @@ section#nosotros h2 em,
     border-color: #C58B2B !important;
     color: #C58B2B !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.12) !important;
+    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.16) !important;
 }
 
 .cat-chip.active {
-    background: #2C1E18 !important;
-    color: #FFFFFF !important;
-    border-color: #2C1E18 !important;
-    box-shadow: 0 4px 12px rgba(44, 30, 24, 0.20) !important;
+    background: linear-gradient(135deg, #24130e 0%, #3d231a 100%) !important;
+    color: #fffdf9 !important;
+    border: 1.5px solid #C58B2B !important;
+    box-shadow: 0 6px 16px rgba(36, 19, 14, 0.18) !important;
 }
 
 /* 4. Grilla de Productos y Tarjetas Estilo Editorial Boutique */
@@ -7645,6 +7647,17 @@ section#nosotros h2 em,
     }
 }
 
+@keyframes cardRevealSubtle {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .grid .card,
 .card {
     background: #FFFFFF !important;
@@ -7657,6 +7670,16 @@ section#nosotros h2 em,
     height: 100% !important;
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
     position: relative !important;
+    animation: cardRevealSubtle 0.38s ease-out both !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .grid .card,
+    .card {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
 }
 
 .grid .card:hover,
@@ -7684,11 +7707,11 @@ section#nosotros h2 em,
     width: 100% !important;
     object-fit: cover !important;
     filter: contrast(1.05) saturate(1.1) brightness(1.02) !important;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease !important;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), filter 0.3s ease !important;
 }
 
 .card:hover .card-img-wrap img {
-    transform: scale(1.05) !important;
+    transform: scale(1.03) !important;
     filter: contrast(1.08) saturate(1.15) brightness(1.03) !important;
 }
 
@@ -7715,18 +7738,20 @@ section#nosotros h2 em,
 .card .badge-status,
 .card .badge-discount,
 .card .card-tag {
-    background: rgba(30, 22, 18, 0.88) !important;
+    background: linear-gradient(135deg, #dfac4c 0%, #C58B2B 100%) !important;
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
     border-radius: 999px !important;
     padding: 3px 9px !important;
-    font-size: 0.62rem !important;
+    font-size: 0.65rem !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-style: italic !important;
     font-weight: 700 !important;
-    letter-spacing: 0.04em !important;
+    letter-spacing: 0.03em !important;
     text-transform: uppercase !important;
-    color: #FFFFFF !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    color: #24130e !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16) !important;
+    border: 1px solid rgba(255, 253, 249, 0.75) !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 4px !important;
@@ -7736,30 +7761,23 @@ section#nosotros h2 em,
     max-width: 100% !important;
 }
 
-/* Variantes refinadas de insignias de frescura y estado */
-.card .badge-fresh-hoy {
-    background: #0E7C86 !important;
-    color: #FFFFFF !important;
-    border-color: rgba(255, 255, 255, 0.28) !important;
-}
-
-.card .badge-fresh-pedido {
-    background: #C92A63 !important;
-    color: #FFFFFF !important;
-    border-color: rgba(255, 255, 255, 0.28) !important;
-}
-
+/* Variantes refinadas de insignias de frescura y estado (Sello Vitrina Francesa) */
+.card .badge-fresh-hoy,
+.card .badge-fresh-pedido,
 .card .badge-fresh-popular {
-    background: #C58B2B !important;
-    color: #FFFFFF !important;
-    border-color: rgba(255, 255, 255, 0.28) !important;
+    background: linear-gradient(135deg, #dfac4c 0%, #C58B2B 100%) !important;
+    color: #24130e !important;
+    border: 1px solid rgba(255, 253, 249, 0.8) !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-style: italic !important;
+    font-weight: 700 !important;
 }
 
 .card .badge-discount,
 .badge-discount {
-    background: linear-gradient(135deg, #D48817 0%, #B86B11 100%) !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    background: linear-gradient(135deg, #dfac4c 0%, #C58B2B 100%) !important;
+    color: #24130e !important;
+    border: 1px solid rgba(255, 253, 249, 0.85) !important;
     box-shadow: 0 4px 10px rgba(184, 107, 17, 0.35) !important;
     position: relative !important;
     top: auto !important;
@@ -7768,12 +7786,18 @@ section#nosotros h2 em,
     transform: none !important;
     margin: 0 !important;
     width: auto !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-style: italic !important;
+    font-weight: 700 !important;
 }
 
 .card .badge-status.badge-agotado,
 .card .badge-status.badge-out {
     background: rgba(185, 28, 28, 0.92) !important;
     color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    font-style: normal !important;
 }
 
 /* Botón flotante de Favoritos en la esquina superior derecha de la foto */
