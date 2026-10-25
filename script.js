@@ -6061,7 +6061,7 @@ function sendOrder() {
 
     const curDelivery = (typeof window.deliveryType !== 'undefined') ? window.deliveryType : 'delivery';
 
-    if (!name) return alert("Por favor, llena tu nombre.");
+    if (!name) return alert("Por favor, ingresa tu nombre completo.");
     if (curDelivery === 'delivery' && !addr) {
         return alert("Por favor, ingresa tu barrio y dirección para el domicilio en Cúcuta.");
     }
