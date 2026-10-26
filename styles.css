@@ -10727,16 +10727,16 @@ section#nosotros h2 em,
    INICIO BOUTIQUE EXECUTIVE REDESIGN (5 BLOQUES INMERSIVOS)
    ========================================================================== */
 
-/* --- BLOQUE 1: HERO BOUTIQUE INMERSIVO (UN SOLO LOGO LIMPIO Y ARMONIOSO) --- */
+/* --- BLOQUE 1: HERO BOUTIQUE INMERSIVO (FONDO PAREJO Y FLUIDO, SIN CAJA ENCAJONADA) --- */
 .hero-boutique-immersive {
     position: relative;
     background: linear-gradient(135deg, #fffdfa 0%, #fff3f5 50%, #fef8f0 100%);
-    border: 1px solid rgba(197, 139, 43, 0.22);
-    border-radius: 28px;
-    padding: 36px 24px;
-    margin-bottom: 32px;
+    border: none;
+    border-radius: 0;
+    padding: 32px 18px 24px;
+    margin-bottom: 24px;
     overflow: hidden;
-    box-shadow: 0 16px 45px -12px rgba(136, 19, 55, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    box-shadow: none;
 }
 
 .hero-boutique-immersive::before {
@@ -10770,6 +10770,8 @@ section#nosotros h2 em,
     align-items: center;
     position: relative;
     z-index: 2;
+    max-width: 1140px;
+    margin: 0 auto;
 }
 
 .hero-col-content {
@@ -10905,111 +10907,57 @@ section#nosotros h2 em,
     color: #3d251e;
     font-weight: 500;
     line-height: 1.65;
-    margin: 0 0 14px 0;
+    margin: 0 0 16px 0;
     max-width: 580px;
 }
 
-/* Conector Editorial Boutique Centrado hacia las tarjetas de especialidades */
-.hero-order-hint-connector {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 26px;
-    position: relative;
-    z-index: 3;
-    gap: 10px;
-}
-
-.hero-connector-ornament-row {
+/* BOTÓN EXPLORAR NUESTRA CARTA (ESTILO BOUTIQUE DORADO IMPERIAL) */
+.hero-cta-ActionWrap {
+    margin-top: 8px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 14px;
-    width: 100%;
-    max-width: 620px;
+    justify-content: flex-start;
+    width: auto;
 }
 
-.hero-connector-line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(197, 139, 43, 0.45) 50%, transparent 100%);
-    position: relative;
-}
-
-.hero-connector-line::after {
-    content: '';
-    position: absolute;
-    top: -2.5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #C58B2B;
-    box-shadow: 0 0 6px rgba(197, 139, 43, 0.6);
-}
-
-.hero-order-hint {
-    font-family: 'Quicksand', sans-serif !important;
-    font-size: 0.92rem !important;
-    font-weight: 700 !important;
-    color: #5c3a10 !important;
-    background: linear-gradient(135deg, rgba(255, 250, 242, 0.95) 0%, rgba(253, 242, 246, 0.95) 100%) !important;
-    padding: 8px 24px !important;
-    border-radius: 999px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: 1.5px solid rgba(197, 139, 43, 0.55) !important;
-    box-shadow: 0 4px 18px rgba(197, 139, 43, 0.14) !important;
-    letter-spacing: -0.15px !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-}
-
-/* Botón / Insignia Circular Joya de 38px x 38px que apunta hacia las tarjetas */
-.hero-connector-jewel-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #9d174d 0%, #7a1436 100%);
-    border: 2px solid #C58B2B;
-    box-shadow: 0 6px 16px rgba(157, 23, 77, 0.25);
+.btn-explore-carta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
+    gap: 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #d49a35 0%, #C58B2B 100%);
+    color: #24130e;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 14px 32px;
+    border: 1px solid rgba(255, 253, 249, 0.45);
+    box-shadow: 0 8px 20px rgba(197, 139, 43, 0.28);
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    animation: bounceDownSubtle 1.8s ease-in-out infinite;
-    padding: 0;
+    text-decoration: none;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background 0.25s ease;
     outline: none;
 }
 
-.hero-connector-jewel-btn svg {
-    color: #ffffff;
-    transition: transform 0.2s ease;
+.btn-explore-carta svg {
+    color: #24130e;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.hero-connector-jewel-btn:hover {
-    transform: scale(1.12);
-    border-color: #ffd782;
-    box-shadow: 0 8px 22px rgba(157, 23, 77, 0.38), 0 0 12px rgba(197, 139, 43, 0.4);
+.btn-explore-carta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(197, 139, 43, 0.38);
+    background: linear-gradient(135deg, #dfa640 0%, #ce9330 100%);
 }
 
-.hero-connector-jewel-btn:active {
-    transform: scale(0.94);
+.btn-explore-carta:hover svg {
+    transform: translateY(3px);
 }
 
-@keyframes bounceDownSubtle {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(6px);
-    }
+.btn-explore-carta:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.25);
 }
 
 /* --- BLOQUE 2: EXPERIENCIAS P&S PUNTO DULCE (3 TARJETAS-BOTÓN PRINCIPALES) --- */
@@ -11199,34 +11147,16 @@ section#nosotros h2 em,
         align-items: center;
     }
 
-    .hero-order-hint-connector {
-        margin-top: 18px;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+    .hero-cta-ActionWrap {
         justify-content: center;
-        padding: 0 10px;
-        gap: 8px;
-    }
-
-    .hero-connector-ornament-row {
-        gap: 8px;
         width: 100%;
+        margin-top: 14px;
     }
 
-    .hero-order-hint {
-        max-width: 94%;
-        padding: 7px 16px !important;
-        font-size: 0.84rem !important;
-        text-align: center !important;
-        justify-content: center !important;
-        line-height: 1.35 !important;
-    }
-
-    .hero-connector-jewel-btn {
-        width: 38px;
-        height: 38px;
+    .btn-explore-carta {
+        width: auto;
+        padding: 13px 28px;
+        font-size: 0.95rem;
     }
 
     .hero-col-logo {
@@ -11553,8 +11483,8 @@ section#nosotros h2 em,
 
 @media (max-width: 540px) {
     .hero-boutique-immersive {
-        padding: 24px 18px;
-        border-radius: 22px;
+        padding: 24px 12px;
+        border-radius: 0;
     }
 
     .hero-capsule-actions button {
