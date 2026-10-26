@@ -10727,16 +10727,24 @@ section#nosotros h2 em,
    INICIO BOUTIQUE EXECUTIVE REDESIGN (5 BLOQUES INMERSIVOS)
    ========================================================================== */
 
-/* --- BLOQUE 1: HERO BOUTIQUE INMERSIVO (FONDO PAREJO Y FLUIDO, SIN CAJA ENCAJONADA) --- */
+/* --- BLOQUE 1: HERO BOUTIQUE INMERSIVO (FONDO 100% FULL-WIDTH DE PARED A PARED, SIN CAJA ENCAJONADA) --- */
 .hero-boutique-immersive {
     position: relative;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
     background: linear-gradient(135deg, #fffdfa 0%, #fff3f5 50%, #fef8f0 100%);
-    border: none;
-    border-radius: 0;
-    padding: 32px 18px 24px;
-    margin-bottom: 24px;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 38px 24px 28px;
+    margin-top: -22px;
+    margin-bottom: 28px;
     overflow: hidden;
-    box-shadow: none;
+    box-shadow: none !important;
+    box-sizing: border-box;
 }
 
 .hero-boutique-immersive::before {
@@ -11483,8 +11491,9 @@ section#nosotros h2 em,
 
 @media (max-width: 540px) {
     .hero-boutique-immersive {
-        padding: 24px 12px;
-        border-radius: 0;
+        padding: 24px 16px;
+        margin-top: -14px;
+        border-radius: 0 !important;
     }
 
     .hero-capsule-actions button {
