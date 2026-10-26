@@ -4862,7 +4862,19 @@ function createCardHTML(p) {
         singleBadgeHTML = `<span class="badge-discount">🔥 ¡OFERTA! -${pct}%</span>`;
     } else if (p.tag && p.tag.trim() !== '') {
         // Si tiene etiqueta personalizada definida en administración
-        singleBadgeHTML = `<span class="badge-status">${p.tag.toUpperCase()}</span>`;
+        let cleanTag = p.tag.trim().toUpperCase();
+        if (cleanTag.includes('RECIÉN HORNEADO') || cleanTag.includes('RECIEN HORNEADO') || cleanTag.includes('RECIEN') || cleanTag.includes('HORNEADO')) {
+            cleanTag = 'TRADICIONAL';
+        }
+        let tagClass = 'badge-tag-general';
+        if (cleanTag.includes('MÁS PEDIDO') || cleanTag.includes('MAS PEDIDO')) {
+            tagClass = 'badge-fresh-pedido';
+        } else if (cleanTag.includes('FAVORITO')) {
+            tagClass = 'badge-fresh-hoy';
+        } else if (cleanTag.includes('POPULAR')) {
+            tagClass = 'badge-fresh-popular';
+        }
+        singleBadgeHTML = `<span class="badge-status ${tagClass}">${cleanTag}</span>`;
     } else {
         // Prioridad 3: Disponible y sin descuento -> 1 sola etiqueta entre Popular, Más pedido o Favorito
         const numId = Number(p.id) || 1;

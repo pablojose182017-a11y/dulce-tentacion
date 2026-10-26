@@ -7856,22 +7856,19 @@ section#nosotros h2 em,
 }
 
 .card .badge-status,
-.card .badge-discount,
 .card .card-tag {
-    background: linear-gradient(135deg, #dfac4c 0%, #C58B2B 100%) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    border-radius: 999px !important;
-    padding: 3px 9px !important;
-    font-size: 0.65rem !important;
-    font-family: 'Playfair Display', Georgia, serif !important;
-    font-style: italic !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.03em !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-style: normal !important;
+    font-weight: 800 !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.04em !important;
     text-transform: uppercase !important;
-    color: #24130e !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16) !important;
-    border: 1px solid rgba(255, 253, 249, 0.75) !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-radius: 999px !important;
+    box-shadow: 0 4px 12px rgba(36, 19, 14, 0.22) !important;
+    padding: 4px 10px !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 4px !important;
@@ -7879,26 +7876,40 @@ section#nosotros h2 em,
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     max-width: 100% !important;
+    background: linear-gradient(135deg, #b45309 0%, #78350f 100%) !important;
 }
 
-/* Variantes refinadas de insignias de frescura y estado (Sello Vitrina Francesa) */
-.card .badge-fresh-hoy,
+/* 1. MÁS PEDIDO: Dorado Imperial a Vino Rubí (gemelo a PREMIO DULCE) */
 .card .badge-fresh-pedido,
-.card .badge-fresh-popular {
-    background: linear-gradient(135deg, #dfac4c 0%, #C58B2B 100%) !important;
-    color: #24130e !important;
-    border: 1px solid rgba(255, 253, 249, 0.8) !important;
-    font-family: 'Playfair Display', Georgia, serif !important;
-    font-style: italic !important;
-    font-weight: 700 !important;
+.card .badge-status.badge-fresh-pedido {
+    background: linear-gradient(135deg, #c58b2b 0%, #9d174d 100%) !important;
+}
+
+/* 2. FAVORITO: Cacao Profundo a Bronce Imperial */
+.card .badge-fresh-hoy,
+.card .badge-status.badge-fresh-hoy {
+    background: linear-gradient(135deg, #24130e 0%, #8a5a19 100%) !important;
+}
+
+/* 3. POPULAR: Vino Imperial a Ciruela Real */
+.card .badge-fresh-popular,
+.card .badge-status.badge-fresh-popular {
+    background: linear-gradient(135deg, #b91c56 0%, #590d2b 100%) !important;
+}
+
+/* 4. TRADICIONAL / ESPECIAL / RECOMENDADO / OTRAS ETIQUETAS */
+.card .badge-tag-general,
+.card .badge-status.badge-tag-general {
+    background: linear-gradient(135deg, #b45309 0%, #78350f 100%) !important;
 }
 
 .card .badge-discount,
 .badge-discount {
-    background: linear-gradient(135deg, #dfac4c 0%, #C58B2B 100%) !important;
-    color: #24130e !important;
-    border: 1px solid rgba(255, 253, 249, 0.85) !important;
-    box-shadow: 0 4px 10px rgba(184, 107, 17, 0.35) !important;
+    background: linear-gradient(135deg, #c58b2b 0%, #b45309 100%) !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(36, 19, 14, 0.22) !important;
     position: relative !important;
     top: auto !important;
     left: auto !important;
@@ -7906,18 +7917,26 @@ section#nosotros h2 em,
     transform: none !important;
     margin: 0 !important;
     width: auto !important;
-    font-family: 'Playfair Display', Georgia, serif !important;
-    font-style: italic !important;
-    font-weight: 700 !important;
+    border-radius: 999px !important;
+    padding: 4px 10px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-style: normal !important;
+    font-weight: 800 !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
 }
 
 .card .badge-status.badge-agotado,
 .card .badge-status.badge-out {
-    background: rgba(185, 28, 28, 0.92) !important;
+    background: rgba(185, 28, 28, 0.95) !important;
     color: #FFFFFF !important;
     border: 1px solid rgba(255, 255, 255, 0.35) !important;
-    font-family: system-ui, -apple-system, sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-style: normal !important;
+    font-weight: 800 !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.04em !important;
 }
 
 /* Botón flotante de Favoritos en la esquina superior derecha de la foto */
