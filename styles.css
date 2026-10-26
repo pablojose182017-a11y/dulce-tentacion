@@ -7760,17 +7760,15 @@ section#nosotros h2 em,
     border: none !important;
 }
 
-/* Píldoras de filtro de categorías con jerarquía Cristal & Cacao/Oro */
+/* Píldoras de filtro de categorías con jerarquía Cristal & Cacao/Oro (Optimizado sin backdrop-filter) */
 .cat-chip {
-    background: rgba(255, 253, 250, 0.82) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
+    background: rgba(255, 253, 250, 0.96) !important;
     border: 1px solid rgba(197, 139, 43, 0.35) !important;
     color: #5c4338 !important;
     border-radius: 50px !important;
     padding: 8px 18px !important;
     font-weight: 600 !important;
-    transition: all 0.25s ease !important;
+    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
     box-shadow: none !important;
 }
 
@@ -7811,11 +7809,11 @@ section#nosotros h2 em,
 @keyframes cardRevealSubtle {
     from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: translate3d(0, 10px, 0);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 }
 
@@ -7829,9 +7827,10 @@ section#nosotros h2 em,
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease !important;
     position: relative !important;
-    animation: cardRevealSubtle 0.38s ease-out both !important;
+    animation: cardRevealSubtle 0.32s ease-out both !important;
+    contain: layout style;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -11133,7 +11132,7 @@ section#nosotros h2 em,
     user-select: none;
 }
 
-/* Destello de luz diagonal suave (brillito boutique) */
+/* Destello de luz diagonal suave (brillito boutique acelerado por hardware) */
 .btn-explore-carta::after {
     content: '';
     position: absolute;
@@ -11151,15 +11150,16 @@ section#nosotros h2 em,
     );
     transform: rotate(25deg);
     pointer-events: none;
-    animation: btnBoutiqueShimmer 3.5s infinite ease-in-out;
+    will-change: transform;
+    animation: btnBoutiqueShimmer 4s ease-in-out infinite;
 }
 
 @keyframes btnBoutiqueShimmer {
     0%, 25% {
-        left: -120%;
+        transform: translate3d(0, 0, 0) rotate(25deg);
     }
-    55%, 100% {
-        left: 220%;
+    60%, 100% {
+        transform: translate3d(500px, 0, 0) rotate(25deg);
     }
 }
 
@@ -11192,15 +11192,16 @@ section#nosotros h2 em,
     display: inline-block;
     font-size: 1.15rem;
     line-height: 1;
+    will-change: transform;
     animation: btnHandBounce 1.6s infinite ease-in-out;
 }
 
 @keyframes btnHandBounce {
     0%, 100% {
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
     50% {
-        transform: translateY(4px);
+        transform: translate3d(0, 4px, 0);
     }
 }
 

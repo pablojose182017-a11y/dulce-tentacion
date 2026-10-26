@@ -284,6 +284,8 @@ window.addEventListener('DOMContentLoaded', () => {
         const onEnd = () => {
             if (!isDown) return;
             isDown = false;
+            window.removeEventListener('mousemove', onMouseMoveWindow);
+            window.removeEventListener('mouseup', onEnd);
             element.style.cursor = 'grab';
             element.style.userSelect = '';
             setTimeout(() => {
@@ -291,17 +293,21 @@ window.addEventListener('DOMContentLoaded', () => {
             }, 60);
         };
 
+        const onMouseMoveWindow = (e) => {
+            if (!isDown) return;
+            onMove(e.pageX);
+        };
+
+        if (element._dragScrollInit) return;
+        element._dragScrollInit = true;
+
         element.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return; // Solo clic principal
             onStart(e.pageX);
+            window.addEventListener('mousemove', onMouseMoveWindow);
+            window.addEventListener('mouseup', onEnd);
         });
 
-        window.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            onMove(e.pageX);
-        });
-
-        window.addEventListener('mouseup', onEnd);
         element.addEventListener('mouseleave', onEnd);
 
         // Prevenir clics involuntarios en botones hijos tras un arrastre real
@@ -1368,6 +1374,8 @@ function renderRewards() {
                     <span class="reward-badge-floating">🎁 PREMIO DULCE</span>
                     <img src="${imgSrc}" alt="${r.name}" 
                          class="${imgClass}"
+                         loading="lazy"
+                         decoding="async"
                          onerror="this.onerror=null; this.src='logo-pys.png'; this.classList.add('reward-img-logo');" 
                          onclick="event.stopPropagation(); if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, this.alt);" 
                          title="Ver foto ampliada de la recompensa">
@@ -5037,7 +5045,7 @@ function createCardHTML(p) {
             ${badgesHTML}
             <div class="card-img-wrap" style="opacity:${opac}; filter:${filt}; cursor:pointer;" onclick="event.stopPropagation(); const img = this.querySelector('img'); if(img) window.openProductImageModal(img.src, img.alt);" title="Ver foto ampliada">
                 ${favBtnHTML}
-                <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); window.openProductImageModal(this.src, this.alt);">
+                <img src="${safeImg(p.img || p.image)}" alt="${p.name}" class="pimg-${p.id}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='logo-pys.png';" onclick="event.stopPropagation(); window.openProductImageModal(this.src, this.alt);">
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
@@ -5422,14 +5430,18 @@ window.deliveryType = 'delivery';
 window.dt_min_free_delivery = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
 window.dt_delivery_base_cost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
 
-// Sincronizador global de textos y valores de domicilio
+// Sincronizador global de textos y valores de domicilio (con comprobación previa contra re-render innecesario)
 window.applyDeliveryConfig = function(minFree, baseCost) {
-    if (typeof minFree === 'number' && !isNaN(minFree) && minFree >= 0) {
-        window.dt_min_free_delivery = minFree;
+    const validMin = (typeof minFree === 'number' && !isNaN(minFree) && minFree >= 0) ? minFree : window.dt_min_free_delivery;
+    const validCost = (typeof baseCost === 'number' && !isNaN(baseCost) && baseCost >= 0) ? baseCost : window.dt_delivery_base_cost;
+
+    if (window._deliveryInitialized && window.dt_min_free_delivery === validMin && window.dt_delivery_base_cost === validCost) {
+        return;
     }
-    if (typeof baseCost === 'number' && !isNaN(baseCost) && baseCost >= 0) {
-        window.dt_delivery_base_cost = baseCost;
-    }
+
+    window.dt_min_free_delivery = validMin;
+    window.dt_delivery_base_cost = validCost;
+    window._deliveryInitialized = true;
 
     const currentMin = typeof window.dt_min_free_delivery !== 'undefined' ? window.dt_min_free_delivery : 10000;
     const currentCost = typeof window.dt_delivery_base_cost !== 'undefined' ? window.dt_delivery_base_cost : 5000;
@@ -5437,11 +5449,11 @@ window.applyDeliveryConfig = function(minFree, baseCost) {
     const costFormatted = `$${currentCost.toLocaleString('es-CO')} COP`;
 
     document.querySelectorAll('.js-free-delivery-min').forEach(el => {
-        el.textContent = minFormatted;
+        if (el.textContent !== minFormatted) el.textContent = minFormatted;
     });
 
     document.querySelectorAll('.js-delivery-base-cost').forEach(el => {
-        el.textContent = costFormatted;
+        if (el.textContent !== costFormatted) el.textContent = costFormatted;
     });
 
     if (typeof updateCart === 'function') {
@@ -6968,7 +6980,8 @@ window.initDraggableNotifBell = function () {
     const bell = document.getElementById('btnAdminNotifBell');
     const wrapper = document.querySelector('.admin-notif-wrapper');
     if (!bell || !wrapper) return;
-    if (bell.dataset.dragInitialized === 'true') return;
+    if (bell._dragInitialized === true || bell.dataset.dragInitialized === 'true') return;
+    bell._dragInitialized = true;
     bell.dataset.dragInitialized = 'true';
 
     bell.style.touchAction = 'none';
@@ -7025,11 +7038,11 @@ window.initDraggableNotifBell = function () {
         initialLeft = rect.left;
         initialTop = rect.top;
 
-        document.addEventListener('mousemove', onMove, { passive: false });
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('touchend', onEnd);
-        document.addEventListener('touchcancel', onEnd);
+        window.addEventListener('mousemove', onMove, { passive: false });
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+        window.addEventListener('touchcancel', onEnd);
     }
 
     function onMove(e) {
@@ -7081,11 +7094,11 @@ window.initDraggableNotifBell = function () {
         isDragging = false;
         bell.style.cursor = 'grab';
 
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onEnd);
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onEnd);
-        document.removeEventListener('touchcancel', onEnd);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+        window.removeEventListener('touchcancel', onEnd);
 
         if (hasMoved) {
             // Guardar posición en localStorage para persistencia

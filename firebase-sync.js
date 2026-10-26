@@ -9,6 +9,27 @@ window._adminModulesLoading = false;
 window._adminModulesPromise = null;
 window._adminChartPromise = null;
 
+// Helper de Debounce de alto rendimiento (120ms) para amortiguar ráfagas de Firebase
+let _debounceRenderProductsTimer = null;
+function debouncedRenderProducts() {
+    clearTimeout(_debounceRenderProductsTimer);
+    _debounceRenderProductsTimer = setTimeout(() => {
+        if (typeof renderProducts === 'function') renderProducts();
+        if (typeof renderFeatured === 'function') renderFeatured();
+        if (typeof renderStockAdmin === 'function') renderStockAdmin();
+        if (typeof renderKitchenStock === 'function') renderKitchenStock();
+    }, 120);
+}
+
+let _debounceRenderOrdersTimer = null;
+function debouncedRenderLiveOrders() {
+    clearTimeout(_debounceRenderOrdersTimer);
+    _debounceRenderOrdersTimer = setTimeout(() => {
+        if (typeof renderLiveOrders === 'function') renderLiveOrders();
+        if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+    }, 120);
+}
+
 // FIX: Helper para resolver la desconexión léxica entre script.js y firebase-sync.js
 // cuando el inicio de sesión (ej. Google One Tap) no asigna explícitamente window.currentUser
 function _getSyncUser() {
@@ -484,19 +505,11 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
             }
         } catch (e) { /* cuota de almacenamiento */ }
 
-        // Re-renderizar — diferir si el DOM aún no está listo
-        function doRender() {
-            if (typeof renderProducts   === 'function') renderProducts();
-            if (typeof renderFeatured   === 'function') renderFeatured();
-            if (typeof renderStockAdmin === 'function') renderStockAdmin();
-            if (typeof renderKitchenStock === 'function') renderKitchenStock();
-        }
-
+        // Re-renderizar con debounce para amortiguar ráfagas iniciales de Firestore
         if (document.readyState === 'loading') {
-            // DOM no listo: diferir hasta DOMContentLoaded para evitar errores de render
-            document.addEventListener('DOMContentLoaded', doRender, { once: true });
+            document.addEventListener('DOMContentLoaded', debouncedRenderProducts, { once: true });
         } else {
-            doRender();
+            debouncedRenderProducts();
         }
     }
 
@@ -1393,8 +1406,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 localStorage.setItem('dt_pedidos_historial', JSON.stringify(pedidosRemotos));
-                if (typeof renderLiveOrders === 'function') renderLiveOrders();
-                if (typeof renderAdminDashboard === 'function') renderAdminDashboard();
+                debouncedRenderLiveOrders();
                 
                 // Si el libro contable está abierto, actualizarlo también
                 const modalContent = document.getElementById('contabilidad-detalle-content');
@@ -2258,11 +2270,17 @@ window.addEventListener('DOMContentLoaded', () => {
             const data = doc.data();
             const minFree = data.minFreeDelivery !== undefined ? data.minFreeDelivery : window.dt_min_free_delivery;
             const baseCost = data.deliveryBaseCost !== undefined ? data.deliveryBaseCost : (data.costoDomicilioBase !== undefined ? data.costoDomicilioBase : window.dt_delivery_base_cost);
+
+            if (window.dt_min_free_delivery === minFree && window.dt_delivery_base_cost === baseCost && window._deliveryInitialized) {
+                return;
+            }
+
             if (typeof window.applyDeliveryConfig === 'function') {
                 window.applyDeliveryConfig(minFree, baseCost);
             } else {
                 if (minFree !== undefined) window.dt_min_free_delivery = minFree;
                 if (baseCost !== undefined) window.dt_delivery_base_cost = baseCost;
+                window._deliveryInitialized = true;
                 if (typeof updateCart === 'function') updateCart();
             }
         }
