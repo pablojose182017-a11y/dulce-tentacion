@@ -1307,12 +1307,17 @@ function renderRewards() {
             disabledAttr = 'disabled';
         }
 
+        const imgSrc = safeImg(r.img);
+        const isLogoDefault = !imgSrc || imgSrc.includes('logo-punto-dulce.png') || imgSrc.includes('logo-pys.png');
+        const imgClass = isLogoDefault ? 'reward-img-el reward-img-logo' : 'reward-img-el';
+
         return `
             <div class="ticket-card reward-boutique-card" id="reward-card-${r.id}">
                 <div class="reward-img-wrap">
                     <span class="reward-badge-floating">🎁 PREMIO DULCE</span>
-                    <img src="${safeImg(r.img)}" alt="${r.name}" 
-                         onerror="this.onerror=null; this.src='logo-pys.png';" 
+                    <img src="${imgSrc}" alt="${r.name}" 
+                         class="${imgClass}"
+                         onerror="this.onerror=null; this.src='logo-pys.png'; this.classList.add('reward-img-logo');" 
                          onclick="event.stopPropagation(); if(typeof window.openProductImageModal === 'function') window.openProductImageModal(this.src, this.alt);" 
                          title="Ver foto ampliada de la recompensa">
                 </div>

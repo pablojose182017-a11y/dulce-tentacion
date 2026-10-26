@@ -3816,8 +3816,8 @@
         #rewards-container.rewards-grid,
         #rewards-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-            gap: 26px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
             margin-bottom: 28px;
             align-items: stretch;
         }
@@ -3827,37 +3827,41 @@
         .reward-boutique-card {
             background: #FFFFFF;
             border: 1.5px solid #F1E5D8;
-            border-radius: 22px;
+            border-radius: 18px;
             padding: 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             text-align: left;
-            box-shadow: 0 6px 20px rgba(44, 30, 24, 0.05);
+            box-shadow: 0 4px 16px rgba(44, 30, 24, 0.05);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             position: relative;
             overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .ticket-card:hover,
         .reward-boutique-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 16px 36px rgba(197, 139, 43, 0.16);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(197, 139, 43, 0.16);
             border-color: #C58B2B;
         }
 
-        /* Envoltorio de Imagen Proporcionada (sin recortes, idéntico al catálogo) */
+        /* Envoltorio de Imagen Proporcionada (idéntico al catálogo) */
         .reward-img-wrap {
             position: relative;
             width: 100%;
-            height: 210px;
+            height: 180px;
             overflow: hidden;
             background: #FDFBF9;
             cursor: pointer;
             border-bottom: 1px solid #F6EDE4;
+            border-radius: 16px 16px 0 0;
         }
 
-        .reward-img-wrap img {
+        .reward-img-wrap img,
+        .reward-img-wrap .reward-img-el {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -3869,30 +3873,37 @@
             border-radius: 0;
         }
 
+        .reward-img-wrap img.reward-img-logo,
+        .reward-img-wrap .reward-img-logo {
+            object-fit: contain !important;
+            padding: 10px !important;
+            background: #fff9f5 !important;
+        }
+
         .reward-boutique-card:hover .reward-img-wrap img {
-            transform: scale(1.06);
+            transform: scale(1.05);
         }
 
         /* Insignia Flotante Estilo Píldora: PREMIO DULCE */
         .reward-badge-floating {
             position: absolute;
-            top: 12px;
-            left: 12px;
+            top: 10px;
+            left: 10px;
             background: linear-gradient(135deg, #C58B2B 0%, #B81D5A 100%);
             color: #FFFFFF;
             font-weight: 800;
-            font-size: 0.72rem;
-            letter-spacing: 0.04em;
-            padding: 5px 12px;
+            font-size: 0.70rem;
+            letter-spacing: 0.03em;
+            padding: 4px 10px;
             border-radius: 999px;
-            box-shadow: 0 4px 12px rgba(184, 29, 90, 0.32);
+            box-shadow: 0 4px 10px rgba(184, 29, 90, 0.28);
             z-index: 2;
             text-transform: uppercase;
         }
 
         /* Cuerpo de la Tarjeta */
         .reward-card-body {
-            padding: 18px 20px 20px;
+            padding: 14px 14px 16px;
             display: flex;
             flex-direction: column;
             flex-grow: 1;
@@ -3900,39 +3911,39 @@
         }
 
         .reward-category {
-            font-size: 0.74rem;
+            font-size: 0.68rem;
             font-weight: 800;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
             color: #B81D5A;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .reward-title {
             font-family: 'Quicksand', 'Plus Jakarta Sans', sans-serif;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 800;
             color: #2C1E18;
-            margin: 0 0 14px 0;
-            line-height: 1.35;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
         }
 
         /* Barra de Progreso Fina y Elegante */
         .reward-progress-block {
             background: #FFFDF9;
             border: 1px solid #F3E7DA;
-            border-radius: 12px;
-            padding: 10px 12px;
-            margin-bottom: 16px;
+            border-radius: 10px;
+            padding: 8px 10px;
+            margin-bottom: 12px;
         }
 
         .reward-progress-track {
             width: 100%;
-            height: 7px;
+            height: 6px;
             background: #EFE5DB;
             border-radius: 999px;
             overflow: hidden;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .reward-progress-fill {
@@ -3946,44 +3957,52 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: #78350F;
+            gap: 4px;
+        }
+
+        .reward-progress-info span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .reward-progress-info strong {
             color: #B81D5A;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         /* Footer de la Tarjeta: Precio en Puntos y Botón Píldora */
         .reward-footer-area {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             margin-top: auto;
-            padding-top: 10px;
+            padding-top: 8px;
             border-top: 1px dashed #EEDDC9;
         }
 
         .reward-points-price {
             display: flex;
             align-items: baseline;
-            gap: 6px;
+            gap: 5px;
         }
 
         .reward-points-price .pts-icon {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
         }
 
         .reward-points-price .pts-val {
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             font-weight: 800;
             color: #B81D5A;
             letter-spacing: -0.01em;
         }
 
         .reward-points-price .pts-label {
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             font-weight: 800;
             color: #C58B2B;
             text-transform: uppercase;
@@ -3994,19 +4013,21 @@
         .btn-redeem-pill,
         .ticket-card .btn-redeem {
             width: 100% !important;
-            height: 42px !important;
-            padding: 0 16px !important;
+            height: 38px !important;
+            padding: 0 12px !important;
             border-radius: 999px !important;
-            font-size: 0.78rem !important;
+            font-size: 0.74rem !important;
             font-weight: 800 !important;
-            letter-spacing: 0.04em !important;
+            letter-spacing: 0.03em !important;
             text-transform: uppercase !important;
             white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
             cursor: pointer !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 6px !important;
+            gap: 5px !important;
             box-sizing: border-box !important;
             transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1) !important;
         }
@@ -4055,6 +4076,105 @@
             color: #92400E !important;
             border-style: solid !important;
             transform: translateY(-1px) !important;
+        }
+
+        /* Adaptación en pantallas móviles (<= 768px): 2 Columnas idénticas al catálogo de panes */
+        @media (max-width: 768px) {
+            #rewards-container.rewards-grid,
+            #rewards-container {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 12px !important;
+                padding: 8px 4px !important;
+                margin-bottom: 24px !important;
+            }
+
+            .ticket-card,
+            .reward-boutique-card {
+                border-radius: 14px !important;
+            }
+
+            .reward-img-wrap {
+                height: 145px !important;
+                border-radius: 14px 14px 0 0 !important;
+            }
+
+            .reward-badge-floating {
+                top: 8px !important;
+                left: 8px !important;
+                font-size: 0.65rem !important;
+                padding: 3px 8px !important;
+            }
+
+            .reward-card-body {
+                padding: 10px 10px 12px !important;
+            }
+
+            .reward-category {
+                font-size: 0.65rem !important;
+                margin-bottom: 3px !important;
+            }
+
+            .reward-title {
+                font-size: 0.98rem !important;
+                line-height: 1.25 !important;
+                margin: 0 0 8px 0 !important;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            .reward-progress-block {
+                padding: 6px 8px !important;
+                border-radius: 8px !important;
+                margin-bottom: 8px !important;
+            }
+
+            .reward-progress-track {
+                height: 5px !important;
+                margin-bottom: 4px !important;
+            }
+
+            .reward-progress-info {
+                font-size: 0.66rem !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 2px !important;
+            }
+
+            .reward-progress-info span {
+                display: none !important;
+            }
+
+            .reward-progress-info strong {
+                font-size: 0.70rem !important;
+            }
+
+            .reward-footer-area {
+                gap: 8px !important;
+                padding-top: 6px !important;
+            }
+
+            .reward-points-price .pts-icon {
+                font-size: 0.95rem !important;
+            }
+
+            .reward-points-price .pts-val {
+                font-size: 1.15rem !important;
+            }
+
+            .reward-points-price .pts-label {
+                font-size: 0.75rem !important;
+            }
+
+            .btn-redeem-pill,
+            .ticket-card .btn-redeem {
+                height: 34px !important;
+                padding: 0 8px !important;
+                font-size: 0.68rem !important;
+                letter-spacing: 0.02em !important;
+            }
         }
 
         /* --- ESTILOS PARA MIS PEDIDOS --- */
