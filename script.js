@@ -5800,6 +5800,44 @@ window.closeDeliveryCoverageModal = function (e) {
     }
 };
 
+window.openHornoModal = function () {
+    const m = document.getElementById('hornoModal');
+    if (m) {
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeHornoModal = function (e) {
+    if (e && e.target && e.target !== e.currentTarget && e.target.id !== 'hornoModal') {
+        return;
+    }
+    const m = document.getElementById('hornoModal');
+    if (m) {
+        m.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
+
+window.openSeguridadModal = function () {
+    const m = document.getElementById('seguridadModal');
+    if (m) {
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+};
+
+window.closeSeguridadModal = function (e) {
+    if (e && e.target && e.target !== e.currentTarget && e.target.id !== 'seguridadModal') {
+        return;
+    }
+    const m = document.getElementById('seguridadModal');
+    if (m) {
+        m.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+};
+
 window.toggleMobileMenu = function (e) {
     if (e && e.stopPropagation) e.stopPropagation();
     const m = document.getElementById('mobileDropdownMenu');

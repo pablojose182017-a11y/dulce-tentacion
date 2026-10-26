@@ -16,7 +16,7 @@
         rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.initGoogleSignIn) window.initGoogleSignIn()"></script>
     <!-- Archivo CSS Principal -->
-    <link rel="stylesheet" href="styles.css?v=20261026f">
+    <link rel="stylesheet" href="styles.css?v=20261026h">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr CSS y JS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -334,11 +334,13 @@
 
                     <div class="hero-cta-ActionWrap">
                         <button type="button" class="btn-explore-carta" onclick="const target = document.querySelector('.hero-specialties-grid, #catalogo, .catalog-section, .especialidades-boutique-section'); if(target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });">
-                            <span>Explorar Nuestra Carta</span>
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <polyline points="19 12 12 19 5 12"></polyline>
-                            </svg>
+                            <span class="btn-carta-sparkle" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M12 0L14.6 9.4L24 12L14.6 14.6L12 24L9.4 14.6L0 12L9.4 9.4L12 0Z"/>
+                                </svg>
+                            </span>
+                            <span class="btn-carta-text">Explorar Nuestra Carta</span>
+                            <span class="btn-hand-down" aria-hidden="true">👇</span>
                         </button>
                     </div>
 
@@ -441,9 +443,9 @@
             </div>
         </div>
 
-        <!-- BLOQUE 3 (NUEVO): LOS 3 SELLOS DE GARANTÍA Y CONFIANZA -->
+        <!-- BLOQUE 3: LOS 3 SELLOS DE GARANTÍA Y CONFIANZA INTERACTIVOS -->
         <div class="sellos-garantia-grid">
-            <div class="sello-card">
+            <div class="sello-card sello-interactive" onclick="openHornoModal()" role="button" tabindex="0" title="Toca para conocer nuestros horarios de horneado y promesa artesanal">
                 <div class="sello-icon-halo">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2v8l3-3 3 3V2z"/>
@@ -452,11 +454,12 @@
                 </div>
                 <div class="sello-content">
                     <h4>🥖 Recién Horneado</h4>
-                    <p>Elaboración diaria continua con ingredientes naturales seleccionados y verdadero amor artesanal.</p>
+                    <p>Elaboración diaria continua con ingredientes naturales seleccionados y amor artesanal.</p>
+                    <span class="sello-card-link">Conocer tandas y horno <span class="sello-link-arrow">→</span></span>
                 </div>
             </div>
 
-            <div class="sello-card delivery-clickable" onclick="openDeliveryCoverageModal()" role="button" tabindex="0">
+            <div class="sello-card sello-interactive delivery-clickable" onclick="openDeliveryCoverageModal()" role="button" tabindex="0" title="Toca para ver zonas de entrega, tarifas y cobertura">
                 <div class="sello-icon-halo">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="18.5" cy="17.5" r="3.5"/>
@@ -467,11 +470,12 @@
                 </div>
                 <div class="sello-content">
                     <h4>🛵 Domicilios en Cúcuta</h4>
-                    <p>Entrega ágil y confiable directo a tu puerta. <strong>¡Envío GRATIS por compras desde <span class="js-free-delivery-min">$10.000 COP</span>!</strong></p>
+                    <p>Entrega ágil directo a tu puerta. <strong>¡Envío GRATIS por compras desde <span class="js-free-delivery-min">$10.000 COP</span>!</strong></p>
+                    <span class="sello-card-link">Ver cobertura y tarifas <span class="sello-link-arrow">→</span></span>
                 </div>
             </div>
 
-            <div class="sello-card">
+            <div class="sello-card sello-interactive" onclick="openSeguridadModal()" role="button" tabindex="0" title="Toca para conocer nuestro proceso de compra y métodos de pago">
                 <div class="sello-icon-halo">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
@@ -480,7 +484,8 @@
                 </div>
                 <div class="sello-content">
                     <h4>🔒 Proceso Seguro</h4>
-                    <p>Pide fácil en línea con confirmación inmediata y soporte personalizado por WhatsApp en vivo.</p>
+                    <p>Pide en línea en 3 pasos con confirmación instantánea, pagos seguros y soporte WhatsApp.</p>
+                    <span class="sello-card-link">Ver métodos y soporte <span class="sello-link-arrow">→</span></span>
                 </div>
             </div>
         </div>
@@ -2121,6 +2126,106 @@
        </div>
       </div>
 
+    <!-- ===== MODAL TRADICIÓN & HORARIOS DE NUESTRO HORNO ===== -->
+    <div id="hornoModal" class="modal-backdrop-generic" style="display:none;" onclick="closeHornoModal(event)">
+        <div class="modal-content-card" onclick="event.stopPropagation()">
+            <div class="modal-header-custom" style="background: linear-gradient(135deg, #24130e 0%, #4a2518 100%); color: #fff;">
+                <h3 style="color:#fff; display:flex; align-items:center; gap:8px;">🥖 Tradición & Horarios de Horneado</h3>
+                <button type="button" class="btn-close-modal" onclick="closeHornoModal()" style="color:#fff;">&times;</button>
+            </div>
+            <div class="modal-body-custom">
+                <div style="background:#fff7ed; border-left:4px solid #C58B2B; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
+                    <strong style="color:#8c5218; font-size:0.95rem; display:block; margin-bottom:4px;">✨ Promesa de Calidad 100% Artesanal</strong>
+                    <p style="margin:0; font-size:0.87rem; color:#4a3228; line-height:1.5;">En Pan y Sabor horneamos a diario con materias primas premium, sin conservantes nocivos, respetando los tiempos naturales de fermentación para garantizar crocancia, aroma y suavidad insuperable.</p>
+                </div>
+
+                <h4 style="margin:0 0 10px 0; color:#24130e; font-size:0.96rem; font-weight:800;">⏰ Tandas Frescas del Día:</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#faf7f5; border-radius:10px; border:1px solid #ebdcd5;">
+                        <span style="font-size:1.4rem;">🌅</span>
+                        <div style="flex:1;">
+                            <strong style="color:#24130e; font-size:0.9rem; display:block;">Primera Tanda Matutina (6:00 AM – 7:30 AM)</strong>
+                            <span style="font-size:0.82rem; color:#6b5247;">Pan de bono, almojábanas, pan campesino y calentitos para el desayuno.</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#faf7f5; border-radius:10px; border:1px solid #ebdcd5;">
+                        <span style="font-size:1.4rem;">☀️</span>
+                        <div style="flex:1;">
+                            <strong style="color:#24130e; font-size:0.9rem; display:block;">Segunda Tanda Mediodía (11:30 AM – 1:00 PM)</strong>
+                            <span style="font-size:0.82rem; color:#6b5247;">Pan baguette, roscones de guayaba y arequipe, y pastelería fresca.</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#faf7f5; border-radius:10px; border:1px solid #ebdcd5;">
+                        <span style="font-size:1.4rem;">☕</span>
+                        <div style="flex:1;">
+                            <strong style="color:#24130e; font-size:0.9rem; display:block;">Tercera Tanda Vespertina (4:00 PM – 5:30 PM)</strong>
+                            <span style="font-size:0.82rem; color:#6b5247;">Pan aliñado, trenzas dulces, croissants y repostería para el café de la tarde.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center; padding:6px 0 2px;">
+                    <button type="button" class="btn-primary-custom" onclick="closeHornoModal(); if(window.filterCategory) { window.filterCategory('panaderia'); } if(window.goToCatalog) { window.goToCatalog(); }" style="background:linear-gradient(135deg, #d49a35 0%, #C58B2B 100%); color:#24130e; border:none; padding:12px 24px; border-radius:12px; font-weight:800; font-size:0.92rem; cursor:pointer; box-shadow:0 6px 16px rgba(197, 139, 43, 0.35);">
+                        🥖 Ver Catálogo de Pan Fresco →
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer-custom" style="text-align:center; padding-top:10px;">
+                <button type="button" onclick="closeHornoModal()" style="background:transparent; color:#6b5247; border:none; padding:6px 16px; font-weight:600; cursor:pointer; font-size:0.88rem;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL COMPRA FÁCIL & MÉTODOS DE PAGO ===== -->
+    <div id="seguridadModal" class="modal-backdrop-generic" style="display:none;" onclick="closeSeguridadModal(event)">
+        <div class="modal-content-card" onclick="event.stopPropagation()">
+            <div class="modal-header-custom" style="background: linear-gradient(135deg, #1b382b 0%, #0d281e 100%); color: #fff;">
+                <h3 style="color:#fff; display:flex; align-items:center; gap:8px;">🛡️ Compra Fácil, Segura & Medios de Pago</h3>
+                <button type="button" class="btn-close-modal" onclick="closeSeguridadModal()" style="color:#fff;">&times;</button>
+            </div>
+            <div class="modal-body-custom">
+                <div style="background:#e8f5e9; border-left:4px solid #2e7d32; padding:12px 14px; border-radius:10px; margin-bottom:16px;">
+                    <strong style="color:#1b5e20; font-size:0.95rem; display:block; margin-bottom:4px;">✨ 100% Confiable · Soporte en Vivo por WhatsApp</strong>
+                    <p style="margin:0; font-size:0.87rem; color:#2e7d32; line-height:1.5;">Cada pedido queda registrado en nuestro sistema en tiempo real y coordinado al instante con nuestro equipo de despacho.</p>
+                </div>
+
+                <h4 style="margin:0 0 10px 0; color:#24130e; font-size:0.96rem; font-weight:800;">📦 Tu pedido en 3 simples pasos:</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px; background:#faf7f5; border-radius:10px; border:1px solid #ebdcd5;">
+                        <span style="background:#24130e; color:#fff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">1</span>
+                        <div style="flex:1;">
+                            <strong style="color:#24130e; font-size:0.9rem; display:block;">Elige tus favoritos de la carta</strong>
+                            <span style="font-size:0.82rem; color:#6b5247;">Agrega al carrito tus panes, tortas o combos favoritos. Acumulas puntos automáticos con cada compra.</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px; background:#faf7f5; border-radius:10px; border:1px solid #ebdcd5;">
+                        <span style="background:#24130e; color:#fff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">2</span>
+                        <div style="flex:1;">
+                            <strong style="color:#24130e; font-size:0.9rem; display:block;">Ingresa tus datos y medio de pago</strong>
+                            <span style="font-size:0.82rem; color:#6b5247;">Aceptamos <strong>Nequi, Daviplata, Transferencia Bancolombia</strong> o <strong>Efectivo contraentrega</strong>.</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px; background:#faf7f5; border-radius:10px; border:1px solid #ebdcd5;">
+                        <span style="background:#24130e; color:#fff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; flex-shrink:0;">3</span>
+                        <div style="flex:1;">
+                            <strong style="color:#24130e; font-size:0.9rem; display:block;">Confirmación instantánea</strong>
+                            <span style="font-size:0.82rem; color:#6b5247;">Recibes tu resumen de pedido y un enlace directo a WhatsApp para cualquier indicación especial de entrega.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center; padding:6px 0 2px;">
+                    <a href="https://wa.me/573228399587?text=Hola%20Pan%20y%20Sabor,%20tengo%20una%20consulta%20sobre%20medios%20de%20pago%20o%20mi%20pedido" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none; padding:11px 22px; border-radius:12px; font-weight:700; font-size:0.9rem; box-shadow:0 4px 14px rgba(37, 211, 102, 0.35);">
+                        <span>💬 Chatear con Soporte WhatsApp</span>
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer-custom" style="text-align:center; padding-top:10px;">
+                <button type="button" onclick="closeSeguridadModal()" style="background:transparent; color:#6b5247; border:none; padding:6px 16px; font-weight:600; cursor:pointer; font-size:0.88rem;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== MODAL VISOR DE IMAGEN AMPLIADA (PRODUCT LIGHTBOX) ===== -->
     <div id="productImageModal" class="product-lightbox-modal" style="display:none;" role="dialog" aria-modal="true" aria-label="Visor de imagen de producto" onclick="if(event.target === this || event.target.classList.contains('product-lightbox-backdrop')) window.closeProductImageModal();">
         <div class="product-lightbox-backdrop"></div>
@@ -2152,10 +2257,10 @@
     <script src="membership-admin-panel.js?v=20261021" defer></script>
     <script src="membership-admin-ui.js?v=20261021" defer></script>
 
-    <script src="script.js?v=20261026f" defer></script>
-    <script src="control-roles.js?v=20261026f" defer></script>
+    <script src="script.js?v=20261026g" defer></script>
+    <script src="control-roles.js?v=20261026g" defer></script>
     <!-- Firebase Sync Module -->
-    <script src="firebase-sync.js?v=20261026f" defer></script>
+    <script src="firebase-sync.js?v=20261026g" defer></script>
 
 </body>
 </html>

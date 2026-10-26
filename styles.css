@@ -11109,43 +11109,112 @@ section#nosotros h2 em,
 }
 
 .btn-explore-carta {
+    position: relative;
+    overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 12px;
     border-radius: 999px;
-    background: linear-gradient(135deg, #d49a35 0%, #C58B2B 100%);
-    color: #24130e;
+    background: linear-gradient(135deg, #d49a35 0%, #b86b28 42%, #9d174d 100%) !important;
+    color: #ffffff !important;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    padding: 14px 32px;
-    border: 1px solid rgba(255, 253, 249, 0.45);
-    box-shadow: 0 8px 20px rgba(197, 139, 43, 0.28);
+    font-weight: 800;
+    font-size: 1.04rem;
+    letter-spacing: 0.3px;
+    padding: 15px 34px;
+    border: 1.5px solid rgba(255, 248, 235, 0.75) !important;
+    box-shadow: 0 10px 24px rgba(157, 23, 77, 0.22), 0 4px 10px rgba(197, 139, 43, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+    text-shadow: 0 1px 2px rgba(36, 19, 14, 0.25) !important;
     cursor: pointer;
     text-decoration: none;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background 0.25s ease;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
     outline: none;
+    user-select: none;
 }
 
-.btn-explore-carta svg {
-    color: #24130e;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+/* Destello de luz diagonal suave (brillito boutique) */
+.btn-explore-carta::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -120%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.25) 45%,
+        rgba(255, 255, 255, 0.45) 50%,
+        rgba(255, 255, 255, 0.25) 55%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(25deg);
+    pointer-events: none;
+    animation: btnBoutiqueShimmer 3.5s infinite ease-in-out;
+}
+
+@keyframes btnBoutiqueShimmer {
+    0%, 25% {
+        left: -120%;
+    }
+    55%, 100% {
+        left: 220%;
+    }
+}
+
+.btn-carta-sparkle {
+    color: #fff3d1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 5px rgba(255, 243, 209, 0.8));
+    animation: btnSparklePulse 3.5s infinite ease-in-out;
+}
+
+.btn-carta-sparkle path {
+    fill: #fff3d1;
+    stroke: #fff3d1;
+}
+
+@keyframes btnSparklePulse {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: drop-shadow(0 0 4px rgba(255, 243, 209, 0.7));
+    }
+    50% {
+        transform: scale(1.18) rotate(8deg);
+        filter: drop-shadow(0 0 8px rgba(255, 243, 209, 0.95));
+    }
+}
+
+.btn-hand-down {
+    display: inline-block;
+    font-size: 1.15rem;
+    line-height: 1;
+    animation: btnHandBounce 1.6s infinite ease-in-out;
+}
+
+@keyframes btnHandBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(4px);
+    }
 }
 
 .btn-explore-carta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 26px rgba(197, 139, 43, 0.38);
-    background: linear-gradient(135deg, #dfa640 0%, #ce9330 100%);
-}
-
-.btn-explore-carta:hover svg {
-    transform: translateY(3px);
+    transform: translateY(-2.5px);
+    border-color: #ffffff !important;
+    background: linear-gradient(135deg, #dfac4c 0%, #c57830 45%, #b31d58 100%) !important;
+    box-shadow: 0 12px 28px rgba(157, 23, 77, 0.28), 0 6px 14px rgba(197, 139, 43, 0.32), inset 0 1px 2px rgba(255, 255, 255, 0.55) !important;
+    color: #ffffff !important;
 }
 
 .btn-explore-carta:active {
     transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(197, 139, 43, 0.25);
+    box-shadow: 0 6px 16px rgba(157, 23, 77, 0.25), 0 2px 6px rgba(197, 139, 43, 0.2) !important;
 }
 
 /* --- BLOQUE 2: EXPERIENCIAS P&S PUNTO DULCE (3 TARJETAS-BOTÓN PRINCIPALES) --- */
@@ -11373,13 +11442,21 @@ section#nosotros h2 em,
     align-items: flex-start;
     gap: 16px;
     box-shadow: 0 6px 18px rgba(56, 38, 31, 0.04);
-    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
 }
 
 .sello-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(197, 139, 43, 0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(197, 139, 43, 0.16);
     border-color: #C58B2B;
+}
+
+.sello-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(197, 139, 43, 0.12);
 }
 
 .sello-icon-halo {
@@ -11393,6 +11470,18 @@ section#nosotros h2 em,
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease;
+}
+
+.sello-card:hover .sello-icon-halo {
+    transform: scale(1.08) rotate(3deg);
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+}
+
+.sello-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .sello-content h4 {
@@ -11403,11 +11492,35 @@ section#nosotros h2 em,
 }
 
 .sello-content p {
-    margin: 0;
+    margin: 0 0 8px 0;
     font-size: 0.88rem;
     color: #4a3228;
     line-height: 1.5;
     font-weight: 500;
+}
+
+.sello-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #C58B2B;
+    margin-top: auto;
+    transition: color 0.2s ease;
+}
+
+.sello-link-arrow {
+    display: inline-block;
+    transition: transform 0.22s ease;
+}
+
+.sello-card:hover .sello-card-link {
+    color: #8c5218;
+}
+
+.sello-card:hover .sello-link-arrow {
+    transform: translateX(4px);
 }
 
 /* --- BLOQUE 4: TARJETA ÚNETE AL CLUB DE PUNTOS P&S --- */
