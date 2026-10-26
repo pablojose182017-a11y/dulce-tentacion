@@ -584,6 +584,9 @@ window.abrirModalEdicionProducto = function (pId = null) {
     let catSelect = 'panaderia';
 
     let actualPoints = '';
+    let actualBadge = '';
+    let actualSubtitle = '';
+    let actualDesc = '';
     if (pId) {
         p = products.find(x => x.id === pId);
         if (!p) return;
@@ -593,6 +596,9 @@ window.abrirModalEdicionProducto = function (pId = null) {
         actualImg = p.img || p.originalImg;
         catSelect = p.cat;
         actualPoints = p.points !== undefined ? p.points : (p.puntos !== undefined ? p.puntos : '');
+        actualBadge = (p.badge !== undefined ? p.badge : (p.tag || '')).trim().toUpperCase();
+        actualSubtitle = (p.subtitle !== undefined ? p.subtitle : (p.subtitulo || '')).trim();
+        actualDesc = (p.desc !== undefined ? p.desc : (p.descripcionBreve || '')).trim();
     }
 
     if (!document.getElementById('modal-editar-producto')) {
@@ -617,10 +623,9 @@ window.abrirModalEdicionProducto = function (pId = null) {
     const btnRestaurar = pId ? `<button type="button" onclick="window.restaurarProductoOriginal(${pId})" style="flex:1; padding:8px 12px; background:transparent; color:#64748b; border:1px solid #cbd5e1; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='transparent'; this.style.borderColor='#cbd5e1';">🔄 Restaurar</button>` : '';
     const btnEliminar = pId ? `<button type="button" id="btn-borrar-prod-modal" onclick="window.eliminarProducto(${pId})" style="flex:1; background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fee2e2';" onmouseout="this.style.background='#fef2f2';">🗑️ Eliminar Producto</button>` : '';
 
-
     const modal = document.getElementById('modal-editar-producto');
     modal.innerHTML = `
-        <div class="auth-content" style="max-width:420px; width:92%; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 12px 32px rgba(0,0,0,0.15);">
+        <div class="auth-content" style="max-width:440px; width:92%; max-height:90vh; overflow-y:auto; padding:24px; background:#fff; border-radius:20px; position:relative; box-shadow:0 12px 32px rgba(0,0,0,0.15);">
             <button class="auth-close-btn" onclick="document.getElementById('modal-editar-producto').style.display='none'" style="position:absolute; top:12px; right:12px; background:#fff; border:1px solid #e2e8f0; border-radius:50%; width:32px; height:32px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#fff'">✕</button>
             
             <div style="text-align:center; margin-bottom:20px;">
@@ -654,8 +659,34 @@ window.abrirModalEdicionProducto = function (pId = null) {
                 </div>
             </div>
 
+            <!-- PERSONALIZACIÓN VISUAL DEL CATÁLOGO BOUTIQUE -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">🏷️ Etiqueta Superior (Badge)</label>
+                    <select id="edit-prod-badge" style="width:100%; padding:10px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:13px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+                        <option value="" ${actualBadge === '' ? 'selected' : ''}>Automática (Según orden)</option>
+                        <option value="NONE" ${actualBadge === 'NONE' ? 'selected' : ''}>Ninguna (Sin etiqueta)</option>
+                        <option value="MÁS PEDIDO" ${actualBadge === 'MÁS PEDIDO' || actualBadge === 'MAS PEDIDO' ? 'selected' : ''}>❤️ MÁS PEDIDO</option>
+                        <option value="FAVORITO" ${actualBadge === 'FAVORITO' ? 'selected' : ''}>✨ FAVORITO</option>
+                        <option value="POPULAR" ${actualBadge === 'POPULAR' ? 'selected' : ''}>⭐ POPULAR</option>
+                        <option value="TRADICIONAL" ${actualBadge === 'TRADICIONAL' ? 'selected' : ''}>🌾 TRADICIONAL</option>
+                        <option value="ESPECIAL" ${actualBadge === 'ESPECIAL' ? 'selected' : ''}>🥐 ESPECIAL</option>
+                        <option value="RECOMENDADO" ${actualBadge === 'RECOMENDADO' ? 'selected' : ''}>👑 RECOMENDADO</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">✍️ Frase / Subtítulo</label>
+                    <input type="text" id="edit-prod-subtitle" value="${actualSubtitle}" style="width:100%; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:13px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Ej. PAN DEL DÍA o ESPECIALIDAD">
+                </div>
+            </div>
+
             <div style="margin-bottom:16px;">
-                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">⭐ Puntos que otorga (Club VIP)</label>
+                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">📝 Descripción Breve</label>
+                <textarea id="edit-prod-desc" rows="2" style="width:100%; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:13px; color:#1e293b; outline:none; resize:vertical; font-family:inherit; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'" placeholder="Pan tradicional de costra crocante y miga suave">${actualDesc}</textarea>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">⭐ Puntos que otorga (Club de Puntos)</label>
                 <input type="number" id="newProductPoints" value="${actualPoints !== undefined && actualPoints !== '' ? actualPoints : ''}" min="0" placeholder="Puntos que otorga (ej: 10)" style="width:100%; padding:10px 14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; font-size:14px; color:#1e293b; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
             </div>
             
@@ -692,6 +723,13 @@ window.guardarEdicionProducto = function (pId) {
     const puntosInput = document.getElementById('newProductPoints');
     const nuevosPuntos = puntosInput && puntosInput.value.trim() !== '' ? Math.max(0, parseInt(puntosInput.value) || 0) : 0;
 
+    const badgeSelect = document.getElementById('edit-prod-badge');
+    const nuevoBadge = badgeSelect ? badgeSelect.value.trim() : '';
+    const subtitleInput = document.getElementById('edit-prod-subtitle');
+    const nuevoSubtitulo = subtitleInput ? subtitleInput.value.trim() : '';
+    const descInput = document.getElementById('edit-prod-desc');
+    const nuevaDescripcion = descInput ? descInput.value.trim() : '';
+
     const nuevoPrecio = parseInt(nuevoPrecioStr.replace(/\D/g, ''));
     if (!nuevoNombre || isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
         if (typeof showToast === 'function') showToast('Completa el nombre y precio', '⚠️');
@@ -724,7 +762,13 @@ window.guardarEdicionProducto = function (pId) {
         category: nuevaCategoria,
         cat: nuevaCategoria,
         points: nuevosPuntos,
-        puntos: nuevosPuntos
+        puntos: nuevosPuntos,
+        badge: nuevoBadge,
+        tag: nuevoBadge,
+        subtitle: nuevoSubtitulo,
+        subtitulo: nuevoSubtitulo,
+        desc: nuevaDescripcion,
+        descripcionBreve: nuevaDescripcion
     };
     
     // Si la imagen actual es un Base64 enorme pero el administrador no subió una foto nueva,
@@ -736,9 +780,9 @@ window.guardarEdicionProducto = function (pId) {
     }
     
     // Preservar metadatos requeridos para UI si existen
-    const allowedFields = ['permiteRelleno', 'unidades', 'tag', 'oldPrice', 'originalName', 'originalCat', 'originalImg', 'enOferta', 'desc'];
+    const allowedFields = ['permiteRelleno', 'unidades', 'tag', 'badge', 'subtitle', 'subtitulo', 'desc', 'descripcionBreve', 'oldPrice', 'originalName', 'originalCat', 'originalImg', 'enOferta'];
     allowedFields.forEach(key => {
-        if (existingCatalogEntry[key] !== undefined) {
+        if (existingCatalogEntry[key] !== undefined && firestorePayload[key] === undefined) {
             if (key === 'originalImg' && typeof existingCatalogEntry[key] === 'string' && existingCatalogEntry[key].startsWith('data:image/')) {
                 // Prevenir migración de Base64 al campo originalImg
             } else {
@@ -824,7 +868,12 @@ window.guardarEdicionProducto = function (pId) {
                     img: fullLocalEntry.img || firestorePayload.img || 'logo-pys.png',
                     points: nuevosPuntos,
                     puntos: nuevosPuntos,
-                    desc: 'Producto fresco del día',
+                    badge: nuevoBadge,
+                    tag: nuevoBadge,
+                    subtitle: nuevoSubtitulo,
+                    subtitulo: nuevoSubtitulo,
+                    desc: nuevaDescripcion || 'Producto fresco del día',
+                    descripcionBreve: nuevaDescripcion,
                     isCustom: true
                 });
             } else {
@@ -843,6 +892,12 @@ window.guardarEdicionProducto = function (pId) {
                     p.cat = nuevaCategoria;
                     p.points = nuevosPuntos;
                     p.puntos = nuevosPuntos;
+                    p.badge = nuevoBadge;
+                    p.tag = nuevoBadge;
+                    p.subtitle = nuevoSubtitulo;
+                    p.subtitulo = nuevoSubtitulo;
+                    p.desc = nuevaDescripcion || p.desc;
+                    p.descripcionBreve = nuevaDescripcion;
 
                     const isOferta = window.dtOfertasActivas ? window.dtOfertasActivas[pId] : null;
                     if (isOferta) {

@@ -113,14 +113,65 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) { }
 
-    // Rehidratar inmediatamente cualquier oferta activa conocida antes del primer renderizado
+    // Rehidratar inmediatamente cualquier catálogo personalizado u oferta activa conocida antes del primer renderizado
     try {
         const ofertasActivas = window.dtOfertasActivas || JSON.parse(localStorage.getItem('dt_ofertas_activas') || '{}');
         const localCat = JSON.parse(localStorage.getItem('dt_catalogo_personalizado') || '{}');
+
+        // Hidratar productos nuevos creados localmente
+        Object.keys(localCat).forEach(k => {
+            const data = localCat[k];
+            if (data && data.isCustom && !data.eliminado) {
+                if (!products.find(x => String(x.id) === String(k))) {
+                    const pPts = data.points !== undefined ? Number(data.points) : (data.puntos !== undefined ? Number(data.puntos) : 0);
+                    const pBadge = (data.badge !== undefined ? data.badge : (data.tag || '')).trim();
+                    const pSubtitle = (data.subtitle !== undefined ? data.subtitle : (data.subtitulo || '')).trim();
+                    const pDesc = (data.desc !== undefined ? data.desc : (data.descripcionBreve || 'Producto fresco del día')).trim();
+                    products.push({
+                        id: data.id || k,
+                        name: data.name,
+                        price: data.price,
+                        cat: data.category || data.cat || 'panaderia',
+                        img: data.img,
+                        points: pPts,
+                        puntos: pPts,
+                        badge: pBadge,
+                        tag: pBadge,
+                        subtitle: pSubtitle,
+                        subtitulo: pSubtitle,
+                        desc: pDesc,
+                        descripcionBreve: pDesc,
+                        isCustom: true
+                    });
+                }
+            }
+        });
+
+        // Hidratar campos visuales y ofertas en productos existentes
         products.forEach(p => {
+            const catEntry = localCat[p.id] || localCat[String(p.id)];
+            if (catEntry) {
+                if (catEntry.badge !== undefined || catEntry.tag !== undefined) {
+                    const bVal = (catEntry.badge !== undefined ? catEntry.badge : catEntry.tag || '').trim();
+                    p.badge = bVal;
+                    p.tag = bVal;
+                }
+                if (catEntry.subtitle !== undefined || catEntry.subtitulo !== undefined) {
+                    const sVal = (catEntry.subtitle !== undefined ? catEntry.subtitle : catEntry.subtitulo || '').trim();
+                    p.subtitle = sVal;
+                    p.subtitulo = sVal;
+                }
+                if (catEntry.desc !== undefined || catEntry.descripcionBreve !== undefined) {
+                    const dVal = (catEntry.desc !== undefined ? catEntry.desc : catEntry.descripcionBreve || '').trim();
+                    if (dVal !== '') {
+                        p.desc = dVal;
+                        p.descripcionBreve = dVal;
+                    }
+                }
+            }
+
             if (ofertasActivas[p.id]) {
                 const of = ofertasActivas[p.id];
-                const catEntry = localCat[p.id] || localCat[String(p.id)];
                 const base = (catEntry && catEntry.price) ? Number(catEntry.price) : (of.precioOriginal || p.price);
                 p.oldPrice = base;
                 if (!p.originalName) p.originalName = p.name;
@@ -3566,7 +3617,7 @@ function renderAdminPointsModalContent() {
             <button type="button" class="auth-close-btn" onclick="window.closeAdminPointsModal()" style="position:absolute; top:14px; right:14px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:50%; width:34px; height:34px; font-size:1.1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#64748b; z-index:10; transition:all 0.2s;" onmouseover="this.style.background='#fee2e2'; this.style.color='#ef4444';" onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b';">✕</button>
 
             <div style="text-align:center; margin-bottom:14px; flex:0 0 auto;">
-                <h3 style="margin:0; font-size:20px; font-weight:800; background:linear-gradient(135deg, #e91e63, #ff5722); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⭐ Configurar Puntos & Club VIP</h3>
+                <h3 style="margin:0; font-size:20px; font-weight:800; background:linear-gradient(135deg, #e91e63, #ff5722); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">⭐ Configurar Puntos & Club de Puntos</h3>
                 <p style="margin:4px 0 0 0; color:#64748b; font-size:12px;">Edita, agrega o elimina las recompensas que los clientes canjean con sus puntos acumulados.</p>
             </div>
 
@@ -4853,6 +4904,8 @@ function createCardHTML(p) {
     // Máximo 1 sola insignia en la esquina superior izquierda
     let singleBadgeHTML = '';
 
+    const customBadge = (p.badge !== undefined ? p.badge : (p.tag || '')).trim().toUpperCase();
+
     if (isOut) {
         // Prioridad 1: Agotado
         singleBadgeHTML = `<span class="badge-status badge-agotado">🚫 AGOTADO</span>`;
@@ -4860,23 +4913,40 @@ function createCardHTML(p) {
         // Prioridad 2: Descuento u Oferta activa
         const pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         singleBadgeHTML = `<span class="badge-discount">🔥 ¡OFERTA! -${pct}%</span>`;
-    } else if (p.tag && p.tag.trim() !== '') {
+    } else if (customBadge === 'NONE') {
+        // Explícitamente configurado sin etiqueta
+        singleBadgeHTML = '';
+    } else if (customBadge !== '') {
         // Si tiene etiqueta personalizada definida en administración
-        let cleanTag = p.tag.trim().toUpperCase();
+        let cleanTag = customBadge;
         if (cleanTag.includes('RECIÉN HORNEADO') || cleanTag.includes('RECIEN HORNEADO') || cleanTag.includes('RECIEN') || cleanTag.includes('HORNEADO')) {
             cleanTag = 'TRADICIONAL';
         }
         let tagClass = 'badge-tag-general';
+        let displayTag = cleanTag;
+
         if (cleanTag.includes('MÁS PEDIDO') || cleanTag.includes('MAS PEDIDO')) {
             tagClass = 'badge-fresh-pedido';
+            displayTag = cleanTag.startsWith('❤️') ? cleanTag : `❤️ ${cleanTag}`;
         } else if (cleanTag.includes('FAVORITO')) {
             tagClass = 'badge-fresh-hoy';
+            displayTag = cleanTag.startsWith('✨') ? cleanTag : `✨ ${cleanTag}`;
         } else if (cleanTag.includes('POPULAR')) {
             tagClass = 'badge-fresh-popular';
+            displayTag = cleanTag.startsWith('⭐') ? cleanTag : `⭐ ${cleanTag}`;
+        } else if (cleanTag.includes('TRADICIONAL')) {
+            tagClass = 'badge-tag-general';
+            displayTag = cleanTag.startsWith('🌾') ? cleanTag : `🌾 ${cleanTag}`;
+        } else if (cleanTag.includes('ESPECIAL')) {
+            tagClass = 'badge-tag-general';
+            displayTag = cleanTag.startsWith('🥐') ? cleanTag : `🥐 ${cleanTag}`;
+        } else if (cleanTag.includes('RECOMENDADO')) {
+            tagClass = 'badge-fresh-pedido';
+            displayTag = cleanTag.startsWith('👑') ? cleanTag : `👑 ${cleanTag}`;
         }
-        singleBadgeHTML = `<span class="badge-status ${tagClass}">${cleanTag}</span>`;
+        singleBadgeHTML = `<span class="badge-status ${tagClass}">${displayTag}</span>`;
     } else {
-        // Prioridad 3: Disponible y sin descuento -> 1 sola etiqueta entre Popular, Más pedido o Favorito
+        // Prioridad 3: Disponible y sin descuento (Automático según orden) -> 1 sola etiqueta entre Popular, Más pedido o Favorito
         const numId = Number(p.id) || 1;
         const variantMod = numId % 3;
 
@@ -4921,7 +4991,11 @@ function createCardHTML(p) {
         'ofertas': 'Ofertas & Combos',
         'eventos': 'Eventos & Fiestas'
     };
-    const categoryName = categoryLabels[p.cat] || (p.cat ? p.cat.toUpperCase() : 'PANADERÍA ARTESANAL');
+    const defaultCategoryName = categoryLabels[p.cat] || (p.cat ? p.cat.toUpperCase() : 'PANADERÍA ARTESANAL');
+    const displayCategoryOrSubtitle = (p.subtitle !== undefined && p.subtitle.trim() !== '') ? p.subtitle.trim() : 
+                                      ((p.subtitulo !== undefined && p.subtitulo.trim() !== '') ? p.subtitulo.trim() : defaultCategoryName);
+    const displayDesc = (p.desc !== undefined && p.desc.trim() !== '') ? p.desc.trim() : 
+                        ((p.descripcionBreve !== undefined && p.descripcionBreve.trim() !== '') ? p.descripcionBreve.trim() : '');
 
     let fillingSelectHTML = '';
     let priceHTML = `
@@ -4967,9 +5041,9 @@ function createCardHTML(p) {
             </div>
             <div class="card-body">
                 <div style="opacity:${opac};">
-                    <div class="card-category">${categoryName}</div>
+                    <div class="card-category">${displayCategoryOrSubtitle}</div>
                     <h3>${p.name}</h3>
-                    <p class="card-desc">${p.desc}</p>
+                    <p class="card-desc">${displayDesc}</p>
                     ${fillingSelectHTML}
                 </div>
                 <div class="card-footer-area">

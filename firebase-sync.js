@@ -360,6 +360,9 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
             if (data.isCustom && !data.eliminado) {
                 if (!products.find(x => String(x.id) === String(k))) {
                     const pPts = data.points !== undefined ? Number(data.points) : (data.puntos !== undefined ? Number(data.puntos) : 0);
+                    const pBadge = (data.badge !== undefined ? data.badge : (data.tag || '')).trim();
+                    const pSubtitle = (data.subtitle !== undefined ? data.subtitle : (data.subtitulo || '')).trim();
+                    const pDesc = (data.desc !== undefined ? data.desc : (data.descripcionBreve || 'Producto fresco del día')).trim();
                     products.push({
                         id: data.id || k,
                         name: data.name,
@@ -368,7 +371,12 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
                         img: data.img,
                         points: pPts,
                         puntos: pPts,
-                        desc: data.desc || 'Producto fresco del día',
+                        badge: pBadge,
+                        tag: pBadge,
+                        subtitle: pSubtitle,
+                        subtitulo: pSubtitle,
+                        desc: pDesc,
+                        descripcionBreve: pDesc,
                         isCustom: true
                     });
                 }
@@ -399,6 +407,26 @@ db.collection('configuracion').doc('vip').onSnapshot((doc) => {
                 if (customData.category) {
                     if (!p.originalCat) p.originalCat = p.cat;
                     p.cat = customData.category;
+                }
+
+                if (customData.badge !== undefined || customData.tag !== undefined) {
+                    const bVal = (customData.badge !== undefined ? customData.badge : customData.tag || '').trim();
+                    p.badge = bVal;
+                    p.tag = bVal;
+                }
+
+                if (customData.subtitle !== undefined || customData.subtitulo !== undefined) {
+                    const sVal = (customData.subtitle !== undefined ? customData.subtitle : customData.subtitulo || '').trim();
+                    p.subtitle = sVal;
+                    p.subtitulo = sVal;
+                }
+
+                if (customData.desc !== undefined || customData.descripcionBreve !== undefined) {
+                    const dVal = (customData.desc !== undefined ? customData.desc : customData.descripcionBreve || '').trim();
+                    if (dVal !== '') {
+                        p.desc = dVal;
+                        p.descripcionBreve = dVal;
+                    }
                 }
 
                 if (customData.price !== undefined) {
