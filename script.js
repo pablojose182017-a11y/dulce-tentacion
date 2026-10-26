@@ -6709,11 +6709,11 @@ window.adjustNotifDropdownPosition = function () {
     const bell = document.getElementById('btnAdminNotifBell');
     if (!dd || dd.style.display !== 'block') return;
 
+    const anchor = bell || wrapper;
+    const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 60, top: 20, left: 20, right: 60 };
+
     if (window.innerWidth <= 600) {
         // En móviles/pantallas estrechas, fijar posición respetando límites seguros de pantalla
-        const anchor = bell || wrapper;
-        const rect = anchor ? anchor.getBoundingClientRect() : { bottom: 60, top: 20 };
-
         let targetTop = rect.bottom + 8;
         // Si el botón está muy abajo en la pantalla, abrir hacia arriba
         if (targetTop + 280 > window.innerHeight) {
@@ -6731,103 +6731,154 @@ window.adjustNotifDropdownPosition = function () {
         dd.style.overflowX = 'hidden';
         dd.style.zIndex = '9999999';
     } else {
-        dd.style.position = 'absolute';
-        dd.style.top = '50px';
-        dd.style.right = '0';
-        dd.style.left = 'auto';
-        dd.style.width = '340px';
-        dd.style.maxWidth = 'calc(100vw - 24px)';
-        dd.style.maxHeight = 'none';
-        dd.style.overflowX = 'hidden';
-        dd.style.zIndex = '999999';
+        const isFloating = wrapper && (wrapper.classList.contains('is-floating') || wrapper.style.position === 'fixed');
+        if (isFloating) {
+            dd.style.position = 'fixed';
+            let targetTop = rect.bottom + 8;
+            if (targetTop + 320 > window.innerHeight) {
+                targetTop = Math.max(10, rect.top - 330);
+            }
+            let targetLeft = rect.right - 340;
+            if (targetLeft < 10) targetLeft = Math.max(10, rect.left);
+            if (targetLeft + 340 > window.innerWidth - 10) {
+                targetLeft = Math.max(10, window.innerWidth - 350);
+            }
+
+            dd.style.top = `${targetTop}px`;
+            dd.style.left = `${targetLeft}px`;
+            dd.style.right = 'auto';
+            dd.style.width = '340px';
+            dd.style.maxWidth = 'calc(100vw - 24px)';
+            dd.style.maxHeight = '80vh';
+            dd.style.overflowX = 'hidden';
+            dd.style.zIndex = '9999999';
+        } else {
+            dd.style.position = 'absolute';
+            dd.style.top = '50px';
+            dd.style.right = '0';
+            dd.style.left = 'auto';
+            dd.style.width = '340px';
+            dd.style.maxWidth = 'calc(100vw - 24px)';
+            dd.style.maxHeight = 'none';
+            dd.style.overflowX = 'hidden';
+            dd.style.zIndex = '999999';
+        }
     }
 };
 
-
-
-
-
 window.handleNotifClick = function (event, payloadStr) {
-    console.log("=== DIAGNOSTICO FALLO B ===");
-    console.log("handleNotifClick EJECUTADO!");
-    console.log("payloadStr:", payloadStr);
-
     if (event) event.stopPropagation();
     try {
         const item = JSON.parse(decodeURIComponent(payloadStr));
-        console.log("item parseado:", item);
 
-        // 1. Cerrar Dropdown
+        // 1. Cerrar Dropdown de Notificaciones de inmediato
         const dd = document.getElementById('adminNotifDropdown');
         if (dd) dd.style.display = 'none';
 
-        // 2. Enrutar
+        // 2. Enrutar según el tipo de notificación
         const isOrder = item.orderId || (item.title && item.title.toLowerCase().includes('pedido'));
         const isVip = item.type === 'solicitud_vip' || (item.title && item.title.toLowerCase().includes('vip'));
 
         if (typeof showSection === 'function') showSection('admin-dashboard');
 
         if (isOrder) {
-            const oId = item.orderId || (item.title.match(/#([A-Z0-9-]+)/) ? item.title.match(/#([A-Z0-9-]+)/)[1] : null);
+            let oId = item.orderId || null;
+            if (!oId && item.title) {
+                const m = item.title.match(/#([A-Z0-9-]+)/i);
+                if (m) oId = m[1];
+            }
+            if (!oId && item.message) {
+                const m = item.message.match(/#([A-Z0-9-]+)/i);
+                if (m) oId = m[1];
+            }
 
-            const procederFlujoVisual = () => {
-                if (item.timestamp) {
-                    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-                    const orderDateStr = (new Date(item.timestamp - tzoffset)).toISOString().split('T')[0];
-                    const dateInput = document.getElementById('orderDateFilter');
-                    if (dateInput) {
-                        dateInput.value = orderDateStr;
-                        if (typeof filterOrdersByDate === 'function') {
-                            filterOrdersByDate();
-                        }
-                    }
-                }
-                if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('pedidos');
+            const enfocarYResaltarPedido = (targetOrderId) => {
+                let intentos = 0;
+                const maxIntentos = 10;
+                const intervalo = setInterval(() => {
+                    intentos++;
+                    let orderCard = null;
 
-                console.log("oId extraído:", oId);
-                if (oId) {
-                    setTimeout(() => {
-                        const selector = `.pedido-card[data-order-id="${oId}"]`;
-                        console.log("Selector a utilizar:", selector);
-                        let orderCard = document.querySelector(selector);
-                        console.log("orderCard encontrado (1er intento):", !!orderCard);
+                    if (targetOrderId) {
+                        orderCard = document.querySelector(`.pedido-card[data-order-id="${targetOrderId}"]`);
                         if (!orderCard) {
                             const allCards = Array.from(document.querySelectorAll('.pedido-card'));
-                            console.log("allCards .pedido-card encontradas:", allCards.length);
-                            orderCard = allCards.find(el => el.innerHTML.includes(oId));
-                            console.log("orderCard encontrado (fallback):", !!orderCard);
+                            orderCard = allCards.find(el => {
+                                const text = (el.textContent || el.innerText || '').toUpperCase();
+                                return text.includes(targetOrderId.toUpperCase());
+                            });
                         }
-                        if (orderCard) {
-                            console.log("Haciendo scrollIntoView...");
-                            orderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const oldBg = orderCard.style.background || '';
-                            orderCard.style.background = '#fef08a';
-                            setTimeout(() => orderCard.style.background = oldBg, 1500);
-                            console.log("Resaltado completado.");
-                        } else {
-                            console.warn("handleNotifClick: No se encontró la tarjeta del pedido en el DOM para el ID:", oId);
-                        }
-                    }, 800);
-                }
+                    }
+
+                    if (orderCard) {
+                        clearInterval(intervalo);
+                        orderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        orderCard.classList.remove('order-card-highlight');
+                        void orderCard.offsetWidth; // Force reflow
+                        orderCard.classList.add('order-card-highlight');
+                        setTimeout(() => orderCard.classList.remove('order-card-highlight'), 2600);
+                    } else if (intentos >= maxIntentos) {
+                        clearInterval(intervalo);
+                        console.warn("handleNotifClick: No se encontró la tarjeta del pedido tras re-renderizar:", targetOrderId);
+                    }
+                }, 120);
             };
 
-            if (oId && window.db && typeof window.pedidosHistorial !== 'undefined') {
-                const existe = window.pedidosHistorial.some(p => p.id === oId || p.idDoc === oId);
+            const procederFlujoVisual = () => {
+                // a) Activar pestaña pedidos
+                if (typeof window.cambiarPestanaAdmin === 'function') {
+                    window.cambiarPestanaAdmin('pedidos');
+                }
+
+                // b) Localizar si el pedido ya existe en memoria
+                const listMemoria = window.pedidosHistorial || pedidosHistorial || [];
+                const pedidoData = oId ? listMemoria.find(p => String(p.id).toUpperCase() === oId.toUpperCase() || String(p.idDoc).toUpperCase() === oId.toUpperCase()) : null;
+
+                const fechaPedido = pedidoData && pedidoData.timestamp
+                    ? new Date(pedidoData.timestamp)
+                    : (item.timestamp ? new Date(item.timestamp) : null);
+
+                const dateInput = document.getElementById('orderDateFilter');
+                const searchInput = document.getElementById('orderSearchInput');
+
+                if (fechaPedido && !isNaN(fechaPedido.getTime())) {
+                    const tzoffset = fechaPedido.getTimezoneOffset() * 60000;
+                    const orderDateStr = (new Date(fechaPedido.getTime() - tzoffset)).toISOString().split('T')[0];
+                    if (dateInput) dateInput.value = orderDateStr;
+                    if (typeof orderDateFilterValue !== 'undefined') orderDateFilterValue = orderDateStr;
+                } else {
+                    if (dateInput) dateInput.value = '';
+                    if (typeof orderDateFilterValue !== 'undefined') orderDateFilterValue = '';
+                }
+
+                if (searchInput) searchInput.value = '';
+                if (typeof orderSearchIdValue !== 'undefined') orderSearchIdValue = '';
+
+                // c) Re-renderizar lista de pedidos
+                if (typeof renderLiveOrders === 'function') {
+                    renderLiveOrders();
+                }
+
+                // d) Scroll suave y destello
+                enfocarYResaltarPedido(oId);
+            };
+
+            // Si el pedido no está en memoria, traerlo de Firestore
+            if (oId && window.db) {
+                const listMemoria = window.pedidosHistorial || pedidosHistorial || [];
+                const existe = listMemoria.some(p => String(p.id).toUpperCase() === oId.toUpperCase() || String(p.idDoc).toUpperCase() === oId.toUpperCase());
                 if (!existe) {
                     window.db.collection('pedidos').doc(oId).get().then(docSnap => {
                         if (docSnap.exists) {
-                            const existeDobleCheck = window.pedidosHistorial.some(p => p.id === oId || p.idDoc === oId);
-                            if (!existeDobleCheck) {
-                                const pData = { ...docSnap.data(), id: docSnap.id, idDoc: docSnap.id };
-                                window.pedidosHistorial.push(pData);
-                                if (typeof pedidosHistorial !== 'undefined') pedidosHistorial.push(pData);
+                            const pData = { ...docSnap.data(), id: docSnap.id, idDoc: docSnap.id };
+                            if (window.pedidosHistorial) window.pedidosHistorial.push(pData);
+                            if (typeof pedidosHistorial !== 'undefined' && pedidosHistorial !== window.pedidosHistorial) {
+                                pedidosHistorial.push(pData);
                             }
-                            procederFlujoVisual();
-                        } else {
-                            console.warn("handleNotifClick: El pedido no se encuentra en memoria ni en Firestore (ID: " + oId + ")");
                         }
+                        procederFlujoVisual();
                     }).catch(err => {
-                        console.error("handleNotifClick: Error obteniendo pedido antiguo:", err);
+                        console.error("handleNotifClick: Error obteniendo pedido de Firestore:", err);
                         procederFlujoVisual();
                     });
                     return;
@@ -6837,8 +6888,6 @@ window.handleNotifClick = function (event, payloadStr) {
             procederFlujoVisual();
         } else if (isVip) {
             if (typeof window.cambiarPestanaAdmin === 'function') window.cambiarPestanaAdmin('usuarios');
-
-            // Filtrado automático en #adminUserSearch
             const emailMatch = item.message ? item.message.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/) : null;
             if (emailMatch) {
                 setTimeout(() => {
@@ -6854,8 +6903,6 @@ window.handleNotifClick = function (event, payloadStr) {
         console.error("Error al procesar click de notificación:", e);
     }
 };
-
-
 
 document.addEventListener('click', function (e) {
     const wrapper = document.querySelector('.admin-notif-wrapper');
@@ -6879,128 +6926,157 @@ window.addEventListener('resize', function () {
 });
 
 // ===== ARRASTRE MULTI-DISPOSITIVO (MOUSE Y TOUCH) PARA LA CAMPANA DE NOTIFICACIONES =====
-(function initDraggableNotifBell() {
-    function setup() {
-        const bell = document.getElementById('btnAdminNotifBell');
-        const wrapper = document.querySelector('.admin-notif-wrapper');
-        if (!bell || !wrapper || bell.dataset.dragInitialized) return;
-        bell.dataset.dragInitialized = 'true';
+window.initDraggableNotifBell = function () {
+    const bell = document.getElementById('btnAdminNotifBell');
+    const wrapper = document.querySelector('.admin-notif-wrapper');
+    if (!bell || !wrapper) return;
+    if (bell.dataset.dragInitialized === 'true') return;
+    bell.dataset.dragInitialized = 'true';
 
-        bell.style.touchAction = 'none';
-        bell.style.userSelect = 'none';
-        bell.style.webkitUserSelect = 'none';
+    bell.style.touchAction = 'none';
+    bell.style.userSelect = 'none';
+    bell.style.webkitUserSelect = 'none';
+    wrapper.style.touchAction = 'none';
 
-        let isDragging = false;
-        let startX = 0, startY = 0;
-        let initialLeft = 0, initialTop = 0;
-        let hasMoved = false;
-        const dragThreshold = 6;
+    // Restaurar posición guardada en localStorage si existe
+    try {
+        const savedPos = JSON.parse(localStorage.getItem('dt_bell_position') || 'null');
+        if (savedPos && typeof savedPos.left === 'number' && typeof savedPos.top === 'number') {
+            const maxX = Math.max(10, window.innerWidth - 52);
+            const maxY = Math.max(10, window.innerHeight - 52);
+            const clampLeft = Math.max(10, Math.min(savedPos.left, maxX));
+            const clampTop = Math.max(10, Math.min(savedPos.top, maxY));
 
-        function getCoords(e) {
-            if (e.touches && e.touches.length > 0) {
-                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-            }
-            return { x: e.clientX, y: e.clientY };
+            wrapper.classList.add('is-floating');
+            wrapper.style.position = 'fixed';
+            wrapper.style.zIndex = '9999998';
+            wrapper.style.margin = '0';
+            wrapper.style.left = `${clampLeft}px`;
+            wrapper.style.top = `${clampTop}px`;
+            wrapper.style.right = 'auto';
+            wrapper.style.bottom = 'auto';
         }
+    } catch (e) { }
 
-        function onStart(e) {
-            if (e.type === 'mousedown' && e.button !== 0) return;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialLeft = 0, initialTop = 0;
+    let hasMoved = false;
+    const dragThreshold = 6;
 
-            const coords = getCoords(e);
-            startX = coords.x;
-            startY = coords.y;
-            hasMoved = false;
-            isDragging = true;
-
-            const rect = wrapper.getBoundingClientRect();
-            initialLeft = rect.left;
-            initialTop = rect.top;
-
-            document.addEventListener('mousemove', onMove, { passive: false });
-            document.addEventListener('mouseup', onEnd);
-            document.addEventListener('touchmove', onMove, { passive: false });
-            document.addEventListener('touchend', onEnd);
-            document.addEventListener('touchcancel', onEnd);
+    function getCoords(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
-
-        function onMove(e) {
-            if (!isDragging) return;
-            const coords = getCoords(e);
-            const dx = coords.x - startX;
-            const dy = coords.y - startY;
-
-            if (!hasMoved && Math.hypot(dx, dy) > dragThreshold) {
-                hasMoved = true;
-                wrapper.style.position = 'fixed';
-                wrapper.style.zIndex = '9999998';
-                wrapper.style.margin = '0';
-                bell.style.cursor = 'grabbing';
-            }
-
-            if (hasMoved) {
-                if (e.cancelable) e.preventDefault();
-
-                const bellWidth = wrapper.offsetWidth || 42;
-                const bellHeight = wrapper.offsetHeight || 42;
-                const margin = 10;
-
-                let newLeft = initialLeft + dx;
-                let newTop = initialTop + dy;
-
-                const minX = margin;
-                const maxX = window.innerWidth - bellWidth - margin;
-                const minY = margin;
-                const maxY = window.innerHeight - bellHeight - margin;
-
-                newLeft = Math.max(minX, Math.min(newLeft, maxX));
-                newTop = Math.max(minY, Math.min(newTop, maxY));
-
-                wrapper.style.left = `${newLeft}px`;
-                wrapper.style.top = `${newTop}px`;
-                wrapper.style.right = 'auto';
-                wrapper.style.bottom = 'auto';
-
-                if (window.adjustNotifDropdownPosition) {
-                    window.adjustNotifDropdownPosition();
-                }
-            }
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
         }
-
-        function onEnd() {
-            if (!isDragging) return;
-            isDragging = false;
-            bell.style.cursor = 'pointer';
-
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onEnd);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('touchend', onEnd);
-            document.removeEventListener('touchcancel', onEnd);
-
-            if (hasMoved) {
-                const clickBlocker = function (ev) {
-                    ev.stopPropagation();
-                    ev.preventDefault();
-                    bell.removeEventListener('click', clickBlocker, true);
-                };
-                bell.addEventListener('click', clickBlocker, true);
-                setTimeout(() => bell.removeEventListener('click', clickBlocker, true), 120);
-            }
-        }
-
-        bell.addEventListener('mousedown', onStart);
-        bell.addEventListener('touchstart', onStart, { passive: true });
+        return { x: e.clientX, y: e.clientY };
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setup);
-    } else {
-        setup();
+    function onStart(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+
+        const coords = getCoords(e);
+        startX = coords.x;
+        startY = coords.y;
+        hasMoved = false;
+        isDragging = true;
+
+        const rect = wrapper.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        document.addEventListener('mousemove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+        document.addEventListener('touchcancel', onEnd);
     }
-})();
+
+    function onMove(e) {
+        if (!isDragging) return;
+        const coords = getCoords(e);
+        const dx = coords.x - startX;
+        const dy = coords.y - startY;
+
+        if (!hasMoved && Math.hypot(dx, dy) > dragThreshold) {
+            hasMoved = true;
+            wrapper.classList.add('is-floating');
+            wrapper.style.position = 'fixed';
+            wrapper.style.zIndex = '9999998';
+            wrapper.style.margin = '0';
+            bell.style.cursor = 'grabbing';
+        }
+
+        if (hasMoved) {
+            if (e.cancelable) e.preventDefault();
+
+            const bellWidth = wrapper.offsetWidth || 42;
+            const bellHeight = wrapper.offsetHeight || 42;
+            const margin = 10;
+
+            let newLeft = initialLeft + dx;
+            let newTop = initialTop + dy;
+
+            const minX = margin;
+            const maxX = window.innerWidth - bellWidth - margin;
+            const minY = margin;
+            const maxY = window.innerHeight - bellHeight - margin;
+
+            newLeft = Math.max(minX, Math.min(newLeft, maxX));
+            newTop = Math.max(minY, Math.min(newTop, maxY));
+
+            wrapper.style.left = `${newLeft}px`;
+            wrapper.style.top = `${newTop}px`;
+            wrapper.style.right = 'auto';
+            wrapper.style.bottom = 'auto';
+
+            if (window.adjustNotifDropdownPosition) {
+                window.adjustNotifDropdownPosition();
+            }
+        }
+    }
+
+    function onEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        bell.style.cursor = 'grab';
+
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+        document.removeEventListener('touchcancel', onEnd);
+
+        if (hasMoved) {
+            // Guardar posición en localStorage para persistencia
+            try {
+                const rect = wrapper.getBoundingClientRect();
+                localStorage.setItem('dt_bell_position', JSON.stringify({ left: rect.left, top: rect.top }));
+            } catch (e) { }
+
+            // Bloquear el clic resultante de soltar el arrastre
+            const clickBlocker = function (ev) {
+                ev.stopPropagation();
+                ev.preventDefault();
+                bell.removeEventListener('click', clickBlocker, true);
+            };
+            bell.addEventListener('click', clickBlocker, true);
+            setTimeout(() => bell.removeEventListener('click', clickBlocker, true), 150);
+        }
+    }
+
+    bell.addEventListener('mousedown', onStart);
+    bell.addEventListener('touchstart', onStart, { passive: true });
+};
+
+// Auto-inicializar al cargar
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => window.initDraggableNotifBell());
+} else {
+    window.initDraggableNotifBell();
+}
 
 function openVipModal(e) {
     // Membresía VIP retirada en producción

@@ -358,6 +358,9 @@ window.renderAdminNotifList = function () {
 
 // Extracted from script.js
 window.toggleAdminNotifDropdown = function () {
+    if (typeof window.initDraggableNotifBell === 'function') {
+        window.initDraggableNotifBell();
+    }
     const dd = document.getElementById('adminNotifDropdown');
     if (!dd) return;
     const isOpen = dd.style.display === 'block';

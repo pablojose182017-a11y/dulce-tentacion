@@ -253,6 +253,11 @@ window.loadAdminHTMLFragment = async function() {
             await window.loadProtectedAdminScript('/contabilidad.js?v=17', 'contabilidad.js');
         }
 
+        // Inicializar arrastre de la campanita flotante de notificaciones
+        if (typeof window.initDraggableNotifBell === 'function') {
+            window.initDraggableNotifBell();
+        }
+
         window._adminFragmentLoaded = true;
     } catch (e) {
         console.error("Fallo al cargar admin-dashboard-fragment.html", e);

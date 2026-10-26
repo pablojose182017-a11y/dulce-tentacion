@@ -6563,11 +6563,23 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 /* =========================================
    CENTRO DE NOTIFICACIONES ADMIN / OPERATIVO
 ========================================= */
+.admin-notif-wrapper {
+    position: relative;
+    display: inline-block;
+    touch-action: none;
+}
+
+.admin-notif-wrapper.is-floating {
+    position: fixed !important;
+    z-index: 9999998 !important;
+    margin: 0 !important;
+}
+
 .btn-notif-bell {
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
-    cursor: pointer;
+    cursor: grab;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 .btn-notif-bell:hover {
@@ -6577,6 +6589,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 .btn-notif-bell:active {
     transform: scale(0.95);
+    cursor: grabbing;
 }
 
 #adminNotifDropdown {
@@ -6593,6 +6606,34 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
         right: 12px !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
+    }
+}
+
+/* Destello brillante al localizar pedido desde notificación */
+.order-card-highlight {
+    animation: orderCardGlow 2.5s ease-out forwards !important;
+}
+
+@keyframes orderCardGlow {
+    0% {
+        background-color: #fef08a !important;
+        box-shadow: 0 0 0 4px #eab308, 0 8px 24px rgba(234, 179, 8, 0.45) !important;
+        transform: scale(1.02);
+    }
+    30% {
+        background-color: #fef9c3 !important;
+        box-shadow: 0 0 0 3px #f59e0b, 0 6px 18px rgba(245, 158, 11, 0.35) !important;
+        transform: scale(1.01);
+    }
+    70% {
+        background-color: #fefce8 !important;
+        box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3), 0 4px 12px rgba(0,0,0,0.08) !important;
+        transform: scale(1);
+    }
+    100% {
+        background-color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+        transform: scale(1);
     }
 }
 
